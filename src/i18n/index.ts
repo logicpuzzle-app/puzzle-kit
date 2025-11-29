@@ -85,7 +85,7 @@ const resources = {
       'tool.line.directions': 'Directions',
       'tool.line.direction.orthogonal': 'Orthogonal',
       'tool.line.direction.diagonal': 'Diagonal',
-      'tool.line.direction.straight': 'Straight',
+      'tool.line.direction.straight': 'Free Segment',
       'tool.line.direction.freehand': 'Freehand',
       'tool.line.freehand.list': 'Freehand Lines',
       'tool.line.freehand.noLines': 'No freehand lines',
@@ -428,7 +428,7 @@ const resources = {
       'tool.line.directions': '方向',
       'tool.line.direction.orthogonal': '縦横',
       'tool.line.direction.diagonal': '斜め',
-      'tool.line.direction.straight': '自由線',
+      'tool.line.direction.straight': '自由線分',
       'tool.line.direction.freehand': 'フリーハンド',
       'tool.line.freehand.list': 'フリーハンド',
       'tool.line.freehand.noLines': 'フリーハンドなし',
@@ -690,15 +690,50 @@ const resources = {
   },
 };
 
+const LANGUAGE_STORAGE_KEY = 'puzzlekit-language';
+
+/**
+ * Detect the default language based on:
+ * 1. localStorage saved preference
+ * 2. Browser/system locale (Japanese regions → 'ja', others → 'en')
+ */
+function detectDefaultLanguage(): string {
+  // Check localStorage first
+  const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+  if (saved === 'ja' || saved === 'en') {
+    return saved;
+  }
+
+  // Check browser locale - only Japanese for 'ja', everything else defaults to 'en'
+  const browserLang = navigator.language || (navigator as { userLanguage?: string }).userLanguage || '';
+  if (browserLang.toLowerCase().startsWith('ja')) {
+    return 'ja';
+  }
+
+  return 'en';
+}
+
+/**
+ * Save language preference to localStorage
+ */
+export function saveLanguagePreference(lang: string): void {
+  localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+}
+
 i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: 'ja', // Default language
+    lng: detectDefaultLanguage(),
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false,
     },
   });
+
+// Listen for language changes and save to localStorage
+i18n.on('languageChanged', (lng) => {
+  saveLanguagePreference(lng);
+});
 
 export default i18n;

@@ -1,0 +1,333 @@
+import { useCallback } from 'react';
+import {
+  findNearestCell,
+  findNearestVertex,
+  findNearestEdge,
+  getCellId,
+  getVertexId,
+  getEdgeHId,
+  getEdgeVId,
+  getCellCenter,
+  getVertexPosition,
+  getEdgePosition,
+} from '../utils/gridUtils';
+import type { Point, LineGridPoint, LineDirection, GridConfig } from '../types';
+
+/**
+ * Hook providing grid point utilities for line/edge tools
+ */
+export function useGridPointUtils(grid: GridConfig) {
+  /**
+   * Find the nearest grid point based on allowed grid point types
+   * Returns { id: string, position: Point } or null
+   */
+  const findNearestGridPoint = useCallback(
+    (point: Point, allowedTypes: LineGridPoint[]): { id: string; position: Point } | null => {
+      const threshold = grid.cellSize * 0.4; // Detection threshold
+      let bestId: string | null = null;
+      let bestPosition: Point | null = null;
+      let bestDistance = Infinity;
+
+      // Check cell centers
+      if (allowedTypes.includes('cell')) {
+        const cell = findNearestCell(point, grid);
+        if (cell) {
+          const center = getCellCenter(cell.row, cell.col, grid);
+          const distance = Math.sqrt(Math.pow(point.x - center.x, 2) + Math.pow(point.y - center.y, 2));
+          if (distance < threshold && distance < bestDistance) {
+            bestId = getCellId(cell.row, cell.col);
+            bestPosition = center;
+            bestDistance = distance;
+          }
+        }
+      }
+
+      // Check vertices
+      if (allowedTypes.includes('vertex')) {
+        const vertex = findNearestVertex(point, grid, threshold);
+        if (vertex) {
+          const pos = getVertexPosition(vertex.row, vertex.col, grid);
+          const distance = Math.sqrt(Math.pow(point.x - pos.x, 2) + Math.pow(point.y - pos.y, 2));
+          if (distance < threshold && distance < bestDistance) {
+            bestId = getVertexId(vertex.row, vertex.col);
+            bestPosition = pos;
+            bestDistance = distance;
+          }
+        }
+      }
+
+      // Check edge centers
+      if (allowedTypes.includes('edge')) {
+        const edge = findNearestEdge(point, grid, threshold);
+        if (edge) {
+          const pos = getEdgePosition(edge.type, edge.row, edge.col, grid);
+          const distance = Math.sqrt(Math.pow(point.x - pos.x, 2) + Math.pow(point.y - pos.y, 2));
+          if (distance < threshold && distance < bestDistance) {
+            bestId = edge.type === 'h' ? getEdgeHId(edge.row, edge.col) : getEdgeVId(edge.row, edge.col);
+            bestPosition = pos;
+            bestDistance = distance;
+          }
+        }
+      }
+
+      return bestId && bestPosition ? { id: bestId, position: bestPosition } : null;
+    },
+    [grid]
+  );
+
+  // Parse ID to get row/col coordinates
+  const parsePointId = useCallback((id: string): { row: number; col: number; type: string } | null => {
+    const cellMatch = id.match(/^cell-(\d+)-(\d+)$/);
+    if (cellMatch) return { row: parseInt(cellMatch[1]), col: parseInt(cellMatch[2]), type: 'cell' };
+
+    const vertexMatch = id.match(/^vertex-(\d+)-(\d+)$/);
+    if (vertexMatch) return { row: parseInt(vertexMatch[1]), col: parseInt(vertexMatch[2]), type: 'vertex' };
+
+    const edgeHMatch = id.match(/^edge-h-(\d+)-(\d+)$/);
+    if (edgeHMatch) return { row: parseInt(edgeHMatch[1]), col: parseInt(edgeHMatch[2]), type: 'edge-h' };
+
+    const edgeVMatch = id.match(/^edge-v-(\d+)-(\d+)$/);
+    if (edgeVMatch) return { row: parseInt(edgeVMatch[1]), col: parseInt(edgeVMatch[2]), type: 'edge-v' };
+
+    return null;
+  }, []);
+
+  // Build ID from row/col and type
+  const buildPointId = useCallback((row: number, col: number, type: string): string => {
+    switch (type) {
+      case 'cell': return `cell-${row}-${col}`;
+      case 'vertex': return `vertex-${row}-${col}`;
+      case 'edge-h': return `edge-h-${row}-${col}`;
+      case 'edge-v': return `edge-v-${row}-${col}`;
+      default: return `cell-${row}-${col}`;
+    }
+  }, []);
+
+  /**
+   * Check if a line between two points is allowed based on direction settings
+   */
+  const isLineDirectionAllowed = useCallback(
+    (fromId: string, toId: string, allowedDirections: LineDirection[]): boolean => {
+      const from = parsePointId(fromId);
+      const to = parsePointId(toId);
+      if (!from || !to) return true; // Can't determine, allow
+
+      const dRow = Math.abs(to.row - from.row);
+      const dCol = Math.abs(to.col - from.col);
+
+      // Orthogonal: one of dRow or dCol is 0
+      const isOrthogonal = dRow === 0 || dCol === 0;
+      // Diagonal: dRow === dCol and both > 0
+      const isDiagonal = dRow === dCol && dRow > 0;
+
+      if (isOrthogonal && allowedDirections.includes('orthogonal')) return true;
+      if (isDiagonal && allowedDirections.includes('diagonal')) return true;
+
+      // If neither strictly orthogonal nor diagonal, check if at least one is allowed
+      // For mixed cases (like 2,1 knight moves), allow if both directions are enabled
+      if (!isOrthogonal && !isDiagonal) {
+        return allowedDirections.includes('orthogonal') && allowedDirections.includes('diagonal');
+      }
+
+      return false;
+    },
+    [parsePointId]
+  );
+
+  /**
+   * Get intermediate points between two points for line interpolation
+   * Returns array of point IDs including start (excluded) and end (included)
+   * Returns null if path is not possible with given directions
+   *
+   * @param halfMode - If true, allows lines between different grid point types:
+   *   - Cell + Edge (Orthogonal): center to edge
+   *   - Vertex + Edge (Orthogonal): vertex to edge
+   *   - Cell + Vertex (Diagonal): center to vertex
+   *   - Edge-h + Edge-v (Diagonal): horizontal edge to vertical edge
+   */
+  const getInterpolatedPath = useCallback(
+    (fromId: string, toId: string, allowedDirections: LineDirection[], halfMode: boolean = false): string[] | null => {
+      const from = parsePointId(fromId);
+      const to = parsePointId(toId);
+      if (!from || !to) return null;
+
+      const fromIsCell = from.type === 'cell';
+      const toIsCell = to.type === 'cell';
+      const fromIsVertex = from.type === 'vertex';
+      const toIsVertex = to.type === 'vertex';
+      const fromIsEdgeH = from.type === 'edge-h';
+      const toIsEdgeH = to.type === 'edge-h';
+      const fromIsEdgeV = from.type === 'edge-v';
+      const toIsEdgeV = to.type === 'edge-v';
+      const fromIsEdge = fromIsEdgeH || fromIsEdgeV;
+      const toIsEdge = toIsEdgeH || toIsEdgeV;
+
+      // Half mode handling for different point type combinations
+      if (halfMode) {
+        // 1. Cell + Edge (Orthogonal): center to edge
+        if ((fromIsCell && toIsEdge) || (fromIsEdge && toIsCell)) {
+          if (!allowedDirections.includes('orthogonal')) return null;
+
+          const cellPt = fromIsCell ? from : to;
+          const edgePt = fromIsCell ? to : from;
+
+          let isAdjacent = false;
+          if (edgePt.type === 'edge-h') {
+            // edge-h at (r, c) is adjacent to cell (r-1, c) [below] and cell (r, c) [above]
+            isAdjacent = (
+              (edgePt.row === cellPt.row && edgePt.col === cellPt.col) ||     // top edge of cell
+              (edgePt.row === cellPt.row + 1 && edgePt.col === cellPt.col)    // bottom edge of cell
+            );
+          } else if (edgePt.type === 'edge-v') {
+            // edge-v at (r, c) is adjacent to cell (r, c-1) [right] and cell (r, c) [left]
+            isAdjacent = (
+              (edgePt.row === cellPt.row && edgePt.col === cellPt.col) ||     // left edge of cell
+              (edgePt.row === cellPt.row && edgePt.col === cellPt.col + 1)    // right edge of cell
+            );
+          }
+
+          if (isAdjacent) return [toId];
+          return null;
+        }
+
+        // 2. Vertex + Edge (Orthogonal): vertex to edge
+        if ((fromIsVertex && toIsEdge) || (fromIsEdge && toIsVertex)) {
+          if (!allowedDirections.includes('orthogonal')) return null;
+
+          const vertexPt = fromIsVertex ? from : to;
+          const edgePt = fromIsVertex ? to : from;
+
+          let isAdjacent = false;
+          if (edgePt.type === 'edge-h') {
+            // edge-h at (r, c) is adjacent to vertex (r, c) [left] and vertex (r, c+1) [right]
+            isAdjacent = (
+              (edgePt.row === vertexPt.row && edgePt.col === vertexPt.col) ||     // left vertex
+              (edgePt.row === vertexPt.row && edgePt.col === vertexPt.col - 1)    // right vertex
+            );
+          } else if (edgePt.type === 'edge-v') {
+            // edge-v at (r, c) is adjacent to vertex (r, c) [top] and vertex (r+1, c) [bottom]
+            isAdjacent = (
+              (edgePt.row === vertexPt.row && edgePt.col === vertexPt.col) ||     // top vertex
+              (edgePt.row === vertexPt.row - 1 && edgePt.col === vertexPt.col)    // bottom vertex
+            );
+          }
+
+          if (isAdjacent) return [toId];
+          return null;
+        }
+
+        // 3. Cell + Vertex (Diagonal): center to vertex
+        if ((fromIsCell && toIsVertex) || (fromIsVertex && toIsCell)) {
+          if (!allowedDirections.includes('diagonal')) return null;
+
+          const cellPt = fromIsCell ? from : to;
+          const vertexPt = fromIsCell ? to : from;
+
+          // vertex (r, c) is diagonally adjacent to cells:
+          // (r-1, c-1) [top-left], (r-1, c) [top-right], (r, c-1) [bottom-left], (r, c) [bottom-right]
+          const isAdjacent = (
+            (vertexPt.row === cellPt.row && vertexPt.col === cellPt.col) ||         // bottom-right vertex
+            (vertexPt.row === cellPt.row && vertexPt.col === cellPt.col + 1) ||     // bottom-left vertex
+            (vertexPt.row === cellPt.row + 1 && vertexPt.col === cellPt.col) ||     // top-right vertex
+            (vertexPt.row === cellPt.row + 1 && vertexPt.col === cellPt.col + 1)    // top-left vertex
+          );
+
+          if (isAdjacent) return [toId];
+          return null;
+        }
+
+        // 4. Edge-h + Edge-v (Diagonal): horizontal edge to vertical edge
+        if ((fromIsEdgeH && toIsEdgeV) || (fromIsEdgeV && toIsEdgeH)) {
+          if (!allowedDirections.includes('diagonal')) return null;
+
+          const edgeH = fromIsEdgeH ? from : to;
+          const edgeV = fromIsEdgeH ? to : from;
+
+          // edge-h at (r, c) is diagonally adjacent to edge-v at:
+          // (r-1, c) [top-left], (r-1, c+1) [top-right], (r, c) [bottom-left], (r, c+1) [bottom-right]
+          const isAdjacent = (
+            (edgeV.row === edgeH.row - 1 && edgeV.col === edgeH.col) ||     // top-left
+            (edgeV.row === edgeH.row - 1 && edgeV.col === edgeH.col + 1) || // top-right
+            (edgeV.row === edgeH.row && edgeV.col === edgeH.col) ||         // bottom-left
+            (edgeV.row === edgeH.row && edgeV.col === edgeH.col + 1)        // bottom-right
+          );
+
+          if (isAdjacent) return [toId];
+          return null;
+        }
+      }
+
+      // For same-type connections or non-half mode
+      // Check if types are compatible (same type only)
+      if (from.type !== to.type) {
+        return null; // Different point types without half mode, can't interpolate
+      }
+
+      const dRow = to.row - from.row;
+      const dCol = to.col - from.col;
+      const absDRow = Math.abs(dRow);
+      const absDCol = Math.abs(dCol);
+
+      // Same type handling
+      if (from.type === to.type) {
+        // Already adjacent (distance 1), just return the end point
+        if ((absDRow === 1 && absDCol === 0) || (absDRow === 0 && absDCol === 1)) {
+          if (allowedDirections.includes('orthogonal')) return [toId];
+          return null;
+        }
+        if (absDRow === 1 && absDCol === 1) {
+          if (allowedDirections.includes('diagonal')) return [toId];
+          return null;
+        }
+
+        // Orthogonal path (straight line)
+        if (absDRow === 0 && absDCol > 0 && allowedDirections.includes('orthogonal')) {
+          const path: string[] = [];
+          const step = dCol > 0 ? 1 : -1;
+          for (let c = from.col + step; ; c += step) {
+            path.push(buildPointId(from.row, c, from.type));
+            if (c === to.col) break;
+          }
+          return path;
+        }
+        if (absDCol === 0 && absDRow > 0 && allowedDirections.includes('orthogonal')) {
+          const path: string[] = [];
+          const step = dRow > 0 ? 1 : -1;
+          for (let r = from.row + step; ; r += step) {
+            path.push(buildPointId(r, from.col, from.type));
+            if (r === to.row) break;
+          }
+          return path;
+        }
+
+        // Diagonal path (45 degree line) - same type
+        if (absDRow === absDCol && absDRow > 0 && allowedDirections.includes('diagonal')) {
+          const path: string[] = [];
+          const stepR = dRow > 0 ? 1 : -1;
+          const stepC = dCol > 0 ? 1 : -1;
+          let r = from.row + stepR;
+          let c = from.col + stepC;
+          while (true) {
+            path.push(buildPointId(r, c, from.type));
+            if (r === to.row && c === to.col) break;
+            r += stepR;
+            c += stepC;
+          }
+          return path;
+        }
+      }
+
+      // Not a valid path
+      return null;
+    },
+    [parsePointId, buildPointId]
+  );
+
+  return {
+    findNearestGridPoint,
+    parsePointId,
+    buildPointId,
+    isLineDirectionAllowed,
+    getInterpolatedPath,
+  };
+}

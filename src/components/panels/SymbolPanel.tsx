@@ -225,6 +225,7 @@ const SYMBOL_CATEGORIES: { id: string; labelKey: string; symbols: SymbolDef[] }[
       { id: 'pig', icon: '豚', filled: true, tagsJa: ['豚', 'ぶた', 'ブタ'], tagsEn: ['pig', 'boar'] },
       { id: 'chicken', icon: 'にわとり', filled: true, tagsJa: ['鶏', 'にわとり', 'ニワトリ', '鳥'], tagsEn: ['chicken', 'rooster', 'hen'] },
       { id: 'cow', icon: '牛', filled: true, tagsJa: ['牛', 'うし', 'ウシ', '家畜'], tagsEn: ['cow', 'cattle', 'bull'] },
+      { id: 'duck', icon: 'アヒル', filled: true, tagsJa: ['アヒル', 'あひる', '鳥', 'カモ', '家鴨'], tagsEn: ['duck', 'bird', 'rubber duck'] },
     ],
   },
 ];

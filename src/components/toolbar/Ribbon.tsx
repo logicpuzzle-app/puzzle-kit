@@ -612,6 +612,36 @@ const LineSettingsPicker: React.FC = () => {
   const currentGridPoints = toolSettings.lineGridPoints || ['cell'];
   const currentDirections = toolSettings.lineDirections || ['orthogonal'];
 
+  // Half mode availability logic:
+  // Enabled when there's potential for lines between different types of grid points
+  const hasCell = currentGridPoints.includes('cell');
+  const hasVertex = currentGridPoints.includes('vertex');
+  const hasEdge = currentGridPoints.includes('edge');
+  const hasOrthogonal = currentDirections.includes('orthogonal');
+  const hasDiagonal = currentDirections.includes('diagonal');
+  const isSpecialMode = currentDirections.includes('freehand') || currentDirections.includes('straight');
+
+  // Calculate if half mode should be available
+  let isHalfModeAvailable = false;
+  if (!isSpecialMode) {
+    // Edge + Diagonal: allows lines between edge columns and rows
+    if (hasEdge && hasDiagonal) {
+      isHalfModeAvailable = true;
+    }
+    // Center + Vertex + Diagonal: allows lines between center and vertex
+    if (hasCell && hasVertex && hasDiagonal) {
+      isHalfModeAvailable = true;
+    }
+    // Center + Edge + Orthogonal: allows lines between center and edge
+    if (hasCell && hasEdge && hasOrthogonal) {
+      isHalfModeAvailable = true;
+    }
+    // Vertex + Edge + Orthogonal: allows lines between vertex and edge
+    if (hasVertex && hasEdge && hasOrthogonal) {
+      isHalfModeAvailable = true;
+    }
+  }
+
   return (
     <div className="flex items-center gap-4">
       {/* Grid point type selector (multi-select toggle) */}
@@ -632,6 +662,24 @@ const LineSettingsPicker: React.FC = () => {
               <span>{t(gp.labelKey)}</span>
             </button>
           ))}
+          {/* Half mode checkbox - always visible, disabled when not applicable */}
+          <label
+            className={`flex items-center gap-1 px-2 py-1 text-xs border rounded-sm transition-colors ml-1 ${
+              isHalfModeAvailable
+                ? 'cursor-pointer hover:bg-office-ribbon-hover border-office-border'
+                : 'cursor-not-allowed opacity-50 border-office-border bg-gray-50'
+            }`}
+            title={t('prop.halfMode')}
+          >
+            <input
+              type="checkbox"
+              checked={toolSettings.lineHalfMode || false}
+              onChange={(e) => setToolSettings({ lineHalfMode: e.target.checked })}
+              disabled={!isHalfModeAvailable}
+              className="rounded border-office-border"
+            />
+            <span>{t('prop.halfMode')}</span>
+          </label>
         </div>
         <span className="text-[10px] text-office-text-secondary uppercase">
           {t('tool.line.gridPoints')}
