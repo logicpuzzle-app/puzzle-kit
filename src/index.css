@@ -1,0 +1,127 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: light;
+  color: #323130;
+  background-color: #f3f2f1;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Office-style scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f3f2f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c8c8c8;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a6a6a6;
+}
+
+/* Office-style button base */
+.btn-office {
+  @apply px-3 py-1 text-sm text-office-text bg-white border border-office-border rounded-sm
+         hover:bg-office-ribbon-hover active:bg-office-ribbon-active
+         focus:outline-none focus:ring-1 focus:ring-office-accent
+         transition-colors duration-100;
+}
+
+.btn-office-primary {
+  @apply px-3 py-1 text-sm text-white bg-office-accent border border-office-accent rounded-sm
+         hover:bg-office-accent-hover active:bg-office-accent-hover
+         focus:outline-none focus:ring-1 focus:ring-office-accent
+         transition-colors duration-100;
+}
+
+/* Tool button */
+.tool-btn {
+  @apply flex flex-col items-center justify-center p-1 min-w-[40px] h-[50px]
+         text-xs text-office-text bg-transparent border-0 rounded-sm
+         hover:bg-office-ribbon-hover active:bg-office-ribbon-active
+         focus:outline-none transition-colors duration-100 cursor-pointer;
+}
+
+.tool-btn.active {
+  @apply bg-office-ribbon-active;
+}
+
+.tool-btn-icon {
+  @apply w-5 h-5 mb-0.5;
+}
+
+/* Ribbon tab */
+.ribbon-tab {
+  @apply px-4 py-2 text-sm text-office-text bg-transparent border-0
+         hover:bg-office-ribbon-hover cursor-pointer transition-colors duration-100;
+}
+
+.ribbon-tab.active {
+  @apply bg-white border-t-2 border-t-office-accent;
+}
+
+/* Panel styles */
+.panel {
+  @apply bg-white border border-office-border shadow-sm;
+}
+
+.panel-header {
+  @apply px-3 py-2 text-xs font-semibold text-office-text-secondary uppercase tracking-wide
+         bg-office-bg border-b border-office-border;
+}
+
+/* Input styles */
+.input-office {
+  @apply px-2 py-1 text-sm text-office-text bg-white border border-office-border rounded-sm
+         focus:outline-none focus:border-office-accent focus:ring-1 focus:ring-office-accent;
+}
+
+/* Select styles */
+.select-office {
+  @apply px-2 py-1 text-sm text-office-text bg-white border border-office-border rounded-sm
+         focus:outline-none focus:border-office-accent cursor-pointer;
+}
+
+/* Checkered pattern for transparent color */
+.bg-checkered {
+  background-image:
+    linear-gradient(45deg, #ccc 25%, transparent 25%),
+    linear-gradient(-45deg, #ccc 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #ccc 75%),
+    linear-gradient(-45deg, transparent 75%, #ccc 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+}

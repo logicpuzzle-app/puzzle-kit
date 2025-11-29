@@ -1,0 +1,518 @@
+// Core type definitions for PuzzleKit
+
+// Re-export Penpa Point types (renamed to avoid conflicts)
+export {
+  PointType as PenpaPointType,
+  PointUse,
+  type Point as PenpaPoint,
+  type GridPoints,
+  createPoint,
+  createGridPoints,
+  generateSquareGridPoints,
+  getCellIndex,
+  getVertexIndex,
+  getEdgeHIndex,
+  getEdgeVIndex,
+  getCellPosition,
+  isPointInBounds,
+  findCellAtPosition,
+  findNearestPoint,
+  getAdjacentCells,
+} from './point';
+
+// Re-export Hex grid types
+export {
+  generateHexGridPoints,
+  pixelToHex,
+  hexToPixel,
+  getHexVertices,
+  getHexNeighbors,
+  hexDistance,
+} from './hexPoint';
+
+// Re-export Triangle grid types
+export {
+  generateTriGridPoints,
+  pixelToTri,
+  triToPixel,
+  getTriVertices,
+  getTriNeighbors,
+  triDistance,
+  isUpwardTriangle,
+} from './triPoint';
+
+// Re-export Pyramid grid types
+export {
+  generatePyramidGridPoints,
+  pixelToPyramid,
+  pyramidToPixel,
+  getPyramidVertices,
+  getPyramidNeighbors,
+  isPyramidUpward,
+  getPyramidRowCellCount,
+  getPyramidTotalCells,
+  getPyramidCellIndex,
+  getPyramidCellPosition,
+} from './pyramidPoint';
+
+// Re-export Penpa element types
+export {
+  PenpaLineStyle,
+  getLineStyleProps,
+  parseEdgeKey,
+  createEdgeKey,
+  parseWallKey,
+  createWallKey,
+  getPenpaColor,
+  parseLineE,
+  parseWalls,
+  parseThermos,
+  parseArrows,
+  PENPA_COLORS,
+  PENPA_SYMBOLS,
+  PenpaNumberSize,
+  PenpaNumberPosition,
+  type PenpaEdge,
+  type PenpaWall,
+  type PenpaCage,
+  type PenpaThermo,
+  type PenpaArrow,
+  type PenpaDirectionalClue,
+  type PenpaDirection,
+  type PenpaPolygon,
+  type PenpaSquareFrame,
+  type PenpaNumber,
+  type PenpaSmallNumber,
+  type PenpaSymbolType,
+} from './penpaElements';
+
+// Re-export Penpa mode types
+export {
+  DEFAULT_MODE_STATE,
+  getSubmodes,
+  supportsDiagonal,
+  operatesOnVertices,
+  operatesOnCells,
+  operatesOnEdges,
+  getModeShortcut,
+  type PenpaEditMode,
+  type PenpaLayerMode,
+  type PenpaModeState,
+  type PenpaSurfaceSubmode,
+  type PenpaLineSubmode,
+  type PenpaLineESubmode,
+  type PenpaWallSubmode,
+  type PenpaNumberSubmode,
+  type PenpaSymbolSubmode,
+  type PenpaSpecialSubmode,
+  type PenpaCageSubmode,
+  type PenpaCombiSubmode,
+  type PenpaBoardSubmode,
+} from './penpaModes';
+
+// Re-export Puzzle Genre types
+export {
+  PUZZLE_GENRES,
+  PUZZLE_TAGS,
+  GENRE_INFO,
+  getGenresByTag,
+  getGenresWithTags,
+  getGenreInfo,
+  type PuzzleGenre,
+  type PuzzleTag,
+  type GenreInfo,
+} from './puzzleGenres';
+
+export type LayerType = 'problem' | 'answer';
+
+export type ToolCategory =
+  | 'surface'
+  | 'line'
+  | 'edge'
+  | 'wall'
+  | 'number'
+  | 'text'
+  | 'symbol'
+  | 'special'
+  | 'cage'
+  | 'select';
+
+export type ToolType =
+  // Surface tools
+  | 'surface-fill'
+  | 'surface-dot'
+  // Line tools (cell center to center)
+  | 'line-normal'
+  | 'line-diagonal'
+  | 'line-free'
+  | 'line-middle'
+  // Edge tools (vertex to vertex)
+  | 'edge-normal'
+  | 'edge-diagonal'
+  | 'edge-free'
+  // Wall tools
+  | 'wall-normal'
+  // Number tools
+  | 'number-normal'
+  | 'number-large'
+  | 'number-medium'
+  | 'number-small'
+  | 'number-corner'
+  | 'number-side'
+  | 'number-candidates'
+  | 'number-directional' // Yajilin-style directional clue
+  // Text tools
+  | 'text-alphabet'
+  | 'text-hiragana'
+  | 'text-katakana'
+  | 'text-free'
+  // Symbol tools
+  | 'symbol-circle'
+  | 'symbol-square'
+  | 'symbol-triangle'
+  | 'symbol-diamond'
+  | 'symbol-star'
+  | 'symbol-arrow'
+  | 'symbol-cross'
+  | 'symbol-line'
+  | 'symbol-cat'
+  | 'symbol-dog'
+  | 'symbol-rabbit'
+  | 'symbol-bear'
+  | 'symbol-mouse'
+  | 'symbol-pig'
+  | 'symbol-bird'
+  | 'symbol-fish'
+  | 'symbol-snake'
+  | 'symbol-frog'
+  // Special tools
+  | 'special-thermo'
+  | 'special-arrow'
+  | 'special-cage'
+  // Multicolor surface
+  | 'multicolor-surface'
+  // Solution area
+  | 'solution-area'
+  // Selection
+  | 'select';
+
+export type LineStyle =
+  | 'solid'
+  | 'dashed'
+  | 'dotted'
+  | 'double';
+
+export type LineThickness = 'thinnest' | 'thin' | 'normal' | 'thick' | 'thickest';
+
+/** Simple 2D coordinate point */
+export interface Point {
+  x: number;
+  y: number;
+}
+
+export interface GridPosition {
+  row: number;
+  col: number;
+}
+
+// Grid point types (distinct from Point in point.ts)
+export type GridPointType =
+  | 'cell'        // Cell center (type 0)
+  | 'vertex'      // Grid vertex (type 1)
+  | 'edge-h'      // Horizontal edge center (type 2)
+  | 'edge-v';     // Vertical edge center (type 3)
+
+export interface GridPoint {
+  id: string;
+  row: number;
+  col: number;
+  type: GridPointType;
+  x: number;  // SVG coordinate
+  y: number;  // SVG coordinate
+}
+
+// Drawing elements
+export interface SurfaceElement {
+  id: string;
+  cellId: string;
+  color: string;
+  layer: LayerType;
+}
+
+export interface LineElement {
+  id: string;
+  from: string;  // point ID (for grid-snapped lines)
+  to: string;    // point ID (for grid-snapped lines)
+  style: LineStyle;
+  thickness: LineThickness;
+  color: string;
+  layer: LayerType;
+  // For freehand lines (not snapped to grid)
+  isFree?: boolean;
+  fromX?: number;  // SVG x coordinate
+  fromY?: number;  // SVG y coordinate
+  toX?: number;    // SVG x coordinate
+  toY?: number;    // SVG y coordinate
+  strokeId?: string;  // Groups freehand segments into a single stroke
+}
+
+export interface EdgeElement {
+  id: string;
+  from: string;  // vertex ID
+  to: string;    // vertex ID
+  style: LineStyle;
+  thickness: LineThickness;
+  color: string;
+  layer: LayerType;
+}
+
+export interface WallElement {
+  id: string;
+  position: string;  // edge-h or edge-v point ID
+  style: LineStyle;
+  color: string;
+  layer: LayerType;
+}
+
+export interface NumberElement {
+  id: string;
+  cellId: string;
+  value: string;
+  size: 'large' | 'medium' | 'small';
+  position: 'center' | 'corner' | 'side' | 'candidates';
+  cornerIndex?: number;  // 0-3 for corners (TL, TR, BL, BR)
+  sideIndex?: number;    // 0-3 for sides (T, R, B, L)
+  candidates?: number[]; // For candidates mode (1-9 for Sudoku)
+  color: string;
+  layer: LayerType;
+}
+
+export interface SymbolElement {
+  id: string;
+  cellId: string;
+  symbolType: string;
+  size: 'large' | 'medium' | 'small';
+  rotation: number;  // degrees
+  color: string;
+  fillColor?: string;
+  layer: LayerType;
+}
+
+export interface CageElement {
+  id: string;
+  cells: string[];  // cell IDs
+  style: 'solid' | 'dashed';
+  color: string;
+  label?: string;
+  layer: LayerType;
+}
+
+export interface SpecialElement {
+  id: string;
+  type: 'thermo' | 'arrow' | 'polygon';
+  points: string[];  // point IDs in order
+  color: string;
+  layer: LayerType;
+  data?: Record<string, unknown>;
+}
+
+// Grid type for different cell shapes
+export type GridType = 'square' | 'hex' | 'triangle' | 'pyramid';
+
+// Grid configuration
+export interface GridConfig {
+  rows: number;
+  cols: number;
+  cellSize: number;
+  outerPadding: number;
+  showGrid: boolean;
+  gridStyle: 'normal' | 'thick' | 'sudoku' | 'dots' | 'dashed';
+  // Grid type (cell shape)
+  gridType: GridType;
+  // Extended margin options (extra cells outside main grid)
+  marginTop: number;
+  marginBottom: number;
+  marginLeft: number;
+  marginRight: number;
+  // Frame style
+  frameStyle: 'normal' | 'thick' | 'double' | 'none';
+  frameColor: string;
+  // Grid line colors
+  gridColor: string;
+  // Background color
+  backgroundColor: string;
+  // Background image
+  backgroundImage?: string;  // Base64 data URL or external URL
+  backgroundOpacity?: number;  // 0-1
+  backgroundFit?: 'contain' | 'cover' | 'fill' | 'none';  // How image fits in grid
+  backgroundScale?: number;  // Scale factor (1 = 100%)
+  backgroundTile?: boolean;  // Whether to tile the image
+  backgroundOffsetX?: number;  // X offset in pixels
+  backgroundOffsetY?: number;  // Y offset in pixels
+  // Export padding (extra space around the entire grid)
+  exportPaddingTop?: number;  // pixels
+  exportPaddingBottom?: number;  // pixels
+  exportPaddingLeft?: number;  // pixels
+  exportPaddingRight?: number;  // pixels
+  // Disabled cells (cells that are excluded from the puzzle grid)
+  disabledCells?: string[];  // Array of cell IDs (e.g., "cell-0-0")
+  disabledCellColor?: string;  // Color for disabled cells (default: background color)
+}
+
+// Puzzle state
+export interface PuzzleElements {
+  surfaces: Record<string, SurfaceElement>;
+  lines: Record<string, LineElement>;
+  edges: Record<string, EdgeElement>;
+  walls: Record<string, WallElement>;
+  numbers: Record<string, NumberElement>;
+  symbols: Record<string, SymbolElement>;
+  cages: Record<string, CageElement>;
+  specials: Record<string, SpecialElement>;
+  directionalClues?: Record<string, import('./penpaElements').PenpaDirectionalClue>;
+}
+
+// Solution Area - cells where answer checking applies
+export interface SolutionArea {
+  cells: string[]; // cell IDs that are part of the solution area
+  enabled: boolean; // whether solution checking is active
+}
+
+// Multicolor surface element - multiple colors per cell
+export interface MulticolorSurfaceElement {
+  id: string;
+  cellId: string;
+  colors: number[]; // array of color indices (Penpa format: up to 4 colors per cell)
+  pattern: 'cross' | 'x'; // Pattern layout: + (cross) or × (x)
+  customColors?: string[]; // Custom colors array (idx 9+ map to this array)
+  layer: LayerType;
+}
+
+export interface PuzzleState {
+  problem: PuzzleElements;
+  answer: PuzzleElements;
+  // Solution area for answer checking
+  solutionArea?: SolutionArea;
+  // Multicolor surfaces (separate from regular surfaces)
+  multicolorSurfaces?: Record<string, MulticolorSurfaceElement>;
+}
+
+// Number position type
+export type NumberPosition = 'center' | 'corner' | 'side' | 'candidates';
+
+// Line grid point types - where lines can connect
+export type LineGridPoint = 'cell' | 'vertex' | 'edge';
+
+// Line direction types
+// orthogonal: horizontal/vertical with grid snap
+// diagonal: 45-degree with grid snap
+// straight: single straight line between any two grid points (no interpolation)
+// freehand: free drawing without grid snap
+export type LineDirection = 'orthogonal' | 'diagonal' | 'straight' | 'freehand';
+
+// Multicolor swatch (saved pattern preset)
+export interface MulticolorSwatch {
+  id: string;
+  slots: number[];       // 4 color slot indices
+  pattern: 'cross' | 'x';
+  customColors: string[]; // Custom colors used in this swatch
+}
+
+// Tool settings
+export interface ToolSettings {
+  currentTool: ToolType;
+  currentCategory: ToolCategory;
+  color: string;
+  secondaryColor: string;
+  lineStyle: LineStyle;
+  lineThickness: LineThickness;
+  symbolSize: 'large' | 'medium' | 'small';
+  numberSize: 'large' | 'medium' | 'small';
+  symbolRotation: number; // degrees
+  // Number tool submode settings
+  numberPosition: NumberPosition;
+  cornerIndex: number; // 0-3 for corners (TL, TR, BL, BR)
+  sideIndex: number;   // 0-3 for sides (T, R, B, L)
+  selectedCandidates: number[]; // For candidates mode (1-9)
+  arrowDirection: number; // 0=up, 1=left, 2=right, 3=down for directional numbers
+  // Multicolor surface mode settings
+  multicolorSlots: number[]; // 4 color slots for multicolor mode (Penpa color indices)
+  multicolorPattern: 'cross' | 'x'; // Pattern layout: + or ×
+  multicolorCustomColors: string[]; // Custom colors array (idx 9, 10, 11, 12 map to index 0, 1, 2, 3)
+  multicolorSwatches: MulticolorSwatch[]; // Saved pattern presets
+  // Line tool settings
+  lineGridPoints: LineGridPoint[];   // Which grid points to use (multiple select)
+  lineDirections: LineDirection[];   // Which directions to allow (multiple select)
+  lineHalfMode: boolean;             // Half mode: allows lines between cell centers and edge centers
+  // Symbol tool settings
+  symbolGridPoints: LineGridPoint[]; // Which grid points symbols can be placed on
+}
+
+// Canvas state
+export interface CanvasState {
+  zoom: number;
+  panX: number;
+  panY: number;
+  isDragging: boolean;
+  isDrawing: boolean;
+  selection: string[];
+}
+
+// Color palette
+export interface ColorPalette {
+  surface: string[];
+  line: string[];
+  symbol: string[];
+  number: string[];
+}
+
+export const DEFAULT_COLORS: ColorPalette = {
+  surface: [
+    '#808080', // Dark grey
+    '#00ff00', // Green
+    '#c0c0c0', // Light grey
+    '#000000', // Black
+    '#0000ff', // Blue
+    '#ff0000', // Red
+    '#ffff00', // Yellow
+    '#ff8000', // Orange
+    '#ff00ff', // Pink
+    '#00ffff', // Cyan
+    '#ffffff', // White
+  ],
+  line: [
+    '#000000', // Black
+    '#808080', // Grey
+    '#ff0000', // Red
+    '#00ff00', // Green
+    '#0000ff', // Blue
+  ],
+  symbol: [
+    '#000000', // Black
+    '#ffffff', // White
+    '#ff0000', // Red
+    '#00ff00', // Green
+    '#0000ff', // Blue
+  ],
+  number: [
+    '#000000', // Black
+    '#808080', // Grey
+    '#ff0000', // Red
+    '#0000ff', // Blue
+  ],
+};
+
+// Export format
+export interface PuzzleExport {
+  version: string;
+  grid: GridConfig;
+  state: PuzzleState;
+  metadata?: {
+    title?: string;
+    author?: string;
+    genre?: string;
+    difficulty?: string;
+    created?: string;
+    modified?: string;
+  };
+}
