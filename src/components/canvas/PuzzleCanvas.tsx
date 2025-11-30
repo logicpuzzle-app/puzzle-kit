@@ -39,13 +39,36 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
   arrowStyle = 'polygon',
 }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const { grid, canvas } = usePuzzleStore();
+  const {
+    grid,
+    canvas,
+    useTopology,
+    topology,
+    previewTopology,
+    previewGrid,
+  } = usePuzzleStore();
 
-  const { width, height } = useMemo(() => getGridDimensions(grid), [grid]);
+  const effectiveTopology = previewTopology ?? topology;
+  const effectiveGrid = previewGrid ?? grid;
+
+  const { width, height } = useMemo(() => {
+    // Prefer topology bounds when available (non-square tilings)
+    if (useTopology && effectiveTopology) {
+      const exportPaddingLeft = effectiveGrid.exportPaddingLeft ?? 0;
+      const exportPaddingRight = effectiveGrid.exportPaddingRight ?? 0;
+      const exportPaddingTop = effectiveGrid.exportPaddingTop ?? 0;
+      const exportPaddingBottom = effectiveGrid.exportPaddingBottom ?? 0;
+      return {
+        width: effectiveTopology.bounds.maxX + exportPaddingLeft + exportPaddingRight,
+        height: effectiveTopology.bounds.maxY + exportPaddingTop + exportPaddingBottom,
+      };
+    }
+    return getGridDimensions(effectiveGrid);
+  }, [useTopology, effectiveTopology, effectiveGrid]);
 
   // Export padding offsets
-  const exportPaddingLeft = grid.exportPaddingLeft ?? 0;
-  const exportPaddingTop = grid.exportPaddingTop ?? 0;
+  const exportPaddingLeft = effectiveGrid.exportPaddingLeft ?? 0;
+  const exportPaddingTop = effectiveGrid.exportPaddingTop ?? 0;
 
   const transform = `translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom})`;
 
@@ -110,7 +133,7 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
 
           {/* For square grids: separate background and lines for proper surface layering */}
           {/* For non-square grids: use combined Grid component */}
-          {grid.gridType === 'square' || !grid.gridType ? (
+          {effectiveGrid.gridType === 'square' || !effectiveGrid.gridType ? (
             <>
               {/* Grid background (cell fills) */}
               <GridBackground />

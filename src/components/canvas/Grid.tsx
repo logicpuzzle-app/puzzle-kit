@@ -7,6 +7,9 @@ import { TopologyGrid, TopologyGridBackground, TopologyGridLines } from './Topol
 // Re-export DisabledCellsOverlay for backwards compatibility
 export { DisabledCellsOverlay } from './grid/DisabledCellsOverlay';
 
+// Opacity for preview mode (dimmed grid)
+const PREVIEW_OPACITY = 0.4;
+
 interface GridBackgroundProps {
   children?: React.ReactNode;
 }
@@ -21,10 +24,12 @@ export const GridBackground: React.FC<GridBackgroundProps> = ({ children }) => {
   const effectiveTopology = previewTopology ?? topology;
   const effectiveGrid = previewGrid ?? grid;
   const { gridType = 'square' } = effectiveGrid;
+  const isPreview = previewTopology !== null;
 
   // Use topology-based background when in topology mode
   if (useTopology && effectiveTopology) {
-    return <TopologyGridBackground topology={effectiveTopology}>{children}</TopologyGridBackground>;
+    const content = <TopologyGridBackground topology={effectiveTopology}>{children}</TopologyGridBackground>;
+    return isPreview ? <g opacity={PREVIEW_OPACITY}>{content}</g> : content;
   }
 
   // Non-square grids handle their own background
@@ -32,7 +37,8 @@ export const GridBackground: React.FC<GridBackgroundProps> = ({ children }) => {
     return <>{children}</>;
   }
 
-  return <SquareGridBackground>{children}</SquareGridBackground>;
+  const content = <SquareGridBackground>{children}</SquareGridBackground>;
+  return isPreview ? <g opacity={PREVIEW_OPACITY}>{content}</g> : content;
 };
 
 /**
@@ -44,10 +50,12 @@ export const GridLines: React.FC = () => {
   const effectiveTopology = previewTopology ?? topology;
   const effectiveGrid = previewGrid ?? grid;
   const { gridType = 'square' } = effectiveGrid;
+  const isPreview = previewTopology !== null;
 
   // Use topology-based lines when in topology mode
   if (useTopology && effectiveTopology) {
-    return <TopologyGridLines topology={effectiveTopology} grid={effectiveGrid} />;
+    const content = <TopologyGridLines topology={effectiveTopology} grid={effectiveGrid} />;
+    return isPreview ? <g opacity={PREVIEW_OPACITY}>{content}</g> : content;
   }
 
   // Non-square grids - no lines here (handled by HexGrid etc.)
@@ -55,7 +63,8 @@ export const GridLines: React.FC = () => {
     return null;
   }
 
-  return <SquareGridLines />;
+  const content = <SquareGridLines />;
+  return isPreview ? <g opacity={PREVIEW_OPACITY}>{content}</g> : content;
 };
 
 /**
@@ -67,21 +76,26 @@ export const Grid: React.FC = () => {
   const effectiveTopology = previewTopology ?? topology;
   const effectiveGrid = previewGrid ?? grid;
   const { gridType = 'square' } = effectiveGrid;
+  const isPreview = previewTopology !== null;
 
   // Prefer topology-based rendering when enabled and topology available
   if (useTopology && effectiveTopology) {
-    return <TopologyGrid topology={effectiveTopology} grid={effectiveGrid} />;
+    const content = <TopologyGrid topology={effectiveTopology} grid={effectiveGrid} />;
+    return isPreview ? <g opacity={PREVIEW_OPACITY}>{content}</g> : content;
   }
 
   // Render non-square grid types
+  let content: React.ReactElement;
   if (gridType === 'hex') {
-    return <HexGrid grid={effectiveGrid} />;
+    content = <HexGrid grid={effectiveGrid} />;
   } else if (gridType === 'triangle') {
-    return <TriangleGrid grid={effectiveGrid} />;
+    content = <TriangleGrid grid={effectiveGrid} />;
   } else if (gridType === 'pyramid') {
-    return <PyramidGrid grid={effectiveGrid} />;
+    content = <PyramidGrid grid={effectiveGrid} />;
+  } else {
+    // Use square grid
+    content = <SquareGrid />;
   }
 
-  // Use topology-based grid when in topology mode
-  return <SquareGrid />;
+  return isPreview ? <g opacity={PREVIEW_OPACITY}>{content}</g> : content;
 };

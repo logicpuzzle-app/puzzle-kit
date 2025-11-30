@@ -4,13 +4,9 @@
 
 export { trihexagonalGridToTopology } from './trihexagonal';
 export { snubSquareGridToTopology } from './snubSquare';
-export {
-  truncatedSquareGridToTopology,
-  truncatedHexagonalGridToTopology,
-  truncatedTrihexagonalGridToTopology,
-} from './truncated';
-export {
-  rhombitrihexagonalGridToTopology,
-  snubTrihexagonalGridToTopology,
-  elongatedTriangularGridToTopology,
-} from './rhombiAndOthers';
+export { truncatedSquareGridToTopology } from './truncatedSquare';
+export { truncatedHexagonalGridToTopology } from './truncatedHexagonal';
+export { truncatedTrihexagonalGridToTopology } from './truncatedTrihexagonal';
+export { rhombitrihexagonalGridToTopology } from './rhombitrihexagonal';
+export { snubTrihexagonalGridToTopology } from './snubTrihexagonal';
+export { elongatedTriangularGridToTopology } from './elongatedTriangular';

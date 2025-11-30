@@ -523,6 +523,11 @@ interface PuzzleStore {
   mergeCells: (cellIds: string[]) => void;
   unmergeCells: (cellIds: string[]) => void;
 
+  // Split cells
+  addSplitLine: (cellId: string, startVertexId: string, endVertexId: string) => void;
+  removeSplitLine: (cellId: string) => void;
+  clearSplitLines: () => void;
+
   // Grid resize (works with topology mode)
   resizeGrid: (newConfig: Partial<GridConfig>) => void;
 
@@ -1564,6 +1569,77 @@ export const usePuzzleStore = create<PuzzleStore>((set, get) => {
           .filter((group) => group.length >= 2); // Remove groups with less than 2 cells
 
         const grid = { ...state.grid, mergedCells: newMerged.length > 0 ? newMerged : undefined };
+        let topology = state.topology;
+        if (state.useTopology) {
+          const base = gridConfigToTopology(grid);
+          topology = applyTopologyPreset(base, {
+            preset: state.topologyPreset,
+            intensity: state.topologyIntensity,
+          });
+        }
+        return { grid, topology };
+      }),
+
+    // Add a split line to a cell
+    addSplitLine: (cellId, startVertexId, endVertexId) =>
+      set((state) => {
+        const currentSplits = state.grid.splitLines || [];
+
+        // Check if this split already exists
+        const exists = currentSplits.some(
+          (s) =>
+            s.cellId === cellId &&
+            ((s.startPoint.type === 'vertex' && s.startPoint.vertexId === startVertexId &&
+              s.endPoint.type === 'vertex' && s.endPoint.vertexId === endVertexId) ||
+             (s.startPoint.type === 'vertex' && s.startPoint.vertexId === endVertexId &&
+              s.endPoint.type === 'vertex' && s.endPoint.vertexId === startVertexId))
+        );
+        if (exists) return state;
+
+        const newSplit = {
+          cellId,
+          startPoint: { type: 'vertex' as const, vertexId: startVertexId },
+          endPoint: { type: 'vertex' as const, vertexId: endVertexId },
+        };
+
+        const grid = { ...state.grid, splitLines: [...currentSplits, newSplit] };
+        let topology = state.topology;
+        if (state.useTopology) {
+          const base = gridConfigToTopology(grid);
+          topology = applyTopologyPreset(base, {
+            preset: state.topologyPreset,
+            intensity: state.topologyIntensity,
+          });
+        }
+        return { grid, topology };
+      }),
+
+    // Remove split lines for a cell
+    removeSplitLine: (cellId) =>
+      set((state) => {
+        const currentSplits = state.grid.splitLines || [];
+        const newSplits = currentSplits.filter((s) => s.cellId !== cellId);
+
+        if (newSplits.length === currentSplits.length) return state;
+
+        const grid = { ...state.grid, splitLines: newSplits.length > 0 ? newSplits : undefined };
+        let topology = state.topology;
+        if (state.useTopology) {
+          const base = gridConfigToTopology(grid);
+          topology = applyTopologyPreset(base, {
+            preset: state.topologyPreset,
+            intensity: state.topologyIntensity,
+          });
+        }
+        return { grid, topology };
+      }),
+
+    // Clear all split lines
+    clearSplitLines: () =>
+      set((state) => {
+        if (!state.grid.splitLines || state.grid.splitLines.length === 0) return state;
+
+        const grid = { ...state.grid, splitLines: undefined };
         let topology = state.topology;
         if (state.useTopology) {
           const base = gridConfigToTopology(grid);

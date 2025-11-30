@@ -351,7 +351,15 @@ function splitCellByPoints(
 
   const idx1 = findIndex(p1);
   const idx2 = findIndex(p2);
-  if (idx1 === -1 || idx2 === -1) return null;
+  if (idx1 === -1 || idx2 === -1) {
+    console.warn('[split] start/end not found in polygon', {
+      cellId: cell.id,
+      boundary: polygon.map(p => p.id),
+      start: p1,
+      end: p2,
+    });
+    return null;
+  }
   const n = polygon.length;
   if (n < 4) return null;
 
@@ -390,11 +398,20 @@ export function applySplits(topology: GridTopology, config: GridConfig): GridTop
 
     const start = split.startPoint;
     const end = split.endPoint;
-    if (start.type !== 'vertex' && start.type !== 'edge') return;
-    if (end.type !== 'vertex' && end.type !== 'edge') return;
+    if (start.type !== 'vertex' && start.type !== 'edge') {
+      console.warn('[split] unsupported start point type', start);
+      return;
+    }
+    if (end.type !== 'vertex' && end.type !== 'edge') {
+      console.warn('[split] unsupported end point type', end);
+      return;
+    }
 
     const newDefs = splitCellByPoints(originalCell, start as any, end as any, topology);
-    if (!newDefs) return;
+    if (!newDefs) {
+      console.warn('[split] split failed for cell', split.cellId, { start, end });
+      return;
+    }
 
     defsMap.set(split.cellId, newDefs);
   });

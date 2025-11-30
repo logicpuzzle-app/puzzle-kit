@@ -78,6 +78,42 @@ const TriangleSymbol: React.FC<SymbolProps> = ({ x, y, size, color, fillColor, r
   );
 };
 
+const CubeSymbol: React.FC<SymbolProps> = ({ x, y, size, color, fillColor, rotation }) => {
+  const half = size * 0.28;
+  const depth = size * 0.18;
+
+  const topPoints = [
+    `${x - half},${y - half + depth}`,
+    `${x},${y - half - depth}`,
+    `${x + half},${y - half + depth}`,
+    `${x},${y + depth}`,
+  ].join(' ');
+
+  const frontPoints = [
+    `${x - half},${y - half + depth}`,
+    `${x + half},${y - half + depth}`,
+    `${x + half},${y + half + depth}`,
+    `${x - half},${y + half + depth}`,
+  ].join(' ');
+
+  const sidePoints = [
+    `${x + half},${y - half + depth}`,
+    `${x + half + depth},${y - depth}`,
+    `${x + half + depth},${y + half}`,
+    `${x + half},${y + half + depth}`,
+  ].join(' ');
+
+  const faceFill = fillColor || 'none';
+
+  return (
+    <g transform={rotation ? `rotate(${rotation} ${x} ${y})` : undefined}>
+      <polygon points={topPoints} fill={faceFill} stroke={color} strokeWidth={2} />
+      <polygon points={sidePoints} fill={faceFill} stroke={color} strokeWidth={2} />
+      <polygon points={frontPoints} fill={faceFill} stroke={color} strokeWidth={2} />
+    </g>
+  );
+};
+
 const DiamondSymbol: React.FC<SymbolProps> = ({ x, y, size, color, fillColor, rotation }) => {
   const h = size * 0.4;
   const points = `${x},${y - h} ${x + h},${y} ${x},${y + h} ${x - h},${y}`;
@@ -527,6 +563,8 @@ const renderSymbol = (type: string, props: SymbolProps, textValue?: string): Rea
       return <MineSymbol {...props} />;
     case 'bulb':
       return <BulbSymbol {...props} />;
+    case 'cube':
+      return <CubeSymbol {...props} />;
 
     // Animal symbols (lucide only)
     case 'cat':

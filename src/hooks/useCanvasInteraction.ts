@@ -37,6 +37,7 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
     topology,
     mergeCells,
     unmergeCells,
+    addSplitLine,
   } = usePuzzleStore();
 
   const [isPanning, setIsPanning] = useState(false);
@@ -197,14 +198,22 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
           setSplitStartVertex(vertexId);
         }
       } else if (isEnd) {
-        if (splitStartVertex && vertexId && vertexId !== splitStartVertex) {
-          // TODO: Implement actual cell splitting
-          // This would involve:
-          // 1. Finding cells that share both vertices
-          // 2. Creating a new vertex at the intersection if needed
-          // 3. Splitting the cell into two new cells
-          // 4. Updating the topology
-          console.log('Split from', splitStartVertex, 'to', vertexId);
+        if (splitStartVertex && vertexId && vertexId !== splitStartVertex && topology) {
+          // Find cells that share both vertices
+          const startVertex = topology.vertices.get(splitStartVertex);
+          const endVertex = topology.vertices.get(vertexId);
+
+          if (startVertex && endVertex) {
+            // Find common cells between both vertices
+            const startCells = new Set(startVertex.adjacentCells);
+            const commonCells = endVertex.adjacentCells.filter(cellId => startCells.has(cellId));
+
+            if (commonCells.length > 0) {
+              // Add split line for the first common cell
+              const cellId = commonCells[0];
+              addSplitLine(cellId, splitStartVertex, vertexId);
+            }
+          }
         }
         setSplitStartVertex(null);
         setSplitHoverVertex(null);
@@ -213,7 +222,7 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
         setSplitHoverVertex(vertexId);
       }
     },
-    [findNearestVertexAtPoint, splitStartVertex]
+    [findNearestVertexAtPoint, splitStartVertex, topology, addSplitLine]
   );
 
   // Update split hover vertex (for cursor display in split mode)

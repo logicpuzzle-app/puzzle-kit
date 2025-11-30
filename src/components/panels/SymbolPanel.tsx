@@ -77,6 +77,22 @@ const BulbIcon: React.FC<{ size: number; color: string }> = ({ size, color }) =>
   );
 };
 
+const CubeIcon: React.FC<{ size: number; color: string }> = ({ size, color }) => {
+  const s = size;
+  const half = s * 0.32;
+  const depth = s * 0.2;
+  const top = `${s / 2 - half},${s / 2 - half + depth} ${s / 2},${s / 2 - half - depth} ${s / 2 + half},${s / 2 - half + depth} ${s / 2},${s / 2 + depth}`;
+  const front = `${s / 2 - half},${s / 2 - half + depth} ${s / 2 + half},${s / 2 - half + depth} ${s / 2 + half},${s / 2 + half + depth} ${s / 2 - half},${s / 2 + half + depth}`;
+  const side = `${s / 2 + half},${s / 2 - half + depth} ${s / 2 + half + depth},${s / 2 - depth} ${s / 2 + half + depth},${s / 2 + half} ${s / 2 + half},${s / 2 + half + depth}`;
+  return (
+    <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`}>
+      <polygon points={top} fill="none" stroke={color} strokeWidth={s * 0.08} />
+      <polygon points={side} fill="none" stroke={color} strokeWidth={s * 0.08} />
+      <polygon points={front} fill="none" stroke={color} strokeWidth={s * 0.08} />
+    </svg>
+  );
+};
+
 // Symbol definition with tags for search
 interface SymbolDef {
   id: string;
@@ -203,6 +219,7 @@ const SYMBOL_CATEGORIES: { id: string; labelKey: string; symbols: SymbolDef[] }[
       { id: 'zombie', icon: 'ゾンビ', filled: true, tagsJa: ['ゾンビ', 'アンデッド', '死者'], tagsEn: ['zombie', 'undead', 'dead'] },
       { id: 'cactus', icon: 'サボテン', filled: true, tagsJa: ['サボテン', '植物', '砂漠'], tagsEn: ['cactus', 'plant', 'desert'] },
       { id: 'alien', icon: 'エイリアン', filled: true, tagsJa: ['エイリアン', '宇宙人', 'グレイ', 'UFO'], tagsEn: ['alien', 'grey', 'ufo', 'extraterrestrial'] },
+      { id: 'cube', icon: '立方体', filled: false, tagsJa: ['立方体', 'キューブ', 'ブロック'], tagsEn: ['cube', 'block', '3d'] },
       { id: 'frying-pan', icon: '🍳', filled: false, tagsJa: ['フライパン', '料理', '目玉焼き'], tagsEn: ['frying pan', 'pan', 'cooking', 'egg'] },
     ],
   },
@@ -325,6 +342,9 @@ export const SymbolPanel: React.FC = () => {
                     }
                     if (symbol.id === 'frying-pan') {
                       return <FryingPanIcon size={fontSize} color={currentColor} />;
+                    }
+                    if (symbol.id === 'cube') {
+                      return <CubeIcon size={fontSize} color={currentColor} />;
                     }
                     if (symbol.id === 'ghostBlack') {
                       return <GhostBlackIcon size={fontSize} color={currentColor} />;

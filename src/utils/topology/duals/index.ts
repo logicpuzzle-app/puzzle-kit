@@ -2,19 +2,11 @@
  * Dual Tilings Index
  */
 
-export {
-  cairoPentagonalGridToTopology,
-  floretPentagonalGridToTopology,
-  prismaticPentagonalGridToTopology,
-} from './pentagonal';
-
-export {
-  rhombilleGridToTopology,
-  deltoidalTrihexagonalGridToTopology,
-} from './rhombAndKite';
-
-export {
-  tetrakisSquareGridToTopology,
-  triakisTriangularGridToTopology,
-  kisrhombilleGridToTopology,
-} from './triangular';
+export { cairoPentagonalGridToTopology } from './cairoPentagonal';
+export { floretPentagonalGridToTopology } from './floretPentagonal';
+export { prismaticPentagonalGridToTopology } from './prismaticPentagonal';
+export { rhombilleGridToTopology } from './rhombille';
+export { deltoidalTrihexagonalGridToTopology } from './deltoidalTrihexagonal';
+export { tetrakisSquareGridToTopology } from './tetrakisSquare';
+export { triakisTriangularGridToTopology } from './triakisTriangular';
+export { kisrhombilleGridToTopology } from './kisrhombille';
