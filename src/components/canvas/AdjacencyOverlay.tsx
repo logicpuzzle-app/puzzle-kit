@@ -4,6 +4,7 @@ import { usePuzzleStore } from '../../store/puzzleStore';
 /**
  * AdjacencyOverlay - Draws dotted lines between adjacent cell centers
  * Only visible when showAdjacency is enabled
+ * For isometric grids, lines go through the shared edge midpoint
  */
 export const AdjacencyOverlay: React.FC = () => {
   const {
@@ -11,10 +12,12 @@ export const AdjacencyOverlay: React.FC = () => {
     topology: storeTopology,
     previewTopology,
     useTopology,
+    grid,
   } = usePuzzleStore();
 
   // Use preview topology if available
   const topology = previewTopology ?? storeTopology;
+  const isIsometric = grid.gridType === 'iso';
 
   // Generate adjacency lines from topology
   const adjacencyLines = useMemo(() => {
@@ -46,25 +49,42 @@ export const AdjacencyOverlay: React.FC = () => {
 
           const center2 = adjCell.center;
 
-          lines.push(
-            <line
-              key={pairKey}
-              x1={center1.x}
-              y1={center1.y}
-              x2={center2.x}
-              y2={center2.y}
-              stroke="#666"
-              strokeWidth={1}
-              strokeDasharray="4,4"
-              opacity={0.6}
-            />
-          );
+          if (isIsometric) {
+            // For isometric: go through edge midpoint
+            const midpoint = edge.midpoint;
+            lines.push(
+              <path
+                key={pairKey}
+                d={`M ${center1.x} ${center1.y} L ${midpoint.x} ${midpoint.y} L ${center2.x} ${center2.y}`}
+                fill="none"
+                stroke="#666"
+                strokeWidth={1}
+                strokeDasharray="4,4"
+                opacity={0.6}
+              />
+            );
+          } else {
+            // For other grids: direct line
+            lines.push(
+              <line
+                key={pairKey}
+                x1={center1.x}
+                y1={center1.y}
+                x2={center2.x}
+                y2={center2.y}
+                stroke="#666"
+                strokeWidth={1}
+                strokeDasharray="4,4"
+                opacity={0.6}
+              />
+            );
+          }
         }
       }
     }
 
     return lines;
-  }, [showAdjacency, useTopology, topology]);
+  }, [showAdjacency, useTopology, topology, isIsometric]);
 
   if (!showAdjacency || !adjacencyLines || adjacencyLines.length === 0) {
     return null;

@@ -100,6 +100,28 @@ const getPointPosition = (id: string, grid: GridConfig, topology?: GridTopology 
   return null;
 };
 
+/**
+ * Find the shared edge midpoint between two cells in topology
+ */
+const findSharedEdgeMidpoint = (
+  fromCellId: string,
+  toCellId: string,
+  topology: GridTopology
+): Point | null => {
+  const fromCell = topology.cells.get(fromCellId);
+  const toCell = topology.cells.get(toCellId);
+  if (!fromCell || !toCell) return null;
+
+  // Find edge that is shared by both cells
+  for (const edgeId of fromCell.boundaryEdges) {
+    const edge = topology.edges.get(edgeId);
+    if (edge && edge.adjacentCells.includes(toCellId)) {
+      return edge.midpoint;
+    }
+  }
+  return null;
+};
+
 export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
   const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology } = usePuzzleStore();
 
@@ -109,6 +131,7 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
 
   // Get topology for position lookups if in topology mode
   const activeTopology = useTopology ? topology : null;
+  const isIsometric = grid.gridType === 'iso';
 
   // Lines (can connect cell centers, vertices, or edge centers, or free coordinates)
   const lines = useMemo(() => {
@@ -119,6 +142,7 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
 
     Object.values(layerData.lines).forEach((line: LineElement) => {
       let fromX: number, fromY: number, toX: number, toY: number;
+      let midpoint: Point | null = null;
 
       if (line.isFree && line.fromX !== undefined && line.fromY !== undefined && line.toX !== undefined && line.toY !== undefined) {
         // Free line - use raw coordinates
@@ -135,25 +159,47 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
         fromY = fromPos.y;
         toX = toPos.x;
         toY = toPos.y;
+
+        // For isometric grids, if both endpoints are cells, go through shared edge midpoint
+        if (isIsometric && activeTopology && line.from.startsWith('cell-') && line.to.startsWith('cell-')) {
+          midpoint = findSharedEdgeMidpoint(line.from, line.to, activeTopology);
+        }
       }
 
-      elements.push(
-        <line
-          key={line.id}
-          x1={fromX}
-          y1={fromY}
-          x2={toX}
-          y2={toY}
-          stroke={line.color}
-          strokeWidth={getStrokeWidth(line.thickness)}
-          strokeDasharray={getStrokeDasharray(line.style)}
-          strokeLinecap="round"
-        />
-      );
+      if (midpoint) {
+        // Draw path through midpoint
+        elements.push(
+          <path
+            key={line.id}
+            d={`M ${fromX} ${fromY} L ${midpoint.x} ${midpoint.y} L ${toX} ${toY}`}
+            fill="none"
+            stroke={line.color}
+            strokeWidth={getStrokeWidth(line.thickness)}
+            strokeDasharray={getStrokeDasharray(line.style)}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        );
+      } else {
+        // Draw direct line
+        elements.push(
+          <line
+            key={line.id}
+            x1={fromX}
+            y1={fromY}
+            x2={toX}
+            y2={toY}
+            stroke={line.color}
+            strokeWidth={getStrokeWidth(line.thickness)}
+            strokeDasharray={getStrokeDasharray(line.style)}
+            strokeLinecap="round"
+          />
+        );
+      }
     });
 
     return elements;
-  }, [puzzle, layer, grid, isVisible, activeTopology]);
+  }, [puzzle, layer, grid, isVisible, activeTopology, isIsometric]);
 
   // Edges (vertex to vertex)
   const edges = useMemo(() => {

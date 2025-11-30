@@ -336,6 +336,7 @@ export type GridType =
   | 'triangle'         // {3,6} - Triangular tiling
   | 'hex'              // {6,3} - Hexagonal tiling
   | 'pyramid'          // Pyramid (special)
+  | 'iso'              // Isometric cube grid (Penpa iso)
   // Semi-regular tilings
   | 'snub-square'      // 3².4.3.4 - Snub square tiling
   | 'trihexagonal'     // 3.6.3.6 - Trihexagonal (kagome) tiling
@@ -356,9 +357,18 @@ export type GridType =
   | 'prismatic-pentagonal'; // V3³.4² - Prismatic pentagonal tiling
 
 // Grid configuration
+// Isometric grid face type
+export type IsometricFace = 'top' | 'left' | 'right' | 'bottom';
+
+// Isometric view type
+export type IsometricView = 'exterior' | 'interior';
+
 export interface GridConfig {
   rows: number;
   cols: number;
+  level?: number; // for iso/cube grids (height/depth)
+  isometricFaces?: IsometricFace[]; // which faces to show: ['top', 'left', 'right'] by default
+  isometricView?: IsometricView; // 'exterior' (default) or 'interior' (shows bottom instead of top)
   cellSize: number;
   outerPadding: number;
   showGrid: boolean;
@@ -508,6 +518,7 @@ export interface CanvasState {
   isDragging: boolean;
   isDrawing: boolean;
   selection: string[];
+  panMode: boolean;
 }
 
 // Color palette

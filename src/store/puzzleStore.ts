@@ -13,6 +13,8 @@ import {
   ToolCategory,
   GridConfig,
   GridType,
+  IsometricFace,
+  IsometricView,
   PuzzleState,
   PuzzleElements,
   CanvasState,
@@ -26,6 +28,7 @@ import {
   CageElement,
   SpecialElement,
   BoxLineElement,
+  Point,
 } from '../types';
 import {
   gridConfigToTopology,
@@ -35,6 +38,10 @@ import {
   type TopologyPreset,
   type ResizeDirection,
 } from '../utils/gridTopology';
+import {
+  serializeTopology,
+  deserializeTopology,
+} from '../utils/serialization';
 import {
   normalizeSegmentEndpoints,
   generateLineId,
@@ -415,6 +422,7 @@ interface PuzzleStore {
   setCanvasState: (state: Partial<CanvasState>) => void;
   setZoom: (zoom: number) => void;
   setPan: (x: number, y: number) => void;
+  setPanMode: (enabled: boolean) => void;
 
   // Layer visibility
   showProblemLayer: boolean;
@@ -470,7 +478,7 @@ interface PuzzleStore {
   // Clear operations
   clearLayer: (layer: LayerType) => void;
   clearAll: () => void;
-  newPuzzle: (options?: { rows?: number; cols?: number; gridType?: GridType; cellSize?: number }) => void;
+  newPuzzle: (options?: { rows?: number; cols?: number; gridType?: GridType; cellSize?: number; level?: number; isometricFaces?: IsometricFace[]; isometricView?: IsometricView }) => void;
 
   // Selection
   selectedElements: string[];
@@ -490,8 +498,8 @@ interface PuzzleStore {
   setGridMode: (isGridMode: boolean) => void;
   gridSubTab: 'shape' | 'display';
   setGridSubTab: (tab: 'shape' | 'display') => void;
-  gridEditMode: 'preset' | 'merge' | 'split' | 'exclude';
-  setGridEditMode: (mode: 'preset' | 'merge' | 'split' | 'exclude') => void;
+  gridEditMode: 'preset' | 'merge' | 'split' | 'exclude' | 'sculpt';
+  setGridEditMode: (mode: 'preset' | 'merge' | 'split' | 'exclude' | 'sculpt') => void;
 
   // Topology mode (use GridTopology for deformed grids)
   useTopology: boolean;
@@ -509,7 +517,7 @@ interface PuzzleStore {
   // Preview topology (for previewing grid changes before applying)
   previewTopology: import('../utils/gridTopology').GridTopology | null;
   previewGrid: GridConfig | null;
-  setPreviewGrid: (config: { gridType: import('../types').GridType; rows: number; cols: number; cellSize?: number } | null) => void;
+  setPreviewGrid: (config: { gridType: import('../types').GridType; rows: number; cols: number; cellSize?: number; level?: number; isometricFaces?: IsometricFace[]; isometricView?: IsometricView } | null) => void;
 
   // Show adjacency lines between cell centers
   showAdjacency: boolean;
@@ -518,6 +526,9 @@ interface PuzzleStore {
   // Grid cell enabled/disabled toggle
   toggleCellDisabled: (cellId: string) => void;
   setCellDisabled: (cellId: string, disabled: boolean) => void;
+
+  // Sculpt mode: rotate a 3-cell cluster around a shared vertex
+  sculptRotateCluster: (vertexId: string) => void;
 
   // Merge cells
   mergeCells: (cellIds: string[]) => void;
@@ -567,6 +578,7 @@ export const usePuzzleStore = create<PuzzleStore>((set, get) => {
     grid: {
       rows: 10,
       cols: 10,
+      level: 1,
       cellSize: 40,
       outerPadding: 20,
       showGrid: true,
@@ -642,6 +654,7 @@ export const usePuzzleStore = create<PuzzleStore>((set, get) => {
       isDragging: false,
       isDrawing: false,
       selection: [],
+      panMode: false,
     },
 
     setCanvasState: (canvasUpdate) =>
@@ -657,6 +670,11 @@ export const usePuzzleStore = create<PuzzleStore>((set, get) => {
     setPan: (x, y) =>
       set((state) => ({
         canvas: { ...state.canvas, panX: x, panY: y },
+      })),
+
+    setPanMode: (enabled) =>
+      set((state) => ({
+        canvas: { ...state.canvas, panMode: enabled },
       })),
 
     // Layer visibility
@@ -1336,6 +1354,9 @@ export const usePuzzleStore = create<PuzzleStore>((set, get) => {
         cols = 10,
         gridType = 'square',
         cellSize = 40,
+        level,
+        isometricFaces,
+        isometricView,
       } = options;
 
       const baseGrid: GridConfig = {
@@ -1354,6 +1375,9 @@ export const usePuzzleStore = create<PuzzleStore>((set, get) => {
         frameColor: '#000000',
         gridColor: '#000000',
         backgroundColor: '#ffffff',
+        ...(level !== undefined && { level }),
+        ...(isometricFaces !== undefined && { isometricFaces }),
+        ...(isometricView !== undefined && { isometricView }),
       };
 
       const baseTopology = gridConfigToTopology(baseGrid);
@@ -1375,6 +1399,7 @@ export const usePuzzleStore = create<PuzzleStore>((set, get) => {
           isDragging: false,
           isDrawing: false,
           selection: [],
+          panMode: false,
         },
         selectedElements: [],
         hoverCell: null,
@@ -1479,6 +1504,9 @@ export const usePuzzleStore = create<PuzzleStore>((set, get) => {
           rows: config.rows,
           cols: config.cols,
           cellSize: config.cellSize ?? state.grid.cellSize,
+          ...(config.level !== undefined && { level: config.level }),
+          ...(config.isometricFaces !== undefined && { isometricFaces: config.isometricFaces }),
+          ...(config.isometricView !== undefined && { isometricView: config.isometricView }),
         };
         const baseTopology = gridConfigToTopology(previewGridConfig);
         const previewTopo = applyTopologyPreset(baseTopology, {
@@ -1516,6 +1544,288 @@ export const usePuzzleStore = create<PuzzleStore>((set, get) => {
         return state;
       }),
 
+    // Sculpt mode: flip a 3-cell cluster (adjacent to a vertex) vertically around pivot
+    sculptRotateCluster: (vertexId: string) =>
+      set((state) => {
+        if (!state.topology || state.grid.gridType !== 'iso') return state;
+        const topology = state.topology;
+        const pivot = topology.vertices.get(vertexId);
+        if (!pivot || pivot.adjacentCells.length !== 3) return state;
+
+
+        const clusterCellIds = new Set(pivot.adjacentCells);
+        const affectedVertexIds = new Set<string>();
+        const localCellIds = new Set<string>(clusterCellIds);
+
+        // Include neighboring cells to limit debug output to the rotated area
+        clusterCellIds.forEach((cellId) => {
+          const cell = topology.cells.get(cellId);
+          cell?.adjacentCells.forEach((adjId) => localCellIds.add(adjId));
+        });
+
+        const collectCellInfo = (cellsMap: Map<string, any>, ids: Set<string>) =>
+          Array.from(ids)
+            .map((id) => {
+              const cell = cellsMap.get(id);
+              if (!cell) return null;
+              return {
+                id: cell.id,
+                boundaryVertices: cell.boundaryVertices.slice(),
+                center: cell.center,
+                adjacentCells: cell.adjacentCells,
+              };
+            })
+            .filter((c): c is NonNullable<typeof c> => !!c);
+
+        const collectVertexInfo = (verticesMap: Map<string, any>, ids: Set<string>) =>
+          Array.from(ids)
+            .map((id) => {
+              const v = verticesMap.get(id);
+              if (!v) return null;
+              return { id: v.id, pos: v.position, adjCells: v.adjacentCells };
+            })
+            .filter((v): v is NonNullable<typeof v> => !!v);
+
+        const collectEdgeInfo = (edgesMap: Map<string, any>, ids: Set<string>) =>
+          Array.from(edgesMap.values())
+            .filter((edge) => edge.adjacentCells.some((cId: string) => ids.has(cId)))
+            .map((edge) => ({
+              id: edge.id,
+              start: edge.startVertex,
+              end: edge.endVertex,
+              adj: edge.adjacentCells,
+            }));
+
+        pivot.adjacentCells.forEach((cellId) => {
+          const cell = topology.cells.get(cellId);
+          if (!cell) return;
+          cell.boundaryVertices.forEach((vId) => affectedVertexIds.add(vId));
+        });
+
+        const localVertexIdsBefore = new Set<string>();
+        localCellIds.forEach((cellId) => {
+          const cell = topology.cells.get(cellId);
+          cell?.boundaryVertices.forEach((vId) => localVertexIdsBefore.add(vId));
+        });
+
+        // Debug: snapshot before mutation (only cluster + neighbors)
+        console.log('[sculptRotateCluster][before] pivot', pivot.id, 'cluster', Array.from(clusterCellIds), 'localCells', Array.from(localCellIds));
+        console.log('[sculptRotateCluster][before] cells', collectCellInfo(state.topology.cells, localCellIds));
+        console.log('[sculptRotateCluster][before] vertices', collectVertexInfo(state.topology.vertices, localVertexIdsBefore));
+        console.log('[sculptRotateCluster][before] edges', collectEdgeInfo(state.topology.edges, localCellIds));
+
+        const newVertices = new Map(state.topology.vertices);
+
+        const edgeKey = (a: string, b: string) => (a < b ? `${a}-${b}` : `${b}-${a}`);
+        const pairToEdge = new Map<string, any>();
+        state.topology.edges.forEach((edge) => {
+          const key = edgeKey(edge.startVertex, edge.endVertex);
+          pairToEdge.set(key, edge);
+        });
+
+        // Outer ring: 6 vertices around pivot (exclude pivot itself)
+        const outerVertexIds = new Set<string>();
+        clusterCellIds.forEach((cellId) => {
+          const cell = topology.cells.get(cellId);
+          cell?.boundaryVertices.forEach((vId) => {
+            if (vId !== pivot.id) outerVertexIds.add(vId);
+          });
+        });
+
+        if (outerVertexIds.size !== 6) {
+          console.log('[sculptRotateCluster] abort: expected 6 outer vertices, got', outerVertexIds.size);
+          return state;
+        }
+
+        // Order outer vertices by angle around pivot, then create remap (+3 = 180° rotation)
+        const orderedOuter = Array.from(outerVertexIds)
+          .map((vid) => {
+            const v = newVertices.get(vid)!;
+            return { vid, angle: Math.atan2(v.position.y - pivot.position.y, v.position.x - pivot.position.x) };
+          })
+          .sort((a, b) => a.angle - b.angle);
+
+        // Create bidirectional remap: each vertex swaps with the one 3 positions away
+        const remap = new Map<string, string>();
+        orderedOuter.forEach((item, idx) => {
+          const target = orderedOuter[(idx + 3) % 6];
+          remap.set(item.vid, target.vid);
+        });
+        const remapVertex = (vid: string) => remap.get(vid) ?? vid;
+
+        console.log('[sculptRotateCluster] remap', Object.fromEntries(remap));
+
+        // Find top and bottom vertices of the hexagon (min/max Y)
+        let hexTopY = Infinity;
+        let hexBottomY = -Infinity;
+        outerVertexIds.forEach((vid) => {
+          const v = newVertices.get(vid);
+          if (!v) return;
+          if (v.position.y < hexTopY) hexTopY = v.position.y;
+          if (v.position.y > hexBottomY) hexBottomY = v.position.y;
+        });
+
+        // Calculate flipped pivot position (vertical flip around hexagon center)
+        const hexCenterY = (hexTopY + hexBottomY) / 2;
+        const flippedPivotY = 2 * hexCenterY - pivot.position.y;
+        const pivotDeltaY = flippedPivotY - pivot.position.y;
+
+        console.log('[sculptRotateCluster] pivot flip', {
+          pivotBefore: pivot.position,
+          hexTopY,
+          hexBottomY,
+          hexCenterY,
+          flippedPivotY,
+          pivotDeltaY,
+        });
+
+        // Update pivot vertex position
+        newVertices.set(pivot.id, {
+          ...pivot,
+          position: {
+            x: pivot.position.x,
+            y: flippedPivotY,
+          },
+        });
+
+        // Rebuild cells: only remap boundaryVertices for cluster cells
+        // Calculate center as centroid of remapped vertices
+        const newCells = new Map(state.topology.cells);
+
+        clusterCellIds.forEach((cellId) => {
+          const cell = state.topology!.cells.get(cellId);
+          if (!cell) return;
+
+          // Remap boundary vertices
+          const boundaryVertices = cell.boundaryVertices.map(remapVertex);
+
+          // Calculate center as centroid of remapped vertices
+          const positions = boundaryVertices
+            .map((vid) => newVertices.get(vid)?.position)
+            .filter((p): p is Point => !!p);
+
+          const center: Point = positions.length > 0
+            ? {
+                x: positions.reduce((sum, p) => sum + p.x, 0) / positions.length,
+                y: positions.reduce((sum, p) => sum + p.y, 0) / positions.length,
+              }
+            : cell.center;
+
+          console.log('[sculptRotateCluster]', cellId, {
+            before: cell.center,
+            after: center,
+          });
+
+          newCells.set(cellId, { ...cell, boundaryVertices, center });
+        });
+
+        // Rebuild all edges from cells
+        const edgeAccumulator = new Map<string, { startVertex: string; endVertex: string; cells: string[] }>();
+        newCells.forEach((cell, cellId) => {
+          const verts = cell.boundaryVertices;
+          for (let i = 0; i < verts.length; i++) {
+            const start = verts[i];
+            const end = verts[(i + 1) % verts.length];
+            const key = edgeKey(start, end);
+            const acc = edgeAccumulator.get(key) ?? { startVertex: start, endVertex: end, cells: [] as string[] };
+            if (!acc.cells.includes(cellId)) acc.cells.push(cellId);
+            edgeAccumulator.set(key, acc);
+          }
+        });
+
+        const newEdges = new Map<string, any>();
+        edgeAccumulator.forEach((acc, key) => {
+          const v1 = newVertices.get(acc.startVertex);
+          const v2 = newVertices.get(acc.endVertex);
+          if (!v1 || !v2) return;
+          const baseId = pairToEdge.get(key)?.id ?? key;
+          newEdges.set(baseId, {
+            id: baseId,
+            startVertex: acc.startVertex,
+            endVertex: acc.endVertex,
+            midpoint: {
+              x: (v1.position.x + v2.position.x) / 2,
+              y: (v1.position.y + v2.position.y) / 2,
+            },
+            adjacentCells: acc.cells,
+            isBoundary: acc.cells.length === 1,
+          });
+        });
+
+        // Rebuild vertex adjacentCells from cells
+        const vertexToCells = new Map<string, Set<string>>();
+        newCells.forEach((cell, cellId) => {
+          cell.boundaryVertices.forEach((vid: string) => {
+            if (!vertexToCells.has(vid)) vertexToCells.set(vid, new Set());
+            vertexToCells.get(vid)!.add(cellId);
+          });
+        });
+        vertexToCells.forEach((cellIds, vid) => {
+          const v = newVertices.get(vid);
+          if (v) {
+            newVertices.set(vid, { ...v, adjacentCells: Array.from(cellIds) });
+          }
+        });
+
+        // Detect new hexagons (vertices with exactly 3 adjacent cells)
+        const oldHexagonVertices = new Set<string>();
+        state.topology.vertices.forEach((v, vid) => {
+          if (v.adjacentCells.length === 3) oldHexagonVertices.add(vid);
+        });
+
+        const newHexagonVertices: string[] = [];
+        newVertices.forEach((v, vid) => {
+          if (v.adjacentCells.length === 3 && !oldHexagonVertices.has(vid)) {
+            newHexagonVertices.push(vid);
+          }
+        });
+
+        if (newHexagonVertices.length > 0) {
+          console.log('[sculptRotateCluster] new hexagons detected:', newHexagonVertices.map((vid) => {
+            const v = newVertices.get(vid);
+            return { id: vid, position: v?.position, cells: v?.adjacentCells };
+          }));
+        }
+
+        const localVertexIdsAfter = new Set<string>();
+        localCellIds.forEach((cellId) => {
+          const cell = newCells.get(cellId);
+          cell?.boundaryVertices.forEach((vId) => localVertexIdsAfter.add(vId));
+        });
+
+        // Debug: log cluster reconnection (only cluster + neighbors)
+        console.log('[sculptRotateCluster][after] pivot', pivot.id, 'cluster', Array.from(clusterCellIds), 'localCells', Array.from(localCellIds));
+        console.log('[sculptRotateCluster][after] cells', collectCellInfo(newCells, localCellIds));
+        console.log('[sculptRotateCluster][after] vertices', collectVertexInfo(newVertices, localVertexIdsAfter));
+        console.log('[sculptRotateCluster][after] edges', collectEdgeInfo(newEdges, localCellIds));
+
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        newVertices.forEach((v) => {
+          minX = Math.min(minX, v.position.x);
+          minY = Math.min(minY, v.position.y);
+          maxX = Math.max(maxX, v.position.x);
+          maxY = Math.max(maxY, v.position.y);
+        });
+        const bounds = {
+          minX,
+          minY,
+          maxX,
+          maxY,
+          width: maxX - minX,
+          height: maxY - minY,
+        };
+
+        return {
+          topology: {
+            ...state.topology,
+            vertices: newVertices,
+            edges: newEdges,
+            cells: newCells,
+            bounds,
+          },
+        };
+      }),
+
     // Merge cells - combine multiple cells into one merged cell
     mergeCells: (cellIds) =>
       set((state) => {
@@ -1523,9 +1833,27 @@ export const usePuzzleStore = create<PuzzleStore>((set, get) => {
 
         const currentMerged = state.grid.mergedCells || [];
 
+        const resolveIds = (ids: string[]) => {
+          const expanded: string[] = [];
+          ids.forEach((id) => {
+            const m = id.match(/^merged-(\d+)$/);
+            if (m) {
+              const idx = parseInt(m[1], 10);
+              if (currentMerged[idx]) {
+                expanded.push(...currentMerged[idx]);
+                return;
+              }
+            }
+            expanded.push(id);
+          });
+          return expanded;
+        };
+
+        const expandedCellIds = resolveIds(cellIds);
+
         // Check if any of these cells are already part of a merged group
         const existingGroupIndices: number[] = [];
-        cellIds.forEach((cellId) => {
+        expandedCellIds.forEach((cellId) => {
           currentMerged.forEach((group, idx) => {
             if (group.includes(cellId) && !existingGroupIndices.includes(idx)) {
               existingGroupIndices.push(idx);
@@ -1534,7 +1862,7 @@ export const usePuzzleStore = create<PuzzleStore>((set, get) => {
         });
 
         // Combine all cells from existing groups with new cells
-        let allCells = [...cellIds];
+        let allCells = [...expandedCellIds];
         existingGroupIndices.forEach((idx) => {
           allCells = [...allCells, ...currentMerged[idx]];
         });
@@ -1563,9 +1891,27 @@ export const usePuzzleStore = create<PuzzleStore>((set, get) => {
         const currentMerged = state.grid.mergedCells || [];
         if (currentMerged.length === 0) return state;
 
+        const resolveIds = (ids: string[]) => {
+          const expanded: string[] = [];
+          ids.forEach((id) => {
+            const m = id.match(/^merged-(\d+)$/);
+            if (m) {
+              const idx = parseInt(m[1], 10);
+              if (currentMerged[idx]) {
+                expanded.push(...currentMerged[idx]);
+                return;
+              }
+            }
+            expanded.push(id);
+          });
+          return expanded;
+        };
+
+        const expanded = resolveIds(cellIds);
+
         // Find groups containing any of these cells and split them
         const newMerged = currentMerged
-          .map((group) => group.filter((id) => !cellIds.includes(id)))
+          .map((group) => group.filter((id) => !expanded.includes(id)))
           .filter((group) => group.length >= 2); // Remove groups with less than 2 cells
 
         const grid = { ...state.grid, mergedCells: newMerged.length > 0 ? newMerged : undefined };
@@ -1796,15 +2142,22 @@ export const usePuzzleStore = create<PuzzleStore>((set, get) => {
     // Export/Import
     exportPuzzle: () => {
       const state = get();
-      const exportData = {
+      const exportData: Record<string, unknown> = {
         version: '1.0.0',
         grid: state.grid,
         state: state.puzzle,
+        useTopology: state.useTopology,
+        topologyPreset: state.topologyPreset,
+        topologyIntensity: state.topologyIntensity,
         metadata: {
           created: new Date().toISOString(),
           modified: new Date().toISOString(),
         },
       };
+      // Include serialized topology if available
+      if (state.topology) {
+        exportData.topology = serializeTopology(state.topology);
+      }
       return JSON.stringify(exportData, null, 2);
     },
 
@@ -1812,10 +2165,32 @@ export const usePuzzleStore = create<PuzzleStore>((set, get) => {
       try {
         const data = JSON.parse(json);
         if (data.version && data.grid && data.state) {
-          set({
+          const updateState: Partial<PuzzleStore> = {
             grid: data.grid,
             puzzle: data.state,
-          });
+          };
+          // Restore topology settings
+          if (data.useTopology !== undefined) {
+            updateState.useTopology = data.useTopology;
+          }
+          if (data.topologyPreset !== undefined) {
+            updateState.topologyPreset = data.topologyPreset;
+          }
+          if (data.topologyIntensity !== undefined) {
+            updateState.topologyIntensity = data.topologyIntensity;
+          }
+          // Restore topology if available
+          if (data.topology) {
+            updateState.topology = deserializeTopology(data.topology);
+          } else if (data.useTopology) {
+            // Regenerate topology from grid config if useTopology is true but no topology saved
+            const base = gridConfigToTopology(data.grid);
+            updateState.topology = applyTopologyPreset(base, {
+              preset: data.topologyPreset || 'none',
+              intensity: data.topologyIntensity || 0,
+            });
+          }
+          set(updateState);
           historyManager.clear();
           return true;
         }

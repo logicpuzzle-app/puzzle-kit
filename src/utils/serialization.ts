@@ -1,5 +1,6 @@
 import pako from 'pako';
 import type { PuzzleExport, GridConfig, PuzzleState } from '../types';
+import type { GridTopology, TopologyCell, TopologyVertex, TopologyEdge } from './topology/types';
 
 // Penpa-compatible compression using zlib
 // Format: "m=edit&p=" + base64(zlib(JSON))
@@ -440,4 +441,45 @@ export function downloadAsPng(blob: Blob, filename = 'puzzle.png'): void {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// ========================================
+// Topology Serialization
+// ========================================
+
+/**
+ * Serializable topology format (uses arrays instead of Maps)
+ */
+export interface SerializedTopology {
+  cells: [string, TopologyCell][];
+  vertices: [string, TopologyVertex][];
+  edges: [string, TopologyEdge][];
+  bounds: GridTopology['bounds'];
+  sourceConfig?: GridConfig;
+}
+
+/**
+ * Convert GridTopology to serializable format
+ */
+export function serializeTopology(topology: GridTopology): SerializedTopology {
+  return {
+    cells: Array.from(topology.cells.entries()),
+    vertices: Array.from(topology.vertices.entries()),
+    edges: Array.from(topology.edges.entries()),
+    bounds: topology.bounds,
+    sourceConfig: topology.sourceConfig,
+  };
+}
+
+/**
+ * Convert serialized format back to GridTopology
+ */
+export function deserializeTopology(serialized: SerializedTopology): GridTopology {
+  return {
+    cells: new Map(serialized.cells),
+    vertices: new Map(serialized.vertices),
+    edges: new Map(serialized.edges),
+    bounds: serialized.bounds,
+    sourceConfig: serialized.sourceConfig,
+  };
 }

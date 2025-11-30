@@ -821,6 +821,10 @@ function gridTypeToPenpa(gridType: string): PenpaGridType {
       return 'hex';
     case 'tri':
       return 'tri';
+    case 'pyramid':
+      return 'pyramid';
+    case 'iso':
+      return 'iso';
     default:
       return 'square';
   }
@@ -829,7 +833,7 @@ function gridTypeToPenpa(gridType: string): PenpaGridType {
 /**
  * Convert Penpa grid type to PuzzleKit grid type
  */
-function penpaToGridType(gridtype: PenpaGridType): 'square' | 'hex' {
+function penpaToGridType(gridtype: PenpaGridType): 'square' | 'hex' | 'tri' | 'pyramid' | 'iso' {
   switch (gridtype) {
     case 'square':
     case 'sudoku':
@@ -837,6 +841,12 @@ function penpaToGridType(gridtype: PenpaGridType): 'square' | 'hex' {
       return 'square';
     case 'hex':
       return 'hex';
+    case 'tri':
+      return 'tri';
+    case 'pyramid':
+      return 'pyramid';
+    case 'iso':
+      return 'iso';
     default:
       return 'square';
   }

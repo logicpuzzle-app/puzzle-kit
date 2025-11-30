@@ -15,11 +15,14 @@ import {
   loadUIPreferences,
   saveCanvasState,
   loadCanvasState,
+  saveTopologyState,
+  loadTopologyState,
   isStorageAvailable,
 } from '../utils/storage';
 
 // Debounce time in milliseconds
 const SAVE_DEBOUNCE_MS = 500;
+const TOPOLOGY_SAVE_DEBOUNCE_MS = 1000; // Longer debounce for topology (larger data)
 
 /**
  * Hook that automatically persists store state to localStorage
@@ -30,15 +33,23 @@ export function useStoragePersistence() {
     toolSettings,
     grid,
     canvas,
+    topology,
+    useTopology,
+    topologyPreset,
+    topologyIntensity,
     showProblemLayer,
     showAnswerLayer,
     setToolSettings,
     setGrid,
     setCanvasState,
+    setUseTopology,
+    setTopologyPreset,
+    setTopologyIntensity,
   } = usePuzzleStore();
 
   const hasInitialized = useRef(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const topologySaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Initialize from localStorage on mount
   useEffect(() => {
@@ -49,6 +60,7 @@ export function useStoragePersistence() {
     const persistedGridConfig = loadGridConfig();
     const persistedUIPrefs = loadUIPreferences();
     const persistedCanvasState = loadCanvasState();
+    const persistedTopologyState = loadTopologyState();
 
     // Apply to store (merge with defaults)
     setToolSettings({
@@ -63,13 +75,26 @@ export function useStoragePersistence() {
       zoom: persistedCanvasState.zoom,
     });
 
+    // Apply topology state
+    if (persistedTopologyState.useTopology !== undefined) {
+      setUseTopology(persistedTopologyState.useTopology);
+    }
+    if (persistedTopologyState.topologyPreset) {
+      setTopologyPreset(persistedTopologyState.topologyPreset as any);
+    }
+    if (persistedTopologyState.topologyIntensity !== undefined) {
+      setTopologyIntensity(persistedTopologyState.topologyIntensity);
+    }
+    // Note: topology itself is restored via setGrid which regenerates it,
+    // or via importPuzzle which includes topology data
+
     // Apply UI preferences
     if (persistedUIPrefs.showProblemLayer !== undefined) {
       // Would need toggleProblemLayer/toggleAnswerLayer if needed
     }
 
     hasInitialized.current = true;
-  }, [setToolSettings, setGrid, setCanvasState]);
+  }, [setToolSettings, setGrid, setCanvasState, setUseTopology, setTopologyPreset, setTopologyIntensity]);
 
   // Save tool settings when they change (debounced)
   useEffect(() => {
@@ -127,6 +152,25 @@ export function useStoragePersistence() {
       }
     };
   }, [canvas.zoom]); // Only save on zoom change, not pan
+
+  // Save topology state when it changes (debounced with longer interval)
+  useEffect(() => {
+    if (!hasInitialized.current || !isStorageAvailable()) return;
+
+    if (topologySaveTimeoutRef.current) {
+      clearTimeout(topologySaveTimeoutRef.current);
+    }
+
+    topologySaveTimeoutRef.current = setTimeout(() => {
+      saveTopologyState(topology, useTopology, topologyPreset, topologyIntensity);
+    }, TOPOLOGY_SAVE_DEBOUNCE_MS);
+
+    return () => {
+      if (topologySaveTimeoutRef.current) {
+        clearTimeout(topologySaveTimeoutRef.current);
+      }
+    };
+  }, [topology, useTopology, topologyPreset, topologyIntensity]);
 
   // Save UI preferences when they change
   useEffect(() => {

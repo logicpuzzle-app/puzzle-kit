@@ -5,6 +5,8 @@
  */
 
 import type { ToolSettings, GridConfig, CanvasState } from '../types';
+import type { GridTopology } from './topology/types';
+import { serializeTopology, deserializeTopology, type SerializedTopology } from './serialization';
 
 const STORAGE_KEYS = {
   TOOL_SETTINGS: 'puzzlekit_tool_settings',
@@ -13,6 +15,7 @@ const STORAGE_KEYS = {
   UI_PREFERENCES: 'puzzlekit_ui_preferences',
   RECENT_PUZZLES: 'puzzlekit_recent_puzzles',
   LANGUAGE: 'puzzlekit_language',
+  TOPOLOGY: 'puzzlekit_topology',
 } as const;
 
 const STORAGE_VERSION = 1;
@@ -255,4 +258,49 @@ export function isStorageAvailable(): boolean {
   } catch {
     return false;
   }
+}
+
+// ===========================
+// Topology Persistence
+// ===========================
+
+export interface PersistedTopologyState {
+  topology: SerializedTopology | null;
+  useTopology: boolean;
+  topologyPreset: string;
+  topologyIntensity: number;
+}
+
+const DEFAULT_TOPOLOGY_STATE: PersistedTopologyState = {
+  topology: null,
+  useTopology: true,
+  topologyPreset: 'none',
+  topologyIntensity: 0,
+};
+
+export function saveTopologyState(
+  topology: GridTopology | null,
+  useTopology: boolean,
+  topologyPreset: string,
+  topologyIntensity: number
+): boolean {
+  const data: PersistedTopologyState = {
+    topology: topology ? serializeTopology(topology) : null,
+    useTopology,
+    topologyPreset,
+    topologyIntensity,
+  };
+  return setItem(STORAGE_KEYS.TOPOLOGY, data);
+}
+
+export function loadTopologyState(): PersistedTopologyState & { deserializedTopology: GridTopology | null } {
+  const state = getItem(STORAGE_KEYS.TOPOLOGY, DEFAULT_TOPOLOGY_STATE);
+  return {
+    ...state,
+    deserializedTopology: state.topology ? deserializeTopology(state.topology) : null,
+  };
+}
+
+export function clearTopologyState(): void {
+  removeItem(STORAGE_KEYS.TOPOLOGY);
 }

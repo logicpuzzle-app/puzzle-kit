@@ -11,6 +11,7 @@ export function useKeyboardShortcuts() {
     setActiveLayer,
     setZoom,
     setPan,
+    setPanMode,
     canvas,
   } = usePuzzleStore();
 
@@ -95,8 +96,15 @@ export function useKeyboardShortcuts() {
         // Could clear selection here
         return;
       }
+
+      // H - toggle pan mode
+      if (key === 'h' && !ctrl) {
+        e.preventDefault();
+        setPanMode(!canvas.panMode);
+        return;
+      }
     },
-    [undo, redo, setToolSettings, toolSettings, activeLayer, setActiveLayer, setZoom, setPan, canvas.zoom]
+    [undo, redo, setToolSettings, toolSettings, activeLayer, setActiveLayer, setZoom, setPan, setPanMode, canvas.zoom, canvas.panMode]
   );
 
   useEffect(() => {

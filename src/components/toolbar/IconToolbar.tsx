@@ -66,6 +66,15 @@ const ZoomOutIcon: React.FC<{ size?: number }> = ({ size = 16 }) => (
   </svg>
 );
 
+const PanIcon: React.FC<{ size?: number }> = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0" />
+    <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2" />
+    <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8" />
+    <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
+  </svg>
+);
+
 const ImageIcon: React.FC<{ size?: number }> = ({ size = 16 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
@@ -104,13 +113,14 @@ interface ToolbarButtonProps {
   onClick: () => void;
   title: string;
   disabled?: boolean;
+  active?: boolean;
 }
 
-const ToolbarButton: React.FC<ToolbarButtonProps> = ({ icon, onClick, title, disabled }) => (
+const ToolbarButton: React.FC<ToolbarButtonProps> = ({ icon, onClick, title, disabled, active }) => (
   <button
     className={`w-7 h-7 flex items-center justify-center rounded hover:bg-office-ribbon-hover transition-colors ${
       disabled ? 'opacity-40 cursor-not-allowed' : ''
-    }`}
+    } ${active ? 'bg-blue-200 border border-blue-400' : ''}`}
     onClick={onClick}
     title={title}
     disabled={disabled}
@@ -138,6 +148,7 @@ export const IconToolbar: React.FC = () => {
     newPuzzle,
     setZoom,
     setPan,
+    setPanMode,
     canUndo,
     canRedo,
   } = usePuzzleStore();
@@ -265,6 +276,12 @@ export const IconToolbar: React.FC = () => {
           icon={<ZoomOutIcon />}
           onClick={() => setZoom(canvas.zoom / 1.2)}
           title={`${t('view.zoomOut')} (Ctrl+-)`}
+        />
+        <ToolbarButton
+          icon={<PanIcon />}
+          onClick={() => setPanMode(!canvas.panMode)}
+          title={t('view.panMode') || 'Pan Mode (H)'}
+          active={canvas.panMode}
         />
         <button
           className="h-6 px-2 text-xs border border-office-border rounded hover:bg-office-ribbon-hover transition-colors"

@@ -8,6 +8,7 @@
  */
 
 import type { GridConfig, PuzzleState, ToolSettings } from '../types';
+import type { SerializedTopology } from '../utils/serialization';
 
 // ========================================
 // Types
@@ -18,6 +19,10 @@ export interface PersistedState {
   grid: GridConfig;
   puzzle: PuzzleState;
   toolSettings?: Partial<ToolSettings>;
+  topology?: SerializedTopology;
+  useTopology?: boolean;
+  topologyPreset?: string;
+  topologyIntensity?: number;
   metadata?: {
     title?: string;
     author?: string;

@@ -1,11 +1,22 @@
+/**
+ * useCanvasInteraction - Hook for handling canvas interactions
+ *
+ * Coordinates between:
+ * - Mouse/touch event handling
+ * - Tool handlers (surface, line, edge, wall, symbol, etc.)
+ * - Grid edit mode handlers (merge, split, exclude, sculpt)
+ * - Zoom/pan controls
+ */
+
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { usePuzzleStore } from '../store/puzzleStore';
 import { screenToSvg } from '../utils/gridUtils';
 import { useToolHandlers } from './useToolHandlers';
 import { useSelectionTool, type SelectionRect } from './useSelectionTool';
 import { useGridPointUtils } from './useGridPointUtils';
+import { useGridEditMode } from './useGridEditMode';
+import { useSculptMode } from './useSculptMode';
 import type { Point } from '../types';
-import type { GridTopology } from '../utils/gridTopology';
 
 interface UseCanvasInteractionOptions {
   svgRef: React.RefObject<SVGSVGElement | null>;
@@ -18,7 +29,6 @@ interface TouchState {
   initialZoom: number;
   lastTouchPoint: Point | null;
   touchStartTime: number;
-  // Track initial touch count for secondary color (2-finger tap) or delete (3-finger tap)
   initialTouchCount: number;
 }
 
@@ -35,11 +45,9 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
     isGridMode,
     gridEditMode,
     topology,
-    mergeCells,
-    unmergeCells,
-    addSplitLine,
   } = usePuzzleStore();
 
+  // Drawing state
   const [isPanning, setIsPanning] = useState(false);
   const [lastPanPoint, setLastPanPoint] = useState<Point | null>(null);
   const [drawStartPoint, setDrawStartPoint] = useState<string | null>(null);
@@ -51,13 +59,6 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
   const isDraggingRef = useRef(false);
   const isRightClickRef = useRef(false);
   const isShiftKeyRef = useRef(false);
-
-  // Merge mode state - track cells being selected for merge
-  const [mergingCells, setMergingCells] = useState<string[]>([]);
-
-  // Split mode state - track vertices being connected for split
-  const [splitStartVertex, setSplitStartVertex] = useState<string | null>(null);
-  const [splitHoverVertex, setSplitHoverVertex] = useState<string | null>(null);
 
   // Touch state
   const touchStateRef = useRef<TouchState>({
@@ -99,141 +100,25 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
 
   const { findNearestGridPoint } = useGridPointUtils(grid);
 
-  // Helper to find cell at a given point
-  const findCellAtPoint = useCallback(
-    (point: Point): string | null => {
-      if (!topology) return null;
+  // Grid edit mode handlers (merge, split)
+  const {
+    mergingCells,
+    handleMergeMode,
+    splitStartVertex,
+    splitHoverVertex,
+    handleSplitMode,
+    updateSplitHoverVertex,
+  } = useGridEditMode({ topology });
 
-      // Check each cell in the topology
-      for (const [cellId, cell] of topology.cells) {
-        // Get vertex positions from boundary vertices
-        const vertices = cell.boundaryVertices
-          .map(vId => topology.vertices.get(vId))
-          .filter((v): v is NonNullable<typeof v> => v !== undefined)
-          .map(v => v.position);
+  // Sculpt mode handlers
+  const {
+    sculptHover,
+    handleSculptMode,
+    updateSculptHover,
+    getSculptHoverPolygons,
+  } = useSculptMode({ grid, topology });
 
-        if (vertices.length < 3) continue;
-
-        // Point-in-polygon test
-        let inside = false;
-        for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
-          const xi = vertices[i].x, yi = vertices[i].y;
-          const xj = vertices[j].x, yj = vertices[j].y;
-          const intersect = ((yi > point.y) !== (yj > point.y))
-            && (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
-          if (intersect) inside = !inside;
-        }
-        if (inside) return cellId;
-      }
-      return null;
-    },
-    [topology]
-  );
-
-  // Handle merge mode - add cell to merging list
-  const handleMergeMode = useCallback(
-    (point: Point, isStart: boolean, isEnd: boolean, isRightClick: boolean) => {
-      const cellId = findCellAtPoint(point);
-      if (!cellId) return;
-
-      if (isRightClick) {
-        // Right-click to unmerge the cell
-        unmergeCells([cellId]);
-        return;
-      }
-
-      if (isStart) {
-        // Start merging - initialize with first cell
-        setMergingCells([cellId]);
-      } else if (isEnd) {
-        // End merging - call mergeCells with collected cells
-        if (mergingCells.length >= 2) {
-          mergeCells(mergingCells);
-        }
-        setMergingCells([]);
-      } else {
-        // Continue merging - add cell if not already in list
-        if (!mergingCells.includes(cellId)) {
-          setMergingCells((prev) => [...prev, cellId]);
-        }
-      }
-    },
-    [findCellAtPoint, mergingCells, mergeCells, unmergeCells, topology]
-  );
-
-  // Helper to find nearest vertex at a given point
-  const findNearestVertexAtPoint = useCallback(
-    (point: Point, maxDistance: number = 15): string | null => {
-      if (!topology) return null;
-
-      let nearestId: string | null = null;
-      let nearestDist = maxDistance;
-
-      for (const [vertexId, vertex] of topology.vertices) {
-        const dist = Math.hypot(point.x - vertex.position.x, point.y - vertex.position.y);
-        if (dist < nearestDist) {
-          nearestDist = dist;
-          nearestId = vertexId;
-        }
-      }
-      return nearestId;
-    },
-    [topology]
-  );
-
-  // Handle split mode - connect vertices to split cells
-  const handleSplitMode = useCallback(
-    (point: Point, isStart: boolean, isEnd: boolean, isRightClick: boolean) => {
-      if (isRightClick) {
-        // Right-click to cancel
-        setSplitStartVertex(null);
-        setSplitHoverVertex(null);
-        return;
-      }
-
-      const vertexId = findNearestVertexAtPoint(point);
-
-      if (isStart) {
-        if (vertexId) {
-          setSplitStartVertex(vertexId);
-        }
-      } else if (isEnd) {
-        if (splitStartVertex && vertexId && vertexId !== splitStartVertex && topology) {
-          // Find cells that share both vertices
-          const startVertex = topology.vertices.get(splitStartVertex);
-          const endVertex = topology.vertices.get(vertexId);
-
-          if (startVertex && endVertex) {
-            // Find common cells between both vertices
-            const startCells = new Set(startVertex.adjacentCells);
-            const commonCells = endVertex.adjacentCells.filter(cellId => startCells.has(cellId));
-
-            if (commonCells.length > 0) {
-              // Add split line for the first common cell
-              const cellId = commonCells[0];
-              addSplitLine(cellId, splitStartVertex, vertexId);
-            }
-          }
-        }
-        setSplitStartVertex(null);
-        setSplitHoverVertex(null);
-      } else {
-        // During drag, update hover vertex
-        setSplitHoverVertex(vertexId);
-      }
-    },
-    [findNearestVertexAtPoint, splitStartVertex, topology, addSplitLine]
-  );
-
-  // Update split hover vertex (for cursor display in split mode)
-  const updateSplitHoverVertex = useCallback(
-    (point: Point) => {
-      const vertexId = findNearestVertexAtPoint(point);
-      setSplitHoverVertex(vertexId);
-    },
-    [findNearestVertexAtPoint]
-  );
-
+  // Mouse position helper
   const getMousePosition = useCallback(
     (e: React.MouseEvent | MouseEvent): Point => {
       return screenToSvg(
@@ -248,13 +133,14 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
     [canvas.zoom, canvas.panX, canvas.panY, svgRef]
   );
 
-  // Get selection tool handlers
+  // Selection tool handlers
   const {
     isSelecting,
     selectionRect,
     handleSelectTool,
   } = useSelectionTool({ getMousePosition });
 
+  // Wheel handler (zoom/pan)
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
       e.preventDefault();
@@ -284,14 +170,15 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
     [canvas.zoom, canvas.panX, canvas.panY, setZoom, setPan, svgRef]
   );
 
+  // Mouse down handler
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       const point = getMousePosition(e);
       const isRightClick = e.button === 2;
       const isShiftKey = e.shiftKey;
 
-      // Middle mouse button or space+click for panning
-      if (e.button === 1 || (e.button === 0 && e.altKey)) {
+      // Middle mouse button, alt+click, or panMode for panning
+      if (e.button === 1 || (e.button === 0 && e.altKey) || (e.button === 0 && canvas.panMode)) {
         setIsPanning(true);
         setLastPanPoint({ x: e.clientX, y: e.clientY });
         return;
@@ -316,6 +203,8 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
           handleMergeMode(point, true, false, isRightClick);
         } else if (gridEditMode === 'split') {
           handleSplitMode(point, true, false, isRightClick);
+        } else if (gridEditMode === 'sculpt') {
+          handleSculptMode(point, isRightClick);
         }
         // preset mode: do nothing (just view properties panel)
         return;
@@ -351,9 +240,11 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
       toolSettings.currentTool,
       isGridMode,
       gridEditMode,
+      canvas.panMode,
       handleGridTool,
       handleMergeMode,
       handleSplitMode,
+      handleSculptMode,
       handleSurfaceTool,
       handleLineTool,
       handleEdgeTool,
@@ -368,6 +259,7 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
     ]
   );
 
+  // Mouse move handler
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
       if (isPanning && lastPanPoint) {
@@ -444,6 +336,7 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
     ]
   );
 
+  // Mouse up handler
   const handleMouseUp = useCallback(
     (e: React.MouseEvent) => {
       if (isPanning) {
@@ -495,6 +388,7 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
     [isPanning, setCanvasState, endHistoryGroup, getMousePosition, toolSettings.currentTool, toolSettings.lineDirections, drawStartPoint, handleSpecialTool, handleCageTool, handleBoxLineTool, handleStraightLineEnd, resetFillModes, isGridMode, gridEditMode, handleMergeMode, handleSplitMode]
   );
 
+  // Context menu handler
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
   }, []);
@@ -552,7 +446,7 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
     };
   };
 
-  // Touch handlers
+  // Touch start handler
   const handleTouchStart = useCallback(
     (e: React.TouchEvent) => {
       e.preventDefault();
@@ -563,26 +457,19 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
       touchState.initialTouchCount = touches.length;
 
       if (touches.length >= 2) {
-        // 2+ fingers: pinch zoom
         touchState.isPinching = true;
         touchState.initialPinchDistance = getPinchDistance(touches);
         touchState.initialZoom = canvas.zoom;
         touchState.lastTouchPoint = getPinchCenter(touches);
       } else if (touches.length === 1) {
-        // Single touch - drawing
         touchState.isPinching = false;
         touchState.lastTouchPoint = { x: touches[0].clientX, y: touches[0].clientY };
 
         const point = getTouchPosition(touches[0]);
         const tool = toolSettings.currentTool;
 
-        // Reset fill modes for new drawing operation
         resetFillModes();
-
-        // Start a history group for drag operations
         startHistoryGroup();
-
-        // Start drawing
         setCanvasState({ isDrawing: true });
         isDraggingRef.current = false;
         isRightClickRef.current = false;
@@ -631,6 +518,7 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
     ]
   );
 
+  // Touch move handler
   const handleTouchMove = useCallback(
     (e: React.TouchEvent) => {
       e.preventDefault();
@@ -638,12 +526,10 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
       const touchState = touchStateRef.current;
 
       if (touches.length === 2 && touchState.isPinching) {
-        // Pinch zoom
         const currentDistance = getPinchDistance(touches);
         const scale = currentDistance / touchState.initialPinchDistance;
         const newZoom = Math.max(0.1, Math.min(5, touchState.initialZoom * scale));
 
-        // Zoom toward pinch center
         const center = getPinchCenter(touches);
         if (touchState.lastTouchPoint) {
           const dx = center.x - touchState.lastTouchPoint.x;
@@ -654,19 +540,15 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
         setZoom(newZoom);
         touchState.lastTouchPoint = center;
       } else if (touches.length === 1 && touchState.lastTouchPoint) {
-        // Single touch move
         if (!canvas.isDrawing) {
-          // Pan if not drawing
           const dx = touches[0].clientX - touchState.lastTouchPoint.x;
           const dy = touches[0].clientY - touchState.lastTouchPoint.y;
           setPan(canvas.panX + dx, canvas.panY + dy);
           touchState.lastTouchPoint = { x: touches[0].clientX, y: touches[0].clientY };
         } else {
-          // Continue drawing
           isDraggingRef.current = true;
           const point = getTouchPosition(touches[0]);
           const tool = toolSettings.currentTool;
-
           const isRightClick = isRightClickRef.current;
           const isShiftKey = isShiftKeyRef.current;
 
@@ -714,6 +596,7 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
     ]
   );
 
+  // Touch end handler
   const handleTouchEnd = useCallback(
     (e: React.TouchEvent) => {
       e.preventDefault();
@@ -794,10 +677,7 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
         }
       }
 
-      // End the history group when touch ends
       endHistoryGroup();
-
-      // Reset fill modes
       resetFillModes();
 
       touchState.isPinching = false;
@@ -832,7 +712,7 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
     ]
   );
 
-  // Update line hover point based on current mouse position
+  // Update line hover point
   const updateLineHoverPoint = useCallback(
     (point: Point) => {
       const tool = toolSettings.currentTool;
@@ -852,7 +732,7 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
     [toolSettings.currentTool, toolSettings.lineGridPoints, findNearestGridPoint]
   );
 
-  // Update symbol hover point based on current mouse position
+  // Update symbol hover point
   const updateSymbolHoverPoint = useCallback(
     (point: Point) => {
       const tool = toolSettings.currentTool;
@@ -903,6 +783,10 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
     splitStartVertex,
     splitHoverVertex,
     updateSplitHoverVertex,
+    // Sculpt mode state
+    sculptHover,
+    updateSculptHover,
+    getSculptHoverPolygons,
   };
 }
 

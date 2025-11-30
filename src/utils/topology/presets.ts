@@ -38,6 +38,10 @@ function getPresetTransform(
       // No transformation
       return (x, y) => ({ x, y });
 
+    case 'pyramid':
+      // No transform (layout handled by pyramid topology itself)
+      return (x, y) => ({ x, y });
+
     case 'cylinder':
       // Bend into a cylinder shape (horizontal wrap visual)
       return (x, y) => {
@@ -293,5 +297,6 @@ export function getTopologyPresetOptions(): { id: TopologyPreset; labelKey: stri
     { id: 'wave', labelKey: 'topology.preset.wave' },
     { id: 'fisheye', labelKey: 'topology.preset.fisheye' },
     { id: 'perspective', labelKey: 'topology.preset.perspective' },
+    { id: 'pyramid', labelKey: 'topology.preset.pyramid' },
   ];
 }

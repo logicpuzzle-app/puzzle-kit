@@ -417,16 +417,22 @@ export const Ribbon: React.FC = () => {
 // Grid Shape Tab Content - grid type, size, topology preset
 const GridShapeContent: React.FC = () => {
   const { t } = useTranslation();
-  const { showAdjacency, setShowAdjacency, gridEditMode, setGridEditMode, previewTopology } = usePuzzleStore();
+  const { showAdjacency, setShowAdjacency, gridEditMode, setGridEditMode, previewTopology, grid } = usePuzzleStore();
 
-  const editModes = [
-    { id: 'preset' as const, labelKey: 'gridEdit.preset' },
-    { id: 'merge' as const, labelKey: 'gridEdit.merge' },
-    { id: 'split' as const, labelKey: 'gridEdit.split' },
-    { id: 'exclude' as const, labelKey: 'gridEdit.exclude' },
+  const isIsometric = grid.gridType === 'iso';
+
+  const editModes: { id: 'preset' | 'merge' | 'split' | 'exclude' | 'sculpt'; labelKey: string; isoOnly?: boolean }[] = [
+    { id: 'preset', labelKey: 'gridEdit.preset' },
+    { id: 'merge', labelKey: 'gridEdit.merge' },
+    { id: 'split', labelKey: 'gridEdit.split' },
+    { id: 'exclude', labelKey: 'gridEdit.exclude' },
+    { id: 'sculpt', labelKey: 'gridEdit.sculpt', isoOnly: true },
   ];
 
-  // During preview, only allow preset mode (disable merge/split/exclude)
+  // Filter modes based on grid type
+  const availableModes = editModes.filter((mode) => !mode.isoOnly || isIsometric);
+
+  // During preview, only allow preset mode (disable merge/split/exclude/sculpt)
   const isPreviewActive = previewTopology !== null;
 
   // Auto-switch to preset mode when preview becomes active
@@ -436,11 +442,18 @@ const GridShapeContent: React.FC = () => {
     }
   }, [isPreviewActive, gridEditMode, setGridEditMode]);
 
+  // Auto-switch from sculpt mode when changing away from isometric
+  React.useEffect(() => {
+    if (!isIsometric && gridEditMode === 'sculpt') {
+      setGridEditMode('preset');
+    }
+  }, [isIsometric, gridEditMode, setGridEditMode]);
+
   return (
     <>
       {/* Grid Edit Mode toggle buttons */}
       <div className="flex items-center gap-0.5 px-2 border-r border-office-border">
-        {editModes.map((mode) => {
+        {availableModes.map((mode) => {
           const isDisabled = isPreviewActive && mode.id !== 'preset';
           return (
             <button

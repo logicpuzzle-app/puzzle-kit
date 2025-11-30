@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../store/puzzleStore';
-import type { GridType } from '../../types';
+import type { GridType, IsometricFace } from '../../types';
 
 interface NewPuzzleDialogProps {
   isOpen: boolean;
@@ -13,6 +13,13 @@ const GRID_TYPES: { id: GridType; icon: string }[] = [
   { id: 'hex', icon: '⬡' },
   { id: 'triangle', icon: '△' },
   { id: 'pyramid', icon: '▲' },
+  { id: 'iso', icon: '◇' },
+];
+
+const ISO_FACES: { id: IsometricFace; labelKey: string }[] = [
+  { id: 'top', labelKey: 'grid.iso.top' },
+  { id: 'left', labelKey: 'grid.iso.left' },
+  { id: 'right', labelKey: 'grid.iso.right' },
 ];
 
 export const NewPuzzleDialog: React.FC<NewPuzzleDialogProps> = ({
@@ -25,9 +32,28 @@ export const NewPuzzleDialog: React.FC<NewPuzzleDialogProps> = ({
   const [gridType, setGridType] = useState<GridType>('square');
   const [rows, setRows] = useState(9);
   const [cols, setCols] = useState(9);
+  const [level, setLevel] = useState(5);
+  // Default: all faces enabled
+  const [isometricFaces, setIsometricFaces] = useState<IsometricFace[]>(['top', 'left', 'right']);
+
+  const toggleFace = (face: IsometricFace) => {
+    setIsometricFaces((prev) => {
+      if (prev.includes(face)) {
+        // Don't allow removing all faces
+        if (prev.length <= 1) return prev;
+        return prev.filter((f) => f !== face);
+      } else {
+        return [...prev, face];
+      }
+    });
+  };
 
   const handleCreate = () => {
-    newPuzzle({ gridType, rows, cols });
+    if (gridType === 'iso') {
+      newPuzzle({ gridType, rows, cols, level, isometricFaces });
+    } else {
+      newPuzzle({ gridType, rows, cols });
+    }
     onClose();
   };
 
@@ -56,7 +82,7 @@ export const NewPuzzleDialog: React.FC<NewPuzzleDialogProps> = ({
           <label className="block text-xs text-office-text-secondary mb-2">
             {t('grid.type')}
           </label>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-5 gap-2">
             {GRID_TYPES.map((type) => (
               <button
                 key={type.id}
@@ -66,7 +92,15 @@ export const NewPuzzleDialog: React.FC<NewPuzzleDialogProps> = ({
                     ? 'bg-office-accent text-white border-office-accent'
                     : 'bg-white border-office-border hover:bg-office-ribbon-hover'
                 }`}
-                onClick={() => setGridType(type.id)}
+                onClick={() => {
+                  setGridType(type.id);
+                  // Set default 5x5x5 for isometric grid
+                  if (type.id === 'iso') {
+                    setRows(5);
+                    setCols(5);
+                    setLevel(5);
+                  }
+                }}
               >
                 <span className="text-2xl mb-1">{type.icon}</span>
                 <span className="text-xs">{t(`grid.type.${type.id}`)}</span>
@@ -91,10 +125,10 @@ export const NewPuzzleDialog: React.FC<NewPuzzleDialogProps> = ({
                 value={rows}
                 onChange={(e) => {
                   const num = parseInt(e.target.value, 10);
-                  if (!isNaN(num) && num >= 1 && num <= 50) setRows(num);
+                  if (!isNaN(num) && num >= 1 && num <= 1000) setRows(num);
                 }}
                 min={1}
-                max={50}
+                max={1000}
               />
             </div>
             <div>
@@ -107,14 +141,58 @@ export const NewPuzzleDialog: React.FC<NewPuzzleDialogProps> = ({
                 value={cols}
                 onChange={(e) => {
                   const num = parseInt(e.target.value, 10);
-                  if (!isNaN(num) && num >= 1 && num <= 50) setCols(num);
+                  if (!isNaN(num) && num >= 1 && num <= 1000) setCols(num);
                 }}
                 min={1}
-                max={50}
+                max={1000}
               />
             </div>
           </div>
         </div>
+
+        {/* Isometric Options (only shown for iso grid type) */}
+        {gridType === 'iso' && (
+          <div className="mb-4">
+            <label className="block text-xs text-office-text-secondary mb-2">
+              {t('grid.iso.faces')}
+            </label>
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              {ISO_FACES.map((face) => {
+                const isActive = isometricFaces.includes(face.id);
+                return (
+                  <button
+                    key={face.id}
+                    type="button"
+                    className={`flex flex-col items-center justify-center p-2 border rounded-sm transition-colors ${
+                      isActive
+                        ? 'bg-office-accent text-white border-office-accent'
+                        : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+                    }`}
+                    onClick={() => toggleFace(face.id)}
+                  >
+                    <span className="text-xs">{t(face.labelKey)}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div>
+              <label className="block text-xs text-office-text-secondary mb-1">
+                {t('grid.iso.level')}
+              </label>
+              <input
+                type="number"
+                className="input-office w-full"
+                value={level}
+                onChange={(e) => {
+                  const num = parseInt(e.target.value, 10);
+                  if (!isNaN(num) && num >= 1 && num <= 1000) setLevel(num);
+                }}
+                min={1}
+                max={1000}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Action buttons */}
         <div className="flex gap-2 justify-end border-t border-office-border pt-3">

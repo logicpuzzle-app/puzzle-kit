@@ -12,6 +12,9 @@ import {
   squareGridToTopology,
   triangularGridToTopology,
   hexagonalGridToTopology,
+  pyramidGridToTopology,
+  applyIsometricTransform,
+  isometricGridToTopology,
 } from './regular';
 
 // Semi-regular tilings
@@ -120,8 +123,9 @@ export function gridConfigToTopology(config: GridConfig): GridTopology {
     // Special / Fallback
     // ========================================
     case 'pyramid':
-      // Pyramid uses square grid as base
-        return squareGridToTopology(config);
+        return pyramidGridToTopology(config);
+    case 'iso':
+        return isometricGridToTopology(config);
 
     default:
       // Default to square grid
@@ -202,6 +206,6 @@ export function getAvailableGridTypes(): {
       'floret-pentagonal',
       'prismatic-pentagonal',
     ],
-    special: ['pyramid'],
+    special: ['pyramid', 'iso'],
   };
 }

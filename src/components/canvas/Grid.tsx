@@ -78,8 +78,11 @@ export const Grid: React.FC = () => {
   const { gridType = 'square' } = effectiveGrid;
   const isPreview = previewTopology !== null;
 
+  // For pyramid/iso, force topology rendering if available
+  const topologyPreferred = useTopology || gridType === 'pyramid' || gridType === 'iso';
+
   // Prefer topology-based rendering when enabled and topology available
-  if (useTopology && effectiveTopology) {
+  if (topologyPreferred && effectiveTopology) {
     const content = <TopologyGrid topology={effectiveTopology} grid={effectiveGrid} />;
     return isPreview ? <g opacity={PREVIEW_OPACITY}>{content}</g> : content;
   }

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Trash2 } from 'lucide-react';
 import { usePuzzleStore } from '../../../store/puzzleStore';
 import type { TopologyPreset } from '../../../utils/gridTopology';
-import type { GridType } from '../../../types';
+import type { GridType, IsometricFace, IsometricView } from '../../../types';
 
 // Background fit mode options
 const fitModes = [
@@ -32,7 +32,17 @@ export const GridPropertiesPanel: React.FC = () => {
   const [pendingGridType, setPendingGridType] = useState<GridType>(grid.gridType);
   const [pendingRows, setPendingRows] = useState<number>(grid.rows);
   const [pendingCols, setPendingCols] = useState<number>(grid.cols);
+  const [pendingLevel, setPendingLevel] = useState<number>(grid.level ?? 1);
   const [pendingCellSize, setPendingCellSize] = useState<number>(grid.cellSize);
+  const [pendingIsoFaces, setPendingIsoFaces] = useState<IsometricFace[]>(
+    grid.isometricFaces ?? ['top', 'left', 'right']
+  );
+  const [pendingIsoView, setPendingIsoView] = useState<IsometricView>(
+    grid.isometricView ?? 'exterior'
+  );
+  const isPyramid = pendingGridType === 'pyramid';
+  const isIso = pendingGridType === 'iso';
+  const effectiveCols = isPyramid ? pendingRows : pendingCols;
 
   // Keep local form in sync when external grid changes (e.g., load puzzle)
   useEffect(() => {
@@ -41,21 +51,48 @@ export const GridPropertiesPanel: React.FC = () => {
     setPendingCols(grid.cols);
     setPendingCellSize(grid.cellSize);
   }, [grid.gridType, grid.rows, grid.cols, grid.cellSize]);
+  useEffect(() => {
+    setPendingLevel(grid.level ?? 1);
+  }, [grid.level]);
+  useEffect(() => {
+    setPendingIsoFaces(grid.isometricFaces ?? ['top', 'left', 'right']);
+  }, [grid.isometricFaces]);
+  useEffect(() => {
+    setPendingIsoView(grid.isometricView ?? 'exterior');
+  }, [grid.isometricView]);
+
+  // Helper to compare face arrays
+  const facesChanged = () => {
+    const currentFaces = grid.isometricFaces ?? ['top', 'left', 'right'];
+    if (pendingIsoFaces.length !== currentFaces.length) return true;
+    return !pendingIsoFaces.every((f) => currentFaces.includes(f));
+  };
 
   // Check if pending values differ from current grid
   const hasChanges = pendingGridType !== grid.gridType ||
     pendingRows !== grid.rows ||
-    pendingCols !== grid.cols ||
-    pendingCellSize !== grid.cellSize;
+    effectiveCols !== grid.cols ||
+    pendingLevel !== (grid.level ?? 1) ||
+    pendingCellSize !== grid.cellSize ||
+    (isIso && facesChanged()) ||
+    (isIso && pendingIsoView !== (grid.isometricView ?? 'exterior'));
 
   // Auto-preview when values change
   useEffect(() => {
     if (hasChanges) {
-      setPreviewGrid({ gridType: pendingGridType, rows: pendingRows, cols: pendingCols, cellSize: pendingCellSize });
+      setPreviewGrid({
+        gridType: pendingGridType,
+        rows: pendingRows,
+        cols: effectiveCols,
+        cellSize: pendingCellSize,
+        level: pendingLevel,
+        isometricFaces: isIso ? pendingIsoFaces : undefined,
+        isometricView: isIso ? pendingIsoView : undefined,
+      });
     } else {
       setPreviewGrid(null);
     }
-  }, [hasChanges, pendingGridType, pendingRows, pendingCols, pendingCellSize, setPreviewGrid]);
+  }, [hasChanges, pendingGridType, pendingRows, effectiveCols, pendingLevel, pendingCellSize, pendingIsoFaces, pendingIsoView, isIso, setPreviewGrid]);
 
   // Clear preview when component unmounts
   useEffect(() => {
@@ -70,8 +107,11 @@ export const GridPropertiesPanel: React.FC = () => {
     setPendingRows(grid.rows);
     setPendingCols(grid.cols);
     setPendingCellSize(grid.cellSize);
+    setPendingLevel(grid.level ?? 1);
+    setPendingIsoFaces(grid.isometricFaces ?? ['top', 'left', 'right']);
+    setPendingIsoView(grid.isometricView ?? 'exterior');
     setPreviewGrid(null);
-  }, [grid.gridType, grid.rows, grid.cols, grid.cellSize, setPreviewGrid]);
+  }, [grid.gridType, grid.rows, grid.cols, grid.cellSize, grid.level, grid.isometricFaces, grid.isometricView, setPreviewGrid]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -173,6 +213,14 @@ export const GridPropertiesPanel: React.FC = () => {
         { id: 'prismatic-pentagonal', labelKey: 'tiling.prismaticPentagonal' },
       ],
     },
+    {
+      category: 'others',
+      labelKey: 'tiling.others',
+      types: [
+        { id: 'pyramid', labelKey: 'tiling.pyramid' },
+        { id: 'iso', labelKey: 'tiling.iso' },
+      ],
+    },
   ];
 
   const presetOptions: { id: TopologyPreset; labelKey: string }[] = [
@@ -187,6 +235,7 @@ export const GridPropertiesPanel: React.FC = () => {
     { id: 'wave', labelKey: 'topology.preset.wave' },
     { id: 'fisheye', labelKey: 'topology.preset.fisheye' },
     { id: 'perspective', labelKey: 'topology.preset.perspective' },
+    { id: 'pyramid', labelKey: 'topology.preset.pyramid' },
   ];
 
   // Shape tab content
@@ -201,7 +250,13 @@ export const GridPropertiesPanel: React.FC = () => {
           <select
             className="w-full h-7 px-2 text-xs border border-office-border rounded-sm"
             value={pendingGridType}
-            onChange={(e) => setPendingGridType(e.target.value as GridType)}
+            onChange={(e) => {
+              const next = e.target.value as GridType;
+              setPendingGridType(next);
+              if (next === 'pyramid') {
+                setPendingCols(pendingRows);
+              }
+            }}
           >
             {gridTypeGroups.map((group) => (
               <optgroup key={group.category} label={t(group.labelKey)}>
@@ -217,31 +272,120 @@ export const GridPropertiesPanel: React.FC = () => {
 
         <div className="flex gap-2">
           <div className="flex-1">
-            <label className="block text-xs text-office-text-secondary mb-1">{t('grid.rows')}</label>
+            <label className="block text-xs text-office-text-secondary mb-1">
+              {isPyramid ? t('grid.height') : t('grid.rows')}
+            </label>
             <input
               type="number"
               className="w-full h-7 px-2 text-xs border border-office-border rounded-sm"
               value={pendingRows}
               min={1}
               max={50}
-              onChange={(e) => setPendingRows(Math.max(1, Math.min(50, parseInt(e.target.value, 10) || 1)))}
+              onChange={(e) => {
+                const value = Math.max(1, Math.min(50, parseInt(e.target.value, 10) || 1));
+                setPendingRows(value);
+                if (isPyramid) {
+                  setPendingCols(value);
+                }
+              }}
             />
           </div>
-          <div className="flex-1">
-            <label className="block text-xs text-office-text-secondary mb-1">{t('grid.cols')}</label>
-            <input
-              type="number"
-              className="w-full h-7 px-2 text-xs border border-office-border rounded-sm"
-              value={pendingCols}
-              min={1}
-              max={50}
-              onChange={(e) => setPendingCols(Math.max(1, Math.min(50, parseInt(e.target.value, 10) || 1)))}
-            />
-          </div>
+          {!isPyramid && (
+            <div className="flex-1">
+              <label className="block text-xs text-office-text-secondary mb-1">{t('grid.cols')}</label>
+              <input
+                type="number"
+                className="w-full h-7 px-2 text-xs border border-office-border rounded-sm"
+                value={pendingCols}
+                min={1}
+                max={50}
+                onChange={(e) => setPendingCols(Math.max(1, Math.min(50, parseInt(e.target.value, 10) || 1)))}
+              />
+            </div>
+          )}
+          {isIso && (
+            <div className="flex-1">
+              <label className="block text-xs text-office-text-secondary mb-1">{t('grid.level')}</label>
+              <input
+                type="number"
+                className="w-full h-7 px-2 text-xs border border-office-border rounded-sm"
+                value={pendingLevel}
+                min={1}
+                max={50}
+                onChange={(e) => setPendingLevel(Math.max(1, Math.min(50, parseInt(e.target.value, 10) || 1)))}
+              />
+            </div>
+          )}
         </div>
 
+        {isIso && (
+          <>
+            {/* Exterior / Interior toggle */}
+            <div>
+              <label className="block text-xs text-office-text-secondary mb-1">{t('grid.iso.view')}</label>
+              <div className="flex gap-1">
+                {(['exterior', 'interior'] as IsometricView[]).map((view) => {
+                  const isActive = pendingIsoView === view;
+                  return (
+                    <button
+                      key={view}
+                      type="button"
+                      className={`flex-1 px-2 py-1.5 text-xs border rounded-sm transition-colors ${
+                        isActive
+                          ? 'bg-office-accent text-white border-office-accent'
+                          : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+                      }`}
+                      onClick={() => setPendingIsoView(view)}
+                    >
+                      {t(`grid.iso.${view}`)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Faces toggle - show different faces based on view mode */}
+            <div>
+              <label className="block text-xs text-office-text-secondary mb-1">{t('grid.iso.faces')}</label>
+              <div className="flex gap-1">
+                {(pendingIsoView === 'interior'
+                  ? (['bottom', 'left', 'right'] as IsometricFace[])
+                  : (['top', 'left', 'right'] as IsometricFace[])
+                ).map((face) => {
+                  // Map 'bottom' to 'top' internally for face toggle state
+                  const stateKey = face === 'bottom' ? 'top' : face;
+                  const isActive = pendingIsoFaces.includes(stateKey);
+                  const canToggle = pendingIsoFaces.length > 1 || !isActive;
+                  return (
+                    <button
+                      key={face}
+                      type="button"
+                      disabled={!canToggle}
+                      className={`flex-1 px-2 py-1.5 text-xs border rounded-sm transition-colors ${
+                        isActive
+                          ? 'bg-office-accent text-white border-office-accent'
+                          : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+                      } ${!canToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      onClick={() => {
+                        if (!canToggle) return;
+                        if (isActive) {
+                          setPendingIsoFaces(pendingIsoFaces.filter((f) => f !== stateKey));
+                        } else {
+                          setPendingIsoFaces([...pendingIsoFaces, stateKey]);
+                        }
+                      }}
+                    >
+                      {t(`grid.iso.${face}`)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
+
         {/* Topology shape (preset/intensity) - only when square grid and topology enabled */}
-        {useTopology && pendingGridType === 'square' && (
+        {useTopology && (pendingGridType === 'square' || pendingGridType === 'pyramid') && (
           <div className="space-y-2">
             <div>
               <label className="block text-xs text-office-text-secondary mb-1">
@@ -329,7 +473,15 @@ export const GridPropertiesPanel: React.FC = () => {
             }`}
             onClick={() => {
               setPreviewGrid(null); // Clear preview first
-              setGrid({ gridType: pendingGridType, rows: pendingRows, cols: pendingCols, cellSize: pendingCellSize });
+              setGrid({
+                gridType: pendingGridType,
+                rows: pendingRows,
+                cols: effectiveCols,
+                level: pendingLevel,
+                cellSize: pendingCellSize,
+                isometricFaces: isIso ? pendingIsoFaces : undefined,
+                isometricView: isIso ? pendingIsoView : undefined,
+              });
               if (useTopology) {
                 setTimeout(() => applyTopologyPreset(), 0);
               }

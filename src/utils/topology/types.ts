@@ -146,6 +146,7 @@ export type TopologyPreset =
   | 'wave'             // Wave deformation
   | 'fisheye'          // Fisheye lens effect
   | 'perspective'      // 3D perspective projection
+  | 'pyramid'          // Pyramid layout (staircase of squares)
   | 'custom';          // User-defined positions
 
 /**

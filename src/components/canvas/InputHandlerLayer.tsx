@@ -16,6 +16,8 @@ import { screenToSvg, findNearestCell, getCellCenter, getCellCorners, parseCellI
 import { findNearestCellInTopology } from '../../utils/gridTopology';
 import type { NumberPosition, SymbolElement, Point } from '../../types';
 import type { TopologyVertex } from '../../utils/gridTopology';
+import { CanvasCursors } from './CanvasCursors';
+import { SpecialToolPreview } from './SpecialToolPreview';
 
 // ========================================
 // Types
@@ -119,16 +121,23 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     splitStartVertex,
     splitHoverVertex,
     updateSplitHoverVertex,
+    sculptHover,
+    updateSculptHover,
+    getSculptHoverPolygons,
   } = useCanvasInteraction({ svgRef });
 
-  // Determine cursor based on current tool
+  // Determine cursor based on current tool and panMode
   const cursorClass = useMemo(() => {
+    // Pan mode has highest priority
+    if (canvas.panMode) {
+      return 'cursor-grab';
+    }
     const tool = toolSettings.currentTool;
     if (tool === 'select') {
       return 'cursor-default';
     }
     return 'cursor-crosshair';
-  }, [toolSettings.currentTool]);
+  }, [toolSettings.currentTool, canvas.panMode]);
 
   const findTopologyCellId = useCallback(
     (row: number, col: number): string | null => {
@@ -319,8 +328,13 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       if (isGridMode && gridEditMode === 'split') {
         updateSplitHoverVertex(point);
       }
+
+      // Update sculpt hover hexagon for sculpt mode cursor
+      if (isGridMode && gridEditMode === 'sculpt') {
+        updateSculptHover(point);
+      }
     },
-    [baseHandleMouseMove, canvas.zoom, canvas.panX, canvas.panY, svgRef, grid, hoverCell, setHoverCell, updateLineHoverPoint, updateSymbolHoverPoint, useTopology, topology, isGridMode, gridEditMode, updateSplitHoverVertex]
+    [baseHandleMouseMove, canvas.zoom, canvas.panX, canvas.panY, svgRef, grid, hoverCell, setHoverCell, updateLineHoverPoint, updateSymbolHoverPoint, useTopology, topology, isGridMode, gridEditMode, updateSplitHoverVertex, updateSculptHover]
   );
 
   // Handle mouse up for selection end
@@ -514,6 +528,12 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       return { cellId, points };
     }).filter((p): p is { cellId: string; points: string } => p !== null);
   }, [mergingCells, topology]);
+
+  // Calculate sculpt mode hover polygons (3-cell cluster)
+  const sculptHoverPolygons = useMemo(() => {
+    if (!isGridMode || gridEditMode !== 'sculpt') return null;
+    return getSculptHoverPolygons(sculptHover);
+  }, [isGridMode, gridEditMode, sculptHover, getSculptHoverPolygons]);
 
   const cellCursorPath = useMemo(() => {
     const tool = toolSettings.currentTool;
@@ -747,395 +767,33 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       onTouchCancel={handleTouchEnd}
     >
       {children}
-      {/* Cell cursor for number tools (Excel-like highlight) */}
-      {cellCursorPath && (
-        <g data-cursor="true" transform={`translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom})`}>
-          <path d={cellCursorPath} fill="none" stroke="#0078d4" strokeWidth={2 / canvas.zoom} />
-        </g>
-      )}
-      {/* Special preview (thermo/arrow/cage) - in transformed space */}
-      <g data-preview="true" transform={`translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom})`}>
-        {specialToolType && specialPreviewPoints.length >= 1 && (
-          <g opacity={0.5} pointerEvents="none">
-            {specialToolType === 'thermo' && (
-              <>
-                {/* Thermo line preview - same as ThermoElement */}
-                {specialPreviewPoints.length >= 1 && (
-                  <path
-                    d={`M ${specialPreviewPoints.map((p) => `${p.x} ${p.y}`).join(' L ')}`}
-                    fill="none"
-                    stroke={toolSettings.color}
-                    strokeWidth={6}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                )}
-                {/* Thermo bulb preview - same as ThermoElement */}
-                <circle
-                  cx={specialPreviewPoints[0].x}
-                  cy={specialPreviewPoints[0].y}
-                  r={12}
-                  fill="#cfcfcf"
-                  stroke={toolSettings.color}
-                  strokeWidth={2}
-                />
-              </>
-            )}
-            {specialToolType === 'arrow' && specialPreviewPoints.length >= 1 && (
-              <>
-                {/* Arrow circle preview - same as ArrowElement */}
-                <circle
-                  cx={specialPreviewPoints[0].x}
-                  cy={specialPreviewPoints[0].y}
-                  r={14}
-                  fill="none"
-                  stroke={toolSettings.color}
-                  strokeWidth={2}
-                />
-                {/* Arrow line preview - including line from circle center */}
-                {specialPreviewPoints.length >= 2 && (
-                  <>
-                    <path
-                      d={`M ${specialPreviewPoints.map((p) => `${p.x} ${p.y}`).join(' L ')}`}
-                      fill="none"
-                      stroke={toolSettings.color}
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    {/* Arrow head - same as ArrowElement */}
-                    {(() => {
-                      const lastIdx = specialPreviewPoints.length - 1;
-                      const prevIdx = Math.max(0, lastIdx - 1);
-                      const from = specialPreviewPoints[prevIdx];
-                      const to = specialPreviewPoints[lastIdx];
-                      const angle = Math.atan2(to.y - from.y, to.x - from.x);
-                      const headLength = 10;
-                      const headAngle = Math.PI / 6;
-                      const x1 = to.x - headLength * Math.cos(angle - headAngle);
-                      const y1 = to.y - headLength * Math.sin(angle - headAngle);
-                      const x2 = to.x - headLength * Math.cos(angle + headAngle);
-                      const y2 = to.y - headLength * Math.sin(angle + headAngle);
-                      return (
-                        <path
-                          d={`M ${to.x} ${to.y} L ${x1} ${y1} M ${to.x} ${to.y} L ${x2} ${y2}`}
-                          fill="none"
-                          stroke={toolSettings.color}
-                          strokeWidth={2}
-                          strokeLinecap="round"
-                        />
-                      );
-                    })()}
-                  </>
-                )}
-              </>
-            )}
-            {specialToolType === 'cage' && specialPreviewCells.length >= 1 && (
-              <>
-                {/* Cage preview - boundary path using cell polygons */}
-                {(() => {
-                  const INSET_SCALE = 0.85; // Inset for cage boundary
-                  const pathParts: string[] = [];
-
-                  // Build a map of edge midpoints to check for shared edges
-                  // Key: rounded edge midpoint "x,y", Value: count of cells sharing this edge
-                  const edgeMidpointCount = new Map<string, number>();
-
-                  // First pass: count how many cells share each edge
-                  specialPreviewCells.forEach((cell) => {
-                    const { polygon } = cell;
-                    if (polygon.length < 3) return;
-
-                    for (let i = 0; i < polygon.length; i++) {
-                      const v1 = polygon[i];
-                      const v2 = polygon[(i + 1) % polygon.length];
-                      // Use edge midpoint as key (rounded to avoid floating point issues)
-                      const midX = Math.round((v1.x + v2.x) / 2 * 100) / 100;
-                      const midY = Math.round((v1.y + v2.y) / 2 * 100) / 100;
-                      const key = `${midX},${midY}`;
-                      edgeMidpointCount.set(key, (edgeMidpointCount.get(key) || 0) + 1);
-                    }
-                  });
-
-                  // Second pass: draw edges that are not shared (count == 1)
-                  specialPreviewCells.forEach((cell) => {
-                    const { center, polygon } = cell;
-                    if (polygon.length < 3) return;
-
-                    // Scale polygon inward
-                    const scaledPolygon = polygon.map(p => ({
-                      x: center.x + (p.x - center.x) * INSET_SCALE,
-                      y: center.y + (p.y - center.y) * INSET_SCALE,
-                    }));
-
-                    for (let i = 0; i < polygon.length; i++) {
-                      const v1 = polygon[i];
-                      const v2 = polygon[(i + 1) % polygon.length];
-                      const midX = Math.round((v1.x + v2.x) / 2 * 100) / 100;
-                      const midY = Math.round((v1.y + v2.y) / 2 * 100) / 100;
-                      const key = `${midX},${midY}`;
-
-                      // Only draw if this edge is not shared with another cage cell
-                      if ((edgeMidpointCount.get(key) || 0) <= 1) {
-                        const sv1 = scaledPolygon[i];
-                        const sv2 = scaledPolygon[(i + 1) % scaledPolygon.length];
-                        pathParts.push(`M ${sv1.x} ${sv1.y} L ${sv2.x} ${sv2.y}`);
-                      }
-                    }
-                  });
-
-                  return (
-                    <path
-                      d={pathParts.join(' ')}
-                      fill="none"
-                      stroke={toolSettings.color}
-                      strokeWidth={1.5}
-                      strokeDasharray="4,4"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  );
-                })()}
-              </>
-            )}
-            {specialToolType === 'boxline' && specialPreviewCells.length >= 1 && (
-              <>
-                {/* BoxLine preview - 90% polygons with connection polygons */}
-                {(() => {
-                  const SCALE = 0.9;
-                  const elements: React.ReactNode[] = [];
-
-                  // Scale polygon around center
-                  const scalePolygon = (polygon: Point[], center: Point) =>
-                    polygon.map(p => ({
-                      x: center.x + (p.x - center.x) * SCALE,
-                      y: center.y + (p.y - center.y) * SCALE,
-                    }));
-
-                  // Check if two cells are adjacent
-                  const areAdjacent = (c1: typeof specialPreviewCells[0], c2: typeof specialPreviewCells[0]) => {
-                    const rowDiff = Math.abs(c1.row - c2.row);
-                    const colDiff = Math.abs(c1.col - c2.col);
-                    return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
-                  };
-
-                  // Draw connections first (using shared edge vertices)
-                  for (let i = 0; i < specialPreviewCells.length - 1; i++) {
-                    const currCell = specialPreviewCells[i];
-                    const nextCell = specialPreviewCells[i + 1];
-
-                    // Only draw connection if cells are adjacent
-                    if (!areAdjacent(currCell, nextCell)) continue;
-
-                    const curr = currCell.center;
-                    const next = nextCell.center;
-                    const currScaled = scalePolygon(currCell.polygon, curr);
-                    const nextScaled = scalePolygon(nextCell.polygon, next);
-
-                    // Find closest vertices to form connection
-                    const currClosest = [...currScaled]
-                      .map((p, idx) => ({ p, idx, dist: Math.hypot(p.x - next.x, p.y - next.y) }))
-                      .sort((a, b) => a.dist - b.dist)
-                      .slice(0, 2);
-                    const nextClosest = [...nextScaled]
-                      .map((p, idx) => ({ p, idx, dist: Math.hypot(p.x - curr.x, p.y - curr.y) }))
-                      .sort((a, b) => a.dist - b.dist)
-                      .slice(0, 2);
-
-                    // Order for proper quadrilateral
-                    const angle = Math.atan2(next.y - curr.y, next.x - curr.x);
-                    const perpAngle = angle + Math.PI / 2;
-                    const sortByPerp = (a: Point, b: Point) => {
-                      const aDot = (a.x - curr.x) * Math.cos(perpAngle) + (a.y - curr.y) * Math.sin(perpAngle);
-                      const bDot = (b.x - curr.x) * Math.cos(perpAngle) + (b.y - curr.y) * Math.sin(perpAngle);
-                      return aDot - bDot;
-                    };
-
-                    const currSorted = [...currClosest].sort((a, b) => sortByPerp(a.p, b.p));
-                    const nextSorted = [...nextClosest].sort((a, b) => sortByPerp(a.p, b.p));
-
-                    const connPoints = [
-                      currSorted[0].p,
-                      currSorted[1].p,
-                      nextSorted[1].p,
-                      nextSorted[0].p,
-                    ];
-
-                    elements.push(
-                      <polygon
-                        key={`conn-${i}`}
-                        points={connPoints.map(p => `${p.x},${p.y}`).join(' ')}
-                        fill={toolSettings.color}
-                      />
-                    );
-                  }
-
-                  // Draw scaled polygons for each cell
-                  specialPreviewCells.forEach((cell, i) => {
-                    const scaledPoints = scalePolygon(cell.polygon, cell.center);
-                    elements.push(
-                      <polygon
-                        key={`box-${i}`}
-                        points={scaledPoints.map(p => `${p.x},${p.y}`).join(' ')}
-                        fill={toolSettings.color}
-                      />
-                    );
-                  });
-
-                  return elements;
-                })()}
-              </>
-            )}
-          </g>
-        )}
-      </g>
-      {/* Hover cell cursor - must be in transformed space */}
-      <g data-cursor="true" transform={`translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom})`}>
-        {/* Topology mode: polygon cursor */}
-        {hoverCellPolygon && (
-          <polygon
-            points={hoverCellPolygon}
-            fill="rgba(0, 120, 215, 0.1)"
-            stroke="rgba(0, 120, 215, 0.5)"
-            strokeWidth={1.5 / canvas.zoom}
-            pointerEvents="none"
-          />
-        )}
-        {/* Standard mode: rectangle cursor */}
-        {hoverCellRect && (
-          <rect
-            x={hoverCellRect.x}
-            y={hoverCellRect.y}
-            width={hoverCellRect.size}
-            height={hoverCellRect.size}
-            fill="rgba(0, 120, 215, 0.1)"
-            stroke="rgba(0, 120, 215, 0.5)"
-            strokeWidth={1.5 / canvas.zoom}
-            pointerEvents="none"
-          />
-        )}
-        {/* Line tool preview - line from start point to hover point */}
-        {lineStartPoint && lineHoverPoint && isLineTool && (
-          <line
-            x1={lineStartPoint.x}
-            y1={lineStartPoint.y}
-            x2={lineHoverPoint.x}
-            y2={lineHoverPoint.y}
-            stroke={toolSettings.color}
-            strokeWidth={2 / canvas.zoom}
-            strokeOpacity={0.5}
-            pointerEvents="none"
-          />
-        )}
-        {/* Line tool grid point cursor */}
-        {lineHoverPoint && isLineTool && (
-          <circle
-            cx={lineHoverPoint.x}
-            cy={lineHoverPoint.y}
-            r={6 / canvas.zoom}
-            fill="rgba(0, 120, 215, 0.3)"
-            stroke="#0078d7"
-            strokeWidth={2 / canvas.zoom}
-            pointerEvents="none"
-          />
-        )}
-        {/* Symbol tool grid point cursor */}
-        {symbolHoverPoint && isSymbolTool && (
-          <circle
-            cx={symbolHoverPoint.x}
-            cy={symbolHoverPoint.y}
-            r={8 / canvas.zoom}
-            fill="rgba(76, 175, 80, 0.3)"
-            stroke="#4caf50"
-            strokeWidth={2 / canvas.zoom}
-            pointerEvents="none"
-          />
-        )}
-      </g>
-      {/* Selection rectangle overlay - in transformed space */}
-      <g data-cursor="true" transform={`translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom})`}>
-        {isSelecting && selectionRect && (
-          <rect
-            x={Math.min(selectionRect.startX, selectionRect.endX)}
-            y={Math.min(selectionRect.startY, selectionRect.endY)}
-            width={Math.abs(selectionRect.endX - selectionRect.startX)}
-            height={Math.abs(selectionRect.endY - selectionRect.startY)}
-            fill="rgba(0, 120, 215, 0.1)"
-            stroke="#0078d7"
-            strokeWidth={1 / canvas.zoom}
-            strokeDasharray={`${4 / canvas.zoom} ${2 / canvas.zoom}`}
-            pointerEvents="none"
-          />
-        )}
-      </g>
-      {/* Merge mode: highlight cells being merged */}
-      <g data-merge-preview="true" transform={`translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom})`}>
-        {mergingCellsPolygons.map((cell, index) => (
-          <polygon
-            key={cell.cellId}
-            points={cell.points}
-            fill={index === 0 ? 'rgba(255, 152, 0, 0.4)' : 'rgba(255, 193, 7, 0.3)'}
-            stroke={index === 0 ? '#ff9800' : '#ffc107'}
-            strokeWidth={2 / canvas.zoom}
-            pointerEvents="none"
-          />
-        ))}
-      </g>
-      {/* Split mode: show line between vertices and hover cursor */}
-      <g data-split-preview="true" transform={`translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom})`}>
-        {/* Hover vertex cursor when not dragging */}
-        {!splitPreview && splitHoverVertexPos && (
-          <circle
-            cx={splitHoverVertexPos.x}
-            cy={splitHoverVertexPos.y}
-            r={6 / canvas.zoom}
-            fill="rgba(156, 39, 176, 0.3)"
-            stroke="#9c27b0"
-            strokeWidth={2 / canvas.zoom}
-            pointerEvents="none"
-          />
-        )}
-        {/* Dragging preview */}
-        {splitPreview && (
-          <>
-            {/* Start vertex indicator */}
-            <circle
-              cx={splitPreview.startPos.x}
-              cy={splitPreview.startPos.y}
-              r={8 / canvas.zoom}
-              fill="rgba(156, 39, 176, 0.4)"
-              stroke="#9c27b0"
-              strokeWidth={2 / canvas.zoom}
-              pointerEvents="none"
-            />
-            {/* Line to hover vertex */}
-            {splitPreview.endPos && (
-              <>
-                <line
-                  x1={splitPreview.startPos.x}
-                  y1={splitPreview.startPos.y}
-                  x2={splitPreview.endPos.x}
-                  y2={splitPreview.endPos.y}
-                  stroke="#9c27b0"
-                  strokeWidth={2 / canvas.zoom}
-                  strokeDasharray={`${4 / canvas.zoom} ${2 / canvas.zoom}`}
-                  pointerEvents="none"
-                />
-                {/* End vertex indicator */}
-                <circle
-                  cx={splitPreview.endPos.x}
-                  cy={splitPreview.endPos.y}
-                  r={6 / canvas.zoom}
-                  fill="rgba(156, 39, 176, 0.3)"
-                  stroke="#9c27b0"
-                  strokeWidth={2 / canvas.zoom}
-                  pointerEvents="none"
-                />
-              </>
-            )}
-          </>
-        )}
-      </g>
+      {/* Special preview (thermo/arrow/cage/boxline) */}
+      <SpecialToolPreview
+        canvas={canvas}
+        specialToolType={specialToolType}
+        specialPreviewPoints={specialPreviewPoints}
+        specialPreviewCells={specialPreviewCells}
+        color={toolSettings.color}
+      />
+      {/* All cursor overlays */}
+      <CanvasCursors
+        canvas={canvas}
+        hoverCellPolygon={hoverCellPolygon}
+        hoverCellRect={hoverCellRect}
+        lineStartPoint={lineStartPoint}
+        lineHoverPoint={lineHoverPoint}
+        isLineTool={isLineTool}
+        lineColor={toolSettings.color}
+        symbolHoverPoint={symbolHoverPoint}
+        isSymbolTool={isSymbolTool}
+        cellCursorPath={cellCursorPath}
+        isSelecting={isSelecting}
+        selectionRect={selectionRect}
+        mergingCellsPolygons={mergingCellsPolygons}
+        splitPreview={splitPreview}
+        splitHoverVertexPos={splitHoverVertexPos}
+        sculptHoverPolygons={sculptHoverPolygons}
+      />
     </svg>
   );
 };

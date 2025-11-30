@@ -64,16 +64,16 @@ export const TopologyGrid: React.FC<TopologyGridProps> = (props) => {
         .map(v => `${v.position.x},${v.position.y}`)
         .join(' ');
 
-      if (points) {
-        polygons.push(
-          <polygon
-            key={cellId}
-            points={points}
-            fill={backgroundColor}
-            stroke="none"
-          />
-        );
-      }
+      if (!points) continue;
+
+      polygons.push(
+        <polygon
+          key={cellId}
+          points={points}
+          fill={backgroundColor}
+          stroke="none"
+        />
+      );
     }
 
     return polygons;
