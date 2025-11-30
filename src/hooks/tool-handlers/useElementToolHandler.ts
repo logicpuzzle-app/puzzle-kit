@@ -12,6 +12,11 @@ import {
   getVertexPosition,
   getEdgePosition,
 } from '../../utils/gridUtils';
+import {
+  findNearestCellInTopology,
+  findNearestVertexInTopology,
+  findNearestEdgeInTopology,
+} from '../../utils/gridTopology';
 import type { Point } from '../../types';
 
 interface UseElementToolHandlerOptions {
@@ -37,15 +42,34 @@ export function useElementToolHandler({
     removeCage,
     addSpecial,
     removeSpecial,
+    addBoxLine,
+    removeBoxLine,
+    updateBoxLine,
     puzzle,
+    useTopology,
+    topology,
   } = usePuzzleStore();
+
+  // Helper to find cell ID considering topology mode
+  const findCellId = useCallback((point: Point): string | null => {
+    if (useTopology && topology) {
+      const topoCell = findNearestCellInTopology(topology, point);
+      if (topoCell) {
+        return topoCell.id;
+      }
+      return null;
+    }
+    const cell = findNearestCell(point, grid);
+    if (cell) {
+      return getCellId(cell.row, cell.col);
+    }
+    return null;
+  }, [grid, useTopology, topology]);
 
   const handleNumberTool = useCallback(
     (point: Point, isRightClick: boolean) => {
-      const cell = findNearestCell(point, grid);
-      if (!cell) return;
-
-      const cellId = getCellId(cell.row, cell.col);
+      const cellId = findCellId(point);
+      if (!cellId) return;
       const layerData = puzzle[activeLayer];
       const { numberPosition, cornerIndex, sideIndex, selectedCandidates } = toolSettings;
 
@@ -93,7 +117,7 @@ export function useElementToolHandler({
       }
       return null;
     },
-    [grid, puzzle, activeLayer, toolSettings, removeNumber]
+    [grid, puzzle, activeLayer, toolSettings, removeNumber, findCellId]
   );
 
   const handleSymbolTool = useCallback(
@@ -110,41 +134,74 @@ export function useElementToolHandler({
 
       // Check cell centers
       if (symbolGridPoints.includes('cell')) {
-        const cell = findNearestCell(point, grid);
-        if (cell) {
-          const center = getCellCenter(cell.row, cell.col, grid);
-          const dist = Math.sqrt(Math.pow(point.x - center.x, 2) + Math.pow(point.y - center.y, 2));
-          if (dist < minDistance) {
-            minDistance = dist;
-            targetId = getCellId(cell.row, cell.col);
+        if (useTopology && topology) {
+          const topoCell = findNearestCellInTopology(topology, point);
+          if (topoCell) {
+            const dist = Math.sqrt(Math.pow(point.x - topoCell.center.x, 2) + Math.pow(point.y - topoCell.center.y, 2));
+            if (dist < minDistance) {
+              minDistance = dist;
+              targetId = topoCell.id;
+            }
+          }
+        } else {
+          const cell = findNearestCell(point, grid);
+          if (cell) {
+            const center = getCellCenter(cell.row, cell.col, grid);
+            const dist = Math.sqrt(Math.pow(point.x - center.x, 2) + Math.pow(point.y - center.y, 2));
+            if (dist < minDistance) {
+              minDistance = dist;
+              targetId = getCellId(cell.row, cell.col);
+            }
           }
         }
       }
 
       // Check vertices
       if (symbolGridPoints.includes('vertex')) {
-        const vertex = findNearestVertex(point, grid, grid.cellSize * 0.6);
-        if (vertex) {
-          const pos = getVertexPosition(vertex.row, vertex.col, grid);
-          const dist = Math.sqrt(Math.pow(point.x - pos.x, 2) + Math.pow(point.y - pos.y, 2));
-          if (dist < minDistance) {
-            minDistance = dist;
-            targetId = getVertexId(vertex.row, vertex.col);
+        if (useTopology && topology) {
+          const topoVertex = findNearestVertexInTopology(topology, point);
+          if (topoVertex) {
+            const dist = Math.sqrt(Math.pow(point.x - topoVertex.position.x, 2) + Math.pow(point.y - topoVertex.position.y, 2));
+            if (dist < minDistance) {
+              minDistance = dist;
+              targetId = topoVertex.id;
+            }
+          }
+        } else {
+          const vertex = findNearestVertex(point, grid, grid.cellSize * 0.6);
+          if (vertex) {
+            const pos = getVertexPosition(vertex.row, vertex.col, grid);
+            const dist = Math.sqrt(Math.pow(point.x - pos.x, 2) + Math.pow(point.y - pos.y, 2));
+            if (dist < minDistance) {
+              minDistance = dist;
+              targetId = getVertexId(vertex.row, vertex.col);
+            }
           }
         }
       }
 
       // Check edges
       if (symbolGridPoints.includes('edge')) {
-        const edge = findNearestEdge(point, grid, grid.cellSize * 0.6);
-        if (edge) {
-          const pos = getEdgePosition(edge.type, edge.row, edge.col, grid);
-          const dist = Math.sqrt(Math.pow(point.x - pos.x, 2) + Math.pow(point.y - pos.y, 2));
-          if (dist < minDistance) {
-            minDistance = dist;
-            targetId = edge.type === 'h'
-              ? getEdgeHId(edge.row, edge.col)
-              : getEdgeVId(edge.row, edge.col);
+        if (useTopology && topology) {
+          const topoEdge = findNearestEdgeInTopology(topology, point);
+          if (topoEdge) {
+            const dist = Math.sqrt(Math.pow(point.x - topoEdge.midpoint.x, 2) + Math.pow(point.y - topoEdge.midpoint.y, 2));
+            if (dist < minDistance) {
+              minDistance = dist;
+              targetId = topoEdge.id;
+            }
+          }
+        } else {
+          const edge = findNearestEdge(point, grid, grid.cellSize * 0.6);
+          if (edge) {
+            const pos = getEdgePosition(edge.type, edge.row, edge.col, grid);
+            const dist = Math.sqrt(Math.pow(point.x - pos.x, 2) + Math.pow(point.y - pos.y, 2));
+            if (dist < minDistance) {
+              minDistance = dist;
+              targetId = edge.type === 'h'
+                ? getEdgeHId(edge.row, edge.col)
+                : getEdgeVId(edge.row, edge.col);
+            }
           }
         }
       }
@@ -195,16 +252,14 @@ export function useElementToolHandler({
         });
       }
     },
-    [grid, puzzle, activeLayer, toolSettings, addSymbol, removeSymbol]
+    [grid, puzzle, activeLayer, toolSettings, addSymbol, removeSymbol, useTopology, topology]
   );
 
   // Handle special tools (thermo, arrow)
   const handleSpecialTool = useCallback(
     (point: Point, isStart: boolean, isEnd: boolean, isRightClick: boolean) => {
-      const cell = findNearestCell(point, grid);
-      if (!cell) return;
-
-      const cellId = getCellId(cell.row, cell.col);
+      const cellId = findCellId(point);
+      if (!cellId) return;
       const layerData = puzzle[activeLayer];
 
       // Get special type from current tool (special-thermo -> thermo)
@@ -225,9 +280,14 @@ export function useElementToolHandler({
         // Start new path
         setSpecialPath([cellId]);
       } else if (!isEnd) {
-        // Continue path (avoid duplicates)
+        // Continue path - handle backtracking (remove last cell if returning to previous cell)
         setSpecialPath((prev) => {
           if (prev.length === 0) return [cellId];
+          // If returning to second-to-last cell, remove the last cell (backtrack)
+          if (prev.length >= 2 && prev[prev.length - 2] === cellId) {
+            return prev.slice(0, -1);
+          }
+          // If not at the last cell, add it
           if (prev[prev.length - 1] !== cellId) {
             return [...prev, cellId];
           }
@@ -253,16 +313,14 @@ export function useElementToolHandler({
         setSpecialPath([]);
       }
     },
-    [grid, puzzle, activeLayer, toolSettings, specialPath, addSpecial, removeSpecial, setSpecialPath]
+    [grid, puzzle, activeLayer, toolSettings, specialPath, addSpecial, removeSpecial, setSpecialPath, findCellId]
   );
 
   // Handle text tool (similar to number tool - returns info for dialog)
   const handleTextTool = useCallback(
     (point: Point, isRightClick: boolean) => {
-      const cell = findNearestCell(point, grid);
-      if (!cell) return null;
-
-      const cellId = getCellId(cell.row, cell.col);
+      const cellId = findCellId(point);
+      if (!cellId) return null;
       const layerData = puzzle[activeLayer];
 
       // Get text type from current tool (text-alphabet -> alphabet)
@@ -287,16 +345,14 @@ export function useElementToolHandler({
       }
       return null;
     },
-    [grid, puzzle, activeLayer, toolSettings.currentTool, removeSymbol]
+    [grid, puzzle, activeLayer, toolSettings.currentTool, removeSymbol, findCellId]
   );
 
   // Handle cage tool (killer cage style)
   const handleCageTool = useCallback(
     (point: Point, isStart: boolean, isEnd: boolean, isRightClick: boolean) => {
-      const cell = findNearestCell(point, grid);
-      if (!cell) return;
-
-      const cellId = getCellId(cell.row, cell.col);
+      const cellId = findCellId(point);
+      if (!cellId) return;
       const layerData = puzzle[activeLayer];
 
       if (isRightClick) {
@@ -314,9 +370,14 @@ export function useElementToolHandler({
         // Start new cage
         setSpecialPath([cellId]);
       } else if (!isEnd) {
-        // Continue adding cells (avoid duplicates)
+        // Continue adding cells - handle backtracking
         setSpecialPath((prev) => {
           if (prev.length === 0) return [cellId];
+          // If returning to second-to-last cell, remove the last cell (backtrack)
+          if (prev.length >= 2 && prev[prev.length - 2] === cellId) {
+            return prev.slice(0, -1);
+          }
+          // Add new cell if not already in path
           if (!prev.includes(cellId)) {
             return [...prev, cellId];
           }
@@ -342,7 +403,106 @@ export function useElementToolHandler({
         setSpecialPath([]);
       }
     },
-    [grid, puzzle, activeLayer, specialPath, addCage, removeCage, setSpecialPath]
+    [grid, puzzle, activeLayer, specialPath, addCage, removeCage, setSpecialPath, findCellId]
+  );
+
+  // Helper to check if two cells are adjacent
+  const areCellsAdjacent = useCallback((cellId1: string, cellId2: string): boolean => {
+    // For topology mode, use the topology's adjacency information
+    if (useTopology && topology) {
+      const cell1 = topology.cells.get(cellId1);
+      if (cell1) {
+        return cell1.adjacentCells.includes(cellId2);
+      }
+      return false;
+    }
+
+    // For standard grid, check orthogonal adjacency
+    const match1 = cellId1.match(/^cell-(\d+)-(\d+)$/);
+    const match2 = cellId2.match(/^cell-(\d+)-(\d+)$/);
+
+    if (match1 && match2) {
+      const [, row1, col1] = match1.map(Number);
+      const [, row2, col2] = match2.map(Number);
+      const rowDiff = Math.abs(row2 - row1);
+      const colDiff = Math.abs(col2 - col1);
+
+      // Only orthogonally adjacent cells
+      return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+    }
+
+    return false;
+  }, [useTopology, topology]);
+
+  // Handle BoxLine tool (hybrid of filled cell and line)
+  // Creates connected boxes that can form snake-like paths
+  const handleBoxLineTool = useCallback(
+    (point: Point, isStart: boolean, isEnd: boolean, isRightClick: boolean) => {
+      const cellId = findCellId(point);
+      if (!cellId) return;
+      const layerData = puzzle[activeLayer];
+      const boxLines = layerData.boxLines || {};
+
+      if (isRightClick) {
+        // Right-click to remove existing boxline at this cell
+        const existingBoxLine = Object.values(boxLines).find(
+          (b) => b.cells.includes(cellId)
+        );
+        if (existingBoxLine) {
+          removeBoxLine(existingBoxLine.id);
+        }
+        return;
+      }
+
+      if (isStart) {
+        // Start new boxline path
+        setSpecialPath([cellId]);
+      } else if (!isEnd) {
+        // Continue path - handle backtracking and only add adjacent cells
+        setSpecialPath((prev) => {
+          if (prev.length === 0) return [cellId];
+
+          // If returning to second-to-last cell, remove the last cell (backtrack)
+          if (prev.length >= 2 && prev[prev.length - 2] === cellId) {
+            return prev.slice(0, -1);
+          }
+
+          // Check if cell is already in path
+          if (prev.includes(cellId)) return prev;
+
+          // Check if new cell is adjacent to the last cell
+          const lastCellId = prev[prev.length - 1];
+          if (areCellsAdjacent(lastCellId, cellId)) {
+            return [...prev, cellId];
+          }
+
+          return prev;
+        });
+      }
+
+      if (isEnd && specialPath.length >= 1) {
+        // End path and create boxline element
+        const finalPath = [...specialPath];
+
+        // Check if end cell is adjacent and should be added
+        if (finalPath.length > 0 && !finalPath.includes(cellId)) {
+          const lastCellId = finalPath[finalPath.length - 1];
+          if (areCellsAdjacent(lastCellId, cellId)) {
+            finalPath.push(cellId);
+          }
+        }
+
+        if (finalPath.length >= 1) {
+          addBoxLine({
+            cells: finalPath,
+            color: toolSettings.color,
+            layer: activeLayer,
+          });
+        }
+        setSpecialPath([]);
+      }
+    },
+    [grid, puzzle, activeLayer, toolSettings.color, specialPath, addBoxLine, removeBoxLine, updateBoxLine, setSpecialPath, findCellId, areCellsAdjacent]
   );
 
   return {
@@ -351,5 +511,6 @@ export function useElementToolHandler({
     handleSpecialTool,
     handleTextTool,
     handleCageTool,
+    handleBoxLineTool,
   };
 }

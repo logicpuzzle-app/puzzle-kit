@@ -59,12 +59,12 @@ describe('hexGridUtils', () => {
         expect(center.y).toBeGreaterThan(0);
       });
 
-      it('different columns have different offsets', () => {
+      it('odd rows have horizontal offset', () => {
         const grid = createHexGrid();
-        const center0 = getHexCenter(0, 0, grid);
-        const center1 = getHexCenter(0, 1, grid);
-        // Odd column has y offset
-        expect(center1.y).not.toBe(center0.y);
+        const centerRow0 = getHexCenter(0, 0, grid);
+        const centerRow1 = getHexCenter(1, 0, grid);
+        // Odd row is shifted horizontally by half a hex width
+        expect(centerRow1.x).not.toBe(centerRow0.x);
       });
     });
 

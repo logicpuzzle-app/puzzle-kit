@@ -6,11 +6,12 @@ import { GridConfig, Point } from '../types';
 // Each hex has 6 vertices and 6 edges
 
 export function getHexSize(cellSize: number): { width: number; height: number } {
-  // For pointy-top hex, width = sqrt(3) * size, height = 2 * size
-  const size = cellSize / 2;
+  // Interpret cellSize as diameter (2 * circumradius). Side length == circumradius.
+  // For pointy-top hex, width = sqrt(3) * R, height = 2 * R, where R = cellSize / 2.
+  const radius = cellSize / 2;
   return {
-    width: Math.sqrt(3) * size,
-    height: 2 * size,
+    width: Math.sqrt(3) * radius,
+    height: cellSize,
   };
 }
 
@@ -18,27 +19,28 @@ export function getHexCenter(row: number, col: number, grid: GridConfig): Point 
   const { cellSize, outerPadding } = grid;
   const { width, height } = getHexSize(cellSize);
 
-  // Offset for odd columns (odd-q offset coordinates)
-  const offset = col % 2 === 1 ? height * 0.25 : 0;
+  // Offset for odd rows (odd-r horizontal layout, pointy-top)
+  const xOffset = row % 2 === 1 ? width / 2 : 0;
+  const rowHeight = height * 0.75;
 
   return {
-    x: outerPadding + col * width * 0.75 + width / 2,
-    y: outerPadding + row * height * 0.75 + height / 2 + offset,
+    x: outerPadding + col * width + xOffset + width / 2,
+    y: outerPadding + row * rowHeight + height / 2,
   };
 }
 
 export function getHexVertices(row: number, col: number, grid: GridConfig): Point[] {
   const center = getHexCenter(row, col, grid);
   const { cellSize } = grid;
-  const size = cellSize / 2;
+  const radius = cellSize / 2;
 
   // 6 vertices for pointy-top hexagon, starting from top
   const vertices: Point[] = [];
   for (let i = 0; i < 6; i++) {
     const angle = (Math.PI / 6) + (Math.PI / 3) * i; // 30° offset for pointy-top
     vertices.push({
-      x: center.x + size * Math.cos(angle),
-      y: center.y + size * Math.sin(angle),
+      x: center.x + radius * Math.cos(angle),
+      y: center.y + radius * Math.sin(angle),
     });
   }
   return vertices;
@@ -50,12 +52,9 @@ export function findNearestHexCell(
 ): { row: number; col: number } | null {
   const { rows, cols, cellSize, outerPadding } = grid;
   const { width, height } = getHexSize(cellSize);
+  const rowHeight = height * 0.75;
 
-  // Approximate column
-  const approxCol = Math.floor((point.x - outerPadding) / (width * 0.75));
-  // Approximate row (accounting for offset)
-  const offset = approxCol % 2 === 1 ? height * 0.25 : 0;
-  const approxRow = Math.floor((point.y - outerPadding - offset) / (height * 0.75));
+  const approxRow = Math.floor((point.y - outerPadding) / rowHeight);
 
   // Check nearby cells and find the closest center
   let bestCell: { row: number; col: number } | null = null;
@@ -64,15 +63,22 @@ export function findNearestHexCell(
   for (let dr = -1; dr <= 1; dr++) {
     for (let dc = -1; dc <= 1; dc++) {
       const r = approxRow + dr;
-      const c = approxCol + dc;
-      if (r >= 0 && r < rows && c >= 0 && c < cols) {
-        const center = getHexCenter(r, c, grid);
-        const dist = Math.sqrt(
-          Math.pow(point.x - center.x, 2) + Math.pow(point.y - center.y, 2)
-        );
-        if (dist < bestDist) {
-          bestDist = dist;
-          bestCell = { row: r, col: c };
+      if (r < 0 || r >= rows) continue;
+
+      const xOffset = r % 2 === 1 ? width / 2 : 0;
+      const approxCol = Math.floor((point.x - outerPadding - xOffset) / width);
+
+      for (let dc2 = -1; dc2 <= 1; dc2++) {
+        const c = approxCol + dc + dc2;
+        if (c >= 0 && c < cols) {
+          const center = getHexCenter(r, c, grid);
+          const dist = Math.sqrt(
+            Math.pow(point.x - center.x, 2) + Math.pow(point.y - center.y, 2)
+          );
+          if (dist < bestDist) {
+            bestDist = dist;
+            bestCell = { row: r, col: c };
+          }
         }
       }
     }
@@ -90,10 +96,11 @@ export function findNearestHexCell(
 export function getHexGridDimensions(grid: GridConfig): { width: number; height: number } {
   const { rows, cols, cellSize, outerPadding } = grid;
   const { width, height } = getHexSize(cellSize);
+  const rowHeight = height * 0.75;
 
   return {
-    width: cols * width * 0.75 + width * 0.25 + outerPadding * 2,
-    height: rows * height * 0.75 + height * 0.5 + outerPadding * 2,
+    width: cols * width + width / 2 + outerPadding * 2,
+    height: (rows - 1) * rowHeight + height + outerPadding * 2,
   };
 }
 

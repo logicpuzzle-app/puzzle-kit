@@ -14,12 +14,14 @@ import { InputHandlerLayer } from './InputHandlerLayer';
 import { Grid, GridBackground, GridLines, DisabledCellsOverlay } from './Grid';
 import { SurfaceLayer } from './SurfaceLayer';
 import { MulticolorSurfaceLayer } from './MulticolorSurfaceLayer';
+import { BoxLineLayer } from './BoxLineLayer';
 import { LineLayer } from './LineLayer';
 import { NumberLayer } from './NumberLayer';
 import { SymbolLayer } from './SymbolLayer';
 import { SpecialLayer } from './SpecialLayer';
 import { DirectionalClueLayer, ArrowStyle } from './DirectionalClueLayer';
 import { SolutionAreaMaskLayer, SolutionAreaBorderLayer } from './SolutionAreaLayer';
+import { AdjacencyOverlay } from './AdjacencyOverlay';
 
 // Re-export types from InputHandlerLayer
 export type { NumberClickInfo, TextClickInfo } from './InputHandlerLayer';
@@ -126,6 +128,9 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
               {/* Grid lines and frame (rendered after surfaces) */}
               <GridLines />
 
+              {/* Adjacency overlay (dotted lines between adjacent cell centers) */}
+              <AdjacencyOverlay />
+
               {/* Disabled cells overlay (only visible in grid mode) */}
               <DisabledCellsOverlay />
             </>
@@ -143,8 +148,15 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
 
               {/* Solution area mask (same layer as surfaces) */}
               <SolutionAreaMaskLayer />
+
+              {/* Adjacency overlay (dotted lines between adjacent cell centers) */}
+              <AdjacencyOverlay />
             </>
           )}
+
+          {/* BoxLine layers (snake/patrol style filled boxes with connections) */}
+          <BoxLineLayer layer="problem" />
+          <BoxLineLayer layer="answer" />
 
           {/* Line layers (edges, walls, lines) */}
           <LineLayer layer="problem" />

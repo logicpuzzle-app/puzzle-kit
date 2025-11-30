@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
 import { parseCellId, parseVertexId, getCellCenter, getVertexPosition, getEdgePosition } from '../../utils/gridUtils';
 import type { LineElement, EdgeElement, WallElement, LayerType, LineStyle, LineThickness, Point, GridConfig } from '../../types';
+import type { GridTopology } from '../../utils/gridTopology';
 
 interface LineLayerProps {
   layer: LayerType;
@@ -37,8 +38,27 @@ const getStrokeDasharray = (style: LineStyle): string | undefined => {
 
 /**
  * Parse any grid point ID (cell, vertex, or edge) and return its position
+ * Uses topology if available and in topology mode
  */
-const getPointPosition = (id: string, grid: GridConfig): Point | null => {
+const getPointPosition = (id: string, grid: GridConfig, topology?: GridTopology | null): Point | null => {
+  // If topology is provided, use it for positions
+  if (topology) {
+    // Try cell
+    const cell = topology.cells.get(id);
+    if (cell) return cell.center;
+
+    // Try vertex
+    const vertex = topology.vertices.get(id);
+    if (vertex) return vertex.position;
+
+    // Try edge
+    const edge = topology.edges.get(id);
+    if (edge) return edge.midpoint;
+
+    return null;
+  }
+
+  // Standard mode - use grid-based calculations
   // Try cell ID: cell-row-col
   const cellMatch = id.match(/^cell-(\d+)-(\d+)$/);
   if (cellMatch) {
@@ -81,11 +101,14 @@ const getPointPosition = (id: string, grid: GridConfig): Point | null => {
 };
 
 export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
-  const { grid, puzzle, showProblemLayer, showAnswerLayer } = usePuzzleStore();
+  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology } = usePuzzleStore();
 
   const isVisible =
     (layer === 'problem' && showProblemLayer) ||
     (layer === 'answer' && showAnswerLayer);
+
+  // Get topology for position lookups if in topology mode
+  const activeTopology = useTopology ? topology : null;
 
   // Lines (can connect cell centers, vertices, or edge centers, or free coordinates)
   const lines = useMemo(() => {
@@ -104,9 +127,9 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
         toX = line.toX;
         toY = line.toY;
       } else {
-        // Grid-snapped line - calculate positions from IDs
-        const fromPos = getPointPosition(line.from, grid);
-        const toPos = getPointPosition(line.to, grid);
+        // Grid-snapped line - calculate positions from IDs (using topology if available)
+        const fromPos = getPointPosition(line.from, grid, activeTopology);
+        const toPos = getPointPosition(line.to, grid, activeTopology);
         if (!fromPos || !toPos) return;
         fromX = fromPos.x;
         fromY = fromPos.y;
@@ -130,7 +153,7 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
     });
 
     return elements;
-  }, [puzzle, layer, grid, isVisible]);
+  }, [puzzle, layer, grid, isVisible, activeTopology]);
 
   // Edges (vertex to vertex)
   const edges = useMemo(() => {
@@ -140,6 +163,29 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
     const elements: React.ReactElement[] = [];
 
     Object.values(layerData.edges).forEach((edge: EdgeElement) => {
+      // In topology mode, use topology vertex positions
+      if (activeTopology) {
+        const fromVertex = activeTopology.vertices.get(edge.from);
+        const toVertex = activeTopology.vertices.get(edge.to);
+        if (!fromVertex || !toVertex) return;
+
+        elements.push(
+          <line
+            key={edge.id}
+            x1={fromVertex.position.x}
+            y1={fromVertex.position.y}
+            x2={toVertex.position.x}
+            y2={toVertex.position.y}
+            stroke={edge.color}
+            strokeWidth={getStrokeWidth(edge.thickness)}
+            strokeDasharray={getStrokeDasharray(edge.style)}
+            strokeLinecap="round"
+          />
+        );
+        return;
+      }
+
+      // Standard mode
       const from = parseVertexId(edge.from);
       const to = parseVertexId(edge.to);
       if (!from || !to) return;
@@ -163,7 +209,7 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
     });
 
     return elements;
-  }, [puzzle, layer, grid, isVisible]);
+  }, [puzzle, layer, grid, isVisible, activeTopology]);
 
   // Walls
   const walls = useMemo(() => {
@@ -174,6 +220,32 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
     const { cellSize, outerPadding } = grid;
 
     Object.values(layerData.walls).forEach((wall: WallElement) => {
+      // In topology mode, use topology edge positions
+      if (activeTopology) {
+        const topoEdge = activeTopology.edges.get(wall.position);
+        if (topoEdge) {
+          const startVertex = activeTopology.vertices.get(topoEdge.startVertex);
+          const endVertex = activeTopology.vertices.get(topoEdge.endVertex);
+          if (startVertex && endVertex) {
+            elements.push(
+              <line
+                key={wall.id}
+                x1={startVertex.position.x}
+                y1={startVertex.position.y}
+                x2={endVertex.position.x}
+                y2={endVertex.position.y}
+                stroke={wall.color}
+                strokeWidth={3}
+                strokeDasharray={getStrokeDasharray(wall.style)}
+                strokeLinecap="round"
+              />
+            );
+          }
+        }
+        return;
+      }
+
+      // Standard mode
       const match = wall.position.match(/^edge-(h|v)-(\d+)-(\d+)$/);
       if (!match) return;
 
@@ -213,7 +285,7 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
     });
 
     return elements;
-  }, [puzzle, layer, grid, isVisible]);
+  }, [puzzle, layer, grid, isVisible, activeTopology]);
 
   if (!isVisible) return null;
 

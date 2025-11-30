@@ -8,6 +8,7 @@
 
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
+import type { TopologyVertex } from '../../utils/gridTopology';
 
 interface SolutionAreaMaskLayerProps {
   /** Whether to show the mask overlay */
@@ -27,15 +28,15 @@ export const SolutionAreaMaskLayer: React.FC<SolutionAreaMaskLayerProps> = ({
   maskOpacity = 0.3,
   maskColor = '#888888',
 }) => {
-  const { grid, puzzle } = usePuzzleStore();
+  const { grid, puzzle, useTopology, topology } = usePuzzleStore();
   const solutionArea = puzzle.solutionArea;
 
-  const { cellPositions, nonSolutionCellIds } = useMemo(() => {
-    const positions: Map<string, { x: number; y: number }> = new Map();
+  const { cellData, nonSolutionCellIds } = useMemo(() => {
+    const data: Map<string, { x: number; y: number; polygon?: string }> = new Map();
     const nonSolutionSet = new Set<string>();
 
     if (!solutionArea || !solutionArea.enabled) {
-      return { cellPositions: positions, nonSolutionCellIds: nonSolutionSet };
+      return { cellData: data, nonSolutionCellIds: nonSolutionSet };
     }
 
     const solutionSet = new Set(solutionArea.cells);
@@ -43,9 +44,25 @@ export const SolutionAreaMaskLayer: React.FC<SolutionAreaMaskLayerProps> = ({
     for (let row = 0; row < grid.rows; row++) {
       for (let col = 0; col < grid.cols; col++) {
         const cellId = `cell-${row}-${col}`;
-        const x = grid.outerPadding + col * grid.cellSize;
-        const y = grid.outerPadding + row * grid.cellSize;
-        positions.set(cellId, { x, y });
+
+        if (useTopology && topology) {
+          // Get cell from topology
+          const topoCell = topology.cells.get(cellId);
+          if (topoCell) {
+            // Build polygon points string
+            const points = topoCell.boundaryVertices
+              .map(vId => topology.vertices.get(vId))
+              .filter((v): v is TopologyVertex => v !== undefined)
+              .map(v => `${v.position.x},${v.position.y}`)
+              .join(' ');
+            data.set(cellId, { x: 0, y: 0, polygon: points });
+          }
+        } else {
+          // Standard grid calculation
+          const x = grid.outerPadding + col * grid.cellSize;
+          const y = grid.outerPadding + row * grid.cellSize;
+          data.set(cellId, { x, y });
+        }
 
         if (!solutionSet.has(cellId)) {
           nonSolutionSet.add(cellId);
@@ -53,8 +70,8 @@ export const SolutionAreaMaskLayer: React.FC<SolutionAreaMaskLayerProps> = ({
       }
     }
 
-    return { cellPositions: positions, nonSolutionCellIds: nonSolutionSet };
-  }, [grid, solutionArea]);
+    return { cellData: data, nonSolutionCellIds: nonSolutionSet };
+  }, [grid, solutionArea, useTopology, topology]);
 
   if (!visible || !solutionArea?.enabled) {
     return null;
@@ -63,14 +80,28 @@ export const SolutionAreaMaskLayer: React.FC<SolutionAreaMaskLayerProps> = ({
   return (
     <g className="solution-area-mask-layer">
       {Array.from(nonSolutionCellIds).map((cellId) => {
-        const pos = cellPositions.get(cellId);
-        if (!pos) return null;
+        const cellInfo = cellData.get(cellId);
+        if (!cellInfo) return null;
 
+        if (useTopology && cellInfo.polygon) {
+          // Render as polygon in topology mode
+          return (
+            <polygon
+              key={`mask-${cellId}`}
+              points={cellInfo.polygon}
+              fill={maskColor}
+              opacity={maskOpacity}
+              pointerEvents="none"
+            />
+          );
+        }
+
+        // Render as rect in standard mode
         return (
           <rect
             key={`mask-${cellId}`}
-            x={pos.x}
-            y={pos.y}
+            x={cellInfo.x}
+            y={cellInfo.y}
             width={grid.cellSize}
             height={grid.cellSize}
             fill={maskColor}
@@ -98,7 +129,7 @@ export const SolutionAreaBorderLayer: React.FC<SolutionAreaBorderLayerProps> = (
   visible = true,
   borderColor = '#0000ff',
 }) => {
-  const { grid, puzzle } = usePuzzleStore();
+  const { grid, puzzle, useTopology, topology } = usePuzzleStore();
   const solutionArea = puzzle.solutionArea;
 
   const boundaryEdges = useMemo(() => {
@@ -115,37 +146,68 @@ export const SolutionAreaBorderLayer: React.FC<SolutionAreaBorderLayerProps> = (
 
       const row = parseInt(match[1], 10);
       const col = parseInt(match[2], 10);
-      const x = grid.outerPadding + col * grid.cellSize;
-      const y = grid.outerPadding + row * grid.cellSize;
-      const size = grid.cellSize;
 
-      // Top edge
-      const topCellId = `cell-${row - 1}-${col}`;
-      if (!solutionSet.has(topCellId)) {
-        edges.push({ x1: x, y1: y, x2: x + size, y2: y });
-      }
+      if (useTopology && topology) {
+        // Get cell from topology and use its edges
+        const topoCell = topology.cells.get(cellId);
+        if (!topoCell) continue;
 
-      // Bottom edge
-      const bottomCellId = `cell-${row + 1}-${col}`;
-      if (!solutionSet.has(bottomCellId)) {
-        edges.push({ x1: x, y1: y + size, x2: x + size, y2: y + size });
-      }
+        // Check each boundary edge of the cell
+        for (const edgeId of topoCell.boundaryEdges) {
+          const topoEdge = topology.edges.get(edgeId);
+          if (!topoEdge) continue;
 
-      // Left edge
-      const leftCellId = `cell-${row}-${col - 1}`;
-      if (!solutionSet.has(leftCellId)) {
-        edges.push({ x1: x, y1: y, x2: x, y2: y + size });
-      }
+          // Find the adjacent cell that is NOT the current cell
+          const adjacentCellId = topoEdge.adjacentCells.find(id => id !== cellId);
 
-      // Right edge
-      const rightCellId = `cell-${row}-${col + 1}`;
-      if (!solutionSet.has(rightCellId)) {
-        edges.push({ x1: x + size, y1: y, x2: x + size, y2: y + size });
+          // If no adjacent cell or adjacent cell is not in solution area, draw the edge
+          if (!adjacentCellId || !solutionSet.has(adjacentCellId)) {
+            const startVertex = topology.vertices.get(topoEdge.startVertex);
+            const endVertex = topology.vertices.get(topoEdge.endVertex);
+            if (startVertex && endVertex) {
+              edges.push({
+                x1: startVertex.position.x,
+                y1: startVertex.position.y,
+                x2: endVertex.position.x,
+                y2: endVertex.position.y,
+              });
+            }
+          }
+        }
+      } else {
+        // Standard grid calculation
+        const x = grid.outerPadding + col * grid.cellSize;
+        const y = grid.outerPadding + row * grid.cellSize;
+        const size = grid.cellSize;
+
+        // Top edge
+        const topCellId = `cell-${row - 1}-${col}`;
+        if (!solutionSet.has(topCellId)) {
+          edges.push({ x1: x, y1: y, x2: x + size, y2: y });
+        }
+
+        // Bottom edge
+        const bottomCellId = `cell-${row + 1}-${col}`;
+        if (!solutionSet.has(bottomCellId)) {
+          edges.push({ x1: x, y1: y + size, x2: x + size, y2: y + size });
+        }
+
+        // Left edge
+        const leftCellId = `cell-${row}-${col - 1}`;
+        if (!solutionSet.has(leftCellId)) {
+          edges.push({ x1: x, y1: y, x2: x, y2: y + size });
+        }
+
+        // Right edge
+        const rightCellId = `cell-${row}-${col + 1}`;
+        if (!solutionSet.has(rightCellId)) {
+          edges.push({ x1: x + size, y1: y, x2: x + size, y2: y + size });
+        }
       }
     }
 
     return edges;
-  }, [solutionArea, grid]);
+  }, [solutionArea, grid, useTopology, topology]);
 
   if (!visible || !solutionArea?.enabled || boundaryEdges.length === 0) {
     return null;

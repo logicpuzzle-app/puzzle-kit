@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
 import { parseCellId, getCellCenter, getCellCorners } from '../../utils/gridUtils';
-import type { NumberElement, LayerType } from '../../types';
+import type { NumberElement, LayerType, Point } from '../../types';
+import type { TopologyVertex } from '../../utils/gridTopology';
 
 interface NumberLayerProps {
   layer: LayerType;
@@ -23,7 +24,7 @@ const getFontSize = (size: 'large' | 'medium' | 'small', cellSize: number): numb
 type DominantBaseline = 'auto' | 'middle' | 'hanging' | 'ideographic';
 
 export const NumberLayer: React.FC<NumberLayerProps> = ({ layer }) => {
-  const { grid, puzzle, showProblemLayer, showAnswerLayer } = usePuzzleStore();
+  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology } = usePuzzleStore();
   const { cellSize } = grid;
 
   const isVisible =
@@ -37,11 +38,35 @@ export const NumberLayer: React.FC<NumberLayerProps> = ({ layer }) => {
     const elements: React.ReactElement[] = [];
 
     Object.values(layerData.numbers).forEach((num: NumberElement) => {
-      const parsed = parseCellId(num.cellId, grid.gridType);
-      if (!parsed) return;
+      let center: Point;
+      let corners: Point[];
 
-      const center = getCellCenter(parsed.row, parsed.col, grid);
-      const corners = getCellCorners(parsed.row, parsed.col, grid);
+      // In topology mode, use topology positions
+      if (useTopology && topology) {
+        const cell = topology.cells.get(num.cellId);
+        if (!cell) return;
+
+        center = cell.center;
+
+        // Get corners from topology vertices
+        corners = cell.boundaryVertices
+          .map(vId => topology.vertices.get(vId))
+          .filter((v): v is TopologyVertex => v !== undefined)
+          .map(v => v.position);
+
+        // Ensure we have 4 corners for corner/side positioning
+        if (corners.length < 4) {
+          // Fallback to center for all corners
+          corners = [center, center, center, center];
+        }
+      } else {
+        // Standard mode
+        const parsed = parseCellId(num.cellId, grid.gridType);
+        if (!parsed) return;
+
+        center = getCellCenter(parsed.row, parsed.col, grid);
+        corners = getCellCorners(parsed.row, parsed.col, grid);
+      }
       const fontSize = getFontSize(num.size, cellSize);
 
       let x = center.x;
@@ -211,7 +236,7 @@ export const NumberLayer: React.FC<NumberLayerProps> = ({ layer }) => {
     });
 
     return elements;
-  }, [puzzle, layer, grid, cellSize, isVisible]);
+  }, [puzzle, layer, grid, cellSize, isVisible, useTopology, topology]);
 
   if (!isVisible) return null;
 

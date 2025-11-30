@@ -13,7 +13,9 @@ import React, { useCallback, useMemo, RefObject, useRef, useEffect } from 'react
 import { usePuzzleStore } from '../../store/puzzleStore';
 import { useCanvasInteraction } from '../../hooks/useCanvasInteraction';
 import { screenToSvg, findNearestCell, getCellCenter, getCellCorners, parseCellId } from '../../utils/gridUtils';
-import type { NumberPosition, SymbolElement } from '../../types';
+import { findNearestCellInTopology } from '../../utils/gridTopology';
+import type { NumberPosition, SymbolElement, Point } from '../../types';
+import type { TopologyVertex } from '../../utils/gridTopology';
 
 // ========================================
 // Types
@@ -77,7 +79,15 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     updateNumber,
     numberSelection,
     setNumberSelection,
+    useTopology,
+    topology: storeTopology,
+    previewTopology,
+    isGridMode,
+    gridEditMode,
   } = usePuzzleStore();
+
+  // Use preview topology if available (for grid shape preview)
+  const topology = previewTopology ?? storeTopology;
 
   useEffect(() => {
     if (!toolSettings.currentTool.startsWith('number')) {
@@ -105,6 +115,10 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     updateLineHoverPoint,
     symbolHoverPoint,
     updateSymbolHoverPoint,
+    mergingCells,
+    splitStartVertex,
+    splitHoverVertex,
+    updateSplitHoverVertex,
   } = useCanvasInteraction({ svgRef });
 
   // Determine cursor based on current tool
@@ -116,10 +130,29 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     return 'cursor-crosshair';
   }, [toolSettings.currentTool]);
 
+  const findTopologyCellId = useCallback(
+    (row: number, col: number): string | null => {
+      if (!topology) return null;
+      const candidates = Array.from(topology.cells.values()).filter(
+        c => c.row === row && c.col === col
+      );
+      if (candidates.length === 0) return null;
+      const hex = candidates.find(c => c.id.includes('hex'));
+      return (hex ?? candidates[0]).id;
+    },
+    [topology]
+  );
+
   // Wrap mouse down to handle number/text tool clicks
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       const tool = toolSettings.currentTool;
+
+      // In grid mode, delegate to base handler (which handles merge/split/exclude)
+      if (isGridMode) {
+        baseHandleMouseDown(e);
+        return;
+      }
 
       // Handle select tool
       if (tool === 'select') {
@@ -145,11 +178,20 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           canvas.panY,
           svgRef.current
         );
-        const cell = findNearestCell(point, grid);
-        if (!cell) return;
-        setNumberSelection({ row: cell.row, col: cell.col });
+        let targetCell: { row: number; col: number } | null = null;
+        if (useTopology && topology) {
+          const topoCell = findNearestCellInTopology(topology, point);
+          if (topoCell && topoCell.row !== undefined && topoCell.col !== undefined) {
+            targetCell = { row: topoCell.row, col: topoCell.col };
+          }
+        } else {
+          const cell = findNearestCell(point, grid);
+          if (cell) targetCell = { row: cell.row, col: cell.col };
+        }
+        if (!targetCell) return;
+        setNumberSelection(targetCell);
         if (e.button === 2) {
-          const cellIndex = cell.row * grid.cols + cell.col;
+          const cellIndex = targetCell.row * grid.cols + targetCell.col;
           const existingId = Object.entries(puzzle[activeLayer].directionalClues || {}).find(
             ([, clue]) => clue.cell === cellIndex
           )?.[0];
@@ -170,9 +212,18 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           canvas.panY,
           svgRef.current
         );
-        const cell = findNearestCell(point, grid);
-        if (cell) {
-          setNumberSelection({ row: cell.row, col: cell.col });
+        let targetCell: { row: number; col: number } | null = null;
+        if (useTopology && topology) {
+          const topoCell = findNearestCellInTopology(topology, point);
+          if (topoCell && topoCell.row !== undefined && topoCell.col !== undefined) {
+            targetCell = { row: topoCell.row, col: topoCell.col };
+          }
+        } else {
+          const cell = findNearestCell(point, grid);
+          if (cell) targetCell = { row: cell.row, col: cell.col };
+        }
+        if (targetCell) {
+          setNumberSelection(targetCell);
         }
         return; // Don't call base handler for number tool
       }
@@ -211,6 +262,17 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       handleTextTool,
       handleSelectTool,
       baseHandleMouseDown,
+      useTopology,
+      topology,
+      grid,
+      setNumberSelection,
+      puzzle,
+      activeLayer,
+      removeDirectionalClue,
+      addDirectionalClue,
+      toolSettings.arrowDirection,
+      isGridMode,
+      gridEditMode,
     ]
   );
 
@@ -228,15 +290,23 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         canvas.panY,
         svgRef.current
       );
-      const cell = findNearestCell(point, grid);
-      if (cell) {
-        if (!hoverCell || hoverCell.row !== cell.row || hoverCell.col !== cell.col) {
-          setHoverCell({ row: cell.row, col: cell.col });
+
+      // Find nearest cell - use topology if in topology mode
+      let cellId: string | null = null;
+      if (useTopology && topology) {
+        const topoCell = findNearestCellInTopology(topology, point);
+        if (topoCell) {
+          cellId = topoCell.id;
         }
       } else {
-        if (hoverCell) {
-          setHoverCell(null);
+        const cell = findNearestCell(point, grid);
+        if (cell) {
+          cellId = `cell-${cell.row}-${cell.col}`;
         }
+      }
+
+      if (cellId !== hoverCell) {
+        setHoverCell(cellId);
       }
 
       // Update line hover point for line tool cursor
@@ -244,8 +314,13 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
 
       // Update symbol hover point for symbol tool cursor
       updateSymbolHoverPoint(point);
+
+      // Update split hover vertex for split mode cursor
+      if (isGridMode && gridEditMode === 'split') {
+        updateSplitHoverVertex(point);
+      }
     },
-    [baseHandleMouseMove, canvas.zoom, canvas.panX, canvas.panY, svgRef, grid, hoverCell, setHoverCell, updateLineHoverPoint, updateSymbolHoverPoint]
+    [baseHandleMouseMove, canvas.zoom, canvas.panX, canvas.panY, svgRef, grid, hoverCell, setHoverCell, updateLineHoverPoint, updateSymbolHoverPoint, useTopology, topology, isGridMode, gridEditMode, updateSplitHoverVertex]
   );
 
   // Handle mouse up for selection end
@@ -268,27 +343,40 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
   // Calculate hover cell position (only for non-line/symbol tools)
   const isLineTool = toolSettings.currentTool.startsWith('line');
   const isSymbolTool = toolSettings.currentTool.startsWith('symbol');
+
+  // For topology mode, get polygon points for hover cell
+  const hoverCellPolygon = useMemo(() => {
+    if (!hoverCell || isLineTool || isSymbolTool) return null;
+    if (!useTopology || !topology) return null;
+    // Hide cursor during topology preview (but not in grid mode)
+    if (previewTopology && !isGridMode) return null;
+
+    const cell = topology.cells.get(hoverCell);
+    if (!cell) return null;
+
+    const points = cell.boundaryVertices
+      .map(vId => topology.vertices.get(vId))
+      .filter((v): v is TopologyVertex => v !== undefined)
+      .map(v => `${v.position.x},${v.position.y}`)
+      .join(' ');
+
+    return points;
+  }, [hoverCell, isLineTool, isSymbolTool, useTopology, topology, previewTopology, isGridMode]);
+
   const hoverCellRect = useMemo(() => {
     if (!hoverCell || isLineTool || isSymbolTool) return null;
-    const x = grid.outerPadding + hoverCell.col * grid.cellSize;
-    const y = grid.outerPadding + hoverCell.row * grid.cellSize;
+    if (useTopology && topology) return null; // Use polygon instead
+    // Hide cursor during topology preview (but not in grid mode)
+    if (previewTopology && !isGridMode) return null;
+    // Parse row/col from cellId for non-topology mode
+    const match = hoverCell.match(/^cell-(\d+)-(\d+)$/);
+    if (!match) return null;
+    const row = parseInt(match[1]);
+    const col = parseInt(match[2]);
+    const x = grid.outerPadding + col * grid.cellSize;
+    const y = grid.outerPadding + row * grid.cellSize;
     return { x, y, size: grid.cellSize };
-  }, [hoverCell, grid.outerPadding, grid.cellSize, isLineTool, isSymbolTool]);
-
-  // Calculate special preview path (for thermo/arrow/cage)
-  const specialPreviewPoints = useMemo(() => {
-    if (specialPath.length === 0) return [];
-
-    const points: { x: number; y: number }[] = [];
-    for (const cellId of specialPath) {
-      const parsed = parseCellId(cellId, grid.gridType);
-      if (parsed) {
-        const center = getCellCenter(parsed.row, parsed.col, grid);
-        points.push(center);
-      }
-    }
-    return points;
-  }, [specialPath, grid]);
+  }, [hoverCell, grid.outerPadding, grid.cellSize, isLineTool, isSymbolTool, useTopology, topology, previewTopology, isGridMode]);
 
   // Get current special tool type
   const specialToolType = useMemo(() => {
@@ -296,17 +384,176 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     if (tool === 'special-thermo') return 'thermo';
     if (tool === 'special-arrow') return 'arrow';
     if (tool === 'special-cage') return 'cage';
+    if (tool === 'special-boxline') return 'boxline';
     return null;
   }, [toolSettings.currentTool]);
+
+  // Type for special preview cell data
+  type SpecialPreviewCell = {
+    center: Point;
+    polygon: Point[];
+    cellId: string;
+    row: number;
+    col: number;
+  };
+
+  // Calculate special preview path (for thermo/arrow/cage/boxline)
+  // Include current hover cell to show what would be drawn on mouse up
+  const specialPreviewCells = useMemo((): SpecialPreviewCell[] => {
+    // Build the path including current hover cell
+    const pathCells = [...specialPath];
+
+    // Add hover cell if it's a special tool and we have a hover cell
+    if (specialToolType && hoverCell) {
+      // hoverCell is now directly a cellId string
+      if (!pathCells.includes(hoverCell)) {
+        pathCells.push(hoverCell);
+      }
+    }
+
+    if (pathCells.length === 0) return [];
+
+    const cells: SpecialPreviewCell[] = [];
+    for (const cellId of pathCells) {
+      // In topology mode, use topology cell data
+      if (useTopology && topology) {
+        const cell = topology.cells.get(cellId);
+        if (cell) {
+          const polygon = cell.boundaryVertices
+            .map(vId => topology.vertices.get(vId))
+            .filter((v): v is TopologyVertex => v !== undefined)
+            .map(v => v.position);
+          const match = cellId.match(/^cell-(\d+)-(\d+)$/);
+          cells.push({
+            center: cell.center,
+            polygon,
+            cellId,
+            row: cell.row ?? (match ? parseInt(match[1]) : 0),
+            col: cell.col ?? (match ? parseInt(match[2]) : 0),
+          });
+        }
+      } else {
+        // Standard mode
+        const parsed = parseCellId(cellId, grid.gridType);
+        if (parsed) {
+          const center = getCellCenter(parsed.row, parsed.col, grid);
+          const half = grid.cellSize / 2;
+          cells.push({
+            center,
+            polygon: [
+              { x: center.x - half, y: center.y - half },
+              { x: center.x + half, y: center.y - half },
+              { x: center.x + half, y: center.y + half },
+              { x: center.x - half, y: center.y + half },
+            ],
+            cellId,
+            row: parsed.row,
+            col: parsed.col,
+          });
+        }
+      }
+    }
+    return cells;
+  }, [specialPath, grid, useTopology, topology, specialToolType, hoverCell]);
+
+  // For backward compatibility, extract just the center points
+  const specialPreviewPoints = useMemo(() =>
+    specialPreviewCells.map(c => c.center),
+    [specialPreviewCells]
+  );
+
+  // Calculate split mode preview (line between vertices)
+  const splitPreview = useMemo(() => {
+    if (!splitStartVertex || !topology) return null;
+
+    const startVertex = topology.vertices.get(splitStartVertex);
+    if (!startVertex) return null;
+
+    const startPos = startVertex.position;
+    let endPos: Point | null = null;
+
+    if (splitHoverVertex) {
+      const hoverVertex = topology.vertices.get(splitHoverVertex);
+      if (hoverVertex) {
+        endPos = hoverVertex.position;
+      }
+    }
+
+    return {
+      startPos,
+      endPos,
+      startVertexId: splitStartVertex,
+      endVertexId: splitHoverVertex,
+    };
+  }, [splitStartVertex, splitHoverVertex, topology]);
+
+  // Calculate split mode hover vertex position (for cursor display when not dragging)
+  const splitHoverVertexPos = useMemo(() => {
+    if (!isGridMode || gridEditMode !== 'split') return null;
+    if (!splitHoverVertex || !topology) return null;
+
+    const vertex = topology.vertices.get(splitHoverVertex);
+    return vertex?.position ?? null;
+  }, [isGridMode, gridEditMode, splitHoverVertex, topology]);
+
+  // Calculate merging cells highlight polygons
+  const mergingCellsPolygons = useMemo(() => {
+    if (!mergingCells || mergingCells.length === 0) return [];
+    if (!topology) return [];
+
+    return mergingCells.map(cellId => {
+      const cell = topology.cells.get(cellId);
+      if (!cell) return null;
+
+      const points = cell.boundaryVertices
+        .map(vId => topology.vertices.get(vId))
+        .filter((v): v is TopologyVertex => v !== undefined)
+        .map(v => `${v.position.x},${v.position.y}`)
+        .join(' ');
+
+      return { cellId, points };
+    }).filter((p): p is { cellId: string; points: string } => p !== null);
+  }, [mergingCells, topology]);
 
   const cellCursorPath = useMemo(() => {
     const tool = toolSettings.currentTool;
     if (!tool.startsWith('number')) return null;
-    const target = numberSelection || hoverCell;
-    if (!target) return null;
-    const corners = getCellCorners(target.row, target.col, grid);
+
+    // Determine target cellId
+    let targetCellId: string | null = null;
+    if (numberSelection) {
+      if (useTopology) {
+        targetCellId = findTopologyCellId(numberSelection.row, numberSelection.col);
+      } else {
+        targetCellId = `cell-${numberSelection.row}-${numberSelection.col}`;
+      }
+    } else if (hoverCell) {
+      targetCellId = hoverCell;
+    }
+    if (!targetCellId) return null;
+
+    // In topology mode, use topology vertex positions
+    if (useTopology && topology) {
+      const cell = topology.cells.get(targetCellId);
+      if (!cell) return null;
+
+      const vertices = cell.boundaryVertices
+        .map(vId => topology.vertices.get(vId))
+        .filter((v): v is TopologyVertex => v !== undefined);
+
+      if (vertices.length < 3) return null;
+
+      return `M ${vertices.map(v => `${v.position.x} ${v.position.y}`).join(' L ')} Z`;
+    }
+
+    // Standard mode - parse row/col from cellId
+    const match = targetCellId.match(/^cell-(\d+)-(\d+)$/);
+    if (!match) return null;
+    const row = parseInt(match[1]);
+    const col = parseInt(match[2]);
+    const corners = getCellCorners(row, col, grid);
     return `M ${corners[0].x} ${corners[0].y} L ${corners[1].x} ${corners[1].y} L ${corners[2].x} ${corners[2].y} L ${corners[3].x} ${corners[3].y} Z`;
-  }, [hoverCell, numberSelection, grid, toolSettings.currentTool]);
+  }, [hoverCell, numberSelection, grid, toolSettings.currentTool, useTopology, topology, findTopologyCellId]);
 
   // Excel-like typing for number tools (including directional)
   useEffect(() => {
@@ -512,54 +759,54 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           <g opacity={0.5} pointerEvents="none">
             {specialToolType === 'thermo' && (
               <>
-                {/* Thermo bulb preview */}
-                <circle
-                  cx={specialPreviewPoints[0].x}
-                  cy={specialPreviewPoints[0].y}
-                  r={grid.cellSize * 0.3}
-                  fill="#cfcfcf"
-                  stroke="#888888"
-                  strokeWidth={2}
-                />
-                {/* Thermo line preview */}
-                {specialPreviewPoints.length >= 2 && (
+                {/* Thermo line preview - same as ThermoElement */}
+                {specialPreviewPoints.length >= 1 && (
                   <path
                     d={`M ${specialPreviewPoints.map((p) => `${p.x} ${p.y}`).join(' L ')}`}
                     fill="none"
-                    stroke="#888888"
+                    stroke={toolSettings.color}
                     strokeWidth={6}
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
                 )}
+                {/* Thermo bulb preview - same as ThermoElement */}
+                <circle
+                  cx={specialPreviewPoints[0].x}
+                  cy={specialPreviewPoints[0].y}
+                  r={12}
+                  fill="#cfcfcf"
+                  stroke={toolSettings.color}
+                  strokeWidth={2}
+                />
               </>
             )}
             {specialToolType === 'arrow' && specialPreviewPoints.length >= 1 && (
               <>
-                {/* Arrow circle preview */}
+                {/* Arrow circle preview - same as ArrowElement */}
                 <circle
                   cx={specialPreviewPoints[0].x}
                   cy={specialPreviewPoints[0].y}
-                  r={grid.cellSize * 0.35}
+                  r={14}
                   fill="none"
-                  stroke="#333333"
+                  stroke={toolSettings.color}
                   strokeWidth={2}
                 />
-                {/* Arrow line preview */}
+                {/* Arrow line preview - including line from circle center */}
                 {specialPreviewPoints.length >= 2 && (
                   <>
                     <path
-                      d={`M ${specialPreviewPoints.slice(1).map((p) => `${p.x} ${p.y}`).join(' L ')}`}
+                      d={`M ${specialPreviewPoints.map((p) => `${p.x} ${p.y}`).join(' L ')}`}
                       fill="none"
-                      stroke="#333333"
+                      stroke={toolSettings.color}
                       strokeWidth={2}
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
-                    {/* Arrow head */}
-                    {specialPreviewPoints.length >= 2 && (() => {
+                    {/* Arrow head - same as ArrowElement */}
+                    {(() => {
                       const lastIdx = specialPreviewPoints.length - 1;
-                      const prevIdx = Math.max(1, lastIdx - 1);
+                      const prevIdx = Math.max(0, lastIdx - 1);
                       const from = specialPreviewPoints[prevIdx];
                       const to = specialPreviewPoints[lastIdx];
                       const angle = Math.atan2(to.y - from.y, to.x - from.x);
@@ -573,7 +820,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
                         <path
                           d={`M ${to.x} ${to.y} L ${x1} ${y1} M ${to.x} ${to.y} L ${x2} ${y2}`}
                           fill="none"
-                          stroke="#333333"
+                          stroke={toolSettings.color}
                           strokeWidth={2}
                           strokeLinecap="round"
                         />
@@ -583,25 +830,160 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
                 )}
               </>
             )}
-            {specialToolType === 'cage' && (
+            {specialToolType === 'cage' && specialPreviewCells.length >= 1 && (
               <>
-                {/* Cage cells preview */}
-                {specialPreviewPoints.map((p, i) => {
-                  const half = grid.cellSize / 2 - 4;
+                {/* Cage preview - boundary path using cell polygons */}
+                {(() => {
+                  const INSET_SCALE = 0.85; // Inset for cage boundary
+                  const pathParts: string[] = [];
+
+                  // Build a map of edge midpoints to check for shared edges
+                  // Key: rounded edge midpoint "x,y", Value: count of cells sharing this edge
+                  const edgeMidpointCount = new Map<string, number>();
+
+                  // First pass: count how many cells share each edge
+                  specialPreviewCells.forEach((cell) => {
+                    const { polygon } = cell;
+                    if (polygon.length < 3) return;
+
+                    for (let i = 0; i < polygon.length; i++) {
+                      const v1 = polygon[i];
+                      const v2 = polygon[(i + 1) % polygon.length];
+                      // Use edge midpoint as key (rounded to avoid floating point issues)
+                      const midX = Math.round((v1.x + v2.x) / 2 * 100) / 100;
+                      const midY = Math.round((v1.y + v2.y) / 2 * 100) / 100;
+                      const key = `${midX},${midY}`;
+                      edgeMidpointCount.set(key, (edgeMidpointCount.get(key) || 0) + 1);
+                    }
+                  });
+
+                  // Second pass: draw edges that are not shared (count == 1)
+                  specialPreviewCells.forEach((cell) => {
+                    const { center, polygon } = cell;
+                    if (polygon.length < 3) return;
+
+                    // Scale polygon inward
+                    const scaledPolygon = polygon.map(p => ({
+                      x: center.x + (p.x - center.x) * INSET_SCALE,
+                      y: center.y + (p.y - center.y) * INSET_SCALE,
+                    }));
+
+                    for (let i = 0; i < polygon.length; i++) {
+                      const v1 = polygon[i];
+                      const v2 = polygon[(i + 1) % polygon.length];
+                      const midX = Math.round((v1.x + v2.x) / 2 * 100) / 100;
+                      const midY = Math.round((v1.y + v2.y) / 2 * 100) / 100;
+                      const key = `${midX},${midY}`;
+
+                      // Only draw if this edge is not shared with another cage cell
+                      if ((edgeMidpointCount.get(key) || 0) <= 1) {
+                        const sv1 = scaledPolygon[i];
+                        const sv2 = scaledPolygon[(i + 1) % scaledPolygon.length];
+                        pathParts.push(`M ${sv1.x} ${sv1.y} L ${sv2.x} ${sv2.y}`);
+                      }
+                    }
+                  });
+
                   return (
-                    <rect
-                      key={i}
-                      x={p.x - half}
-                      y={p.y - half}
-                      width={half * 2}
-                      height={half * 2}
-                      fill="rgba(100, 100, 100, 0.1)"
-                      stroke="#333333"
+                    <path
+                      d={pathParts.join(' ')}
+                      fill="none"
+                      stroke={toolSettings.color}
                       strokeWidth={1.5}
                       strokeDasharray="4,4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     />
                   );
-                })}
+                })()}
+              </>
+            )}
+            {specialToolType === 'boxline' && specialPreviewCells.length >= 1 && (
+              <>
+                {/* BoxLine preview - 90% polygons with connection polygons */}
+                {(() => {
+                  const SCALE = 0.9;
+                  const elements: React.ReactNode[] = [];
+
+                  // Scale polygon around center
+                  const scalePolygon = (polygon: Point[], center: Point) =>
+                    polygon.map(p => ({
+                      x: center.x + (p.x - center.x) * SCALE,
+                      y: center.y + (p.y - center.y) * SCALE,
+                    }));
+
+                  // Check if two cells are adjacent
+                  const areAdjacent = (c1: typeof specialPreviewCells[0], c2: typeof specialPreviewCells[0]) => {
+                    const rowDiff = Math.abs(c1.row - c2.row);
+                    const colDiff = Math.abs(c1.col - c2.col);
+                    return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+                  };
+
+                  // Draw connections first (using shared edge vertices)
+                  for (let i = 0; i < specialPreviewCells.length - 1; i++) {
+                    const currCell = specialPreviewCells[i];
+                    const nextCell = specialPreviewCells[i + 1];
+
+                    // Only draw connection if cells are adjacent
+                    if (!areAdjacent(currCell, nextCell)) continue;
+
+                    const curr = currCell.center;
+                    const next = nextCell.center;
+                    const currScaled = scalePolygon(currCell.polygon, curr);
+                    const nextScaled = scalePolygon(nextCell.polygon, next);
+
+                    // Find closest vertices to form connection
+                    const currClosest = [...currScaled]
+                      .map((p, idx) => ({ p, idx, dist: Math.hypot(p.x - next.x, p.y - next.y) }))
+                      .sort((a, b) => a.dist - b.dist)
+                      .slice(0, 2);
+                    const nextClosest = [...nextScaled]
+                      .map((p, idx) => ({ p, idx, dist: Math.hypot(p.x - curr.x, p.y - curr.y) }))
+                      .sort((a, b) => a.dist - b.dist)
+                      .slice(0, 2);
+
+                    // Order for proper quadrilateral
+                    const angle = Math.atan2(next.y - curr.y, next.x - curr.x);
+                    const perpAngle = angle + Math.PI / 2;
+                    const sortByPerp = (a: Point, b: Point) => {
+                      const aDot = (a.x - curr.x) * Math.cos(perpAngle) + (a.y - curr.y) * Math.sin(perpAngle);
+                      const bDot = (b.x - curr.x) * Math.cos(perpAngle) + (b.y - curr.y) * Math.sin(perpAngle);
+                      return aDot - bDot;
+                    };
+
+                    const currSorted = [...currClosest].sort((a, b) => sortByPerp(a.p, b.p));
+                    const nextSorted = [...nextClosest].sort((a, b) => sortByPerp(a.p, b.p));
+
+                    const connPoints = [
+                      currSorted[0].p,
+                      currSorted[1].p,
+                      nextSorted[1].p,
+                      nextSorted[0].p,
+                    ];
+
+                    elements.push(
+                      <polygon
+                        key={`conn-${i}`}
+                        points={connPoints.map(p => `${p.x},${p.y}`).join(' ')}
+                        fill={toolSettings.color}
+                      />
+                    );
+                  }
+
+                  // Draw scaled polygons for each cell
+                  specialPreviewCells.forEach((cell, i) => {
+                    const scaledPoints = scalePolygon(cell.polygon, cell.center);
+                    elements.push(
+                      <polygon
+                        key={`box-${i}`}
+                        points={scaledPoints.map(p => `${p.x},${p.y}`).join(' ')}
+                        fill={toolSettings.color}
+                      />
+                    );
+                  });
+
+                  return elements;
+                })()}
               </>
             )}
           </g>
@@ -609,6 +991,17 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       </g>
       {/* Hover cell cursor - must be in transformed space */}
       <g data-cursor="true" transform={`translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom})`}>
+        {/* Topology mode: polygon cursor */}
+        {hoverCellPolygon && (
+          <polygon
+            points={hoverCellPolygon}
+            fill="rgba(0, 120, 215, 0.1)"
+            stroke="rgba(0, 120, 215, 0.5)"
+            strokeWidth={1.5 / canvas.zoom}
+            pointerEvents="none"
+          />
+        )}
+        {/* Standard mode: rectangle cursor */}
         {hoverCellRect && (
           <rect
             x={hoverCellRect.x}
@@ -673,6 +1066,74 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
             strokeDasharray={`${4 / canvas.zoom} ${2 / canvas.zoom}`}
             pointerEvents="none"
           />
+        )}
+      </g>
+      {/* Merge mode: highlight cells being merged */}
+      <g data-merge-preview="true" transform={`translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom})`}>
+        {mergingCellsPolygons.map((cell, index) => (
+          <polygon
+            key={cell.cellId}
+            points={cell.points}
+            fill={index === 0 ? 'rgba(255, 152, 0, 0.4)' : 'rgba(255, 193, 7, 0.3)'}
+            stroke={index === 0 ? '#ff9800' : '#ffc107'}
+            strokeWidth={2 / canvas.zoom}
+            pointerEvents="none"
+          />
+        ))}
+      </g>
+      {/* Split mode: show line between vertices and hover cursor */}
+      <g data-split-preview="true" transform={`translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom})`}>
+        {/* Hover vertex cursor when not dragging */}
+        {!splitPreview && splitHoverVertexPos && (
+          <circle
+            cx={splitHoverVertexPos.x}
+            cy={splitHoverVertexPos.y}
+            r={6 / canvas.zoom}
+            fill="rgba(156, 39, 176, 0.3)"
+            stroke="#9c27b0"
+            strokeWidth={2 / canvas.zoom}
+            pointerEvents="none"
+          />
+        )}
+        {/* Dragging preview */}
+        {splitPreview && (
+          <>
+            {/* Start vertex indicator */}
+            <circle
+              cx={splitPreview.startPos.x}
+              cy={splitPreview.startPos.y}
+              r={8 / canvas.zoom}
+              fill="rgba(156, 39, 176, 0.4)"
+              stroke="#9c27b0"
+              strokeWidth={2 / canvas.zoom}
+              pointerEvents="none"
+            />
+            {/* Line to hover vertex */}
+            {splitPreview.endPos && (
+              <>
+                <line
+                  x1={splitPreview.startPos.x}
+                  y1={splitPreview.startPos.y}
+                  x2={splitPreview.endPos.x}
+                  y2={splitPreview.endPos.y}
+                  stroke="#9c27b0"
+                  strokeWidth={2 / canvas.zoom}
+                  strokeDasharray={`${4 / canvas.zoom} ${2 / canvas.zoom}`}
+                  pointerEvents="none"
+                />
+                {/* End vertex indicator */}
+                <circle
+                  cx={splitPreview.endPos.x}
+                  cy={splitPreview.endPos.y}
+                  r={6 / canvas.zoom}
+                  fill="rgba(156, 39, 176, 0.3)"
+                  stroke="#9c27b0"
+                  strokeWidth={2 / canvas.zoom}
+                  pointerEvents="none"
+                />
+              </>
+            )}
+          </>
         )}
       </g>
     </svg>

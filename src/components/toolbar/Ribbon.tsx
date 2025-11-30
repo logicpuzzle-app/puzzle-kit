@@ -18,35 +18,68 @@ const EyeOffIcon: React.FC<{ size?: number }> = ({ size = 14 }) => (
   </svg>
 );
 
-// SVG Icons for special tools
+// Checkbox icons for constraint layer toggle
+const CheckboxIcon: React.FC<{ size?: number }> = ({ size = 14 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+    <polyline points="9 11 12 14 22 4" />
+  </svg>
+);
+
+const CheckboxEmptyIcon: React.FC<{ size?: number }> = ({ size = 14 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+  </svg>
+);
+
+// SVG Icons for special tools - matching actual render appearance
 const ThermoIcon: React.FC<{ size?: number; className?: string }> = ({ size = 16, className }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    {/* Bulb at bottom */}
-    <circle cx="12" cy="18" r="4" fill="currentColor" stroke="none" />
-    {/* Tube going up */}
-    <line x1="12" y1="14" x2="12" y2="4" strokeWidth="3" />
-    {/* Top cap */}
-    <circle cx="12" cy="4" r="1.5" fill="currentColor" stroke="none" />
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    {/* Thermo line (drawn first, behind bulb) */}
+    <path
+      d="M 6 18 L 6 6 L 12 6 L 18 6"
+      stroke="#cfcfcf"
+      strokeWidth="4"
+      fill="none"
+    />
+    {/* Bulb at start - gray fill with thin border */}
+    <circle cx="6" cy="18" r="5" fill="#cfcfcf" stroke="#cfcfcf" strokeWidth="1" />
   </svg>
 );
 
 const ArrowIcon: React.FC<{ size?: number; className?: string }> = ({ size = 16, className }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    {/* Circle at start */}
-    <circle cx="6" cy="12" r="4" fill="none" />
-    {/* Arrow line */}
-    <line x1="10" y1="12" x2="20" y2="12" />
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    {/* Circle at start - hollow */}
+    <circle cx="6" cy="12" r="5" fill="none" strokeWidth="1.5" />
+    {/* Arrow line - thin */}
+    <path d="M 11 12 L 20 12" strokeWidth="1.5" />
     {/* Arrow head */}
-    <polyline points="16 8 20 12 16 16" />
+    <path d="M 20 12 L 16 9 M 20 12 L 16 15" strokeWidth="1.5" />
   </svg>
 );
 
 const CageIcon: React.FC<{ size?: number; className?: string }> = ({ size = 16, className }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    {/* Dashed rectangle representing cage */}
-    <rect x="4" y="4" width="16" height="16" strokeDasharray="3,2" fill="none" />
-    {/* Small number in corner */}
-    <text x="6" y="10" fontSize="6" fill="currentColor" stroke="none">12</text>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    {/* Dashed cage boundary - inset from cell edge */}
+    <rect x="5" y="5" width="14" height="14" strokeDasharray="3,3" strokeWidth="1.5" fill="none" />
+    {/* Small number in top-left corner */}
+    <text x="6" y="11" fontSize="7" fontFamily="Helvetica, Arial, sans-serif" fill="currentColor" stroke="none">12</text>
+  </svg>
+);
+
+const BoxLineIcon: React.FC<{ size?: number; className?: string }> = ({ size = 16, className }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+    {/* L-shaped snake path: 3 cells with 90% polygons and connecting polygons */}
+    {/* Top-left cell polygon (90% size) */}
+    <polygon points="2.5,2.5 9.5,2.5 9.5,9.5 2.5,9.5" />
+    {/* Bottom-left cell polygon (90% size) */}
+    <polygon points="2.5,14.5 9.5,14.5 9.5,21.5 2.5,21.5" />
+    {/* Bottom-right cell polygon (90% size) */}
+    <polygon points="14.5,14.5 21.5,14.5 21.5,21.5 14.5,21.5" />
+    {/* Vertical connection polygon (shared edge vertices) */}
+    <polygon points="2.5,9.5 9.5,9.5 9.5,14.5 2.5,14.5" />
+    {/* Horizontal connection polygon (shared edge vertices) */}
+    <polygon points="9.5,14.5 9.5,21.5 14.5,21.5 14.5,14.5" />
   </svg>
 );
 
@@ -55,6 +88,7 @@ const SPECIAL_TOOL_ICONS: Record<string, React.FC<{ size?: number; className?: s
   'special-thermo': ThermoIcon,
   'special-arrow': ArrowIcon,
   'special-cage': CageIcon,
+  'special-boxline': BoxLineIcon,
 };
 
 interface ToolDef {
@@ -90,6 +124,7 @@ const toolGroups: Record<ToolCategory, ToolDef[]> = {
     { id: 'special-thermo', icon: '🌡', labelKey: 'tool.special.thermo' },
     { id: 'special-arrow', icon: '➤', labelKey: 'tool.special.arrow' },
     { id: 'special-cage', icon: '⊞', labelKey: 'tool.special.cage' },
+    { id: 'special-boxline', icon: '▣', labelKey: 'tool.special.boxline' },
   ],
   cage: [
     { id: 'special-cage', icon: '⊞', labelKey: 'tool.special.cage' },
@@ -124,12 +159,16 @@ export const Ribbon: React.FC = () => {
     setActiveLayer,
     showProblemLayer,
     showAnswerLayer,
+    showConstraintLayer,
     toggleProblemLayer,
     toggleAnswerLayer,
+    toggleConstraintLayer,
     grid,
     setGrid,
     isGridMode,
     setGridMode,
+    gridSubTab,
+    setGridSubTab,
   } = usePuzzleStore();
 
   const handleCategoryClick = (category: CategoryDef) => {
@@ -158,7 +197,7 @@ export const Ribbon: React.FC = () => {
       <div className="flex items-center px-2 py-1 border-b border-office-border">
         {/* Layer switcher with visibility toggles */}
         <div className="flex items-center gap-2 px-2 border-r border-office-border mr-2">
-          {/* Grid button + toggle - leftmost */}
+          {/* Grid button + toggle */}
           <div className="flex items-center">
             <button
               className={`h-7 px-2 text-xs rounded-l-sm border border-r-0 transition-colors ${
@@ -257,34 +296,75 @@ export const Ribbon: React.FC = () => {
               {showAnswerLayer ? <EyeIcon size={14} /> : <EyeOffIcon size={14} />}
             </button>
           </div>
+          {/* Constraint layer - label with checkbox on right */}
+          <div className="flex items-center">
+            <span
+              className={`h-7 px-2 text-xs flex items-center rounded-l-sm border border-r-0 transition-colors bg-white border-office-border`}
+            >
+              {t('layer.constraint')}
+            </span>
+            <button
+              className="h-7 w-7 flex items-center justify-center rounded-r-sm border transition-colors bg-white border-office-border text-office-text hover:bg-office-ribbon-hover"
+              onClick={toggleConstraintLayer}
+              title={t('view.showConstraint')}
+            >
+              {showConstraintLayer ? <CheckboxIcon size={14} /> : <CheckboxEmptyIcon size={14} />}
+            </button>
+          </div>
         </div>
 
-        {/* Main category buttons */}
-        <div className="flex items-center gap-1">
-          {mainCategories.map((category) => (
+        {/* Grid mode subtabs - 盤面形状 / 盤面表示 */}
+        {isGridMode && (
+          <div className="flex items-center gap-1">
             <button
-              key={category.id}
-              className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-sm border transition-colors ${
-                isGridMode
-                  ? 'bg-white border-office-border hover:bg-office-ribbon-hover'
-                  : toolSettings.currentCategory === category.id
+              className={`flex items-center gap-1 h-7 px-2 text-xs rounded-sm border transition-colors ${
+                gridSubTab === 'shape'
+                  ? 'bg-office-accent text-white border-office-accent'
+                  : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+              }`}
+              onClick={() => setGridSubTab('shape')}
+            >
+              <span>{t('grid.tab.shape')}</span>
+            </button>
+            <button
+              className={`flex items-center gap-1 h-7 px-2 text-xs rounded-sm border transition-colors ${
+                gridSubTab === 'display'
+                  ? 'bg-office-accent text-white border-office-accent'
+                  : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+              }`}
+              onClick={() => setGridSubTab('display')}
+            >
+              <span>{t('grid.tab.display')}</span>
+            </button>
+          </div>
+        )}
+
+        {/* Main category buttons - hidden in grid mode */}
+        {!isGridMode && (
+          <div className="flex items-center gap-1">
+            {mainCategories.map((category) => (
+              <button
+                key={category.id}
+                className={`flex items-center gap-1 h-7 px-2 text-xs rounded-sm border transition-colors ${
+                  toolSettings.currentCategory === category.id
                     ? 'bg-office-accent text-white border-office-accent'
                     : 'bg-white border-office-border hover:bg-office-ribbon-hover'
-              }`}
-              onClick={() => handleCategoryClick(category)}
-            >
-              <span className="text-base">{category.icon}</span>
-              <span>{t(category.labelKey)}</span>
-            </button>
-          ))}
-        </div>
+                }`}
+                onClick={() => handleCategoryClick(category)}
+              >
+                <span className="text-sm">{category.icon}</span>
+                <span>{t(category.labelKey)}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
       </div>
 
       {/* Secondary toolbar - Tool details */}
       <div className="flex items-center px-2 py-1 min-h-[50px]">
         {isGridMode ? (
-          <ViewTabContent />
+          gridSubTab === 'shape' ? <GridShapeContent /> : <GridDisplayContent />
         ) : (
           <>
             {/* Tool options for current category */}
@@ -334,49 +414,77 @@ export const Ribbon: React.FC = () => {
   );
 };
 
-const ViewTabContent: React.FC = () => {
+// Grid Shape Tab Content - grid type, size, topology preset
+const GridShapeContent: React.FC = () => {
+  const { t } = useTranslation();
+  const { showAdjacency, setShowAdjacency, gridEditMode, setGridEditMode, previewTopology } = usePuzzleStore();
+
+  const editModes = [
+    { id: 'preset' as const, labelKey: 'gridEdit.preset' },
+    { id: 'merge' as const, labelKey: 'gridEdit.merge' },
+    { id: 'split' as const, labelKey: 'gridEdit.split' },
+    { id: 'exclude' as const, labelKey: 'gridEdit.exclude' },
+  ];
+
+  // During preview, only allow preset mode (disable merge/split/exclude)
+  const isPreviewActive = previewTopology !== null;
+
+  // Auto-switch to preset mode when preview becomes active
+  React.useEffect(() => {
+    if (isPreviewActive && gridEditMode !== 'preset') {
+      setGridEditMode('preset');
+    }
+  }, [isPreviewActive, gridEditMode, setGridEditMode]);
+
+  return (
+    <>
+      {/* Grid Edit Mode toggle buttons */}
+      <div className="flex items-center gap-0.5 px-2 border-r border-office-border">
+        {editModes.map((mode) => {
+          const isDisabled = isPreviewActive && mode.id !== 'preset';
+          return (
+            <button
+              key={mode.id}
+              className={`px-2 py-1 text-xs border rounded-sm transition-colors ${
+                gridEditMode === mode.id
+                  ? 'bg-office-accent text-white border-office-accent'
+                  : isDisabled
+                    ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                    : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+              }`}
+              onClick={() => !isDisabled && setGridEditMode(mode.id)}
+              disabled={isDisabled}
+              title={isDisabled ? t('gridEdit.disabledDuringPreview') : undefined}
+            >
+              {t(mode.labelKey)}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Show Adjacency checkbox */}
+      <div className="flex items-center px-3">
+        <label className="flex items-center gap-1.5 text-xs text-office-text cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={showAdjacency}
+            onChange={(e) => setShowAdjacency(e.target.checked)}
+            className="w-3.5 h-3.5 rounded border-office-border"
+          />
+          {t('topology.showAdjacency')}
+        </label>
+      </div>
+    </>
+  );
+};
+
+// Grid Display Tab Content - styles and colors
+const GridDisplayContent: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { grid, setGrid } = usePuzzleStore();
 
   return (
     <>
-      {/* Grid Size */}
-      <div className="flex flex-col items-center px-3 border-r border-office-border">
-        <div className="flex gap-2 mb-1">
-          <div className="flex items-center gap-1">
-            <label className="text-[10px] text-office-text-secondary">{t('grid.rows')}</label>
-            <input
-              type="number"
-              className="w-12 h-6 px-1 text-xs border border-office-border rounded-sm text-center"
-              value={grid.rows}
-              onChange={(e) => {
-                const num = parseInt(e.target.value, 10);
-                if (!isNaN(num) && num >= 1 && num <= 50) setGrid({ rows: num });
-              }}
-              min={1}
-              max={50}
-            />
-          </div>
-          <div className="flex items-center gap-1">
-            <label className="text-[10px] text-office-text-secondary">{t('grid.cols')}</label>
-            <input
-              type="number"
-              className="w-12 h-6 px-1 text-xs border border-office-border rounded-sm text-center"
-              value={grid.cols}
-              onChange={(e) => {
-                const num = parseInt(e.target.value, 10);
-                if (!isNaN(num) && num >= 1 && num <= 50) setGrid({ cols: num });
-              }}
-              min={1}
-              max={50}
-            />
-          </div>
-        </div>
-        <span className="text-[10px] text-office-text-secondary uppercase">
-          {t('grid.size')}
-        </span>
-      </div>
-
       {/* Grid Style */}
       <div className="flex flex-col items-center px-3 border-r border-office-border">
         <div className="flex gap-0.5 mb-1">
@@ -770,4 +878,3 @@ const SymbolSettingsPicker: React.FC = () => {
     </div>
   );
 };
-

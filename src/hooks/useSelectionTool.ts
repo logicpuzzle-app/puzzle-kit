@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { usePuzzleStore } from '../store/puzzleStore';
 import { findNearestCell, getCellId } from '../utils/gridUtils';
+import { findNearestCellInTopology } from '../utils/gridTopology';
 import type { Point } from '../types';
 
 // Selection rectangle interface
@@ -27,7 +28,24 @@ export function useSelectionTool({ getMousePosition }: UseSelectionToolOptions) 
     selectedElements,
     setSelection,
     clearSelection,
+    useTopology,
+    topology,
   } = usePuzzleStore();
+
+  // Helper to find cell considering topology mode
+  const findCell = useCallback((point: Point): { row: number; col: number } | null => {
+    if (useTopology && topology) {
+      const topoCell = findNearestCellInTopology(topology, point);
+      if (topoCell) {
+        const match = topoCell.id.match(/^cell-(\d+)-(\d+)$/);
+        if (match) {
+          return { row: parseInt(match[1]), col: parseInt(match[2]) };
+        }
+      }
+      return null;
+    }
+    return findNearestCell(point, grid);
+  }, [grid, useTopology, topology]);
 
   // Selection state
   const [isSelecting, setIsSelecting] = useState(false);
@@ -39,7 +57,7 @@ export function useSelectionTool({ getMousePosition }: UseSelectionToolOptions) 
    */
   const findElementAtPoint = useCallback(
     (point: Point): string | null => {
-      const cell = findNearestCell(point, grid);
+      const cell = findCell(point);
       if (!cell) return null;
 
       const cellId = getCellId(cell.row, cell.col);
@@ -68,7 +86,7 @@ export function useSelectionTool({ getMousePosition }: UseSelectionToolOptions) 
 
       return null;
     },
-    [grid, puzzle, activeLayer]
+    [puzzle, activeLayer, findCell]
   );
 
   /**
@@ -87,8 +105,21 @@ export function useSelectionTool({ getMousePosition }: UseSelectionToolOptions) 
       // Check all cells within the rectangle
       for (let row = 0; row < grid.rows; row++) {
         for (let col = 0; col < grid.cols; col++) {
-          const cellX = grid.outerPadding + col * grid.cellSize + grid.cellSize / 2;
-          const cellY = grid.outerPadding + row * grid.cellSize + grid.cellSize / 2;
+          let cellX: number;
+          let cellY: number;
+
+          if (useTopology && topology) {
+            // Get cell center from topology
+            const cellId = getCellId(row, col);
+            const topoCell = topology.cells.get(cellId);
+            if (!topoCell) continue;
+            cellX = topoCell.center.x;
+            cellY = topoCell.center.y;
+          } else {
+            // Standard grid calculation
+            cellX = grid.outerPadding + col * grid.cellSize + grid.cellSize / 2;
+            cellY = grid.outerPadding + row * grid.cellSize + grid.cellSize / 2;
+          }
 
           if (cellX >= minX && cellX <= maxX && cellY >= minY && cellY <= maxY) {
             const cellId = getCellId(row, col);
@@ -117,7 +148,7 @@ export function useSelectionTool({ getMousePosition }: UseSelectionToolOptions) 
 
       return elements;
     },
-    [grid, puzzle, activeLayer]
+    [grid, puzzle, activeLayer, useTopology, topology]
   );
 
   /**

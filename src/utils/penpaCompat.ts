@@ -231,6 +231,7 @@ function convertPenpaToPuzzleKit(penpa: PenpaData): PuzzlinkData {
     symbols: {},
     cages: {},
     specials: {},
+    boxLines: {},
     directionalClues: {},
   });
 
@@ -688,6 +689,7 @@ export function parsePuzzlinkUrl(url: string): PuzzlinkData | null {
       symbols: {},
       cages: {},
       specials: {},
+      boxLines: {},
       directionalClues: {},
     });
 

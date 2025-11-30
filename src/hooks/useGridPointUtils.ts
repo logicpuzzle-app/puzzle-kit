@@ -11,12 +11,20 @@ import {
   getVertexPosition,
   getEdgePosition,
 } from '../utils/gridUtils';
+import {
+  findNearestCellInTopology,
+  findNearestVertexInTopology,
+  findNearestEdgeInTopology,
+} from '../utils/gridTopology';
 import type { Point, LineGridPoint, LineDirection, GridConfig } from '../types';
+import type { GridTopology } from '../utils/gridTopology';
+import { usePuzzleStore } from '../store/puzzleStore';
 
 /**
  * Hook providing grid point utilities for line/edge tools
  */
 export function useGridPointUtils(grid: GridConfig) {
+  const { useTopology, topology } = usePuzzleStore();
   /**
    * Find the nearest grid point based on allowed grid point types
    * Returns { id: string, position: Point } or null
@@ -28,6 +36,51 @@ export function useGridPointUtils(grid: GridConfig) {
       let bestPosition: Point | null = null;
       let bestDistance = Infinity;
 
+      // Use topology-based finding if in topology mode
+      if (useTopology && topology) {
+        // Check cell centers
+        if (allowedTypes.includes('cell')) {
+          const cell = findNearestCellInTopology(topology, point);
+          if (cell) {
+            const distance = Math.sqrt(Math.pow(point.x - cell.center.x, 2) + Math.pow(point.y - cell.center.y, 2));
+            if (distance < threshold && distance < bestDistance) {
+              bestId = cell.id;
+              bestPosition = cell.center;
+              bestDistance = distance;
+            }
+          }
+        }
+
+        // Check vertices
+        if (allowedTypes.includes('vertex')) {
+          const vertex = findNearestVertexInTopology(topology, point);
+          if (vertex) {
+            const distance = Math.sqrt(Math.pow(point.x - vertex.position.x, 2) + Math.pow(point.y - vertex.position.y, 2));
+            if (distance < threshold && distance < bestDistance) {
+              bestId = vertex.id;
+              bestPosition = vertex.position;
+              bestDistance = distance;
+            }
+          }
+        }
+
+        // Check edge centers
+        if (allowedTypes.includes('edge')) {
+          const edge = findNearestEdgeInTopology(topology, point);
+          if (edge) {
+            const distance = Math.sqrt(Math.pow(point.x - edge.midpoint.x, 2) + Math.pow(point.y - edge.midpoint.y, 2));
+            if (distance < threshold && distance < bestDistance) {
+              bestId = edge.id;
+              bestPosition = edge.midpoint;
+              bestDistance = distance;
+            }
+          }
+        }
+
+        return bestId && bestPosition ? { id: bestId, position: bestPosition } : null;
+      }
+
+      // Standard mode - use grid-based finding
       // Check cell centers
       if (allowedTypes.includes('cell')) {
         const cell = findNearestCell(point, grid);
@@ -72,23 +125,28 @@ export function useGridPointUtils(grid: GridConfig) {
 
       return bestId && bestPosition ? { id: bestId, position: bestPosition } : null;
     },
-    [grid]
+    [grid, useTopology, topology]
   );
 
   // Parse ID to get row/col coordinates
+  // For topology mode, returns null (topology IDs don't have row/col)
   const parsePointId = useCallback((id: string): { row: number; col: number; type: string } | null => {
+    // Standard cell ID: cell-row-col
     const cellMatch = id.match(/^cell-(\d+)-(\d+)$/);
     if (cellMatch) return { row: parseInt(cellMatch[1]), col: parseInt(cellMatch[2]), type: 'cell' };
 
+    // Standard vertex ID: vertex-row-col
     const vertexMatch = id.match(/^vertex-(\d+)-(\d+)$/);
     if (vertexMatch) return { row: parseInt(vertexMatch[1]), col: parseInt(vertexMatch[2]), type: 'vertex' };
 
+    // Standard edge IDs: edge-h-row-col, edge-v-row-col
     const edgeHMatch = id.match(/^edge-h-(\d+)-(\d+)$/);
     if (edgeHMatch) return { row: parseInt(edgeHMatch[1]), col: parseInt(edgeHMatch[2]), type: 'edge-h' };
 
     const edgeVMatch = id.match(/^edge-v-(\d+)-(\d+)$/);
     if (edgeVMatch) return { row: parseInt(edgeVMatch[1]), col: parseInt(edgeVMatch[2]), type: 'edge-v' };
 
+    // Topology IDs (cell-row-col-suffix, vertex-N, edge-N) don't have standard row/col
     return null;
   }, []);
 
@@ -149,7 +207,32 @@ export function useGridPointUtils(grid: GridConfig) {
     (fromId: string, toId: string, allowedDirections: LineDirection[], halfMode: boolean = false): string[] | null => {
       const from = parsePointId(fromId);
       const to = parsePointId(toId);
-      if (!from || !to) return null;
+
+      // For topology mode with non-standard IDs, use direct connection
+      // (topology cells use IDs like cell-0-0-hex, vertices use vertex-0, etc.)
+      if (!from || !to) {
+        // In topology mode, allow direct connections between adjacent elements
+        if (useTopology && topology) {
+          // For cell-to-cell connections, check if cells are adjacent
+          if (fromId.startsWith('cell-') && toId.startsWith('cell-')) {
+            const fromCell = topology.cells.get(fromId);
+            if (fromCell && fromCell.adjacentCells.includes(toId)) {
+              return [toId]; // Direct connection to adjacent cell
+            }
+          }
+          // For vertex-to-vertex connections
+          if (fromId.startsWith('vertex-') && toId.startsWith('vertex-')) {
+            const fromVertex = topology.vertices.get(fromId);
+            if (fromVertex && fromVertex.adjacentVertices.includes(toId)) {
+              return [toId]; // Direct connection to adjacent vertex
+            }
+          }
+          // For edge-to-edge or other connections in topology mode
+          // Just allow direct connection (no interpolation possible without row/col)
+          return [toId];
+        }
+        return null;
+      }
 
       const fromIsCell = from.type === 'cell';
       const toIsCell = to.type === 'cell';
@@ -320,7 +403,7 @@ export function useGridPointUtils(grid: GridConfig) {
       // Not a valid path
       return null;
     },
-    [parsePointId, buildPointId]
+    [parsePointId, buildPointId, useTopology, topology]
   );
 
   return {

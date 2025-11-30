@@ -12,6 +12,7 @@ export { Grid } from './Grid';
 // Element layers
 export { SurfaceLayer } from './SurfaceLayer';
 export { MulticolorSurfaceLayer } from './MulticolorSurfaceLayer';
+export { BoxLineLayer } from './BoxLineLayer';
 export { LineLayer } from './LineLayer';
 export { EdgeLayer } from './EdgeLayer';
 export { WallLayer } from './WallLayer';

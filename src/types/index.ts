@@ -189,6 +189,7 @@ export type ToolType =
   | 'special-thermo'
   | 'special-arrow'
   | 'special-cage'
+  | 'special-boxline'
   // Multicolor surface
   | 'multicolor-surface'
   // Solution area
@@ -316,8 +317,43 @@ export interface SpecialElement {
   data?: Record<string, unknown>;
 }
 
-// Grid type for different cell shapes
-export type GridType = 'square' | 'hex' | 'triangle' | 'pyramid';
+// BoxLine: Hybrid of filled cell and line (for Snake, Object Placement, Patrol puzzles)
+// Draws a filled box (90% cell size) that connects to adjacent boxes
+export interface BoxLineElement {
+  id: string;
+  cells: string[];  // cell IDs in order (forming a connected path)
+  color: string;
+  layer: LayerType;
+}
+
+// Grid type for different cell shapes (Tilings)
+// Regular tilings: square {4,4}, triangle {3,6}, hex {6,3}
+// Semi-regular tilings: snub-square, trihexagonal, rhombitrihexagonal, etc.
+// Dual semi-regular: cairo, rhombille, etc.
+export type GridType =
+  // Regular tilings
+  | 'square'           // {4,4} - Square tiling
+  | 'triangle'         // {3,6} - Triangular tiling
+  | 'hex'              // {6,3} - Hexagonal tiling
+  | 'pyramid'          // Pyramid (special)
+  // Semi-regular tilings
+  | 'snub-square'      // 3².4.3.4 - Snub square tiling
+  | 'trihexagonal'     // 3.6.3.6 - Trihexagonal (kagome) tiling
+  | 'rhombitrihexagonal' // 3.4.6.4 - Rhombitrihexagonal tiling
+  | 'truncated-square' // 4.8² - Truncated square tiling
+  | 'truncated-hexagonal' // 3.12² - Truncated hexagonal tiling
+  | 'truncated-trihexagonal' // 4.6.12 - Truncated trihexagonal tiling
+  | 'snub-trihexagonal' // 3⁴.6 - Snub trihexagonal tiling
+  | 'elongated-triangular' // 3³.4² - Elongated triangular tiling
+  // Dual semi-regular tilings
+  | 'cairo'            // V3².4.3.4 - Cairo pentagonal tiling
+  | 'rhombille'        // V3.6.3.6 - Rhombille tiling
+  | 'deltoidal-trihexagonal' // V3.4.6.4 - Deltoidal trihexagonal
+  | 'tetrakis-square'  // V4.8² - Tetrakis square tiling
+  | 'triakis-triangular' // V3.12² - Triakis triangular tiling
+  | 'kisrhombille'     // V4.6.12 - Kisrhombille tiling
+  | 'floret-pentagonal' // V3⁴.6 - Floret pentagonal tiling
+  | 'prismatic-pentagonal'; // V3³.4² - Prismatic pentagonal tiling
 
 // Grid configuration
 export interface GridConfig {
@@ -357,6 +393,21 @@ export interface GridConfig {
   // Disabled cells (cells that are excluded from the puzzle grid)
   disabledCells?: string[];  // Array of cell IDs (e.g., "cell-0-0")
   disabledCellColor?: string;  // Color for disabled cells (default: background color)
+  // Merged cells (groups of cells that are combined into one)
+  // Each entry is an array of cell IDs that form a merged cell
+  mergedCells?: string[][];
+  // Split lines (experimental)
+  splitLines?: SplitLine[];
+}
+
+export type SplitPoint =
+  | { type: 'vertex'; vertexId: string }
+  | { type: 'edge'; edgeId: string; t: number };
+
+export interface SplitLine {
+  cellId: string;           // target cell id
+  startPoint: SplitPoint;
+  endPoint: SplitPoint;
 }
 
 // Puzzle state
@@ -369,6 +420,7 @@ export interface PuzzleElements {
   symbols: Record<string, SymbolElement>;
   cages: Record<string, CageElement>;
   specials: Record<string, SpecialElement>;
+  boxLines: Record<string, BoxLineElement>;
   directionalClues?: Record<string, import('./penpaElements').PenpaDirectionalClue>;
 }
 

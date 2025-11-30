@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../../store/puzzleStore';
+import type { TopologyVertex } from '../../../utils/gridTopology';
 
 /**
  * DisabledCellsOverlay - Renders disabled cells overlay and border lines
@@ -7,7 +8,7 @@ import { usePuzzleStore } from '../../../store/puzzleStore';
  * In other modes: shows only border lines between enabled and disabled cells
  */
 export const DisabledCellsOverlay: React.FC = () => {
-  const { grid, isGridMode } = usePuzzleStore();
+  const { grid, isGridMode, useTopology, topology } = usePuzzleStore();
   const {
     cellSize,
     outerPadding,
@@ -48,6 +49,72 @@ export const DisabledCellsOverlay: React.FC = () => {
     // Helper to check if adjacent cell is enabled (in bounds and not disabled)
     const isAdjacentEnabled = (r: number, c: number) => isInBounds(r, c) && !isDisabled(r, c);
 
+    // Topology mode - use topology positions
+    if (useTopology && topology) {
+      const fillColor = disabledCellColor || '#c0c0c0';
+
+      disabledArray.forEach((cellId) => {
+        const cell = topology.cells.get(cellId);
+        if (!cell) return;
+
+        // Get polygon points from topology vertices
+        const points = cell.boundaryVertices
+          .map(vId => topology.vertices.get(vId))
+          .filter((v): v is TopologyVertex => v !== undefined)
+          .map(v => `${v.position.x},${v.position.y}`)
+          .join(' ');
+
+        if (points) {
+          rectElements.push(
+            <polygon
+              key={cellId}
+              points={points}
+              fill={fillColor}
+              pointerEvents="none"
+            />
+          );
+        }
+
+        // Draw borders for edges adjacent to enabled cells
+        cell.boundaryEdges.forEach((edgeId) => {
+          const edge = topology.edges.get(edgeId);
+          if (!edge) return;
+
+          // Check if adjacent cell is enabled
+          const adjacentCellId = edge.adjacentCells.find(id => id !== cellId);
+          if (!adjacentCellId) return; // Boundary edge
+
+          // Parse adjacent cell ID to check if enabled
+          const match = adjacentCellId.match(/^cell-(-?\d+)-(-?\d+)$/);
+          if (!match) return;
+          const adjRow = parseInt(match[1], 10);
+          const adjCol = parseInt(match[2], 10);
+
+          if (isAdjacentEnabled(adjRow, adjCol)) {
+            const startVertex = topology.vertices.get(edge.startVertex);
+            const endVertex = topology.vertices.get(edge.endVertex);
+            if (startVertex && endVertex) {
+              lineElements.push(
+                <line
+                  key={`${cellId}-${edgeId}`}
+                  x1={startVertex.position.x}
+                  y1={startVertex.position.y}
+                  x2={endVertex.position.x}
+                  y2={endVertex.position.y}
+                  stroke={frameColor}
+                  strokeWidth={strokeWidth}
+                  pointerEvents="none"
+                />
+              );
+            }
+          }
+        });
+      });
+
+      return { rects: rectElements, borderLines: lineElements };
+    }
+
+    // Standard mode
     disabledArray.forEach((cellId) => {
       // Parse cell ID (e.g., "cell-0-0")
       const match = cellId.match(/^cell-(-?\d+)-(-?\d+)$/);
@@ -144,7 +211,7 @@ export const DisabledCellsOverlay: React.FC = () => {
     });
 
     return { rects: rectElements, borderLines: lineElements };
-  }, [isGridMode, gridType, disabledCells, cellSize, outerPadding, marginTop, marginLeft, rows, cols, frameColor, frameStyle, disabledCellColor, backgroundColor]);
+  }, [isGridMode, gridType, disabledCells, cellSize, outerPadding, marginTop, marginLeft, rows, cols, frameColor, frameStyle, disabledCellColor, backgroundColor, useTopology, topology]);
 
   // Return null if no content to render
   if (rects.length === 0 && borderLines.length === 0) return null;

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
-import { getCellCenter } from '../../utils/gridUtils';
+import { getCellCenter, getCellId } from '../../utils/gridUtils';
 import type { LayerType, PuzzleElements } from '../../types';
 
 // Direction constants (matches pzprjs/Penpa)
@@ -108,7 +108,7 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
   layer,
   arrowStyle = 'polygon'
 }) => {
-  const { grid, puzzle, showProblemLayer, showAnswerLayer } = usePuzzleStore();
+  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology } = usePuzzleStore();
   const isVisible = (layer === 'problem' && showProblemLayer) || (layer === 'answer' && showAnswerLayer);
 
   const elements = useMemo(() => {
@@ -122,7 +122,19 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
       const col = clue.cell % grid.cols;
       if (row < 0 || col < 0 || row >= grid.rows || col >= grid.cols) return;
 
-      const center = getCellCenter(row, col, grid);
+      // Get cell center position - use topology if available
+      let center: { x: number; y: number };
+      if (useTopology && topology) {
+        const cellId = getCellId(row, col);
+        const topoCell = topology.cells.get(cellId);
+        if (topoCell) {
+          center = { x: topoCell.center.x, y: topoCell.center.y };
+        } else {
+          center = getCellCenter(row, col, grid);
+        }
+      } else {
+        center = getCellCenter(row, col, grid);
+      }
       const valueStr = String(clue.value);
       const digitCount = valueStr.length;
 
@@ -191,7 +203,7 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
       }
     });
     return nodes;
-  }, [isVisible, puzzle, layer, grid, arrowStyle]);
+  }, [isVisible, puzzle, layer, grid, arrowStyle, useTopology, topology]);
 
   if (!elements) return null;
   return <g className={`directional-clue-layer ${layer}`}>{elements}</g>;

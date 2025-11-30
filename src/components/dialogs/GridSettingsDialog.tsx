@@ -13,7 +13,7 @@ export const GridSettingsDialog: React.FC<GridSettingsDialogProps> = ({
   onClose,
 }) => {
   const { t } = useTranslation();
-  const { grid, setGrid } = usePuzzleStore();
+  const { grid, setGrid, resizeGrid } = usePuzzleStore();
 
   const [localGrid, setLocalGrid] = useState<GridConfig>(grid);
 
@@ -35,7 +35,17 @@ export const GridSettingsDialog: React.FC<GridSettingsDialogProps> = ({
   };
 
   const handleApply = () => {
-    setGrid(localGrid);
+    // Check if size-related properties changed
+    const sizeChanged = localGrid.rows !== grid.rows || localGrid.cols !== grid.cols ||
+      localGrid.marginTop !== grid.marginTop || localGrid.marginBottom !== grid.marginBottom ||
+      localGrid.marginLeft !== grid.marginLeft || localGrid.marginRight !== grid.marginRight;
+
+    if (sizeChanged) {
+      // Use resizeGrid to properly update topology and filter elements on removed cells
+      resizeGrid(localGrid);
+    } else {
+      setGrid(localGrid);
+    }
     onClose();
   };
 

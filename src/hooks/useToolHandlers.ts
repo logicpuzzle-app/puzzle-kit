@@ -54,13 +54,14 @@ export function useToolHandlers({
     setCurrentStrokeId,
   });
 
-  // Element-related handlers (numbers, symbols, specials, cages, text)
+  // Element-related handlers (numbers, symbols, specials, cages, text, boxline)
   const {
     handleNumberTool,
     handleSymbolTool,
     handleSpecialTool,
     handleTextTool,
     handleCageTool,
+    handleBoxLineTool,
   } = useElementToolHandler({
     specialPath,
     setSpecialPath,
@@ -85,6 +86,7 @@ export function useToolHandlers({
     handleSolutionAreaTool,
     handleTextTool,
     handleCageTool,
+    handleBoxLineTool,
     handleStraightLineEnd,
     resetFillModes,
   };

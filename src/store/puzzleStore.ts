@@ -25,7 +25,20 @@ import {
   SymbolElement,
   CageElement,
   SpecialElement,
+  BoxLineElement,
 } from '../types';
+import {
+  gridConfigToTopology,
+  applyTopologyPreset,
+  resizeTopology,
+  type GridTopology,
+  type TopologyPreset,
+  type ResizeDirection,
+} from '../utils/gridTopology';
+import {
+  normalizeSegmentEndpoints,
+  generateLineId,
+} from '../utils/lineNormalization';
 
 import { actionExecutor, type PuzzleStateSlice } from './actionExecutor';
 import { historyManager } from './historyManager';
@@ -63,6 +76,7 @@ const createEmptyElements = (): PuzzleElements => ({
   symbols: {},
   cages: {},
   specials: {},
+  boxLines: {},
   directionalClues: {},
 });
 
@@ -70,6 +84,31 @@ const createEmptyState = (): PuzzleState => ({
   problem: createEmptyElements(),
   answer: createEmptyElements(),
 });
+
+const DEFAULT_TOOL_SETTINGS: ToolSettings = {
+  currentTool: 'surface-fill',
+  currentCategory: 'surface',
+  color: '#000000',
+  secondaryColor: '#CFCFCF',
+  lineStyle: 'solid',
+  lineThickness: 'normal',
+  symbolSize: 'medium',
+  numberSize: 'medium',
+  symbolRotation: 0,
+  numberPosition: 'center',
+  cornerIndex: 0,
+  sideIndex: 0,
+  selectedCandidates: [],
+  arrowDirection: 2, // Default: right (2)
+  multicolorSlots: [1, 0, 0, 0], // Default: light grey + 3 transparent
+  multicolorPattern: 'cross',    // Default: + pattern
+  multicolorCustomColors: [],    // Custom colors array (user-added)
+  multicolorSwatches: [],        // Saved pattern presets
+  lineGridPoints: ['cell'],      // Default: cell centers
+  lineDirections: ['orthogonal'], // Default: orthogonal only
+  lineHalfMode: false,            // Default: don't allow cell-to-edge half lines
+  symbolGridPoints: ['cell'],    // Default: cell centers only
+};
 
 /**
  * Apply a PuzzleAction to state - used for undo/redo
@@ -380,8 +419,10 @@ interface PuzzleStore {
   // Layer visibility
   showProblemLayer: boolean;
   showAnswerLayer: boolean;
+  showConstraintLayer: boolean;
   toggleProblemLayer: () => void;
   toggleAnswerLayer: () => void;
+  toggleConstraintLayer: () => void;
 
   // Element operations (via ActionExecutor)
   addSurface: (element: Omit<SurfaceElement, 'id'>) => string;
@@ -401,6 +442,9 @@ interface PuzzleStore {
   removeCage: (id: string) => void;
   addSpecial: (element: Omit<SpecialElement, 'id'>) => string;
   removeSpecial: (id: string) => void;
+  addBoxLine: (element: Omit<BoxLineElement, 'id'>) => string;
+  removeBoxLine: (id: string) => void;
+  updateBoxLine: (id: string, cells: string[]) => void;
   addDirectionalClue: (element: Omit<import('../types').PenpaDirectionalClue, 'id'>) => string;
   removeDirectionalClue: (id: string) => void;
 
@@ -426,16 +470,16 @@ interface PuzzleStore {
   // Clear operations
   clearLayer: (layer: LayerType) => void;
   clearAll: () => void;
-  newPuzzle: (options?: { rows?: number; cols?: number; gridType?: GridType }) => void;
+  newPuzzle: (options?: { rows?: number; cols?: number; gridType?: GridType; cellSize?: number }) => void;
 
   // Selection
   selectedElements: string[];
   setSelection: (ids: string[]) => void;
   clearSelection: () => void;
 
-  // Hover cursor (cell under mouse)
-  hoverCell: { row: number; col: number } | null;
-  setHoverCell: (cell: { row: number; col: number } | null) => void;
+  // Hover cursor (cell under mouse) - cellId string for all grid types
+  hoverCell: string | null;
+  setHoverCell: (cellId: string | null) => void;
 
   // Number tool selection (cursor position for keyboard input)
   numberSelection: { row: number; col: number } | null;
@@ -444,10 +488,43 @@ interface PuzzleStore {
   // Grid mode (shows grid settings instead of tool options)
   isGridMode: boolean;
   setGridMode: (isGridMode: boolean) => void;
+  gridSubTab: 'shape' | 'display';
+  setGridSubTab: (tab: 'shape' | 'display') => void;
+  gridEditMode: 'preset' | 'merge' | 'split' | 'exclude';
+  setGridEditMode: (mode: 'preset' | 'merge' | 'split' | 'exclude') => void;
+
+  // Topology mode (use GridTopology for deformed grids)
+  useTopology: boolean;
+  setUseTopology: (useTopology: boolean) => void;
+  topology: import('../utils/gridTopology').GridTopology | null;
+  updateTopology: () => void;
+
+  // Topology preset
+  topologyPreset: TopologyPreset;
+  topologyIntensity: number;
+  setTopologyPreset: (preset: TopologyPreset) => void;
+  setTopologyIntensity: (intensity: number) => void;
+  applyTopologyPreset: () => void;
+
+  // Preview topology (for previewing grid changes before applying)
+  previewTopology: import('../utils/gridTopology').GridTopology | null;
+  previewGrid: GridConfig | null;
+  setPreviewGrid: (config: { gridType: import('../types').GridType; rows: number; cols: number; cellSize?: number } | null) => void;
+
+  // Show adjacency lines between cell centers
+  showAdjacency: boolean;
+  setShowAdjacency: (show: boolean) => void;
 
   // Grid cell enabled/disabled toggle
   toggleCellDisabled: (cellId: string) => void;
   setCellDisabled: (cellId: string, disabled: boolean) => void;
+
+  // Merge cells
+  mergeCells: (cellIds: string[]) => void;
+  unmergeCells: (cellIds: string[]) => void;
+
+  // Grid resize (works with topology mode)
+  resizeGrid: (newConfig: Partial<GridConfig>) => void;
 
   // Export/Import
   exportPuzzle: () => string;
@@ -501,41 +578,30 @@ export const usePuzzleStore = create<PuzzleStore>((set, get) => {
     },
 
     setGrid: (gridUpdate) =>
-      set((state) => ({
-        grid: { ...state.grid, ...gridUpdate },
-      })),
+      set((state) => {
+        const newGrid = { ...state.grid, ...gridUpdate };
+        let newTopology = state.topology;
+        if (state.useTopology) {
+          const base = gridConfigToTopology(newGrid);
+          newTopology = applyTopologyPreset(base, {
+            preset: state.topologyPreset,
+            intensity: state.topologyIntensity,
+          });
+        }
+        return {
+          grid: newGrid,
+          topology: newTopology,
+        };
+      }),
 
     // Puzzle state
     puzzle: createEmptyState(),
     activeLayer: 'problem',
 
-    setActiveLayer: (layer) => set({ activeLayer: layer }),
+  setActiveLayer: (layer) => set({ activeLayer: layer }),
 
-    // Tool settings
-    toolSettings: {
-      currentTool: 'surface-fill',
-      currentCategory: 'surface',
-      color: '#000000',
-      secondaryColor: '#CFCFCF',
-      lineStyle: 'solid',
-      lineThickness: 'normal',
-      symbolSize: 'medium',
-      numberSize: 'medium',
-      symbolRotation: 0,
-      numberPosition: 'center',
-      cornerIndex: 0,
-      sideIndex: 0,
-      selectedCandidates: [],
-      arrowDirection: 2, // Default: right (2)
-      multicolorSlots: [1, 0, 0, 0], // Default: light grey + 3 transparent
-      multicolorPattern: 'cross',    // Default: + pattern
-      multicolorCustomColors: [],    // Custom colors array (user-added)
-      multicolorSwatches: [],        // Saved pattern presets
-      lineGridPoints: ['cell'],      // Default: cell centers
-      lineDirections: ['orthogonal'], // Default: orthogonal only
-      lineHalfMode: false,            // Default: don't allow cell-to-edge half lines
-      symbolGridPoints: ['cell'],    // Default: cell centers only
-    },
+  // Tool settings
+  toolSettings: { ...DEFAULT_TOOL_SETTINGS },
 
     setToolSettings: (settings) =>
       set((state) => ({
@@ -591,10 +657,13 @@ export const usePuzzleStore = create<PuzzleStore>((set, get) => {
     // Layer visibility
     showProblemLayer: true,
     showAnswerLayer: true,
+    showConstraintLayer: false, // Default: OFF
     toggleProblemLayer: () =>
       set((state) => ({ showProblemLayer: !state.showProblemLayer })),
     toggleAnswerLayer: () =>
       set((state) => ({ showAnswerLayer: !state.showAnswerLayer })),
+    toggleConstraintLayer: () =>
+      set((state) => ({ showConstraintLayer: !state.showConstraintLayer })),
 
     // Element operations - Direct Zustand implementation for reliable re-rendering
     addSurface: (element) => {
@@ -645,10 +714,30 @@ export const usePuzzleStore = create<PuzzleStore>((set, get) => {
     },
 
     addLine: (element) => {
-      const id = uuidv4();
-      const fullElement: LineElement = { ...element, id };
+      // For freehand lines, use UUID; for grid-snapped lines, use normalized ID
+      let id: string;
+      let normalizedElement: LineElement;
+
+      if (element.isFree) {
+        // Freehand lines: use UUID (multiple segments form a stroke via strokeId)
+        id = uuidv4();
+        normalizedElement = { ...element, id };
+      } else {
+        // Grid-snapped lines: normalize endpoints and generate deterministic ID
+        const [normFrom, normTo] = normalizeSegmentEndpoints(element.from, element.to);
+        id = generateLineId(normFrom, normTo);
+        normalizedElement = { ...element, id, from: normFrom, to: normTo };
+
+        // Check if line with this ID already exists in this layer
+        const state = get();
+        if (state.puzzle[element.layer].lines[id]) {
+          // Line already exists - return existing ID without adding duplicate
+          return id;
+        }
+      }
+
       set((state) => {
-        const layer = fullElement.layer;
+        const layer = normalizedElement.layer;
         return {
           puzzle: {
             ...state.puzzle,
@@ -656,13 +745,13 @@ export const usePuzzleStore = create<PuzzleStore>((set, get) => {
               ...state.puzzle[layer],
               lines: {
                 ...state.puzzle[layer].lines,
-                [id]: fullElement,
+                [id]: normalizedElement,
               },
             },
           },
         };
       });
-      historyManager.addAction(createAddLineAction(fullElement));
+      historyManager.addAction(createAddLineAction(normalizedElement));
       return id;
     },
 
@@ -973,6 +1062,70 @@ export const usePuzzleStore = create<PuzzleStore>((set, get) => {
       }
     },
 
+    addBoxLine: (element) => {
+      const id = uuidv4();
+      const fullElement: BoxLineElement = { ...element, id };
+      set((state) => {
+        const layer = fullElement.layer;
+        return {
+          puzzle: {
+            ...state.puzzle,
+            [layer]: {
+              ...state.puzzle[layer],
+              boxLines: {
+                ...state.puzzle[layer].boxLines,
+                [id]: fullElement,
+              },
+            },
+          },
+        };
+      });
+      // Note: BoxLine doesn't use history for now (similar to directionalClues)
+      return id;
+    },
+
+    removeBoxLine: (id) => {
+      const state = get();
+      const layer = state.activeLayer;
+      const boxLines = state.puzzle[layer].boxLines || {};
+      if (boxLines[id]) {
+        set((state) => {
+          const newBoxLines = { ...state.puzzle[layer].boxLines };
+          delete newBoxLines[id];
+          return {
+            puzzle: {
+              ...state.puzzle,
+              [layer]: {
+                ...state.puzzle[layer],
+                boxLines: newBoxLines,
+              },
+            },
+          };
+        });
+      }
+    },
+
+    updateBoxLine: (id, cells) => {
+      const state = get();
+      const layer = state.activeLayer;
+      const boxLines = state.puzzle[layer].boxLines || {};
+      const element = boxLines[id];
+      if (element) {
+        set((state) => ({
+          puzzle: {
+            ...state.puzzle,
+            [layer]: {
+              ...state.puzzle[layer],
+              boxLines: {
+                ...state.puzzle[layer].boxLines,
+                [id]: { ...element, cells },
+              },
+            },
+          },
+        }));
+      }
+    },
+
     addDirectionalClue: (element) => {
       const id = uuidv4();
       const fullElement = { ...element, id };
@@ -1173,25 +1326,42 @@ export const usePuzzleStore = create<PuzzleStore>((set, get) => {
     },
 
     newPuzzle: (options = {}) => {
-      const { rows = 10, cols = 10, gridType = 'square' } = options;
+      const {
+        rows = 10,
+        cols = 10,
+        gridType = 'square',
+        cellSize = 40,
+      } = options;
+
+      const baseGrid: GridConfig = {
+        rows,
+        cols,
+        cellSize,
+        outerPadding: 20,
+        showGrid: true,
+        gridStyle: 'normal',
+        gridType,
+        marginTop: 0,
+        marginBottom: 0,
+        marginLeft: 0,
+        marginRight: 0,
+        frameStyle: 'normal',
+        frameColor: '#000000',
+        gridColor: '#000000',
+        backgroundColor: '#ffffff',
+      };
+
+      const baseTopology = gridConfigToTopology(baseGrid);
+      const state = get();
+      const topology = state.useTopology
+        ? applyTopologyPreset(baseTopology, {
+            preset: state.topologyPreset,
+            intensity: state.topologyIntensity,
+          })
+        : null;
+
       set({
-        grid: {
-          rows,
-          cols,
-          cellSize: 40,
-          outerPadding: 20,
-          showGrid: true,
-          gridStyle: 'normal',
-          gridType,
-          marginTop: 0,
-          marginBottom: 0,
-          marginLeft: 0,
-          marginRight: 0,
-          frameStyle: 'normal',
-          frameColor: '#000000',
-          gridColor: '#000000',
-          backgroundColor: '#ffffff',
-        },
+        grid: baseGrid,
         puzzle: createEmptyState(),
         canvas: {
           zoom: 1,
@@ -1202,6 +1372,12 @@ export const usePuzzleStore = create<PuzzleStore>((set, get) => {
           selection: [],
         },
         selectedElements: [],
+        hoverCell: null,
+        numberSelection: null,
+        toolSettings: { ...DEFAULT_TOOL_SETTINGS },
+        activeLayer: 'problem',
+        isGridMode: true,
+        topology,
       });
       historyManager.clear();
     },
@@ -1220,8 +1396,97 @@ export const usePuzzleStore = create<PuzzleStore>((set, get) => {
     setNumberSelection: (cell) => set({ numberSelection: cell }),
 
     // Grid mode
-    isGridMode: false,
+    isGridMode: true,
     setGridMode: (isGridMode) => set({ isGridMode }),
+    gridSubTab: 'shape' as const,
+    setGridSubTab: (tab) => set({ gridSubTab: tab }),
+    gridEditMode: 'preset' as const,
+    setGridEditMode: (mode) => set({ gridEditMode: mode }),
+
+    // Topology mode (always enabled, Standard mode removed)
+    useTopology: true,
+    setUseTopology: (useTopology) => {
+      set({ useTopology });
+      // Update topology when enabling
+      if (useTopology) {
+        get().applyTopologyPreset();
+      }
+    },
+    // Initialize topology based on default grid
+    topology: (() => {
+      const defaultGrid: GridConfig = {
+        rows: 10,
+        cols: 10,
+        cellSize: 40,
+        outerPadding: 20,
+        showGrid: true,
+        gridStyle: 'normal',
+        gridType: 'square',
+        marginTop: 0,
+        marginBottom: 0,
+        marginLeft: 0,
+        marginRight: 0,
+        frameStyle: 'normal',
+        frameColor: '#000000',
+        gridColor: '#000000',
+        backgroundColor: '#ffffff',
+      };
+      const baseTopology = gridConfigToTopology(defaultGrid);
+      return applyTopologyPreset(baseTopology, { preset: 'square', intensity: 0.5 });
+    })(),
+    updateTopology: () => {
+      const state = get();
+      if (state.useTopology) {
+        get().applyTopologyPreset();
+      }
+    },
+
+    // Topology preset
+    topologyPreset: 'square' as TopologyPreset,
+    topologyIntensity: 0.5,
+    setTopologyPreset: (preset) => set({ topologyPreset: preset }),
+    setTopologyIntensity: (intensity) => set({ topologyIntensity: intensity }),
+    applyTopologyPreset: () => {
+      const state = get();
+      // Create topology based on grid type (square, triangle, hex, etc.)
+      const baseTopology = gridConfigToTopology(state.grid);
+      // Then apply the preset transformation (deformation effect)
+      const transformedTopology = applyTopologyPreset(baseTopology, {
+        preset: state.topologyPreset,
+        intensity: state.topologyIntensity,
+      });
+      set({ topology: transformedTopology });
+    },
+
+    // Preview topology (for previewing grid changes before applying)
+    previewTopology: null,
+    previewGrid: null,
+    setPreviewGrid: (config) => {
+      if (config === null) {
+        // Clear preview
+        set({ previewTopology: null, previewGrid: null });
+      } else {
+        // Generate preview topology
+        const state = get();
+        const previewGridConfig: GridConfig = {
+          ...state.grid,
+          gridType: config.gridType,
+          rows: config.rows,
+          cols: config.cols,
+          cellSize: config.cellSize ?? state.grid.cellSize,
+        };
+        const baseTopology = gridConfigToTopology(previewGridConfig);
+        const previewTopo = applyTopologyPreset(baseTopology, {
+          preset: state.topologyPreset,
+          intensity: state.topologyIntensity,
+        });
+        set({ previewTopology: previewTopo, previewGrid: previewGridConfig });
+      }
+    },
+
+    // Show adjacency lines
+    showAdjacency: false,
+    setShowAdjacency: (show) => set({ showAdjacency: show }),
 
     // Grid cell enabled/disabled toggle
     toggleCellDisabled: (cellId) =>
@@ -1245,6 +1510,212 @@ export const usePuzzleStore = create<PuzzleStore>((set, get) => {
         }
         return state;
       }),
+
+    // Merge cells - combine multiple cells into one merged cell
+    mergeCells: (cellIds) =>
+      set((state) => {
+        if (cellIds.length < 2) return state;
+
+        const currentMerged = state.grid.mergedCells || [];
+
+        // Check if any of these cells are already part of a merged group
+        const existingGroupIndices: number[] = [];
+        cellIds.forEach((cellId) => {
+          currentMerged.forEach((group, idx) => {
+            if (group.includes(cellId) && !existingGroupIndices.includes(idx)) {
+              existingGroupIndices.push(idx);
+            }
+          });
+        });
+
+        // Combine all cells from existing groups with new cells
+        let allCells = [...cellIds];
+        existingGroupIndices.forEach((idx) => {
+          allCells = [...allCells, ...currentMerged[idx]];
+        });
+        // Remove duplicates
+        allCells = [...new Set(allCells)];
+
+        // Remove old groups and add new combined group
+        const newMerged = currentMerged.filter((_, idx) => !existingGroupIndices.includes(idx));
+        newMerged.push(allCells);
+
+        const grid = { ...state.grid, mergedCells: newMerged };
+        let topology = state.topology;
+        if (state.useTopology) {
+          const base = gridConfigToTopology(grid);
+          topology = applyTopologyPreset(base, {
+            preset: state.topologyPreset,
+            intensity: state.topologyIntensity,
+          });
+        }
+        return { grid, topology };
+      }),
+
+    // Unmerge cells - remove cells from merged groups
+    unmergeCells: (cellIds) =>
+      set((state) => {
+        const currentMerged = state.grid.mergedCells || [];
+        if (currentMerged.length === 0) return state;
+
+        // Find groups containing any of these cells and split them
+        const newMerged = currentMerged
+          .map((group) => group.filter((id) => !cellIds.includes(id)))
+          .filter((group) => group.length >= 2); // Remove groups with less than 2 cells
+
+        const grid = { ...state.grid, mergedCells: newMerged.length > 0 ? newMerged : undefined };
+        let topology = state.topology;
+        if (state.useTopology) {
+          const base = gridConfigToTopology(grid);
+          topology = applyTopologyPreset(base, {
+            preset: state.topologyPreset,
+            intensity: state.topologyIntensity,
+          });
+        }
+        return { grid, topology };
+      }),
+
+    // Grid resize (works with topology mode)
+    resizeGrid: (configChanges) => {
+      const state = get();
+      const oldConfig = state.grid;
+      const newConfig: GridConfig = {
+        ...oldConfig,
+        ...configChanges,
+      };
+
+      // If using topology, use resizeTopology to get cell mapping
+      if (state.useTopology && state.topology) {
+        const resizeResult = resizeTopology(state.topology, oldConfig, newConfig);
+
+        // Remove elements on removed cells
+        const removedCellSet = new Set(resizeResult.removedCells);
+
+        // Helper to check if cellId refers to a removed cell
+        const isCellRemoved = (cellId: string): boolean => {
+          // cellId is in format "r-c", convert to topology cell ID format "cell-r-c"
+          const topologyCellId = `cell-${cellId}`;
+          return removedCellSet.has(topologyCellId);
+        };
+
+        // Helper to filter out elements on removed cells
+        const filterElements = <T extends Record<string, unknown>>(
+          elements: T
+        ): T => {
+          const filtered = {} as T;
+          for (const [key, value] of Object.entries(elements)) {
+            if (!value || typeof value !== 'object') {
+              (filtered as Record<string, unknown>)[key] = value;
+              continue;
+            }
+
+            const elem = value as Record<string, unknown>;
+            let shouldKeep = true;
+
+            // Check cellId property (surfaces, numbers, symbols)
+            if ('cellId' in elem && typeof elem.cellId === 'string') {
+              if (isCellRemoved(elem.cellId)) {
+                shouldKeep = false;
+              }
+            }
+
+            // Check from/to properties (lines, edges)
+            if ('from' in elem && typeof elem.from === 'string') {
+              // from/to might be cell references or vertex references
+              const fromParts = elem.from.split('-');
+              if (fromParts.length >= 2) {
+                const cellId = `${fromParts[0]}-${fromParts[1]}`;
+                if (isCellRemoved(cellId)) {
+                  shouldKeep = false;
+                }
+              }
+            }
+
+            // Check position property (walls)
+            if ('position' in elem && typeof elem.position === 'string') {
+              const pos = elem.position;
+              // Wall position format varies, check if it contains removed cell reference
+              const parts = pos.split('-');
+              if (parts.length >= 2) {
+                const cellId = `${parts[0]}-${parts[1]}`;
+                if (isCellRemoved(cellId)) {
+                  shouldKeep = false;
+                }
+              }
+            }
+
+            if (shouldKeep) {
+              (filtered as Record<string, unknown>)[key] = value;
+            }
+          }
+          return filtered;
+        };
+
+        // Filter elements in both layers
+        const newPuzzle: PuzzleState = {
+          problem: {
+            surfaces: filterElements(state.puzzle.problem.surfaces || {}) as Record<string, SurfaceElement>,
+            lines: filterElements(state.puzzle.problem.lines || {}) as Record<string, LineElement>,
+            edges: filterElements(state.puzzle.problem.edges || {}) as Record<string, EdgeElement>,
+            walls: filterElements(state.puzzle.problem.walls || {}) as Record<string, WallElement>,
+            numbers: filterElements(state.puzzle.problem.numbers || {}) as Record<string, NumberElement>,
+            symbols: filterElements(state.puzzle.problem.symbols || {}) as Record<string, SymbolElement>,
+            cages: state.puzzle.problem.cages || {},
+            specials: state.puzzle.problem.specials || {},
+            boxLines: state.puzzle.problem.boxLines || {},
+            directionalClues: filterElements(state.puzzle.problem.directionalClues || {}),
+          },
+          answer: {
+            surfaces: filterElements(state.puzzle.answer.surfaces || {}) as Record<string, SurfaceElement>,
+            lines: filterElements(state.puzzle.answer.lines || {}) as Record<string, LineElement>,
+            edges: filterElements(state.puzzle.answer.edges || {}) as Record<string, EdgeElement>,
+            walls: filterElements(state.puzzle.answer.walls || {}) as Record<string, WallElement>,
+            numbers: filterElements(state.puzzle.answer.numbers || {}) as Record<string, NumberElement>,
+            symbols: filterElements(state.puzzle.answer.symbols || {}) as Record<string, SymbolElement>,
+            cages: state.puzzle.answer.cages || {},
+            specials: state.puzzle.answer.specials || {},
+            boxLines: state.puzzle.answer.boxLines || {},
+            directionalClues: filterElements(state.puzzle.answer.directionalClues || {}),
+          },
+          // Filter multicolor surfaces at PuzzleState level
+          multicolorSurfaces: filterElements(state.puzzle.multicolorSurfaces || {}),
+        };
+
+        // Update disabled cells - remove any that are now out of bounds
+        const newDisabledCells = (oldConfig.disabledCells || []).filter(
+          (cellId) => !removedCellSet.has(cellId)
+        );
+
+        // Apply preset to new topology
+        const transformedTopology = applyTopologyPreset(resizeResult.topology, {
+          preset: state.topologyPreset,
+          intensity: state.topologyIntensity,
+        });
+
+        set({
+          grid: { ...newConfig, disabledCells: newDisabledCells },
+          puzzle: newPuzzle,
+          topology: transformedTopology,
+        });
+      } else if (state.useTopology) {
+        // Topology mode but no existing topology - create new one
+        const newTopology = gridConfigToTopology(newConfig);
+        const transformedTopology = applyTopologyPreset(newTopology, {
+          preset: state.topologyPreset,
+          intensity: state.topologyIntensity,
+        });
+        set({
+          grid: newConfig,
+          topology: transformedTopology,
+        });
+      } else {
+        // Simple resize without topology - just update grid
+        set({ grid: newConfig });
+      }
+
+      // Clear history after resize
+      historyManager.clear();
+    },
 
     // Export/Import
     exportPuzzle: () => {

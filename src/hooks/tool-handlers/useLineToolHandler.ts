@@ -7,6 +7,11 @@ import {
   getEdgeHId,
   getEdgeVId,
 } from '../../utils/gridUtils';
+import {
+  findNearestVertexInTopology,
+  findNearestEdgeInTopology,
+} from '../../utils/gridTopology';
+import { generateLineId } from '../../utils/lineNormalization';
 import { useGridPointUtils } from '../useGridPointUtils';
 import type { Point } from '../../types';
 
@@ -41,9 +46,43 @@ export function useLineToolHandler({
     addWall,
     removeWall,
     puzzle,
+    useTopology,
+    topology,
   } = usePuzzleStore();
 
   const { findNearestGridPoint, getInterpolatedPath } = useGridPointUtils(grid);
+
+  // Helper to find vertex ID considering topology mode
+  const findVertexId = useCallback((point: Point): string | null => {
+    if (useTopology && topology) {
+      const topoVertex = findNearestVertexInTopology(topology, point);
+      if (topoVertex) {
+        return topoVertex.id;
+      }
+      return null;
+    }
+    const vertex = findNearestVertex(point, grid, grid.cellSize * 0.3);
+    if (vertex) {
+      return getVertexId(vertex.row, vertex.col);
+    }
+    return null;
+  }, [grid, useTopology, topology]);
+
+  // Helper to find edge ID considering topology mode
+  const findEdgeId = useCallback((point: Point): string | null => {
+    if (useTopology && topology) {
+      const topoEdge = findNearestEdgeInTopology(topology, point);
+      if (topoEdge) {
+        return topoEdge.id;
+      }
+      return null;
+    }
+    const edge = findNearestEdge(point, grid, grid.cellSize * 0.3);
+    if (edge) {
+      return edge.type === 'h' ? getEdgeHId(edge.row, edge.col) : getEdgeVId(edge.row, edge.col);
+    }
+    return null;
+  }, [grid, useTopology, topology]);
 
   // Ref for tracking line fill mode during drag
   const lineFillModeRef = useRef<'draw' | 'erase' | null>(null);
@@ -139,13 +178,9 @@ export function useLineToolHandler({
         let currentFrom = drawStartPoint;
 
         for (const toPoint of interpolatedPath) {
-          // Check if line already exists for this segment
-          const existingLine = Object.values(layerData.lines).find(
-            (l) =>
-              !l.isFree &&
-              ((l.from === currentFrom && l.to === toPoint) ||
-               (l.from === toPoint && l.to === currentFrom))
-          );
+          // Check if line already exists using normalized ID
+          const lineId = generateLineId(currentFrom, toPoint);
+          const existingLine = layerData.lines[lineId];
 
           const hasSameColorLine = existingLine && existingLine.color === colorToUse;
 
@@ -227,10 +262,9 @@ export function useLineToolHandler({
 
   const handleEdgeTool = useCallback(
     (point: Point, isStart: boolean, isRightClick: boolean = false, isShiftKey: boolean = false) => {
-      const vertex = findNearestVertex(point, grid, grid.cellSize * 0.3);
-      if (!vertex) return;
+      const vertexId = findVertexId(point);
+      if (!vertexId) return;
 
-      const vertexId = getVertexId(vertex.row, vertex.col);
       const colorToUse = isRightClick ? toolSettings.secondaryColor : toolSettings.color;
 
       if (isStart) {
@@ -286,18 +320,14 @@ export function useLineToolHandler({
       addEdge,
       removeEdge,
       setDrawStartPoint,
+      findVertexId,
     ]
   );
 
   const handleWallTool = useCallback(
     (point: Point, isRightClick: boolean, isShiftKey: boolean = false) => {
-      const edge = findNearestEdge(point, grid, grid.cellSize * 0.3);
-      if (!edge) return;
-
-      const edgeId =
-        edge.type === 'h'
-          ? getEdgeHId(edge.row, edge.col)
-          : getEdgeVId(edge.row, edge.col);
+      const edgeId = findEdgeId(point);
+      if (!edgeId) return;
 
       const colorToUse = isRightClick ? toolSettings.secondaryColor : toolSettings.color;
       const layerData = puzzle[activeLayer];
@@ -332,7 +362,7 @@ export function useLineToolHandler({
         });
       }
     },
-    [grid, puzzle, activeLayer, toolSettings, addWall, removeWall]
+    [grid, puzzle, activeLayer, toolSettings, addWall, removeWall, findEdgeId]
   );
 
   // Handle straight line completion on mouse up
@@ -351,13 +381,9 @@ export function useLineToolHandler({
 
       const layerData = puzzle[activeLayer];
 
-      // Check if line already exists between these two points
-      const existingLine = Object.values(layerData.lines).find(
-        (l) =>
-          !l.isFree &&
-          ((l.from === drawStartPoint && l.to === pointId) ||
-           (l.from === pointId && l.to === drawStartPoint))
-      );
+      // Check if line already exists using normalized ID
+      const lineId = generateLineId(drawStartPoint, pointId);
+      const existingLine = layerData.lines[lineId];
 
       if (existingLine) {
         if (isShiftKey) {

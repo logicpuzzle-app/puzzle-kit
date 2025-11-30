@@ -5,6 +5,7 @@ import { useToolHandlers } from './useToolHandlers';
 import { useSelectionTool, type SelectionRect } from './useSelectionTool';
 import { useGridPointUtils } from './useGridPointUtils';
 import type { Point } from '../types';
+import type { GridTopology } from '../utils/gridTopology';
 
 interface UseCanvasInteractionOptions {
   svgRef: React.RefObject<SVGSVGElement | null>;
@@ -32,6 +33,10 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
     startHistoryGroup,
     endHistoryGroup,
     isGridMode,
+    gridEditMode,
+    topology,
+    mergeCells,
+    unmergeCells,
   } = usePuzzleStore();
 
   const [isPanning, setIsPanning] = useState(false);
@@ -45,6 +50,13 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
   const isDraggingRef = useRef(false);
   const isRightClickRef = useRef(false);
   const isShiftKeyRef = useRef(false);
+
+  // Merge mode state - track cells being selected for merge
+  const [mergingCells, setMergingCells] = useState<string[]>([]);
+
+  // Split mode state - track vertices being connected for split
+  const [splitStartVertex, setSplitStartVertex] = useState<string | null>(null);
+  const [splitHoverVertex, setSplitHoverVertex] = useState<string | null>(null);
 
   // Touch state
   const touchStateRef = useRef<TouchState>({
@@ -70,6 +82,7 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
     handleSolutionAreaTool,
     handleTextTool,
     handleCageTool,
+    handleBoxLineTool,
     handleStraightLineEnd,
     resetFillModes,
   } = useToolHandlers({
@@ -84,6 +97,133 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
   });
 
   const { findNearestGridPoint } = useGridPointUtils(grid);
+
+  // Helper to find cell at a given point
+  const findCellAtPoint = useCallback(
+    (point: Point): string | null => {
+      if (!topology) return null;
+
+      // Check each cell in the topology
+      for (const [cellId, cell] of topology.cells) {
+        // Get vertex positions from boundary vertices
+        const vertices = cell.boundaryVertices
+          .map(vId => topology.vertices.get(vId))
+          .filter((v): v is NonNullable<typeof v> => v !== undefined)
+          .map(v => v.position);
+
+        if (vertices.length < 3) continue;
+
+        // Point-in-polygon test
+        let inside = false;
+        for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+          const xi = vertices[i].x, yi = vertices[i].y;
+          const xj = vertices[j].x, yj = vertices[j].y;
+          const intersect = ((yi > point.y) !== (yj > point.y))
+            && (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
+          if (intersect) inside = !inside;
+        }
+        if (inside) return cellId;
+      }
+      return null;
+    },
+    [topology]
+  );
+
+  // Handle merge mode - add cell to merging list
+  const handleMergeMode = useCallback(
+    (point: Point, isStart: boolean, isEnd: boolean, isRightClick: boolean) => {
+      const cellId = findCellAtPoint(point);
+      if (!cellId) return;
+
+      if (isRightClick) {
+        // Right-click to unmerge the cell
+        unmergeCells([cellId]);
+        return;
+      }
+
+      if (isStart) {
+        // Start merging - initialize with first cell
+        setMergingCells([cellId]);
+      } else if (isEnd) {
+        // End merging - call mergeCells with collected cells
+        if (mergingCells.length >= 2) {
+          mergeCells(mergingCells);
+        }
+        setMergingCells([]);
+      } else {
+        // Continue merging - add cell if not already in list
+        if (!mergingCells.includes(cellId)) {
+          setMergingCells((prev) => [...prev, cellId]);
+        }
+      }
+    },
+    [findCellAtPoint, mergingCells, mergeCells, unmergeCells, topology]
+  );
+
+  // Helper to find nearest vertex at a given point
+  const findNearestVertexAtPoint = useCallback(
+    (point: Point, maxDistance: number = 15): string | null => {
+      if (!topology) return null;
+
+      let nearestId: string | null = null;
+      let nearestDist = maxDistance;
+
+      for (const [vertexId, vertex] of topology.vertices) {
+        const dist = Math.hypot(point.x - vertex.position.x, point.y - vertex.position.y);
+        if (dist < nearestDist) {
+          nearestDist = dist;
+          nearestId = vertexId;
+        }
+      }
+      return nearestId;
+    },
+    [topology]
+  );
+
+  // Handle split mode - connect vertices to split cells
+  const handleSplitMode = useCallback(
+    (point: Point, isStart: boolean, isEnd: boolean, isRightClick: boolean) => {
+      if (isRightClick) {
+        // Right-click to cancel
+        setSplitStartVertex(null);
+        setSplitHoverVertex(null);
+        return;
+      }
+
+      const vertexId = findNearestVertexAtPoint(point);
+
+      if (isStart) {
+        if (vertexId) {
+          setSplitStartVertex(vertexId);
+        }
+      } else if (isEnd) {
+        if (splitStartVertex && vertexId && vertexId !== splitStartVertex) {
+          // TODO: Implement actual cell splitting
+          // This would involve:
+          // 1. Finding cells that share both vertices
+          // 2. Creating a new vertex at the intersection if needed
+          // 3. Splitting the cell into two new cells
+          // 4. Updating the topology
+          console.log('Split from', splitStartVertex, 'to', vertexId);
+        }
+        setSplitStartVertex(null);
+        setSplitHoverVertex(null);
+      } else {
+        // During drag, update hover vertex
+        setSplitHoverVertex(vertexId);
+      }
+    },
+    [findNearestVertexAtPoint, splitStartVertex]
+  );
+
+  // Update split hover vertex (for cursor display in split mode)
+  const updateSplitHoverVertex = useCallback(
+    (point: Point) => {
+      const vertexId = findNearestVertexAtPoint(point);
+      setSplitHoverVertex(vertexId);
+    },
+    [findNearestVertexAtPoint]
+  );
 
   const getMousePosition = useCallback(
     (e: React.MouseEvent | MouseEvent): Point => {
@@ -159,9 +299,16 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
       isRightClickRef.current = isRightClick;
       isShiftKeyRef.current = isShiftKey;
 
-      // Handle grid mode cell toggle (priority over tool)
+      // Handle grid mode based on gridEditMode
       if (isGridMode) {
-        handleGridTool(point, isRightClick, isShiftKey);
+        if (gridEditMode === 'exclude') {
+          handleGridTool(point, isRightClick, isShiftKey);
+        } else if (gridEditMode === 'merge') {
+          handleMergeMode(point, true, false, isRightClick);
+        } else if (gridEditMode === 'split') {
+          handleSplitMode(point, true, false, isRightClick);
+        }
+        // preset mode: do nothing (just view properties panel)
         return;
       }
 
@@ -181,6 +328,8 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
         handleSpecialTool(point, true, false, isRightClick);
       } else if (tool === 'special-cage') {
         handleCageTool(point, true, false, isRightClick);
+      } else if (tool === 'special-boxline') {
+        handleBoxLineTool(point, true, false, isRightClick);
       } else if (tool === 'multicolor-surface') {
         handleMulticolorSurfaceTool(point, isRightClick);
       } else if (tool === 'solution-area') {
@@ -192,7 +341,10 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
       setCanvasState,
       toolSettings.currentTool,
       isGridMode,
+      gridEditMode,
       handleGridTool,
+      handleMergeMode,
+      handleSplitMode,
       handleSurfaceTool,
       handleLineTool,
       handleEdgeTool,
@@ -222,9 +374,16 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
       isDraggingRef.current = true;
       const point = getMousePosition(e);
 
-      // Handle grid mode cell toggle during drag
+      // Handle grid mode based on gridEditMode during drag
       if (isGridMode) {
-        handleGridTool(point, isRightClickRef.current, isShiftKeyRef.current);
+        if (gridEditMode === 'exclude') {
+          handleGridTool(point, isRightClickRef.current, isShiftKeyRef.current);
+        } else if (gridEditMode === 'merge') {
+          handleMergeMode(point, false, false, isRightClickRef.current);
+        } else if (gridEditMode === 'split') {
+          handleSplitMode(point, false, false, isRightClickRef.current);
+        }
+        // preset mode: do nothing
         return;
       }
 
@@ -242,6 +401,8 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
         handleSpecialTool(point, false, false, isRightClickRef.current);
       } else if (tool === 'special-cage') {
         handleCageTool(point, false, false, isRightClickRef.current);
+      } else if (tool === 'special-boxline') {
+        handleBoxLineTool(point, false, false, isRightClickRef.current);
       } else if (tool === 'multicolor-surface') {
         handleMulticolorSurfaceTool(point, isRightClickRef.current);
       } else if (tool === 'solution-area') {
@@ -258,13 +419,17 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
       getMousePosition,
       toolSettings.currentTool,
       isGridMode,
+      gridEditMode,
       handleGridTool,
+      handleMergeMode,
+      handleSplitMode,
       handleSurfaceTool,
       handleLineTool,
       handleEdgeTool,
       handleWallTool,
       handleSpecialTool,
       handleCageTool,
+      handleBoxLineTool,
       handleMulticolorSurfaceTool,
       handleSolutionAreaTool,
     ]
@@ -283,11 +448,22 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
       const isRightClick = isRightClickRef.current;
       const isShiftKey = isShiftKeyRef.current;
 
-      // Complete special/cage tools on mouse up
+      // Handle grid mode completion
+      if (isGridMode && !isRightClick) {
+        if (gridEditMode === 'merge') {
+          handleMergeMode(point, false, true, isRightClick);
+        } else if (gridEditMode === 'split') {
+          handleSplitMode(point, false, true, isRightClick);
+        }
+      }
+
+      // Complete special/cage/boxline tools on mouse up
       if (tool === 'special-thermo' || tool === 'special-arrow') {
         handleSpecialTool(point, false, true, false);
       } else if (tool === 'special-cage') {
         handleCageTool(point, false, true, false);
+      } else if (tool === 'special-boxline') {
+        handleBoxLineTool(point, false, true, false);
       } else if (tool.startsWith('line')) {
         // Handle straight line completion on mouse up
         const allowedDirections = toolSettings.lineDirections || ['orthogonal'];
@@ -307,7 +483,7 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
       setDrawStartPosition(null);
       setCurrentStrokeId(null);
     },
-    [isPanning, setCanvasState, endHistoryGroup, getMousePosition, toolSettings.currentTool, toolSettings.lineDirections, drawStartPoint, handleSpecialTool, handleCageTool, handleStraightLineEnd, resetFillModes]
+    [isPanning, setCanvasState, endHistoryGroup, getMousePosition, toolSettings.currentTool, toolSettings.lineDirections, drawStartPoint, handleSpecialTool, handleCageTool, handleBoxLineTool, handleStraightLineEnd, resetFillModes, isGridMode, gridEditMode, handleMergeMode, handleSplitMode]
   );
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
@@ -417,6 +593,8 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
           handleSpecialTool(point, true, false, false);
         } else if (tool === 'special-cage') {
           handleCageTool(point, true, false, false);
+        } else if (tool === 'special-boxline') {
+          handleBoxLineTool(point, true, false, false);
         } else if (tool === 'multicolor-surface') {
           handleMulticolorSurfaceTool(point, false);
         } else if (tool === 'solution-area') {
@@ -436,6 +614,7 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
       handleSymbolTool,
       handleSpecialTool,
       handleCageTool,
+      handleBoxLineTool,
       handleMulticolorSurfaceTool,
       handleSolutionAreaTool,
       startHistoryGroup,
@@ -494,6 +673,8 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
             handleSpecialTool(point, false, false, isRightClick);
           } else if (tool === 'special-cage') {
             handleCageTool(point, false, false, isRightClick);
+          } else if (tool === 'special-boxline') {
+            handleBoxLineTool(point, false, false, isRightClick);
           } else if (tool === 'multicolor-surface') {
             handleMulticolorSurfaceTool(point, isRightClick);
           } else if (tool === 'solution-area') {
@@ -518,6 +699,7 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
       handleWallTool,
       handleSpecialTool,
       handleCageTool,
+      handleBoxLineTool,
       handleMulticolorSurfaceTool,
       handleSolutionAreaTool,
     ]
@@ -564,6 +746,8 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
             handleSpecialTool(point, true, true, isDeleteMode || isSecondaryColor);
           } else if (tool === 'special-cage') {
             handleCageTool(point, true, true, isDeleteMode || isSecondaryColor);
+          } else if (tool === 'special-boxline') {
+            handleBoxLineTool(point, true, true, isDeleteMode || isSecondaryColor);
           }
         }
       }
@@ -582,6 +766,8 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
           handleSpecialTool(point, false, false, true);
         } else if (tool === 'special-cage') {
           handleCageTool(point, false, false, true);
+        } else if (tool === 'special-boxline') {
+          handleBoxLineTool(point, false, false, true);
         }
       }
 
@@ -594,6 +780,8 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
           if (allowedDirections.includes('straight') && drawStartPoint) {
             handleStraightLineEnd(point, false, false);
           }
+        } else if (tool === 'special-boxline') {
+          handleBoxLineTool(point, false, true, false);
         }
       }
 
@@ -623,6 +811,7 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
       handleSymbolTool,
       handleSpecialTool,
       handleCageTool,
+      handleBoxLineTool,
       handleStraightLineEnd,
       setCanvasState,
       endHistoryGroup,
@@ -699,6 +888,12 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
     // Symbol tool hover
     symbolHoverPoint,
     updateSymbolHoverPoint,
+    // Merge mode state
+    mergingCells,
+    // Split mode state
+    splitStartVertex,
+    splitHoverVertex,
+    updateSplitHoverVertex,
   };
 }
 

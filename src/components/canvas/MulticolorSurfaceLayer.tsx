@@ -10,6 +10,7 @@ import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
 import { getPenpaColor } from '../../types/penpaElements';
 import type { MulticolorSurfaceElement } from '../../types';
+import type { TopologyVertex } from '../../utils/gridTopology';
 
 interface MulticolorSurfaceLayerProps {
   /** Whether the layer is visible */
@@ -131,26 +132,108 @@ const MulticolorCell: React.FC<{
   );
 };
 
+/**
+ * Render a multicolor cell in topology mode
+ * Uses polygon vertices and center to create sections
+ */
+const MulticolorCellTopology: React.FC<{
+  element: MulticolorSurfaceElement;
+  center: { x: number; y: number };
+  vertices: { x: number; y: number }[];
+}> = ({ element, center, vertices }) => {
+  const { colors, pattern = 'cross', customColors } = element;
+
+  // If only one color, render full polygon
+  if (colors.length === 1) {
+    if (colors[0] === 0) return null; // Transparent
+    const color = getColorForIndex(colors[0], customColors);
+
+    return (
+      <polygon
+        points={vertices.map(v => `${v.x},${v.y}`).join(' ')}
+        fill={color}
+        className="multicolor-surface"
+      />
+    );
+  }
+
+  // Multiple colors - divide polygon into sections
+  // For topology mode, we'll create triangles from center to each edge
+  const numVertices = vertices.length;
+  if (numVertices < 3) return null;
+
+  // Map 4 color slots to triangle sections
+  // We divide vertices into 4 groups for quadrant-like effect
+  const sectionsPerColor = Math.ceil(numVertices / 4);
+
+  return (
+    <g className="multicolor-surface">
+      {colors.map((colorIndex, colorSlot) => {
+        if (colorIndex === 0) return null; // Skip transparent
+
+        const color = getColorForIndex(colorIndex, customColors);
+        const paths: React.ReactNode[] = [];
+
+        // Calculate which vertices belong to this color slot
+        const startIdx = colorSlot * sectionsPerColor;
+        const endIdx = Math.min(startIdx + sectionsPerColor, numVertices);
+
+        for (let i = startIdx; i < endIdx; i++) {
+          const v1 = vertices[i];
+          const v2 = vertices[(i + 1) % numVertices];
+
+          paths.push(
+            <polygon
+              key={`${colorSlot}-${i}`}
+              points={`${center.x},${center.y} ${v1.x},${v1.y} ${v2.x},${v2.y}`}
+              fill={color}
+            />
+          );
+        }
+
+        return <g key={`section-${colorSlot}`}>{paths}</g>;
+      })}
+    </g>
+  );
+};
+
 export const MulticolorSurfaceLayer: React.FC<MulticolorSurfaceLayerProps> = ({
   visible = true,
 }) => {
-  const { grid, puzzle } = usePuzzleStore();
+  const { grid, puzzle, useTopology, topology } = usePuzzleStore();
   const multicolorSurfaces = puzzle.multicolorSurfaces;
 
-  const cellPositions = useMemo(() => {
-    const positions: Map<string, { x: number; y: number }> = new Map();
+  const cellData = useMemo(() => {
+    const data: Map<string, { x: number; y: number; polygon?: { x: number; y: number }[]; center?: { x: number; y: number } }> = new Map();
 
     for (let row = 0; row < grid.rows; row++) {
       for (let col = 0; col < grid.cols; col++) {
         const cellId = `cell-${row}-${col}`;
-        const x = grid.outerPadding + col * grid.cellSize;
-        const y = grid.outerPadding + row * grid.cellSize;
-        positions.set(cellId, { x, y });
+
+        if (useTopology && topology) {
+          const topoCell = topology.cells.get(cellId);
+          if (topoCell) {
+            const vertices = topoCell.boundaryVertices
+              .map(vId => topology.vertices.get(vId))
+              .filter((v): v is TopologyVertex => v !== undefined)
+              .map(v => v.position);
+            data.set(cellId, {
+              x: 0,
+              y: 0,
+              polygon: vertices,
+              center: topoCell.center,
+            });
+          }
+        } else {
+          const x = grid.outerPadding + col * grid.cellSize;
+          const y = grid.outerPadding + row * grid.cellSize;
+          data.set(cellId, { x, y });
+        }
       }
     }
 
-    return positions;
-  }, [grid]);
+    return data;
+  }, [grid, useTopology, topology]);
 
   if (!visible || !multicolorSurfaces) {
     return null;
@@ -165,15 +248,26 @@ export const MulticolorSurfaceLayer: React.FC<MulticolorSurfaceLayerProps> = ({
   return (
     <g className="multicolor-surface-layer">
       {elements.map((element) => {
-        const pos = cellPositions.get(element.cellId);
-        if (!pos) return null;
+        const cellInfo = cellData.get(element.cellId);
+        if (!cellInfo) return null;
+
+        if (useTopology && cellInfo.polygon && cellInfo.center) {
+          return (
+            <MulticolorCellTopology
+              key={element.id}
+              element={element}
+              center={cellInfo.center}
+              vertices={cellInfo.polygon}
+            />
+          );
+        }
 
         return (
           <MulticolorCell
             key={element.id}
             element={element}
-            x={pos.x}
-            y={pos.y}
+            x={cellInfo.x}
+            y={cellInfo.y}
             size={grid.cellSize}
           />
         );

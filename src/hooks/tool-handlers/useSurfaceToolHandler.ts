@@ -1,6 +1,7 @@
 import { useCallback, useRef } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
 import { findNearestCell, getCellId } from '../../utils/gridUtils';
+import { findNearestCellInTopology } from '../../utils/gridTopology';
 import type { Point } from '../../types';
 
 /**
@@ -18,7 +19,25 @@ export function useSurfaceToolHandler() {
     removeMulticolorSurface,
     toggleSolutionAreaCell,
     setCellDisabled,
+    useTopology,
+    topology,
   } = usePuzzleStore();
+
+  // Helper to find cell ID considering topology mode
+  const findCellId = useCallback((point: Point): string | null => {
+    if (useTopology && topology) {
+      const topoCell = findNearestCellInTopology(topology, point);
+      if (topoCell) {
+        return topoCell.id;
+      }
+      return null;
+    }
+    const cell = findNearestCell(point, grid);
+    if (cell) {
+      return getCellId(cell.row, cell.col);
+    }
+    return null;
+  }, [grid, useTopology, topology]);
 
   // Refs for tracking fill modes during drag
   const processedCellsRef = useRef<Set<string>>(new Set());
@@ -34,10 +53,8 @@ export function useSurfaceToolHandler() {
 
   const handleSurfaceTool = useCallback(
     (point: Point, isRightClick: boolean, isShiftKey: boolean = false) => {
-      const cell = findNearestCell(point, grid);
-      if (!cell) return;
-
-      const cellId = getCellId(cell.row, cell.col);
+      const cellId = findCellId(point);
+      if (!cellId) return;
 
       // Skip if this cell was already processed during this drag
       if (processedCellsRef.current.has(cellId)) {
@@ -101,15 +118,13 @@ export function useSurfaceToolHandler() {
         }
       }
     },
-    [grid, puzzle, activeLayer, toolSettings.color, toolSettings.secondaryColor, addSurface, removeSurface]
+    [grid, puzzle, activeLayer, toolSettings.color, toolSettings.secondaryColor, addSurface, removeSurface, findCellId]
   );
 
   const handleGridTool = useCallback(
     (point: Point, isRightClick: boolean, isShiftKey: boolean = false) => {
-      const cell = findNearestCell(point, grid);
-      if (!cell) return;
-
-      const cellId = getCellId(cell.row, cell.col);
+      const cellId = findCellId(point);
+      if (!cellId) return;
 
       // Skip if this cell was already processed during this drag
       if (processedCellsRef.current.has(cellId)) {
@@ -145,16 +160,14 @@ export function useSurfaceToolHandler() {
         }
       }
     },
-    [grid, setCellDisabled]
+    [grid, setCellDisabled, findCellId]
   );
 
   // Handle multicolor surface tool
   const handleMulticolorSurfaceTool = useCallback(
     (point: Point, isRightClick: boolean) => {
-      const cell = findNearestCell(point, grid);
-      if (!cell) return;
-
-      const cellId = getCellId(cell.row, cell.col);
+      const cellId = findCellId(point);
+      if (!cellId) return;
 
       if (isRightClick) {
         // Right-click removes multicolor surface
@@ -172,21 +185,19 @@ export function useSurfaceToolHandler() {
         setMulticolorSurface(cellId, colors, pattern, customColors);
       }
     },
-    [grid, toolSettings.color, toolSettings.multicolorSlots, toolSettings.multicolorPattern, toolSettings.multicolorCustomColors, setMulticolorSurface, removeMulticolorSurface]
+    [grid, toolSettings.color, toolSettings.multicolorSlots, toolSettings.multicolorPattern, toolSettings.multicolorCustomColors, setMulticolorSurface, removeMulticolorSurface, findCellId]
   );
 
   // Handle solution area tool
   const handleSolutionAreaTool = useCallback(
     (point: Point, _isRightClick: boolean) => {
-      const cell = findNearestCell(point, grid);
-      if (!cell) return;
-
-      const cellId = getCellId(cell.row, cell.col);
+      const cellId = findCellId(point);
+      if (!cellId) return;
 
       // Toggle cell in solution area
       toggleSolutionAreaCell(cellId);
     },
-    [grid, toggleSolutionAreaCell]
+    [grid, toggleSolutionAreaCell, findCellId]
   );
 
   return {
