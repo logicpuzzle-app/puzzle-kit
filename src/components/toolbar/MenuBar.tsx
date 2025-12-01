@@ -13,9 +13,10 @@ import { gridConfigToTopology, applyTopologyPreset } from '../../utils/gridTopol
 import { parsePenpaUrl, isPenpaUrl, parsePuzzlinkUrl, isPuzzlinkUrl, generatePuzzlinkUrl } from '../../utils/penpaCompat';
 import { NewPuzzleDialog } from '../dialogs/NewPuzzleDialog';
 import { PerformanceTestDialog } from '../dialogs/PerformanceTestDialog';
+import { ShareUrlDialog } from '../dialogs/ShareUrlDialog';
 import { getStorageAdapter, isStorageAvailable } from '../../modules/storage';
 import { syncCountersFromPuzzleState } from '../../utils/idGenerator';
-import type { PuzzleExport } from '../../types';
+import { optimizePuzzleStateForExport } from '../../utils/puzzleExport';
 
 interface MenuItem {
   labelKey: string;
@@ -37,6 +38,8 @@ export const MenuBar: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [isNewPuzzleOpen, setIsNewPuzzleOpen] = useState(false);
   const [isPerformanceTestOpen, setIsPerformanceTestOpen] = useState(false);
+  const [shareUrlDialogOpen, setShareUrlDialogOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -402,10 +405,10 @@ export const MenuBar: React.FC = () => {
       topologyIntensity,
     };
 
-    const puzzleData: PuzzleExport = {
-      version: '1.0.0',
+    const puzzleData = {
+      version: '1.1.0',
       grid,
-      state: puzzle,
+      state: optimizePuzzleStateForExport(puzzle),
       metadata: {
         modified: new Date().toISOString(),
       },
@@ -415,7 +418,9 @@ export const MenuBar: React.FC = () => {
     try {
       const result = await adapter.save(puzzleData);
       await navigator.clipboard.writeText(result.url);
-      alert(t('share.copied') || 'URL copied to clipboard!');
+      // Show success modal with URL
+      setShareUrl(result.url);
+      setShareUrlDialogOpen(true);
     } catch (error) {
       console.error('[Share URL] Failed to save puzzle:', error);
       alert(t('error.shareFailed') || 'Failed to share puzzle. Please try again.');
@@ -638,6 +643,12 @@ export const MenuBar: React.FC = () => {
       <PerformanceTestDialog
         isOpen={isPerformanceTestOpen}
         onClose={() => setIsPerformanceTestOpen(false)}
+      />
+
+      <ShareUrlDialog
+        isOpen={shareUrlDialogOpen}
+        onClose={() => setShareUrlDialogOpen(false)}
+        url={shareUrl}
       />
     </div>
   );

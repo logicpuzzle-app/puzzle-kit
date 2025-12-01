@@ -11,6 +11,7 @@ import {
   generateShareUrl,
 } from '../utils/export';
 import type { PuzzleState, GridConfig } from '../types';
+import { PUZZLE_EXPORT_VERSION } from '../constants/version';
 
 describe('Export Utilities', () => {
   const mockState: PuzzleState = {
@@ -59,7 +60,7 @@ describe('Export Utilities', () => {
       const json = exportToJson(mockState, mockGrid);
       const parsed = JSON.parse(json);
 
-      expect(parsed.version).toBe('1.0.0');
+      expect(parsed.version).toBe(PUZZLE_EXPORT_VERSION);
       expect(parsed.format).toBe('puzzle-kit');
       expect(parsed.grid).toEqual(mockGrid);
       expect(parsed.state).toEqual(mockState);

@@ -9,6 +9,7 @@
  */
 
 import type { PuzzleState, GridConfig } from '../types';
+import { PUZZLE_EXPORT_VERSION } from '../constants/version';
 
 export interface ExportOptions {
   /** Include problem layer */
@@ -161,7 +162,7 @@ export function exportToJson(
   metadata?: Record<string, unknown>
 ): string {
   const exportData = {
-    version: '1.0.0',
+    version: PUZZLE_EXPORT_VERSION,
     format: 'puzzle-kit',
     grid,
     state,

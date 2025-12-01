@@ -8,6 +8,23 @@
 import type { PuzzleExport } from '../../types';
 
 /**
+ * Optimized puzzle export data (layer fields stripped from elements)
+ * Compatible with PuzzleExport but with optimized state structure
+ */
+export interface OptimizedPuzzleExport {
+  version: string;
+  grid: PuzzleExport['grid'];
+  state: Record<string, any>; // Optimized state without layer fields
+  metadata?: PuzzleExport['metadata'];
+  topologySettings?: PuzzleExport['topologySettings'];
+}
+
+/**
+ * Union type for save operations - accepts both full and optimized formats
+ */
+export type PuzzleExportData = PuzzleExport | OptimizedPuzzleExport;
+
+/**
  * Result of saving a puzzle to storage
  */
 export interface SaveResult {
@@ -47,10 +64,10 @@ export interface StorageAdapter {
 
   /**
    * Save a puzzle to storage
-   * @param data The puzzle data to save
+   * @param data The puzzle data to save (full or optimized format)
    * @returns Promise resolving to save result with ID and URL
    */
-  save(data: PuzzleExport): Promise<SaveResult>;
+  save(data: PuzzleExportData): Promise<SaveResult>;
 
   /**
    * Load a puzzle from storage by ID

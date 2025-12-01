@@ -7,6 +7,12 @@ import type { PuzzleIOSlice, SliceCreator } from './types';
 import { createEmptyState, DEFAULT_TOOL_SETTINGS } from './types';
 import { gridConfigToTopology, applyTopologyPreset } from '../../utils/gridTopology';
 import { historyManager } from '../historyManager';
+import {
+  optimizePuzzleStateForExport,
+  restorePuzzleStateFromExport,
+} from '../../utils/puzzleExport';
+import { PUZZLE_EXPORT_VERSION } from '../../constants/version';
+import { migrationRegistry } from '../../migrations';
 
 export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
   newPuzzle: (options = {}) => {
@@ -76,10 +82,11 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
   exportPuzzle: () => {
     const state = get();
     // Topology is regenerated from grid config on load, not stored
+    // Strip 'layer' field from elements - it's implicit from problem/answer structure
     const exportData: Record<string, unknown> = {
-      version: '1.0.0',
+      version: PUZZLE_EXPORT_VERSION,
       grid: state.grid,
-      state: state.puzzle,
+      state: optimizePuzzleStateForExport(state.puzzle),
       topologySettings: {
         useTopology: state.useTopology,
         topologyPreset: state.topologyPreset,
@@ -95,8 +102,21 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
 
   importPuzzle: (json) => {
     try {
-      const data = JSON.parse(json);
+      let data = JSON.parse(json);
       if (data.version && data.grid && data.state) {
+        // Run migrations if needed (for major version changes)
+        if (migrationRegistry.needsMigration(data)) {
+          const migrationResult = migrationRegistry.migrate(data);
+          if (!migrationResult.success) {
+            console.error('[Import] Migration failed:', migrationResult.error);
+            return false;
+          }
+          data = migrationResult.data;
+          if (migrationResult.migrationsApplied.length > 0) {
+            console.log('[Import] Migrations applied:', migrationResult.migrationsApplied);
+          }
+        }
+
         // Support both old format (separate fields) and new format (topologySettings)
         const useTopology = data.topologySettings?.useTopology ?? data.useTopology ?? false;
         const topologyPreset = data.topologySettings?.topologyPreset ?? data.topologyPreset ?? 'square';
@@ -108,9 +128,12 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
           ? applyTopologyPreset(base, { preset: topologyPreset, intensity: topologyIntensity })
           : base;
 
+        // Restore layer field to elements (v1.1.0+ strips layer, older versions include it)
+        const puzzleState = restorePuzzleStateFromExport(data.state);
+
         set({
           grid: data.grid,
-          puzzle: data.state,
+          puzzle: puzzleState,
           useTopology,
           topologyPreset,
           topologyIntensity,

@@ -8,7 +8,7 @@
 import { getStorage, ref, uploadString, getDownloadURL, deleteObject, getBlob } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { app } from '../../../firebase';
-import type { StorageAdapter, SaveResult, LoadResult, StorageConfig } from '../types';
+import type { StorageAdapter, SaveResult, LoadResult, StorageConfig, PuzzleExportData } from '../types';
 import type { PuzzleExport } from '../../../types';
 
 const STORAGE_PATH = 'puzzles';
@@ -28,7 +28,7 @@ export class FirebaseStorageAdapter implements StorageAdapter {
     return app !== null;
   }
 
-  async save(data: PuzzleExport): Promise<SaveResult> {
+  async save(data: PuzzleExportData): Promise<SaveResult> {
     if (!this.isAvailable()) {
       throw new Error('Firebase is not configured');
     }
