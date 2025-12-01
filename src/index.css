@@ -24,6 +24,13 @@ body {
   min-width: 320px;
   min-height: 100vh;
   overflow: hidden;
+  /* Prevent browser swipe-back gesture */
+  overscroll-behavior-x: none;
+}
+
+html {
+  /* Prevent browser swipe-back gesture on the entire page */
+  overscroll-behavior: none;
 }
 
 #root {
@@ -124,4 +131,11 @@ body {
     linear-gradient(-45deg, transparent 75%, #ccc 75%);
   background-size: 8px 8px;
   background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+}
+
+/* Prevent swipe-back gesture on all scrollable elements */
+[class*="overflow-y-auto"],
+[class*="overflow-auto"],
+[class*="overflow-scroll"] {
+  overscroll-behavior: contain;
 }

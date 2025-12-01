@@ -16,6 +16,7 @@ import {
 import { gridConfigToTopology, applyTopologyPreset } from '../../utils/gridTopology';
 import { parsePenpaUrl, isPenpaUrl, parsePuzzlinkUrl, isPuzzlinkUrl, generatePuzzlinkUrl } from '../../utils/penpaCompat';
 import { NewPuzzleDialog } from '../dialogs/NewPuzzleDialog';
+import { PerformanceTestDialog } from '../dialogs/PerformanceTestDialog';
 
 interface MenuItem {
   labelKey: string;
@@ -33,6 +34,7 @@ export const MenuBar: React.FC = () => {
   const { t } = useTranslation();
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [isNewPuzzleOpen, setIsNewPuzzleOpen] = useState(false);
+  const [isPerformanceTestOpen, setIsPerformanceTestOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -46,11 +48,6 @@ export const MenuBar: React.FC = () => {
     useTopology,
     topologyPreset,
     topologyIntensity,
-    newPuzzle,
-    addSurface,
-    addLine,
-    addNumber,
-    addSymbol,
   } = usePuzzleStore();
 
   // Auto-save on changes
@@ -403,96 +400,8 @@ export const MenuBar: React.FC = () => {
     setActiveMenu(null);
   };
 
-  // Performance test: generate a grid with random elements
   const handlePerformanceTest = () => {
-    const sizeInput = prompt(
-      t('help.performanceTestPrompt') || 'Enter grid size (e.g., 20 for 20x20, or 30x40 for width x height):',
-      '20'
-    );
-    if (!sizeInput) return;
-
-    let rows: number, cols: number;
-    if (sizeInput.includes('x')) {
-      const parts = sizeInput.split('x').map(s => parseInt(s.trim(), 10));
-      cols = parts[0] || 20;
-      rows = parts[1] || 20;
-    } else {
-      rows = cols = parseInt(sizeInput, 10) || 20;
-    }
-
-    // Limit size for safety
-    rows = Math.min(Math.max(rows, 5), 100);
-    cols = Math.min(Math.max(cols, 5), 100);
-
-    const startTime = performance.now();
-
-    // Create new puzzle
-    newPuzzle({ rows, cols, gridType: 'square', cellSize: 30 });
-
-    // Generate random elements
-    const colors = ['#000000', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#808080'];
-    const symbols = ['circle', 'square', 'triangle', 'diamond', 'star', 'cross'] as const;
-
-    // Add surfaces (fill ~30% of cells)
-    const surfaceCount = Math.floor(rows * cols * 0.3);
-    for (let i = 0; i < surfaceCount; i++) {
-      const row = Math.floor(Math.random() * rows);
-      const col = Math.floor(Math.random() * cols);
-      const color = colors[Math.floor(Math.random() * colors.length)];
-      addSurface({ cellId: `${row},${col}`, color, layer: 'problem' });
-    }
-
-    // Add numbers (fill ~20% of cells)
-    const numberCount = Math.floor(rows * cols * 0.2);
-    for (let i = 0; i < numberCount; i++) {
-      const row = Math.floor(Math.random() * rows);
-      const col = Math.floor(Math.random() * cols);
-      const value = String(Math.floor(Math.random() * 9) + 1);
-      addNumber({ cellId: `${row},${col}`, value, size: 'large', position: 'center', color: '#000000', layer: 'problem' });
-    }
-
-    // Add symbols (fill ~10% of cells)
-    const symbolCount = Math.floor(rows * cols * 0.1);
-    for (let i = 0; i < symbolCount; i++) {
-      const row = Math.floor(Math.random() * rows);
-      const col = Math.floor(Math.random() * cols);
-      const symbolType = symbols[Math.floor(Math.random() * symbols.length)];
-      const color = colors[Math.floor(Math.random() * colors.length)];
-      addSymbol({ cellId: `${row},${col}`, symbolType, color, size: 'medium', rotation: 0, layer: 'problem' });
-    }
-
-    // Add lines (create ~15% of possible edges)
-    const lineCount = Math.floor(rows * cols * 0.15);
-    for (let i = 0; i < lineCount; i++) {
-      const row = Math.floor(Math.random() * rows);
-      const col = Math.floor(Math.random() * cols);
-      const directions = [
-        { dr: 0, dc: 1 },  // right
-        { dr: 1, dc: 0 },  // down
-      ];
-      const dir = directions[Math.floor(Math.random() * directions.length)];
-      const toRow = row + dir.dr;
-      const toCol = col + dir.dc;
-      if (toRow < rows && toCol < cols) {
-        const color = colors[Math.floor(Math.random() * colors.length)];
-        addLine({ from: `${row},${col}`, to: `${toRow},${toCol}`, color, style: 'solid', thickness: 'normal', layer: 'problem' });
-      }
-    }
-
-    const endTime = performance.now();
-    const totalElements = surfaceCount + numberCount + symbolCount + lineCount;
-
-    alert(
-      `${t('help.performanceTestResult') || 'Performance Test Result'}\n\n` +
-      `Grid: ${cols}x${rows} (${rows * cols} cells)\n` +
-      `Elements: ${totalElements}\n` +
-      `  - Surfaces: ${surfaceCount}\n` +
-      `  - Numbers: ${numberCount}\n` +
-      `  - Symbols: ${symbolCount}\n` +
-      `  - Lines: ${lineCount}\n\n` +
-      `Generation time: ${(endTime - startTime).toFixed(2)}ms`
-    );
-
+    setIsPerformanceTestOpen(true);
     setActiveMenu(null);
   };
 
@@ -690,6 +599,12 @@ export const MenuBar: React.FC = () => {
       <NewPuzzleDialog
         isOpen={isNewPuzzleOpen}
         onClose={() => setIsNewPuzzleOpen(false)}
+      />
+
+      {/* Performance Test Dialog */}
+      <PerformanceTestDialog
+        isOpen={isPerformanceTestOpen}
+        onClose={() => setIsPerformanceTestOpen(false)}
       />
     </div>
   );

@@ -413,6 +413,16 @@ const resources = {
       'help.performanceTest': 'Performance Test',
       'help.performanceTestPrompt': 'Enter grid size (e.g., 20 for 20x20, or 30x40 for width x height):',
       'help.performanceTestResult': 'Performance Test Result',
+      'help.performanceTestInfo': 'This will generate:',
+      'help.totalElements': 'Total elements',
+      'help.generationTime': 'Generation time',
+      'help.runTest': 'Run Test',
+      'help.running': 'Running...',
+      'grid.cells': 'cells',
+      'tool.surface': 'surfaces',
+      'tool.number': 'numbers',
+      'tool.symbol': 'symbols',
+      'tool.line': 'lines',
 
       // Import/Export dialog
       'dialog.importExport': 'Import / Export',
@@ -854,6 +864,16 @@ const resources = {
       'help.performanceTest': 'パフォーマンステスト',
       'help.performanceTestPrompt': 'グリッドサイズを入力 (例: 20で20x20、30x40で幅x高さ):',
       'help.performanceTestResult': 'パフォーマンステスト結果',
+      'help.performanceTestInfo': '生成される要素:',
+      'help.totalElements': '合計要素数',
+      'help.generationTime': '生成時間',
+      'help.runTest': 'テスト実行',
+      'help.running': '実行中...',
+      'grid.cells': 'セル',
+      'tool.surface': '塗り',
+      'tool.number': '数字',
+      'tool.symbol': '記号',
+      'tool.line': '線',
 
       // Import/Export dialog
       'dialog.importExport': 'インポート / エクスポート',

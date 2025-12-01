@@ -6,3 +6,4 @@ export { GridSettingsDialog } from './GridSettingsDialog';
 export { NewPuzzleDialog } from './NewPuzzleDialog';
 export { ImportExportDialog } from './ImportExportDialog';
 export type { DialogMode, ImportFormat, ExportFormat } from './ImportExportDialog';
+export { PerformanceTestDialog } from './PerformanceTestDialog';
