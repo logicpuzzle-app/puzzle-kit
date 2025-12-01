@@ -410,6 +410,9 @@ const resources = {
       // Help
       'help.shortcuts': 'Keyboard Shortcuts',
       'help.about': 'About PuzzleKit',
+      'help.performanceTest': 'Performance Test',
+      'help.performanceTestPrompt': 'Enter grid size (e.g., 20 for 20x20, or 30x40 for width x height):',
+      'help.performanceTestResult': 'Performance Test Result',
 
       // Import/Export dialog
       'dialog.importExport': 'Import / Export',
@@ -848,6 +851,9 @@ const resources = {
       // Help
       'help.shortcuts': 'キーボードショートカット',
       'help.about': 'PuzzleKitについて',
+      'help.performanceTest': 'パフォーマンステスト',
+      'help.performanceTestPrompt': 'グリッドサイズを入力 (例: 20で20x20、30x40で幅x高さ):',
+      'help.performanceTestResult': 'パフォーマンステスト結果',
 
       // Import/Export dialog
       'dialog.importExport': 'インポート / エクスポート',
