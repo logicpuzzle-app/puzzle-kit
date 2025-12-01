@@ -9,8 +9,6 @@
 
 import type {
   LayerType,
-  ToolType,
-  ToolCategory,
   SurfaceElement,
   LineElement,
   EdgeElement,
@@ -24,7 +22,105 @@ import type {
 } from '../types';
 
 // ========================================
-// Action Types
+// Element Type Mapping
+// ========================================
+
+// Map element names to their types
+type ElementTypeMap = {
+  SURFACE: SurfaceElement;
+  LINE: LineElement;
+  EDGE: EdgeElement;
+  WALL: WallElement;
+  NUMBER: NumberElement;
+  SYMBOL: SymbolElement;
+  CAGE: CageElement;
+  SPECIAL: SpecialElement;
+};
+
+type ElementName = keyof ElementTypeMap;
+
+// ========================================
+// Generic Element Actions
+// ========================================
+
+// Generic Add action for any element type
+interface AddElementAction<N extends ElementName> {
+  type: `ADD_${N}`;
+  element: ElementTypeMap[N];
+}
+
+// Generic Remove action for any element type
+interface RemoveElementAction<N extends ElementName> {
+  type: `REMOVE_${N}`;
+  id: string;
+  element: ElementTypeMap[N];
+}
+
+// Specific element actions (for type inference)
+export type AddSurfaceAction = AddElementAction<'SURFACE'>;
+export type RemoveSurfaceAction = RemoveElementAction<'SURFACE'>;
+export type AddLineAction = AddElementAction<'LINE'>;
+export type RemoveLineAction = RemoveElementAction<'LINE'>;
+export type AddEdgeAction = AddElementAction<'EDGE'>;
+export type RemoveEdgeAction = RemoveElementAction<'EDGE'>;
+export type AddWallAction = AddElementAction<'WALL'>;
+export type RemoveWallAction = RemoveElementAction<'WALL'>;
+export type AddNumberAction = AddElementAction<'NUMBER'>;
+export type RemoveNumberAction = RemoveElementAction<'NUMBER'>;
+export type AddSymbolAction = AddElementAction<'SYMBOL'>;
+export type RemoveSymbolAction = RemoveElementAction<'SYMBOL'>;
+export type AddCageAction = AddElementAction<'CAGE'>;
+export type RemoveCageAction = RemoveElementAction<'CAGE'>;
+export type AddSpecialAction = AddElementAction<'SPECIAL'>;
+export type RemoveSpecialAction = RemoveElementAction<'SPECIAL'>;
+
+// Special action for number updates
+export interface UpdateNumberAction {
+  type: 'UPDATE_NUMBER';
+  id: string;
+  previousValue: string;
+  newValue: string;
+  layer: LayerType;
+}
+
+// ========================================
+// Layer Actions
+// ========================================
+
+export interface SetActiveLayerAction {
+  type: 'SET_ACTIVE_LAYER';
+  layer: LayerType;
+  previousLayer: LayerType;
+}
+
+export interface ClearLayerAction {
+  type: 'CLEAR_LAYER';
+  layer: LayerType;
+  previousState: PuzzleState[LayerType];
+}
+
+// ========================================
+// Grid Actions
+// ========================================
+
+export interface SetGridAction {
+  type: 'SET_GRID';
+  grid: Partial<GridConfig>;
+  previousGrid: GridConfig;
+}
+
+// ========================================
+// Batch Action
+// ========================================
+
+export interface BatchAction {
+  type: 'BATCH';
+  actions: PuzzleAction[];
+  description?: string;
+}
+
+// ========================================
+// Union of All Actions
 // ========================================
 
 export type PuzzleAction =
@@ -55,200 +151,45 @@ export type PuzzleAction =
   | BatchAction;
 
 // ========================================
-// Element Actions
+// Generic Action Creators
 // ========================================
 
-export interface AddSurfaceAction {
-  type: 'ADD_SURFACE';
-  element: SurfaceElement;
+// Factory for creating add action creators
+function createAddActionCreator<N extends ElementName>(name: N) {
+  return (element: ElementTypeMap[N]): AddElementAction<N> => ({
+    type: `ADD_${name}` as const,
+    element,
+  });
 }
 
-export interface RemoveSurfaceAction {
-  type: 'REMOVE_SURFACE';
-  id: string;
-  element: SurfaceElement; // Store for undo
+// Factory for creating remove action creators
+function createRemoveActionCreator<N extends ElementName>(name: N) {
+  return (id: string, element: ElementTypeMap[N]): RemoveElementAction<N> => ({
+    type: `REMOVE_${name}` as const,
+    id,
+    element,
+  });
 }
 
-export interface AddLineAction {
-  type: 'ADD_LINE';
-  element: LineElement;
-}
+// Element action creators using the factories
+export const createAddSurfaceAction = createAddActionCreator('SURFACE');
+export const createRemoveSurfaceAction = createRemoveActionCreator('SURFACE');
+export const createAddLineAction = createAddActionCreator('LINE');
+export const createRemoveLineAction = createRemoveActionCreator('LINE');
+export const createAddEdgeAction = createAddActionCreator('EDGE');
+export const createRemoveEdgeAction = createRemoveActionCreator('EDGE');
+export const createAddWallAction = createAddActionCreator('WALL');
+export const createRemoveWallAction = createRemoveActionCreator('WALL');
+export const createAddNumberAction = createAddActionCreator('NUMBER');
+export const createRemoveNumberAction = createRemoveActionCreator('NUMBER');
+export const createAddSymbolAction = createAddActionCreator('SYMBOL');
+export const createRemoveSymbolAction = createRemoveActionCreator('SYMBOL');
+export const createAddCageAction = createAddActionCreator('CAGE');
+export const createRemoveCageAction = createRemoveActionCreator('CAGE');
+export const createAddSpecialAction = createAddActionCreator('SPECIAL');
+export const createRemoveSpecialAction = createRemoveActionCreator('SPECIAL');
 
-export interface RemoveLineAction {
-  type: 'REMOVE_LINE';
-  id: string;
-  element: LineElement;
-}
-
-export interface AddEdgeAction {
-  type: 'ADD_EDGE';
-  element: EdgeElement;
-}
-
-export interface RemoveEdgeAction {
-  type: 'REMOVE_EDGE';
-  id: string;
-  element: EdgeElement;
-}
-
-export interface AddWallAction {
-  type: 'ADD_WALL';
-  element: WallElement;
-}
-
-export interface RemoveWallAction {
-  type: 'REMOVE_WALL';
-  id: string;
-  element: WallElement;
-}
-
-export interface AddNumberAction {
-  type: 'ADD_NUMBER';
-  element: NumberElement;
-}
-
-export interface RemoveNumberAction {
-  type: 'REMOVE_NUMBER';
-  id: string;
-  element: NumberElement;
-}
-
-export interface UpdateNumberAction {
-  type: 'UPDATE_NUMBER';
-  id: string;
-  previousValue: string;
-  newValue: string;
-  layer: LayerType;
-}
-
-export interface AddSymbolAction {
-  type: 'ADD_SYMBOL';
-  element: SymbolElement;
-}
-
-export interface RemoveSymbolAction {
-  type: 'REMOVE_SYMBOL';
-  id: string;
-  element: SymbolElement;
-}
-
-export interface AddCageAction {
-  type: 'ADD_CAGE';
-  element: CageElement;
-}
-
-export interface RemoveCageAction {
-  type: 'REMOVE_CAGE';
-  id: string;
-  element: CageElement;
-}
-
-export interface AddSpecialAction {
-  type: 'ADD_SPECIAL';
-  element: SpecialElement;
-}
-
-export interface RemoveSpecialAction {
-  type: 'REMOVE_SPECIAL';
-  id: string;
-  element: SpecialElement;
-}
-
-// ========================================
-// Layer Actions
-// ========================================
-
-export interface SetActiveLayerAction {
-  type: 'SET_ACTIVE_LAYER';
-  layer: LayerType;
-  previousLayer: LayerType;
-}
-
-export interface ClearLayerAction {
-  type: 'CLEAR_LAYER';
-  layer: LayerType;
-  previousState: PuzzleState[LayerType];
-}
-
-// ========================================
-// Grid Actions
-// ========================================
-
-export interface SetGridAction {
-  type: 'SET_GRID';
-  grid: Partial<GridConfig>;
-  previousGrid: GridConfig;
-}
-
-// ========================================
-// Batch Action (for grouping multiple actions)
-// ========================================
-
-export interface BatchAction {
-  type: 'BATCH';
-  actions: PuzzleAction[];
-  description?: string;
-}
-
-// ========================================
-// Action Creators
-// ========================================
-
-export const createAddSurfaceAction = (element: SurfaceElement): AddSurfaceAction => ({
-  type: 'ADD_SURFACE',
-  element,
-});
-
-export const createRemoveSurfaceAction = (id: string, element: SurfaceElement): RemoveSurfaceAction => ({
-  type: 'REMOVE_SURFACE',
-  id,
-  element,
-});
-
-export const createAddLineAction = (element: LineElement): AddLineAction => ({
-  type: 'ADD_LINE',
-  element,
-});
-
-export const createRemoveLineAction = (id: string, element: LineElement): RemoveLineAction => ({
-  type: 'REMOVE_LINE',
-  id,
-  element,
-});
-
-export const createAddEdgeAction = (element: EdgeElement): AddEdgeAction => ({
-  type: 'ADD_EDGE',
-  element,
-});
-
-export const createRemoveEdgeAction = (id: string, element: EdgeElement): RemoveEdgeAction => ({
-  type: 'REMOVE_EDGE',
-  id,
-  element,
-});
-
-export const createAddWallAction = (element: WallElement): AddWallAction => ({
-  type: 'ADD_WALL',
-  element,
-});
-
-export const createRemoveWallAction = (id: string, element: WallElement): RemoveWallAction => ({
-  type: 'REMOVE_WALL',
-  id,
-  element,
-});
-
-export const createAddNumberAction = (element: NumberElement): AddNumberAction => ({
-  type: 'ADD_NUMBER',
-  element,
-});
-
-export const createRemoveNumberAction = (id: string, element: NumberElement): RemoveNumberAction => ({
-  type: 'REMOVE_NUMBER',
-  id,
-  element,
-});
-
+// Special action creators
 export const createUpdateNumberAction = (
   id: string,
   previousValue: string,
@@ -262,39 +203,6 @@ export const createUpdateNumberAction = (
   layer,
 });
 
-export const createAddSymbolAction = (element: SymbolElement): AddSymbolAction => ({
-  type: 'ADD_SYMBOL',
-  element,
-});
-
-export const createRemoveSymbolAction = (id: string, element: SymbolElement): RemoveSymbolAction => ({
-  type: 'REMOVE_SYMBOL',
-  id,
-  element,
-});
-
-export const createAddCageAction = (element: CageElement): AddCageAction => ({
-  type: 'ADD_CAGE',
-  element,
-});
-
-export const createRemoveCageAction = (id: string, element: CageElement): RemoveCageAction => ({
-  type: 'REMOVE_CAGE',
-  id,
-  element,
-});
-
-export const createAddSpecialAction = (element: SpecialElement): AddSpecialAction => ({
-  type: 'ADD_SPECIAL',
-  element,
-});
-
-export const createRemoveSpecialAction = (id: string, element: SpecialElement): RemoveSpecialAction => ({
-  type: 'REMOVE_SPECIAL',
-  id,
-  element,
-});
-
 export const createBatchAction = (actions: PuzzleAction[], description?: string): BatchAction => ({
   type: 'BATCH',
   actions,
@@ -305,28 +213,40 @@ export const createBatchAction = (actions: PuzzleAction[], description?: string)
 // Action Reversal (for undo)
 // ========================================
 
+// Helper to reverse element actions
+function reverseElementAction<N extends ElementName>(
+  actionType: string,
+  action: PuzzleAction
+): PuzzleAction | null {
+  if (actionType.startsWith('ADD_')) {
+    const name = actionType.slice(4) as N;
+    const addAction = action as AddElementAction<N>;
+    return {
+      type: `REMOVE_${name}`,
+      id: addAction.element.id,
+      element: addAction.element,
+    } as PuzzleAction;
+  }
+  if (actionType.startsWith('REMOVE_')) {
+    const name = actionType.slice(7) as N;
+    const removeAction = action as RemoveElementAction<N>;
+    return {
+      type: `ADD_${name}`,
+      element: removeAction.element,
+    } as PuzzleAction;
+  }
+  return null;
+}
+
 export function reverseAction(action: PuzzleAction): PuzzleAction {
+  // Try to handle as element action
+  const elementReversed = reverseElementAction(action.type, action);
+  if (elementReversed) {
+    return elementReversed;
+  }
+
+  // Handle special cases
   switch (action.type) {
-    case 'ADD_SURFACE':
-      return { type: 'REMOVE_SURFACE', id: action.element.id, element: action.element };
-    case 'REMOVE_SURFACE':
-      return { type: 'ADD_SURFACE', element: action.element };
-    case 'ADD_LINE':
-      return { type: 'REMOVE_LINE', id: action.element.id, element: action.element };
-    case 'REMOVE_LINE':
-      return { type: 'ADD_LINE', element: action.element };
-    case 'ADD_EDGE':
-      return { type: 'REMOVE_EDGE', id: action.element.id, element: action.element };
-    case 'REMOVE_EDGE':
-      return { type: 'ADD_EDGE', element: action.element };
-    case 'ADD_WALL':
-      return { type: 'REMOVE_WALL', id: action.element.id, element: action.element };
-    case 'REMOVE_WALL':
-      return { type: 'ADD_WALL', element: action.element };
-    case 'ADD_NUMBER':
-      return { type: 'REMOVE_NUMBER', id: action.element.id, element: action.element };
-    case 'REMOVE_NUMBER':
-      return { type: 'ADD_NUMBER', element: action.element };
     case 'UPDATE_NUMBER':
       return {
         type: 'UPDATE_NUMBER',
@@ -335,18 +255,6 @@ export function reverseAction(action: PuzzleAction): PuzzleAction {
         newValue: action.previousValue,
         layer: action.layer,
       };
-    case 'ADD_SYMBOL':
-      return { type: 'REMOVE_SYMBOL', id: action.element.id, element: action.element };
-    case 'REMOVE_SYMBOL':
-      return { type: 'ADD_SYMBOL', element: action.element };
-    case 'ADD_CAGE':
-      return { type: 'REMOVE_CAGE', id: action.element.id, element: action.element };
-    case 'REMOVE_CAGE':
-      return { type: 'ADD_CAGE', element: action.element };
-    case 'ADD_SPECIAL':
-      return { type: 'REMOVE_SPECIAL', id: action.element.id, element: action.element };
-    case 'REMOVE_SPECIAL':
-      return { type: 'ADD_SPECIAL', element: action.element };
     case 'SET_ACTIVE_LAYER':
       return {
         type: 'SET_ACTIVE_LAYER',
@@ -355,7 +263,6 @@ export function reverseAction(action: PuzzleAction): PuzzleAction {
       };
     case 'CLEAR_LAYER':
       // Clear layer cannot be easily reversed without snapshot
-      // This will be handled specially in history
       return action;
     case 'SET_GRID':
       return {
@@ -369,6 +276,8 @@ export function reverseAction(action: PuzzleAction): PuzzleAction {
         actions: action.actions.map(reverseAction).reverse(),
         description: action.description ? `Undo: ${action.description}` : undefined,
       };
+    default:
+      return action;
   }
 }
 
@@ -376,42 +285,37 @@ export function reverseAction(action: PuzzleAction): PuzzleAction {
 // Action Description (for UI display)
 // ========================================
 
+// Description mapping for element actions
+const ELEMENT_ACTION_DESCRIPTIONS: Record<string, string> = {
+  ADD_SURFACE: 'Add surface',
+  REMOVE_SURFACE: 'Remove surface',
+  ADD_LINE: 'Add line',
+  REMOVE_LINE: 'Remove line',
+  ADD_EDGE: 'Add edge',
+  REMOVE_EDGE: 'Remove edge',
+  ADD_WALL: 'Add wall',
+  REMOVE_WALL: 'Remove wall',
+  ADD_NUMBER: 'Add number',
+  REMOVE_NUMBER: 'Remove number',
+  ADD_SYMBOL: 'Add symbol',
+  REMOVE_SYMBOL: 'Remove symbol',
+  ADD_CAGE: 'Add cage',
+  REMOVE_CAGE: 'Remove cage',
+  ADD_SPECIAL: 'Add special',
+  REMOVE_SPECIAL: 'Remove special',
+};
+
 export function getActionDescription(action: PuzzleAction): string {
+  // Check element action descriptions
+  const elementDescription = ELEMENT_ACTION_DESCRIPTIONS[action.type];
+  if (elementDescription) {
+    return elementDescription;
+  }
+
+  // Handle special cases
   switch (action.type) {
-    case 'ADD_SURFACE':
-      return 'Add surface';
-    case 'REMOVE_SURFACE':
-      return 'Remove surface';
-    case 'ADD_LINE':
-      return 'Add line';
-    case 'REMOVE_LINE':
-      return 'Remove line';
-    case 'ADD_EDGE':
-      return 'Add edge';
-    case 'REMOVE_EDGE':
-      return 'Remove edge';
-    case 'ADD_WALL':
-      return 'Add wall';
-    case 'REMOVE_WALL':
-      return 'Remove wall';
-    case 'ADD_NUMBER':
-      return 'Add number';
-    case 'REMOVE_NUMBER':
-      return 'Remove number';
     case 'UPDATE_NUMBER':
       return 'Update number';
-    case 'ADD_SYMBOL':
-      return 'Add symbol';
-    case 'REMOVE_SYMBOL':
-      return 'Remove symbol';
-    case 'ADD_CAGE':
-      return 'Add cage';
-    case 'REMOVE_CAGE':
-      return 'Remove cage';
-    case 'ADD_SPECIAL':
-      return 'Add special';
-    case 'REMOVE_SPECIAL':
-      return 'Remove special';
     case 'SET_ACTIVE_LAYER':
       return `Switch to ${action.layer} layer`;
     case 'CLEAR_LAYER':
@@ -420,5 +324,7 @@ export function getActionDescription(action: PuzzleAction): string {
       return 'Update grid settings';
     case 'BATCH':
       return action.description || `${action.actions.length} operations`;
+    default:
+      return 'Unknown action';
   }
 }

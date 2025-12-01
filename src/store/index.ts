@@ -6,6 +6,33 @@
 
 // Main puzzle store
 export { usePuzzleStore } from './puzzleStore';
+export type { PuzzleStore } from './puzzleStore';
+
+// Store slices (for advanced usage)
+export {
+  createGridSlice,
+  createElementsSlice,
+  createCanvasSlice,
+  createToolSlice,
+  createLayerSlice,
+  createSolutionSlice,
+  createHistorySlice,
+  createPuzzleIOSlice,
+  // Types
+  type GridSlice,
+  type ElementsSlice,
+  type CanvasSlice,
+  type ToolSlice,
+  type LayerSlice,
+  type SolutionSlice,
+  type HistorySlice,
+  type PuzzleIOSlice,
+  type SliceCreator,
+  // Helpers
+  createEmptyElements,
+  createEmptyState,
+  DEFAULT_TOOL_SETTINGS,
+} from './slices';
 
 // Action system
 export {

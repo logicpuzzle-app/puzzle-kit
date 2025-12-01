@@ -1,0 +1,132 @@
+/**
+ * Puzzle IO Slice - New puzzle, export, and import operations
+ */
+
+import type { GridConfig, GridType, IsometricFace, IsometricView } from '../../types';
+import type { PuzzleIOSlice, SliceCreator } from './types';
+import { createEmptyState, DEFAULT_TOOL_SETTINGS } from './types';
+import { gridConfigToTopology, applyTopologyPreset } from '../../utils/gridTopology';
+import { serializeTopology, deserializeTopology } from '../../utils/serialization';
+import { historyManager } from '../historyManager';
+
+export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
+  newPuzzle: (options = {}) => {
+    const {
+      rows = 10,
+      cols = 10,
+      gridType = 'square',
+      cellSize = 40,
+      level,
+      isometricFaces,
+      isometricView,
+    } = options;
+
+    const baseGrid: GridConfig = {
+      rows,
+      cols,
+      cellSize,
+      outerPadding: 20,
+      showGrid: true,
+      gridStyle: 'normal',
+      gridType,
+      marginTop: 0,
+      marginBottom: 0,
+      marginLeft: 0,
+      marginRight: 0,
+      frameStyle: 'normal',
+      frameColor: '#000000',
+      gridColor: '#000000',
+      backgroundColor: '#ffffff',
+      ...(level !== undefined && { level }),
+      ...(isometricFaces !== undefined && { isometricFaces }),
+      ...(isometricView !== undefined && { isometricView }),
+    };
+
+    const baseTopology = gridConfigToTopology(baseGrid);
+    const state = get();
+    const topology = state.useTopology
+      ? applyTopologyPreset(baseTopology, {
+          preset: state.topologyPreset,
+          intensity: state.topologyIntensity,
+        })
+      : null;
+
+    set({
+      grid: baseGrid,
+      puzzle: createEmptyState(),
+      canvas: {
+        zoom: 1,
+        panX: 0,
+        panY: 0,
+        isDragging: false,
+        isDrawing: false,
+        selection: [],
+        panMode: false,
+      },
+      selectedElements: [],
+      hoverCell: null,
+      numberSelection: null,
+      toolSettings: { ...DEFAULT_TOOL_SETTINGS },
+      activeLayer: 'problem',
+      isGridMode: true,
+      topology,
+    });
+    historyManager.clear();
+  },
+
+  exportPuzzle: () => {
+    const state = get();
+    const exportData: Record<string, unknown> = {
+      version: '1.0.0',
+      grid: state.grid,
+      state: state.puzzle,
+      useTopology: state.useTopology,
+      topologyPreset: state.topologyPreset,
+      topologyIntensity: state.topologyIntensity,
+      metadata: {
+        created: new Date().toISOString(),
+        modified: new Date().toISOString(),
+      },
+    };
+    if (state.topology) {
+      exportData.topology = serializeTopology(state.topology);
+    }
+    return JSON.stringify(exportData, null, 2);
+  },
+
+  importPuzzle: (json) => {
+    try {
+      const data = JSON.parse(json);
+      if (data.version && data.grid && data.state) {
+        const updateState: Record<string, unknown> = {
+          grid: data.grid,
+          puzzle: data.state,
+        };
+        if (data.useTopology !== undefined) {
+          updateState.useTopology = data.useTopology;
+        }
+        if (data.topologyPreset !== undefined) {
+          updateState.topologyPreset = data.topologyPreset;
+        }
+        if (data.topologyIntensity !== undefined) {
+          updateState.topologyIntensity = data.topologyIntensity;
+        }
+        if (data.topology) {
+          updateState.topology = deserializeTopology(data.topology);
+        } else if (data.useTopology) {
+          const base = gridConfigToTopology(data.grid);
+          updateState.topology = applyTopologyPreset(base, {
+            preset: data.topologyPreset || 'none',
+            intensity: data.topologyIntensity || 0,
+          });
+        }
+        set(updateState as any);
+        historyManager.clear();
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  },
+});

@@ -6,6 +6,8 @@
 
 export { useKeyboardShortcuts } from './useKeyboardShortcuts';
 export { useCanvasInteraction } from './useCanvasInteraction';
+export { useZoomPan } from './useZoomPan';
+export { useTouchHandlers } from './useTouchHandlers';
 export {
   usePenpaKeyboard,
   type PenpaKeyboardState,
