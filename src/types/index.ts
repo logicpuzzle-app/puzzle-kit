@@ -578,4 +578,12 @@ export interface PuzzleExport {
     created?: string;
     modified?: string;
   };
+  // Topology settings (optional - only included if topology has been customized)
+  topologySettings?: {
+    useTopology: boolean;
+    topologyPreset: string;
+    topologyIntensity: number;
+    // Serialized topology data (only if customized via merge/split/sculpt)
+    customTopology?: unknown;
+  };
 }

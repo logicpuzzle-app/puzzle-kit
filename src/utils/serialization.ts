@@ -94,7 +94,8 @@ function decompressKeys(obj: unknown): unknown {
 export function serializePuzzle(
   grid: GridConfig,
   state: PuzzleState,
-  metadata?: PuzzleExport['metadata']
+  metadata?: PuzzleExport['metadata'],
+  topologySettings?: PuzzleExport['topologySettings']
 ): string {
   const data: PuzzleExport = {
     version: PUZZLE_VERSION,
@@ -105,6 +106,11 @@ export function serializePuzzle(
       modified: new Date().toISOString(),
     },
   };
+
+  // Include topology settings if provided
+  if (topologySettings) {
+    data.topologySettings = topologySettings;
+  }
 
   // Compress keys
   const compressed = compressKeys(data);
@@ -163,9 +169,10 @@ export function deserializePuzzle(encoded: string): PuzzleExport | null {
 export function generateShareUrl(
   grid: GridConfig,
   state: PuzzleState,
-  metadata?: PuzzleExport['metadata']
+  metadata?: PuzzleExport['metadata'],
+  topologySettings?: PuzzleExport['topologySettings']
 ): string {
-  const encoded = serializePuzzle(grid, state, metadata);
+  const encoded = serializePuzzle(grid, state, metadata, topologySettings);
   const baseUrl = window.location.origin + window.location.pathname;
   return `${baseUrl}?p=${encoded}`;
 }
@@ -188,7 +195,8 @@ const STORAGE_LIST_KEY = 'puzzlekit_saved_puzzles';
 export function autoSave(
   grid: GridConfig,
   state: PuzzleState,
-  metadata?: PuzzleExport['metadata']
+  metadata?: PuzzleExport['metadata'],
+  topologySettings?: PuzzleExport['topologySettings']
 ): void {
   const data: PuzzleExport = {
     version: PUZZLE_VERSION,
@@ -199,6 +207,9 @@ export function autoSave(
       modified: new Date().toISOString(),
     },
   };
+  if (topologySettings) {
+    data.topologySettings = topologySettings;
+  }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
