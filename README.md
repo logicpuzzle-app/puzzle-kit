@@ -44,6 +44,21 @@ VITE_FIREBASE_PROJECT_ID=your-project-id
 
 See `.env.example` for all available options.
 
+## Acknowledgments
+
+This project is inspired by these wonderful tools:
+
+**pzpr family**
+- [pzprjs](https://github.com/sabo2/pzprjs)
+- [pzpr-puzzlink](https://github.com/robx/pzpr-puzzlink)
+
+**penpa family**
+- [penpa-edit (original)](https://github.com/opt-pan/penpa-edit/)
+- [penpa-edit (enhanced)](https://github.com/swaroopg92/penpa-edit)
+
+**Kudamono editor**
+- [Kudamono](https://pedros.works/kudamono/)
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
