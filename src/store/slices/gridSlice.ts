@@ -425,7 +425,12 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
         height: maxY - minY,
       };
 
+      // Save operation to grid config for regeneration on load
+      const currentSculptOps = state.grid.sculptOperations || [];
+      const newSculptOps = [...currentSculptOps, { type: 'rotate' as const, vertexId }];
+
       return {
+        grid: { ...state.grid, sculptOperations: newSculptOps },
         topology: {
           ...state.topology,
           vertices: newVertices,

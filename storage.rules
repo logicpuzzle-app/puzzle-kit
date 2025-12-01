@@ -1,0 +1,20 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Puzzle files - publicly readable and writable by anyone
+    // (since this is an open puzzle sharing system without authentication)
+    match /puzzles/{puzzleId} {
+      // Anyone can read puzzles
+      allow read: if true;
+
+      // Anyone can create new puzzles (write) without authentication
+      // Limit file size to 1MB to prevent abuse
+      allow write: if request.resource.size < 1 * 1024 * 1024;
+    }
+
+    // Deny access to all other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

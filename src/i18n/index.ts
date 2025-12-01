@@ -451,6 +451,8 @@ const resources = {
       'error.loadFailed': 'Failed to load puzzle',
       'error.invalidPenpaUrl': 'Invalid Penpa URL',
       'error.importFailed': 'Failed to import puzzle',
+      'error.storageNotAvailable': 'Storage is not available. Please try again later.',
+      'error.shareFailed': 'Failed to share puzzle. Please try again.',
     },
   },
   ja: {
@@ -902,6 +904,8 @@ const resources = {
       'error.loadFailed': 'パズルの読み込みに失敗しました',
       'error.invalidPenpaUrl': '無効なPenpa URLです',
       'error.importFailed': 'パズルのインポートに失敗しました',
+      'error.storageNotAvailable': 'ストレージが利用できません。しばらくしてから再度お試しください。',
+      'error.shareFailed': 'パズルの共有に失敗しました。再度お試しください。',
     },
   },
 };

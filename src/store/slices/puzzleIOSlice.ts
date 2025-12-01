@@ -6,7 +6,6 @@ import type { GridConfig, GridType, IsometricFace, IsometricView } from '../../t
 import type { PuzzleIOSlice, SliceCreator } from './types';
 import { createEmptyState, DEFAULT_TOOL_SETTINGS } from './types';
 import { gridConfigToTopology, applyTopologyPreset } from '../../utils/gridTopology';
-import { serializeTopology, deserializeTopology } from '../../utils/serialization';
 import { historyManager } from '../historyManager';
 
 export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
@@ -76,21 +75,21 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
 
   exportPuzzle: () => {
     const state = get();
+    // Topology is regenerated from grid config on load, not stored
     const exportData: Record<string, unknown> = {
       version: '1.0.0',
       grid: state.grid,
       state: state.puzzle,
-      useTopology: state.useTopology,
-      topologyPreset: state.topologyPreset,
-      topologyIntensity: state.topologyIntensity,
+      topologySettings: {
+        useTopology: state.useTopology,
+        topologyPreset: state.topologyPreset,
+        topologyIntensity: state.topologyIntensity,
+      },
       metadata: {
         created: new Date().toISOString(),
         modified: new Date().toISOString(),
       },
     };
-    if (state.topology) {
-      exportData.topology = serializeTopology(state.topology);
-    }
     return JSON.stringify(exportData, null, 2);
   },
 
@@ -98,29 +97,25 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
     try {
       const data = JSON.parse(json);
       if (data.version && data.grid && data.state) {
-        const updateState: Record<string, unknown> = {
+        // Support both old format (separate fields) and new format (topologySettings)
+        const useTopology = data.topologySettings?.useTopology ?? data.useTopology ?? false;
+        const topologyPreset = data.topologySettings?.topologyPreset ?? data.topologyPreset ?? 'square';
+        const topologyIntensity = data.topologySettings?.topologyIntensity ?? data.topologyIntensity ?? 0.5;
+
+        // Regenerate topology from grid config
+        const base = gridConfigToTopology(data.grid);
+        const topology = useTopology
+          ? applyTopologyPreset(base, { preset: topologyPreset, intensity: topologyIntensity })
+          : base;
+
+        set({
           grid: data.grid,
           puzzle: data.state,
-        };
-        if (data.useTopology !== undefined) {
-          updateState.useTopology = data.useTopology;
-        }
-        if (data.topologyPreset !== undefined) {
-          updateState.topologyPreset = data.topologyPreset;
-        }
-        if (data.topologyIntensity !== undefined) {
-          updateState.topologyIntensity = data.topologyIntensity;
-        }
-        if (data.topology) {
-          updateState.topology = deserializeTopology(data.topology);
-        } else if (data.useTopology) {
-          const base = gridConfigToTopology(data.grid);
-          updateState.topology = applyTopologyPreset(base, {
-            preset: data.topologyPreset || 'none',
-            intensity: data.topologyIntensity || 0,
-          });
-        }
-        set(updateState as any);
+          useTopology,
+          topologyPreset,
+          topologyIntensity,
+          topology,
+        } as any);
         historyManager.clear();
         return true;
       }

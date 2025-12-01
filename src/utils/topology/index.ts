@@ -150,6 +150,7 @@ export {
   areCellsDiagonallyAdjacent,
 } from './queries';
 export { applyMergedCells } from './mergeSplit';
+export { applySculptOperations } from './sculpt';
 
 // ========================================
 // Resize

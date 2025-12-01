@@ -5,10 +5,12 @@
  * - Auto-save on state changes (debounced)
  * - Manual save/load
  * - Multiple puzzle slots
+ * - Gzip compression for storage efficiency
  */
 
 import type { GridConfig, PuzzleState, ToolSettings } from '../types';
 import type { SerializedTopology } from '../utils/serialization';
+import { compress, decompress, isCompressionSupported } from '../utils/compression';
 
 // ========================================
 // Types
@@ -80,13 +82,35 @@ export class PersistenceManager {
   }
 
   /**
-   * Save state to a slot
+   * Check if error is a quota exceeded error
    */
-  saveToSlot(
+  private isQuotaExceededError(error: unknown): boolean {
+    return (
+      error instanceof DOMException &&
+      (error.name === 'QuotaExceededError' ||
+        error.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+        error.code === 22)
+    );
+  }
+
+  /**
+   * Emit storage error event for UI to handle
+   */
+  private emitStorageError(errorType: 'quota' | 'general', dataSize: number): void {
+    const event = new CustomEvent('puzzlekit:storage-error', {
+      detail: { errorType, dataSize },
+    });
+    window.dispatchEvent(event);
+  }
+
+  /**
+   * Save state to a slot (async for compression)
+   */
+  async saveToSlot(
     slotId: string,
     state: PersistedState,
     name?: string
-  ): boolean {
+  ): Promise<boolean> {
     if (!this.isAvailable()) return false;
 
     try {
@@ -101,7 +125,19 @@ export class PersistenceManager {
         },
       };
 
-      localStorage.setItem(key, JSON.stringify(data));
+      // Compress and save
+      const json = JSON.stringify(data);
+      const compressed = await compress(json);
+
+      try {
+        localStorage.setItem(key, compressed);
+      } catch (storageError) {
+        if (this.isQuotaExceededError(storageError)) {
+          this.emitStorageError('quota', compressed.length);
+          return false;
+        }
+        throw storageError;
+      }
 
       // Update slots list
       const slots = this.getSlots();
@@ -138,9 +174,9 @@ export class PersistenceManager {
   }
 
   /**
-   * Load state from a slot
+   * Load state from a slot (async for decompression)
    */
-  loadFromSlot(slotId: string): PersistedState | null {
+  async loadFromSlot(slotId: string): Promise<PersistedState | null> {
     if (!this.isAvailable()) return null;
 
     try {
@@ -148,7 +184,9 @@ export class PersistenceManager {
       const data = localStorage.getItem(key);
       if (!data) return null;
 
-      const parsed = JSON.parse(data) as PersistedState;
+      // Decompress (handles both compressed and legacy uncompressed)
+      const json = await decompress(data);
+      const parsed = JSON.parse(json) as PersistedState;
       return this.migrateIfNeeded(parsed);
     } catch (error) {
       console.error('[PersistenceManager] Failed to load:', error);
@@ -193,7 +231,7 @@ export class PersistenceManager {
   }
 
   /**
-   * Auto-save state (debounced)
+   * Auto-save state (debounced, async for compression)
    */
   autoSave(state: PersistedState): void {
     if (!this.isAvailable()) return;
@@ -202,7 +240,7 @@ export class PersistenceManager {
       clearTimeout(this.autoSaveTimeout);
     }
 
-    this.autoSaveTimeout = setTimeout(() => {
+    this.autoSaveTimeout = setTimeout(async () => {
       try {
         const data: PersistedState = {
           ...state,
@@ -213,7 +251,18 @@ export class PersistenceManager {
             savedAt: state.metadata?.savedAt || new Date().toISOString(),
           },
         };
-        localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(data));
+        const json = JSON.stringify(data);
+        const compressed = await compress(json);
+
+        try {
+          localStorage.setItem(AUTO_SAVE_KEY, compressed);
+        } catch (storageError) {
+          if (this.isQuotaExceededError(storageError)) {
+            this.emitStorageError('quota', compressed.length);
+            return;
+          }
+          throw storageError;
+        }
       } catch (error) {
         console.error('[PersistenceManager] Auto-save failed:', error);
       }
@@ -221,16 +270,18 @@ export class PersistenceManager {
   }
 
   /**
-   * Load auto-saved state
+   * Load auto-saved state (async for decompression)
    */
-  loadAutoSave(): PersistedState | null {
+  async loadAutoSave(): Promise<PersistedState | null> {
     if (!this.isAvailable()) return null;
 
     try {
       const data = localStorage.getItem(AUTO_SAVE_KEY);
       if (!data) return null;
 
-      const parsed = JSON.parse(data) as PersistedState;
+      // Decompress (handles both compressed and legacy uncompressed)
+      const json = await decompress(data);
+      const parsed = JSON.parse(json) as PersistedState;
       return this.migrateIfNeeded(parsed);
     } catch (error) {
       console.error('[PersistenceManager] Failed to load auto-save:', error);
@@ -363,18 +414,22 @@ export function usePersistence() {
   useEffect(() => {
     // Initial load
     setSlots(persistenceManager.getSlots());
-    setHasAutoSave(persistenceManager.loadAutoSave() !== null);
+
+    // Check for auto-save asynchronously
+    persistenceManager.loadAutoSave().then(result => {
+      setHasAutoSave(result !== null);
+    });
 
     // Subscribe to changes
     const unsubscribe = persistenceManager.subscribe(setSlots);
     return unsubscribe;
   }, []);
 
-  const saveToSlot = useCallback((slotId: string, state: PersistedState, name?: string) => {
+  const saveToSlot = useCallback(async (slotId: string, state: PersistedState, name?: string) => {
     return persistenceManager.saveToSlot(slotId, state, name);
   }, []);
 
-  const loadFromSlot = useCallback((slotId: string) => {
+  const loadFromSlot = useCallback(async (slotId: string) => {
     return persistenceManager.loadFromSlot(slotId);
   }, []);
 
@@ -382,7 +437,7 @@ export function usePersistence() {
     return persistenceManager.deleteSlot(slotId);
   }, []);
 
-  const loadAutoSave = useCallback(() => {
+  const loadAutoSave = useCallback(async () => {
     return persistenceManager.loadAutoSave();
   }, []);
 

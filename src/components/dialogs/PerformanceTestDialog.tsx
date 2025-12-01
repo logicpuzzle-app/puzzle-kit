@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { v4 as uuidv4 } from 'uuid';
+import {
+  generateSurfaceId,
+  generateNumberId,
+  generateSymbolId,
+  generateLineId,
+  resetIdCounters,
+} from '../../utils/idGenerator';
 import { usePuzzleStore } from '../../store/puzzleStore';
 import { gridConfigToTopology, applyTopologyPreset } from '../../utils/gridTopology';
 import { getCellId } from '../../utils/gridUtils';
@@ -83,6 +89,9 @@ export const PerformanceTestDialog: React.FC<PerformanceTestDialogProps> = ({
           })
         : baseTopology;
 
+      // Reset ID counters before generating new elements
+      resetIdCounters();
+
       // Build puzzle state with all elements pre-generated
       const surfaces: Record<string, SurfaceElement> = {};
       const numbers: Record<string, NumberElement> = {};
@@ -95,7 +104,7 @@ export const PerformanceTestDialog: React.FC<PerformanceTestDialogProps> = ({
         const row = Math.floor(Math.random() * rows);
         const col = Math.floor(Math.random() * cols);
         const color = colors[Math.floor(Math.random() * colors.length)];
-        const id = uuidv4();
+        const id = generateSurfaceId();
         const cellId = getCellId(row, col);
         surfaces[id] = {
           id,
@@ -111,7 +120,7 @@ export const PerformanceTestDialog: React.FC<PerformanceTestDialogProps> = ({
         const row = Math.floor(Math.random() * rows);
         const col = Math.floor(Math.random() * cols);
         const value = String(Math.floor(Math.random() * 9) + 1);
-        const id = uuidv4();
+        const id = generateNumberId();
         const cellId = getCellId(row, col);
         numbers[id] = {
           id,
@@ -131,7 +140,7 @@ export const PerformanceTestDialog: React.FC<PerformanceTestDialogProps> = ({
         const col = Math.floor(Math.random() * cols);
         const symbolType = symbols[Math.floor(Math.random() * symbols.length)];
         const color = colors[Math.floor(Math.random() * colors.length)];
-        const id = uuidv4();
+        const id = generateSymbolId();
         const cellId = getCellId(row, col);
         symbolElements[id] = {
           id,
@@ -158,7 +167,7 @@ export const PerformanceTestDialog: React.FC<PerformanceTestDialogProps> = ({
         const toCol = col + dir.dc;
         if (toRow < rows && toCol < cols) {
           const color = colors[Math.floor(Math.random() * colors.length)];
-          const id = uuidv4();
+          const id = generateLineId();
           const fromCellId = getCellId(row, col);
           const toCellId = getCellId(toRow, toCol);
           lines[id] = {

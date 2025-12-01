@@ -11,6 +11,7 @@ import { actionExecutor, type PuzzleStateSlice } from './actionExecutor';
 import { historyManager, type HistoryState } from './historyManager';
 import { persistenceManager, type PersistedState } from './persistence';
 import type { PuzzleAction } from './actions';
+import { syncCountersFromPuzzleState } from '../utils/idGenerator';
 
 // ========================================
 // Integration Hook
@@ -148,10 +149,13 @@ export function useStoreIntegration(options?: {
     [grid, puzzle, toolSettings]
   );
 
-  // Load state from a slot
-  const loadFromSlot = useCallback((slotId: string) => {
-    const saved = persistenceManager.loadFromSlot(slotId);
+  // Load state from a slot (async for decompression)
+  const loadFromSlot = useCallback(async (slotId: string) => {
+    const saved = await persistenceManager.loadFromSlot(slotId);
     if (!saved) return false;
+
+    // Sync ID counters to avoid collisions
+    syncCountersFromPuzzleState(saved.puzzle);
 
     // Apply loaded state to store
     usePuzzleStore.setState({
@@ -168,10 +172,13 @@ export function useStoreIntegration(options?: {
     return true;
   }, []);
 
-  // Load auto-save
-  const loadAutoSave = useCallback(() => {
-    const saved = persistenceManager.loadAutoSave();
+  // Load auto-save (async for decompression)
+  const loadAutoSave = useCallback(async () => {
+    const saved = await persistenceManager.loadAutoSave();
     if (!saved) return false;
+
+    // Sync ID counters to avoid collisions
+    syncCountersFromPuzzleState(saved.puzzle);
 
     usePuzzleStore.setState({
       grid: saved.grid,
@@ -201,6 +208,9 @@ export function useStoreIntegration(options?: {
   const importFromJson = useCallback((json: string) => {
     const saved = persistenceManager.importFromJson(json);
     if (!saved) return false;
+
+    // Sync ID counters to avoid collisions
+    syncCountersFromPuzzleState(saved.puzzle);
 
     usePuzzleStore.setState({
       grid: saved.grid,

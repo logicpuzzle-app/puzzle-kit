@@ -2,7 +2,19 @@
  * Elements Slice - Puzzle element CRUD operations
  */
 
-import { v4 as uuidv4 } from 'uuid';
+import {
+  generateSurfaceId,
+  generateLineId as generateLineIdCompact,
+  generateEdgeId,
+  generateWallId,
+  generateNumberId,
+  generateSymbolId,
+  generateCageId,
+  generateSpecialId,
+  generateBoxLineId,
+  generateDirectionalClueId,
+  resetIdCounters,
+} from '../../utils/idGenerator';
 import type {
   SurfaceElement,
   LineElement,
@@ -46,7 +58,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   // Surface operations
   addSurface: (element) => {
-    const id = uuidv4();
+    const id = generateSurfaceId();
     const fullElement: SurfaceElement = { ...element, id };
 
     set((state) => {
@@ -98,8 +110,8 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
     let normalizedElement: LineElement;
 
     if (element.isFree) {
-      // Freehand lines: use UUID
-      id = uuidv4();
+      // Freehand lines: use compact ID
+      id = generateLineIdCompact();
       normalizedElement = { ...element, id };
     } else {
       // Grid-snapped lines: normalize endpoints and generate deterministic ID
@@ -157,7 +169,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   // Edge operations
   addEdge: (element) => {
-    const id = uuidv4();
+    const id = generateEdgeId();
     const fullElement: EdgeElement = { ...element, id };
     set((state) => {
       const layer = fullElement.layer;
@@ -202,7 +214,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   // Wall operations
   addWall: (element) => {
-    const id = uuidv4();
+    const id = generateWallId();
     const fullElement: WallElement = { ...element, id };
     set((state) => {
       const layer = fullElement.layer;
@@ -247,7 +259,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   // Number operations
   addNumber: (element) => {
-    const id = uuidv4();
+    const id = generateNumberId();
     const fullElement: NumberElement = { ...element, id };
     set((state) => {
       const layer = fullElement.layer;
@@ -313,7 +325,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   // Symbol operations
   addSymbol: (element) => {
-    const id = uuidv4();
+    const id = generateSymbolId();
     const fullElement: SymbolElement = { ...element, id };
     set((state) => {
       const layer = fullElement.layer;
@@ -358,7 +370,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   // Cage operations
   addCage: (element) => {
-    const id = uuidv4();
+    const id = generateCageId();
     const fullElement: CageElement = { ...element, id };
     set((state) => {
       const layer = fullElement.layer;
@@ -403,7 +415,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   // Special operations
   addSpecial: (element) => {
-    const id = uuidv4();
+    const id = generateSpecialId();
     const fullElement: SpecialElement = { ...element, id };
     set((state) => {
       const layer = fullElement.layer;
@@ -448,7 +460,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   // BoxLine operations
   addBoxLine: (element) => {
-    const id = uuidv4();
+    const id = generateBoxLineId();
     const fullElement: BoxLineElement = { ...element, id };
     set((state) => {
       const layer = fullElement.layer;
@@ -512,7 +524,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   // DirectionalClue operations
   addDirectionalClue: (element) => {
-    const id = uuidv4();
+    const id = generateDirectionalClueId();
     const fullElement = { ...element, id };
     set((state) => {
       const layer = fullElement.layer;
@@ -570,5 +582,6 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
       puzzle: createEmptyState(),
     });
     historyManager.clear();
+    resetIdCounters();
   },
 });

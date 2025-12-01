@@ -408,6 +408,15 @@ export interface GridConfig {
   mergedCells?: string[][];
   // Split lines (experimental)
   splitLines?: SplitLine[];
+  // Sculpt operations (rotations around vertices in isometric grids)
+  // Stored as an array of operations to be replayed when regenerating topology
+  sculptOperations?: SculptOperation[];
+}
+
+// Sculpt operation - records a vertex rotation for replay
+export interface SculptOperation {
+  type: 'rotate';
+  vertexId: string;  // The vertex around which the cluster was rotated
 }
 
 export type SplitPoint =
@@ -578,12 +587,12 @@ export interface PuzzleExport {
     created?: string;
     modified?: string;
   };
-  // Topology settings (optional - only included if topology has been customized)
+  // Topology settings
+  // Note: topology geometry is NOT stored - it's regenerated from grid config
+  // (grid.mergedCells, grid.splitLines are used to recreate merge/split state)
   topologySettings?: {
     useTopology: boolean;
     topologyPreset: string;
     topologyIntensity: number;
-    // Serialized topology data (only if customized via merge/split/sculpt)
-    customTopology?: unknown;
   };
 }

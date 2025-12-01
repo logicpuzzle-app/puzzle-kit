@@ -4,9 +4,10 @@ import './i18n';
 import { PuzzleCanvas, type TextClickInfo } from './components/canvas';
 import { MenuBar, IconToolbar, Ribbon } from './components/toolbar';
 import { PropertiesPanel, StatusBar } from './components/panels';
-import { TextInputDialog, type TextInputType } from './components/dialogs';
+import { TextInputDialog, type TextInputType, StorageErrorDialog } from './components/dialogs';
 import { usePuzzleStore } from './store/puzzleStore';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useStorageErrorHandler } from './hooks/useStorageErrorHandler';
 
 function App() {
   const { t } = useTranslation();
@@ -14,6 +15,9 @@ function App() {
 
   // Global keyboard shortcuts
   useKeyboardShortcuts();
+
+  // Storage error handling
+  const { error: storageError, clearError: clearStorageError, isErrorOpen: isStorageErrorOpen } = useStorageErrorHandler();
 
   // Text dialog state
   const [textDialogOpen, setTextDialogOpen] = useState(false);
@@ -80,6 +84,14 @@ function App() {
         initialValue={textDialogInitialValue}
         textType={textDialogType}
         onSubmit={handleTextSubmit}
+      />
+
+      {/* Storage Error Dialog */}
+      <StorageErrorDialog
+        isOpen={isStorageErrorOpen}
+        onClose={clearStorageError}
+        dataSize={storageError?.dataSize ?? 0}
+        errorType={storageError?.errorType ?? 'general'}
       />
     </div>
   );

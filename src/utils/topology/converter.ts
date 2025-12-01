@@ -41,6 +41,7 @@ import {
   prismaticPentagonalGridToTopology,
 } from './dual';
 import { applyMergedCells, applySplits } from './mergeSplit';
+import { applySculptOperations } from './sculpt';
 
 /**
  * Convert any GridConfig to GridTopology based on grid type.
@@ -138,7 +139,9 @@ export function gridConfigToTopology(config: GridConfig): GridTopology {
   const merged = applyMergedCells(baseTopology, config);
   // Apply splits (vertex-vertex only for now)
   const split = applySplits(merged, config);
-  return split;
+  // Apply sculpt operations (vertex rotations in isometric grids)
+  const sculpted = applySculptOperations(split, config);
+  return sculpted;
 }
 
 /**

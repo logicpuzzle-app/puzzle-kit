@@ -3,26 +3,28 @@ import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
 import { usePuzzleStore } from '../../store/puzzleStore';
 import {
-  generateShareUrl,
-  parseShareUrl,
   downloadAsJson,
   exportToPng,
   downloadAsPng,
   autoSave,
   loadAutoSave,
-  serializeTopology,
-  deserializeTopology,
 } from '../../utils/serialization';
 import { gridConfigToTopology, applyTopologyPreset } from '../../utils/gridTopology';
 import { parsePenpaUrl, isPenpaUrl, parsePuzzlinkUrl, isPuzzlinkUrl, generatePuzzlinkUrl } from '../../utils/penpaCompat';
 import { NewPuzzleDialog } from '../dialogs/NewPuzzleDialog';
 import { PerformanceTestDialog } from '../dialogs/PerformanceTestDialog';
+import { getStorageAdapter, isStorageAvailable } from '../../modules/storage';
+import { syncCountersFromPuzzleState } from '../../utils/idGenerator';
+import type { PuzzleExport } from '../../types';
 
 interface MenuItem {
   labelKey: string;
   shortcut?: string;
   action?: () => void;
   divider?: boolean;
+  disabled?: boolean;
+  strikethrough?: boolean;
+  suffix?: string;
 }
 
 interface MenuDefinition {
@@ -53,16 +55,16 @@ export const MenuBar: React.FC = () => {
   // Auto-save on changes
   useEffect(() => {
     const timer = setTimeout(() => {
-      const topologySettings = topology ? {
+      // Save topology settings without customTopology - it will be regenerated on load
+      const topologySettings = {
         useTopology,
         topologyPreset,
         topologyIntensity,
-        customTopology: serializeTopology(topology),
-      } : undefined;
+      };
       autoSave(grid, puzzle, undefined, topologySettings);
     }, 2000);
     return () => clearTimeout(timer);
-  }, [grid, puzzle, topology, useTopology, topologyPreset, topologyIntensity]);
+  }, [grid, puzzle, useTopology, topologyPreset, topologyIntensity]);
 
   // Helper to load puzzle data with topology
   const loadPuzzleData = (data: {
@@ -72,45 +74,26 @@ export const MenuBar: React.FC = () => {
       useTopology: boolean;
       topologyPreset: string;
       topologyIntensity: number;
-      customTopology?: unknown;
     };
   }) => {
     const storeState = usePuzzleStore.getState();
 
-    // Use saved topology if available, otherwise regenerate
-    let loadedTopology;
-    let loadedUseTopology = storeState.useTopology;
-    let loadedTopologyPreset = storeState.topologyPreset;
-    let loadedTopologyIntensity = storeState.topologyIntensity;
+    // Sync ID counters to avoid collisions
+    syncCountersFromPuzzleState(data.state);
 
-    if (data.topologySettings) {
-      loadedUseTopology = data.topologySettings.useTopology;
-      loadedTopologyPreset = data.topologySettings.topologyPreset as typeof storeState.topologyPreset;
-      loadedTopologyIntensity = data.topologySettings.topologyIntensity;
+    // Use saved settings or fall back to current store settings
+    const loadedUseTopology = data.topologySettings?.useTopology ?? storeState.useTopology;
+    const loadedTopologyPreset = (data.topologySettings?.topologyPreset ?? storeState.topologyPreset) as typeof storeState.topologyPreset;
+    const loadedTopologyIntensity = data.topologySettings?.topologyIntensity ?? storeState.topologyIntensity;
 
-      if (data.topologySettings.customTopology) {
-        // Use saved custom topology
-        loadedTopology = deserializeTopology(data.topologySettings.customTopology as any);
-      } else {
-        // Regenerate from settings
-        const baseTopology = gridConfigToTopology(data.grid);
-        loadedTopology = loadedUseTopology
-          ? applyTopologyPreset(baseTopology, {
-              preset: loadedTopologyPreset,
-              intensity: loadedTopologyIntensity,
-            })
-          : baseTopology;
-      }
-    } else {
-      // No topology settings - regenerate with current store settings
-      const baseTopology = gridConfigToTopology(data.grid);
-      loadedTopology = storeState.useTopology
-        ? applyTopologyPreset(baseTopology, {
-            preset: storeState.topologyPreset,
-            intensity: storeState.topologyIntensity,
-          })
-        : baseTopology;
-    }
+    // Always regenerate topology from grid config (includes mergedCells, splitLines)
+    const baseTopology = gridConfigToTopology(data.grid);
+    const loadedTopology = loadedUseTopology
+      ? applyTopologyPreset(baseTopology, {
+          preset: loadedTopologyPreset,
+          intensity: loadedTopologyIntensity,
+        })
+      : baseTopology;
 
     usePuzzleStore.setState({
       grid: data.grid,
@@ -124,36 +107,54 @@ export const MenuBar: React.FC = () => {
 
   // Load from URL or auto-save on mount
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const encoded = urlParams.get('p');
+    const loadFromUrl = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
 
-    if (encoded) {
-      const data = parseShareUrl(window.location.href);
-      if (data) {
-        loadPuzzleData({
-          grid: data.grid,
-          state: data.state,
-          topologySettings: data.topologySettings,
-        });
-        // Clear URL params
-        window.history.replaceState({}, '', window.location.pathname);
-        return;
+      // Check for puzzle ID (new format)
+      const puzzleId = urlParams.get('id');
+      if (puzzleId) {
+        const adapter = getStorageAdapter();
+        if (adapter && adapter.isAvailable()) {
+          try {
+            const result = await adapter.load(puzzleId);
+            if (result) {
+              loadPuzzleData({
+                grid: result.data.grid,
+                state: result.data.state,
+                topologySettings: result.data.topologySettings,
+              });
+              // Clear URL params
+              window.history.replaceState({}, '', window.location.pathname);
+              return;
+            }
+          } catch (error) {
+            console.error('[Load URL] Failed to load puzzle:', error);
+          }
+        }
       }
-    }
 
-    // Try to load auto-save
-    const saved = loadAutoSave();
-    if (saved) {
-      loadPuzzleData({
-        grid: saved.grid,
-        state: saved.state,
-        topologySettings: saved.topologySettings,
-      });
-    }
+      // Try to load auto-save
+      const saved = loadAutoSave();
+      if (saved) {
+        loadPuzzleData({
+          grid: saved.grid,
+          state: saved.state,
+          topologySettings: saved.topologySettings,
+        });
+      }
+    };
+
+    loadFromUrl();
   }, []);
 
   const handleExportJson = () => {
-    downloadAsJson(grid, puzzle, { title: 'Puzzle' });
+    // Save topology settings without customTopology - it will be regenerated on load
+    const topologySettings = {
+      useTopology,
+      topologyPreset,
+      topologyIntensity,
+    };
+    downloadAsJson(grid, puzzle, { title: 'Puzzle' }, topologySettings);
     setActiveMenu(null);
   };
 
@@ -170,9 +171,10 @@ export const MenuBar: React.FC = () => {
             const content = e.target?.result as string;
             const data = JSON.parse(content);
             if (data.grid && data.state) {
-              usePuzzleStore.setState({
+              loadPuzzleData({
                 grid: data.grid,
-                puzzle: data.state,
+                state: data.state,
+                topologySettings: data.topologySettings,
               });
             }
           } catch {
@@ -384,19 +386,41 @@ export const MenuBar: React.FC = () => {
     setActiveMenu(null);
   };
 
-  const handleShareUrl = () => {
-    // Build topology settings
-    const topologySettings = topology ? {
+  const handleShareUrl = async () => {
+    const adapter = getStorageAdapter();
+
+    if (!adapter || !adapter.isAvailable()) {
+      alert(t('error.storageNotAvailable') || 'Storage is not available. Please try again later.');
+      setActiveMenu(null);
+      return;
+    }
+
+    // Build puzzle export data - topology will be regenerated on load
+    const topologySettings = {
       useTopology,
       topologyPreset,
       topologyIntensity,
-      customTopology: serializeTopology(topology),
-    } : undefined;
+    };
 
-    const url = generateShareUrl(grid, puzzle, undefined, topologySettings);
-    navigator.clipboard.writeText(url).then(() => {
+    const puzzleData: PuzzleExport = {
+      version: '1.0.0',
+      grid,
+      state: puzzle,
+      metadata: {
+        modified: new Date().toISOString(),
+      },
+      topologySettings,
+    };
+
+    try {
+      const result = await adapter.save(puzzleData);
+      await navigator.clipboard.writeText(result.url);
       alert(t('share.copied') || 'URL copied to clipboard!');
-    });
+    } catch (error) {
+      console.error('[Share URL] Failed to save puzzle:', error);
+      alert(t('error.shareFailed') || 'Failed to share puzzle. Please try again.');
+    }
+
     setActiveMenu(null);
   };
 
@@ -422,6 +446,8 @@ export const MenuBar: React.FC = () => {
     }
 
     if (result) {
+      // Sync ID counters to avoid collisions
+      syncCountersFromPuzzleState(result.state);
       usePuzzleStore.setState({
         grid: result.grid,
         puzzle: result.state,
@@ -453,8 +479,8 @@ export const MenuBar: React.FC = () => {
         { labelKey: 'file.save', shortcut: 'Ctrl+S', action: handleExportJson },
         { divider: true, labelKey: '' },
         { labelKey: 'file.importPenpa', action: handleImportPenpaUrl },
-        { labelKey: 'file.exportPuzzlink', action: handleExportPuzzlink },
-        { labelKey: 'file.shareUrl', action: handleShareUrl },
+        { labelKey: 'file.exportPuzzlink', action: handleExportPuzzlink, strikethrough: true, disabled: true },
+        { labelKey: 'file.shareUrl', action: handleShareUrl, suffix: '(beta)' },
         { divider: true, labelKey: '' },
         { labelKey: 'file.exportPng', action: handleExportPng },
         { labelKey: 'file.exportPng2x', action: () => handleExportPngHQ(2) },
@@ -571,10 +597,17 @@ export const MenuBar: React.FC = () => {
                 ) : (
                   <button
                     key={item.labelKey}
-                    className="w-full text-left px-4 py-1.5 text-sm hover:bg-office-ribbon-hover flex justify-between items-center"
-                    onClick={() => item.action?.()}
+                    className={`w-full text-left px-4 py-1.5 text-sm flex justify-between items-center ${
+                      item.disabled
+                        ? 'text-gray-400 cursor-not-allowed'
+                        : 'hover:bg-office-ribbon-hover'
+                    }`}
+                    onClick={() => !item.disabled && item.action?.()}
+                    disabled={item.disabled}
                   >
-                    <span>{t(item.labelKey)}</span>
+                    <span className={item.strikethrough ? 'line-through' : ''}>
+                      {t(item.labelKey)}{item.suffix ? ` ${item.suffix}` : ''}
+                    </span>
                     {item.shortcut && (
                       <span className="text-office-text-secondary text-xs ml-4">
                         {item.shortcut}

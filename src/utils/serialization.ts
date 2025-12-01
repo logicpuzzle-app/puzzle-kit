@@ -304,6 +304,7 @@ export function downloadAsJson(
   grid: GridConfig,
   state: PuzzleState,
   metadata?: PuzzleExport['metadata'],
+  topologySettings?: PuzzleExport['topologySettings'],
   filename = 'puzzle.json'
 ): void {
   const data: PuzzleExport = {
@@ -315,6 +316,10 @@ export function downloadAsJson(
       modified: new Date().toISOString(),
     },
   };
+
+  if (topologySettings) {
+    data.topologySettings = topologySettings;
+  }
 
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], { type: 'application/json' });

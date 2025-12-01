@@ -2,7 +2,7 @@
  * Solution Slice - Solution area and multicolor surface operations
  */
 
-import { v4 as uuidv4 } from 'uuid';
+import { generateMulticolorId } from '../../utils/idGenerator';
 import type { SolutionSlice, SliceCreator } from './types';
 
 export const createSolutionSlice: SliceCreator<SolutionSlice> = (set) => ({
@@ -63,7 +63,7 @@ export const createSolutionSlice: SliceCreator<SolutionSlice> = (set) => ({
     set((state) => {
       const existing = state.puzzle.multicolorSurfaces || {};
       const existingEntry = Object.values(existing).find((e) => e.cellId === cellId);
-      const id = existingEntry?.id || uuidv4();
+      const id = existingEntry?.id || generateMulticolorId();
 
       return {
         puzzle: {
