@@ -42,4 +42,9 @@ export const createToolSlice: SliceCreator<ToolSlice> = (set) => ({
   setGridSubTab: (tab) => set({ gridSubTab: tab }),
   gridEditMode: 'preset' as const,
   setGridEditMode: (mode) => set({ gridEditMode: mode }),
+
+  // UI panels
+  isPropertiesPanelOpen: true,
+  setPropertiesPanelOpen: (open) => set({ isPropertiesPanelOpen: open }),
+  togglePropertiesPanel: () => set((state) => ({ isPropertiesPanelOpen: !state.isPropertiesPanelOpen })),
 });

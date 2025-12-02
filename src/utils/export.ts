@@ -26,6 +26,10 @@ export interface ExportOptions {
   format?: 'png' | 'svg' | 'jpeg';
   /** JPEG quality (0-1) */
   quality?: number;
+  /** Explicit width for export (overrides auto-detection) */
+  width?: number;
+  /** Explicit height for export (overrides auto-detection) */
+  height?: number;
 }
 
 const DEFAULT_OPTIONS: Required<ExportOptions> = {
@@ -36,6 +40,8 @@ const DEFAULT_OPTIONS: Required<ExportOptions> = {
   padding: 20,
   format: 'png',
   quality: 0.92,
+  width: 0,
+  height: 0,
 };
 
 /**
@@ -47,29 +53,78 @@ export async function exportSvgToPng(
 ): Promise<string> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
 
-  // Get SVG dimensions
-  const bbox = svgElement.getBBox();
-  const viewBox = svgElement.getAttribute('viewBox')?.split(' ').map(Number) || [0, 0, bbox.width, bbox.height];
-  const width = (viewBox[2] + opts.padding * 2) * opts.scale;
-  const height = (viewBox[3] + opts.padding * 2) * opts.scale;
+  // Get SVG dimensions - prefer explicit dimensions, then viewBox, then getBBox
+  let contentWidth: number;
+  let contentHeight: number;
 
-  // Clone SVG and add background
+  if (opts.width > 0 && opts.height > 0) {
+    // Use explicit dimensions
+    contentWidth = opts.width;
+    contentHeight = opts.height;
+  } else {
+    // Try to get from viewBox attribute
+    const viewBoxAttr = svgElement.getAttribute('viewBox');
+    if (viewBoxAttr) {
+      const parts = viewBoxAttr.split(' ').map(Number);
+      contentWidth = parts[2];
+      contentHeight = parts[3];
+    } else {
+      // Fallback to getBBox (less reliable for transformed content)
+      const bbox = svgElement.getBBox();
+      contentWidth = bbox.width;
+      contentHeight = bbox.height;
+    }
+  }
+
+  // Output canvas size (with padding and scale)
+  const canvasWidth = (contentWidth + opts.padding * 2) * opts.scale;
+  const canvasHeight = (contentHeight + opts.padding * 2) * opts.scale;
+
+  // Clone SVG and prepare for export
   const clonedSvg = svgElement.cloneNode(true) as SVGElement;
-  clonedSvg.setAttribute('width', String(width));
-  clonedSvg.setAttribute('height', String(height));
+  clonedSvg.setAttribute('width', String(canvasWidth));
+  clonedSvg.setAttribute('height', String(canvasHeight));
+
+  // viewBox: start at (-padding, -padding) to add padding around content at (0,0)
+  // Content spans from (0, 0) to (contentWidth, contentHeight)
   clonedSvg.setAttribute(
     'viewBox',
-    `${viewBox[0] - opts.padding} ${viewBox[1] - opts.padding} ${viewBox[2] + opts.padding * 2} ${viewBox[3] + opts.padding * 2}`
+    `${-opts.padding} ${-opts.padding} ${contentWidth + opts.padding * 2} ${contentHeight + opts.padding * 2}`
   );
 
-  // Add background rect
+  // Find the root transform group (pan/zoom) and reset it
+  const rootGroup = clonedSvg.querySelector('g[transform]');
+  if (rootGroup) {
+    // Remove the pan/zoom transform but keep the group structure
+    rootGroup.removeAttribute('transform');
+
+    // Remove the large background rect used for panning (x=-1000)
+    const bgRects = rootGroup.querySelectorAll('rect');
+    bgRects.forEach((rect) => {
+      const x = parseFloat(rect.getAttribute('x') || '0');
+      if (x < 0) {
+        rect.remove();
+      }
+    });
+  }
+
+  // Add export background rect (covers the viewBox area including padding)
   const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-  bgRect.setAttribute('x', String(viewBox[0] - opts.padding));
-  bgRect.setAttribute('y', String(viewBox[1] - opts.padding));
-  bgRect.setAttribute('width', String(viewBox[2] + opts.padding * 2));
-  bgRect.setAttribute('height', String(viewBox[3] + opts.padding * 2));
+  bgRect.setAttribute('x', String(-opts.padding));
+  bgRect.setAttribute('y', String(-opts.padding));
+  bgRect.setAttribute('width', String(contentWidth + opts.padding * 2));
+  bgRect.setAttribute('height', String(contentHeight + opts.padding * 2));
   bgRect.setAttribute('fill', opts.backgroundColor);
-  clonedSvg.insertBefore(bgRect, clonedSvg.firstChild);
+  // Insert after defs if present, otherwise at the beginning
+  const defs = clonedSvg.querySelector('defs');
+  if (defs && defs.nextSibling) {
+    clonedSvg.insertBefore(bgRect, defs.nextSibling);
+  } else {
+    clonedSvg.insertBefore(bgRect, clonedSvg.firstChild);
+  }
+
+  // Debug log
+  console.log('[Export PNG] contentWidth:', contentWidth, 'contentHeight:', contentHeight, 'padding:', opts.padding);
 
   // Convert to data URL
   const svgData = new XMLSerializer().serializeToString(clonedSvg);
@@ -80,8 +135,8 @@ export async function exportSvgToPng(
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
 
       const ctx = canvas.getContext('2d');
       if (!ctx) {
@@ -90,7 +145,7 @@ export async function exportSvgToPng(
       }
 
       ctx.fillStyle = opts.backgroundColor;
-      ctx.fillRect(0, 0, width, height);
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
       ctx.drawImage(img, 0, 0);
 
       URL.revokeObjectURL(svgUrl);
@@ -118,24 +173,72 @@ export function exportSvgToSvg(
 ): string {
   const opts = { ...DEFAULT_OPTIONS, ...options };
 
-  const bbox = svgElement.getBBox();
-  const viewBox = svgElement.getAttribute('viewBox')?.split(' ').map(Number) || [0, 0, bbox.width, bbox.height];
+  // Get SVG dimensions - prefer explicit dimensions, then viewBox, then getBBox
+  let contentWidth: number;
+  let contentHeight: number;
+
+  if (opts.width > 0 && opts.height > 0) {
+    // Use explicit dimensions
+    contentWidth = opts.width;
+    contentHeight = opts.height;
+  } else {
+    // Try to get from viewBox attribute
+    const viewBoxAttr = svgElement.getAttribute('viewBox');
+    if (viewBoxAttr) {
+      const parts = viewBoxAttr.split(' ').map(Number);
+      contentWidth = parts[2];
+      contentHeight = parts[3];
+    } else {
+      // Fallback to getBBox (less reliable for transformed content)
+      const bbox = svgElement.getBBox();
+      contentWidth = bbox.width;
+      contentHeight = bbox.height;
+    }
+  }
 
   const clonedSvg = svgElement.cloneNode(true) as SVGElement;
 
-  // Add background rect
-  const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-  bgRect.setAttribute('x', String(viewBox[0] - opts.padding));
-  bgRect.setAttribute('y', String(viewBox[1] - opts.padding));
-  bgRect.setAttribute('width', String(viewBox[2] + opts.padding * 2));
-  bgRect.setAttribute('height', String(viewBox[3] + opts.padding * 2));
-  bgRect.setAttribute('fill', opts.backgroundColor);
-  clonedSvg.insertBefore(bgRect, clonedSvg.firstChild);
-
+  // Set viewBox and dimensions
   clonedSvg.setAttribute(
     'viewBox',
-    `${viewBox[0] - opts.padding} ${viewBox[1] - opts.padding} ${viewBox[2] + opts.padding * 2} ${viewBox[3] + opts.padding * 2}`
+    `${-opts.padding} ${-opts.padding} ${contentWidth + opts.padding * 2} ${contentHeight + opts.padding * 2}`
   );
+  clonedSvg.setAttribute('width', String(contentWidth + opts.padding * 2));
+  clonedSvg.setAttribute('height', String(contentHeight + opts.padding * 2));
+
+  // Find the root transform group (pan/zoom) and reset it
+  const rootGroup = clonedSvg.querySelector('g[transform]');
+  if (rootGroup) {
+    // Remove the pan/zoom transform but keep the group structure
+    rootGroup.removeAttribute('transform');
+
+    // Remove the large background rect used for panning (x=-1000)
+    const bgRects = rootGroup.querySelectorAll('rect');
+    bgRects.forEach((rect) => {
+      const x = parseFloat(rect.getAttribute('x') || '0');
+      if (x < 0) {
+        rect.remove();
+      }
+    });
+  }
+
+  // Add export background rect
+  const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  bgRect.setAttribute('x', String(-opts.padding));
+  bgRect.setAttribute('y', String(-opts.padding));
+  bgRect.setAttribute('width', String(contentWidth + opts.padding * 2));
+  bgRect.setAttribute('height', String(contentHeight + opts.padding * 2));
+  bgRect.setAttribute('fill', opts.backgroundColor);
+  // Insert after defs if present, otherwise at the beginning
+  const defs = clonedSvg.querySelector('defs');
+  if (defs && defs.nextSibling) {
+    clonedSvg.insertBefore(bgRect, defs.nextSibling);
+  } else {
+    clonedSvg.insertBefore(bgRect, clonedSvg.firstChild);
+  }
+
+  // Debug log
+  console.log('[Export SVG] contentWidth:', contentWidth, 'contentHeight:', contentHeight, 'padding:', opts.padding);
 
   const svgData = new XMLSerializer().serializeToString(clonedSvg);
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgData)}`;

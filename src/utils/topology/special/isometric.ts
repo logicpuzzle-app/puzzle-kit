@@ -88,13 +88,17 @@ export function applyIsometricTransform(base: GridTopology): GridTopology {
   const shiftedEdges = new Map<string, any>();
   newEdges.forEach((e, k) => shiftedEdges.set(k, { ...e, midpoint: shiftPoint(e.midpoint) }));
 
+  const contentWidth = maxX - minX;
+  const contentHeight = maxY - minY;
+  const totalWidth = contentWidth + padding * 2;
+  const totalHeight = contentHeight + padding * 2;
   const bounds = {
     minX: padding,
     minY: padding,
-    maxX: maxX - minX + padding,
-    maxY: maxY - minY + padding,
-    width: maxX - minX,
-    height: maxY - minY,
+    maxX: padding + contentWidth,
+    maxY: padding + contentHeight,
+    width: totalWidth,
+    height: totalHeight,
   };
 
   return {
@@ -275,13 +279,18 @@ export function isometricGridToTopology(config: GridConfig): GridTopology {
     finalEdges.set(k, { ...e, midpoint: shift(e.midpoint) });
   });
 
+  const contentWidth = maxX - minX;
+  const contentHeight = maxY - minY;
+  const totalWidth = contentWidth + outerPadding * 2;
+  const totalHeight = contentHeight + outerPadding * 2;
+
   const bounds = {
     minX: outerPadding,
     minY: outerPadding,
-    maxX: maxX - minX + outerPadding,
-    maxY: maxY - minY + outerPadding,
-    width: maxX - minX,
-    height: maxY - minY,
+    maxX: outerPadding + contentWidth,
+    maxY: outerPadding + contentHeight,
+    width: totalWidth,
+    height: totalHeight,
   };
 
   return {

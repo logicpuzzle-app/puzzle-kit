@@ -416,13 +416,15 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
         maxX = Math.max(maxX, v.position.x);
         maxY = Math.max(maxY, v.position.y);
       });
+      const prevBounds = state.topology.bounds;
       const bounds = {
         minX,
         minY,
         maxX,
         maxY,
-        width: maxX - minX,
-        height: maxY - minY,
+        // Preserve original canvas extent to avoid export cropping; only update extents.
+        width: prevBounds.width,
+        height: prevBounds.height,
       };
 
       // Save operation to grid config for regeneration on load

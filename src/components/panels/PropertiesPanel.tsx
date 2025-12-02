@@ -14,7 +14,7 @@ import {
 
 export const PropertiesPanel: React.FC = () => {
   const { t } = useTranslation();
-  const { toolSettings, setToolSettings, isGridMode } = usePuzzleStore();
+  const { toolSettings, setToolSettings, isGridMode, isPropertiesPanelOpen, togglePropertiesPanel } = usePuzzleStore();
 
   const lineStyles: { value: LineStyle; labelKey: string }[] = [
     { value: 'solid', labelKey: 'style.solid' },
@@ -43,10 +43,38 @@ export const PropertiesPanel: React.FC = () => {
 
   const resetRotation = () => setToolSettings({ symbolRotation: 0 });
 
+  // Collapsed state - show only toggle button
+  if (!isPropertiesPanelOpen) {
+    return (
+      <div className="bg-white border-l border-office-border flex flex-col h-full">
+        <button
+          onClick={togglePropertiesPanel}
+          className="p-2 hover:bg-office-ribbon-hover transition-colors"
+          title={t('panel.properties')}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="w-56 bg-white border-l border-office-border flex flex-col h-full">
-      {/* Properties header */}
-      <div className="panel-header flex-shrink-0">{t('panel.properties')}</div>
+      {/* Properties header with close button */}
+      <div className="panel-header flex-shrink-0 flex items-center justify-between">
+        <span>{t('panel.properties')}</span>
+        <button
+          onClick={togglePropertiesPanel}
+          className="p-1 hover:bg-office-ribbon-hover rounded transition-colors"
+          title={t('action.close')}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
 
       <div className="p-3 flex flex-col gap-4 flex-shrink-0">
         {/* Grid properties - show when in grid mode */}

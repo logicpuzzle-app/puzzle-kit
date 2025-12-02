@@ -59,8 +59,8 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
       const exportPaddingTop = effectiveGrid.exportPaddingTop ?? 0;
       const exportPaddingBottom = effectiveGrid.exportPaddingBottom ?? 0;
       return {
-        width: effectiveTopology.bounds.maxX + exportPaddingLeft + exportPaddingRight,
-        height: effectiveTopology.bounds.maxY + exportPaddingTop + exportPaddingBottom,
+        width: effectiveTopology.bounds.width + exportPaddingLeft + exportPaddingRight,
+        height: effectiveTopology.bounds.height + exportPaddingTop + exportPaddingBottom,
       };
     }
     return getGridDimensions(effectiveGrid);

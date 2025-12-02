@@ -241,12 +241,26 @@ export const MenuBar: React.FC = () => {
     const svg = document.getElementById('puzzle-canvas') as SVGSVGElement | null;
     if (!svg) return;
 
-    // Get grid dimensions for proper viewBox
-    const { outerPadding, cellSize, rows, cols, marginTop = 0, marginBottom = 0, marginLeft = 0, marginRight = 0 } = grid;
-    const totalRows = rows + marginTop + marginBottom;
-    const totalCols = cols + marginLeft + marginRight;
-    const width = totalCols * cellSize + outerPadding * 2;
-    const height = totalRows * cellSize + outerPadding * 2;
+    // Get dimensions: prefer topology bounds for non-square grids
+    let width: number;
+    let height: number;
+
+    if (useTopology && topology) {
+      // For topology grids (isometric, hex, etc.), use bounds
+      const exportPaddingLeft = grid.exportPaddingLeft ?? 0;
+      const exportPaddingRight = grid.exportPaddingRight ?? 0;
+      const exportPaddingTop = grid.exportPaddingTop ?? 0;
+      const exportPaddingBottom = grid.exportPaddingBottom ?? 0;
+      width = topology.bounds.width + exportPaddingLeft + exportPaddingRight;
+      height = topology.bounds.height + exportPaddingTop + exportPaddingBottom;
+    } else {
+      // For standard square grids
+      const { outerPadding, cellSize, rows, cols, marginTop = 0, marginBottom = 0, marginLeft = 0, marginRight = 0 } = grid;
+      const totalRows = rows + marginTop + marginBottom;
+      const totalCols = cols + marginLeft + marginRight;
+      width = totalCols * cellSize + outerPadding * 2;
+      height = totalRows * cellSize + outerPadding * 2;
+    }
 
     // Clone SVG
     const clone = svg.cloneNode(true) as SVGSVGElement;
@@ -296,12 +310,26 @@ export const MenuBar: React.FC = () => {
     const svg = document.getElementById('puzzle-canvas') as SVGSVGElement | null;
     if (!svg) return;
 
-    // Get grid dimensions for proper sizing
-    const { outerPadding, cellSize, rows, cols, marginTop = 0, marginBottom = 0, marginLeft = 0, marginRight = 0 } = grid;
-    const totalRows = rows + marginTop + marginBottom;
-    const totalCols = cols + marginLeft + marginRight;
-    const width = totalCols * cellSize + outerPadding * 2;
-    const height = totalRows * cellSize + outerPadding * 2;
+    // Get dimensions: prefer topology bounds for non-square grids
+    let width: number;
+    let height: number;
+
+    if (useTopology && topology) {
+      // For topology grids (isometric, hex, etc.), use bounds
+      const exportPaddingLeft = grid.exportPaddingLeft ?? 0;
+      const exportPaddingRight = grid.exportPaddingRight ?? 0;
+      const exportPaddingTop = grid.exportPaddingTop ?? 0;
+      const exportPaddingBottom = grid.exportPaddingBottom ?? 0;
+      width = topology.bounds.width + exportPaddingLeft + exportPaddingRight;
+      height = topology.bounds.height + exportPaddingTop + exportPaddingBottom;
+    } else {
+      // For standard square grids
+      const { outerPadding, cellSize, rows, cols, marginTop = 0, marginBottom = 0, marginLeft = 0, marginRight = 0 } = grid;
+      const totalRows = rows + marginTop + marginBottom;
+      const totalCols = cols + marginLeft + marginRight;
+      width = totalCols * cellSize + outerPadding * 2;
+      height = totalRows * cellSize + outerPadding * 2;
+    }
 
     // Clone SVG and set proper dimensions
     const clone = svg.cloneNode(true) as SVGSVGElement;
@@ -345,12 +373,26 @@ export const MenuBar: React.FC = () => {
     const svg = document.getElementById('puzzle-canvas') as SVGSVGElement | null;
     if (!svg) return;
 
-    // Get grid dimensions for proper sizing
-    const { outerPadding, cellSize, rows, cols, marginTop = 0, marginBottom = 0, marginLeft = 0, marginRight = 0 } = grid;
-    const totalRows = rows + marginTop + marginBottom;
-    const totalCols = cols + marginLeft + marginRight;
-    const width = totalCols * cellSize + outerPadding * 2;
-    const height = totalRows * cellSize + outerPadding * 2;
+    // Get dimensions: prefer topology bounds for non-square grids
+    let width: number;
+    let height: number;
+
+    if (useTopology && topology) {
+      // For topology grids (isometric, hex, etc.), use bounds
+      const exportPaddingLeft = grid.exportPaddingLeft ?? 0;
+      const exportPaddingRight = grid.exportPaddingRight ?? 0;
+      const exportPaddingTop = grid.exportPaddingTop ?? 0;
+      const exportPaddingBottom = grid.exportPaddingBottom ?? 0;
+      width = topology.bounds.width + exportPaddingLeft + exportPaddingRight;
+      height = topology.bounds.height + exportPaddingTop + exportPaddingBottom;
+    } else {
+      // For standard square grids
+      const { outerPadding, cellSize, rows, cols, marginTop = 0, marginBottom = 0, marginLeft = 0, marginRight = 0 } = grid;
+      const totalRows = rows + marginTop + marginBottom;
+      const totalCols = cols + marginLeft + marginRight;
+      width = totalCols * cellSize + outerPadding * 2;
+      height = totalRows * cellSize + outerPadding * 2;
+    }
 
     // Clone SVG and set proper dimensions
     const clone = svg.cloneNode(true) as SVGSVGElement;

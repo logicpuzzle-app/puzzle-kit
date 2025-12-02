@@ -265,6 +265,13 @@ export function applyTopologyPreset(
     maxY = Math.max(maxY, vertex.position.y);
   }
 
+  // Calculate total width/height including padding
+  // Content starts at minX (typically outerPadding) and ends at maxX
+  // Total size = maxX + outerPadding (for right padding)
+  const outerPadding = baseTopology.sourceConfig?.outerPadding ?? 0;
+  const totalWidth = maxX + outerPadding;
+  const totalHeight = maxY + outerPadding;
+
   return {
     cells: newCells,
     vertices: newVertices,
@@ -274,8 +281,8 @@ export function applyTopologyPreset(
       minY,
       maxX,
       maxY,
-      width: maxX - minX,
-      height: maxY - minY,
+      width: totalWidth,
+      height: totalHeight,
     },
     sourceConfig: baseTopology.sourceConfig,
   };

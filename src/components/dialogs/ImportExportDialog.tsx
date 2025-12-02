@@ -24,7 +24,10 @@ import {
   copyToClipboard,
   copyImageToClipboard,
 } from '../../utils/export';
+import { getGridDimensions } from '../../utils/gridUtils';
+import { usePuzzleStore } from '../../store/puzzleStore';
 import type { PuzzleState, GridConfig } from '../../types';
+import type { GridTopology } from '../../utils/gridTopology';
 
 export type DialogMode = 'import' | 'export';
 export type ImportFormat = 'penpa' | 'puzzlink' | 'json' | 'auto';
@@ -41,6 +44,28 @@ interface ImportExportDialogProps {
   onExport?: (format: ExportFormat, data: string) => void;
 }
 
+/**
+ * Get export dimensions considering topology bounds
+ */
+function getExportDimensions(
+  gridConfig: GridConfig,
+  useTopology: boolean,
+  topology: GridTopology | null
+): { width: number; height: number } {
+  // Use topology bounds for non-square grids (iso, merged cells, etc.)
+  if (useTopology && topology) {
+    const exportPaddingLeft = gridConfig.exportPaddingLeft ?? 0;
+    const exportPaddingRight = gridConfig.exportPaddingRight ?? 0;
+    const exportPaddingTop = gridConfig.exportPaddingTop ?? 0;
+    const exportPaddingBottom = gridConfig.exportPaddingBottom ?? 0;
+    return {
+      width: topology.bounds.width + exportPaddingLeft + exportPaddingRight,
+      height: topology.bounds.height + exportPaddingTop + exportPaddingBottom,
+    };
+  }
+  return getGridDimensions(gridConfig);
+}
+
 export const ImportExportDialog: React.FC<ImportExportDialogProps> = ({
   isOpen,
   mode,
@@ -51,6 +76,9 @@ export const ImportExportDialog: React.FC<ImportExportDialogProps> = ({
   onImport,
   onExport,
 }) => {
+  // Get topology info from store
+  const { useTopology, topology } = usePuzzleStore();
+
   const [inputValue, setInputValue] = useState('');
   const [exportFormat, setExportFormat] = useState<ExportFormat>('penpa');
   const [exportUrl, setExportUrl] = useState('');
@@ -176,7 +204,15 @@ export const ImportExportDialog: React.FC<ImportExportDialogProps> = ({
             setError('SVG element not available');
             return;
           }
-          const dataUrl = await exportSvgToPng(svgRef.current, { scale: 2 });
+          // Get dimensions considering topology for non-square grids
+          const pngDims = getExportDimensions(gridConfig, useTopology, topology);
+          console.log('[Export Dialog PNG] dims:', pngDims, 'useTopology:', useTopology, 'topology.bounds:', topology?.bounds);
+          const dataUrl = await exportSvgToPng(svgRef.current, {
+            scale: 2,
+            width: pngDims.width,
+            height: pngDims.height,
+            backgroundColor: gridConfig.backgroundColor || '#ffffff',
+          });
           downloadDataUrl(dataUrl, 'puzzle.png');
           onExport?.('png', dataUrl);
           setSuccess('PNG downloaded!');
@@ -188,7 +224,14 @@ export const ImportExportDialog: React.FC<ImportExportDialogProps> = ({
             setError('SVG element not available');
             return;
           }
-          const svgUrl = exportSvgToSvg(svgRef.current);
+          // Get dimensions considering topology for non-square grids
+          const svgDims = getExportDimensions(gridConfig, useTopology, topology);
+          console.log('[Export Dialog SVG] dims:', svgDims, 'useTopology:', useTopology, 'topology.bounds:', topology?.bounds);
+          const svgUrl = exportSvgToSvg(svgRef.current, {
+            width: svgDims.width,
+            height: svgDims.height,
+            backgroundColor: gridConfig.backgroundColor || '#ffffff',
+          });
           downloadDataUrl(svgUrl, 'puzzle.svg');
           onExport?.('svg', svgUrl);
           setSuccess('SVG downloaded!');

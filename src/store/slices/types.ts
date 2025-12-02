@@ -195,6 +195,11 @@ export interface ToolSlice {
   setGridSubTab: (tab: 'shape' | 'display') => void;
   gridEditMode: 'preset' | 'merge' | 'split' | 'exclude' | 'sculpt';
   setGridEditMode: (mode: 'preset' | 'merge' | 'split' | 'exclude' | 'sculpt') => void;
+
+  // UI panels
+  isPropertiesPanelOpen: boolean;
+  setPropertiesPanelOpen: (open: boolean) => void;
+  togglePropertiesPanel: () => void;
 }
 
 export interface LayerSlice {
