@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../../store/puzzleStore';
+import { toDataLayer } from '../../../types';
 
 // Arrow direction settings for directional numbers (Yajilin-style)
 export const ArrowDirectionSettings: React.FC = () => {
@@ -14,6 +15,8 @@ export const ArrowDirectionSettings: React.FC = () => {
     activeLayer,
     addDirectionalClue,
   } = usePuzzleStore();
+
+  const dataLayer = toDataLayer(activeLayer);
 
   // Direction: 0=up, 1=left, 2=right, 3=down
   const directions = [
@@ -37,7 +40,7 @@ export const ArrowDirectionSettings: React.FC = () => {
     // Update existing directional clue if cell is selected
     if (numberSelection) {
       const cellIndex = numberSelection.row * grid.cols + numberSelection.col;
-      const existingEntry = Object.entries(puzzle[activeLayer].directionalClues || {}).find(
+      const existingEntry = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
         ([, c]) => c.cell === cellIndex
       );
       if (existingEntry) {
@@ -46,7 +49,7 @@ export const ArrowDirectionSettings: React.FC = () => {
           cell: cellIndex,
           direction: directionMap[newDirection],
           value: existing.value,
-          layer: activeLayer,
+          layer: dataLayer,
         });
       }
     }

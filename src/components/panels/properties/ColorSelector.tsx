@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pipette } from 'lucide-react';
 import { usePuzzleStore } from '../../../store/puzzleStore';
+import { toDataLayer } from '../../../types';
 
 // General color palette for tools
 export const COLOR_PALETTE = [
@@ -33,6 +34,7 @@ export const ColorSelector: React.FC = () => {
     addDirectionalClue,
   } = usePuzzleStore();
 
+  const dataLayer = toDataLayer(activeLayer);
   const [customColor, setCustomColor] = useState(toolSettings.color);
   const colorInputRef = useRef<HTMLInputElement>(null);
 
@@ -40,7 +42,7 @@ export const ColorSelector: React.FC = () => {
   const findExistingNumberAtPosition = () => {
     if (!numberSelection) return null;
     const cellId = `cell-${numberSelection.row}-${numberSelection.col}`;
-    const numbers = puzzle[activeLayer].numbers;
+    const numbers = puzzle[dataLayer].numbers;
     const position = toolSettings.numberPosition;
     const cornerIndex = toolSettings.cornerIndex;
     const sideIndex = toolSettings.sideIndex;
@@ -67,7 +69,7 @@ export const ColorSelector: React.FC = () => {
       if (toolSettings.currentTool === 'number-directional') {
         // Update directional clue color
         const cellIndex = numberSelection.row * grid.cols + numberSelection.col;
-        const existingEntry = Object.entries(puzzle[activeLayer].directionalClues || {}).find(
+        const existingEntry = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
           ([, c]) => c.cell === cellIndex
         );
         if (existingEntry) {
@@ -77,7 +79,7 @@ export const ColorSelector: React.FC = () => {
             direction: existing.direction,
             value: existing.value,
             color: newColor,
-            layer: activeLayer,
+            layer: dataLayer,
           });
         }
       } else {
@@ -86,7 +88,7 @@ export const ColorSelector: React.FC = () => {
 
         if (position === 'candidates') {
           // Update all candidates in the cell
-          const candidates = Object.entries(puzzle[activeLayer].numbers).filter(
+          const candidates = Object.entries(puzzle[dataLayer].numbers).filter(
             ([, n]) => n.cellId === cellId && n.position === 'candidates'
           );
           candidates.forEach(([, existing]) => {
@@ -98,7 +100,7 @@ export const ColorSelector: React.FC = () => {
               cornerIndex: existing.cornerIndex,
               sideIndex: existing.sideIndex,
               color: newColor,
-              layer: activeLayer,
+              layer: dataLayer,
             });
           });
         } else {
@@ -114,13 +116,13 @@ export const ColorSelector: React.FC = () => {
               cornerIndex: existing.cornerIndex,
               sideIndex: existing.sideIndex,
               color: newColor,
-              layer: activeLayer,
+              layer: dataLayer,
             });
           }
         }
       }
     }
-  }, [numberSelection, toolSettings, grid, puzzle, activeLayer, addNumber, addDirectionalClue, setToolSettings]);
+  }, [numberSelection, toolSettings, grid, puzzle, dataLayer, addNumber, addDirectionalClue, setToolSettings]);
 
   const handleCustomColorInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newColor = e.target.value;

@@ -5,7 +5,7 @@ import { historyManager } from '../../store/historyManager';
 
 export const StatusBar: React.FC = () => {
   const { t } = useTranslation();
-  const { grid, activeLayer, toolSettings, canvas, isGridMode } = usePuzzleStore();
+  const { grid, activeLayer, toolSettings, canvas } = usePuzzleStore();
 
   // Subscribe to history changes for reactive updates
   const [historyState, setHistoryState] = useState(() => historyManager.getState());
@@ -42,7 +42,7 @@ export const StatusBar: React.FC = () => {
 
       {/* Active layer */}
       <span>
-        {t('layer.active')}: {isGridMode ? t('layer.grid') : t(`layer.${activeLayer}`)}
+        {t('layer.active')}: {t(`layer.${activeLayer}`)}
       </span>
 
       {/* Separator */}

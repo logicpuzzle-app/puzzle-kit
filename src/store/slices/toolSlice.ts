@@ -35,13 +35,24 @@ export const createToolSlice: SliceCreator<ToolSlice> = (set) => ({
       };
     }),
 
-  // Grid mode
-  isGridMode: true,
-  setGridMode: (isGridMode) => set({ isGridMode }),
+  // Grid mode subtabs (only used when activeLayer === 'grid')
   gridSubTab: 'shape' as const,
   setGridSubTab: (tab) => set({ gridSubTab: tab }),
   gridEditMode: 'preset' as const,
   setGridEditMode: (mode) => set({ gridEditMode: mode }),
+
+  // Saved tool settings for normal mode (separate from constraint mode)
+  savedNormalToolSettings: {
+    problem: { tool: 'surface-fill', category: 'surface' },
+    answer: { tool: 'surface-fill', category: 'surface' },
+  },
+  setSavedNormalToolSettings: (layer, tool, category) =>
+    set((state) => ({
+      savedNormalToolSettings: {
+        ...state.savedNormalToolSettings,
+        [layer]: { tool, category },
+      },
+    })),
 
   // UI panels
   isPropertiesPanelOpen: true,

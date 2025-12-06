@@ -9,6 +9,7 @@
 
 import type {
   LayerType,
+  DataLayerType,
   SurfaceElement,
   LineElement,
   EdgeElement,
@@ -80,7 +81,7 @@ export interface UpdateNumberAction {
   id: string;
   previousValue: string;
   newValue: string;
-  layer: LayerType;
+  layer: DataLayerType;
 }
 
 // ========================================
@@ -95,8 +96,8 @@ export interface SetActiveLayerAction {
 
 export interface ClearLayerAction {
   type: 'CLEAR_LAYER';
-  layer: LayerType;
-  previousState: PuzzleState[LayerType];
+  layer: 'problem' | 'answer';
+  previousState: PuzzleState['problem'] | PuzzleState['answer'];
 }
 
 // ========================================
@@ -194,7 +195,7 @@ export const createUpdateNumberAction = (
   id: string,
   previousValue: string,
   newValue: string,
-  layer: LayerType
+  layer: DataLayerType
 ): UpdateNumberAction => ({
   type: 'UPDATE_NUMBER',
   id,

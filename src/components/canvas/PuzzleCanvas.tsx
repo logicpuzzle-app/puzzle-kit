@@ -46,7 +46,12 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
     topology,
     previewTopology,
     previewGrid,
+    trialStage,
   } = usePuzzleStore();
+
+  // Trial mode opacity: 0.9^n where n is trial depth
+  // n=0: 1.0, n=1: 0.9, n=2: 0.81, n=3: 0.729, etc.
+  const trialOpacity = trialStage > 0 ? Math.pow(0.9, trialStage) : 1;
 
   const effectiveTopology = previewTopology ?? topology;
   const effectiveGrid = previewGrid ?? grid;
@@ -140,7 +145,10 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
 
               {/* Surface layers (rendered after grid background, before grid lines) */}
               <SurfaceLayer layer="problem" />
-              <SurfaceLayer layer="answer" />
+              {/* Answer surface with trial opacity */}
+              <g opacity={trialOpacity}>
+                <SurfaceLayer layer="answer" />
+              </g>
 
               {/* Multicolor surface layer */}
               <MulticolorSurfaceLayer />
@@ -164,7 +172,10 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
 
               {/* Surface layers (rendered after grid for non-square) */}
               <SurfaceLayer layer="problem" />
-              <SurfaceLayer layer="answer" />
+              {/* Answer surface with trial opacity */}
+              <g opacity={trialOpacity}>
+                <SurfaceLayer layer="answer" />
+              </g>
 
               {/* Multicolor surface layer */}
               <MulticolorSurfaceLayer />
@@ -179,27 +190,45 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
 
           {/* BoxLine layers (snake/patrol style filled boxes with connections) */}
           <BoxLineLayer layer="problem" />
-          <BoxLineLayer layer="answer" />
+          {/* Answer BoxLine with trial opacity */}
+          <g opacity={trialOpacity}>
+            <BoxLineLayer layer="answer" />
+          </g>
 
           {/* Line layers (edges, walls, lines) */}
           <LineLayer layer="problem" />
-          <LineLayer layer="answer" />
+          {/* Answer lines with trial opacity */}
+          <g opacity={trialOpacity}>
+            <LineLayer layer="answer" />
+          </g>
 
           {/* Special layers (cages, thermos, arrows) */}
           <SpecialLayer layer="problem" />
-          <SpecialLayer layer="answer" />
+          {/* Answer specials with trial opacity */}
+          <g opacity={trialOpacity}>
+            <SpecialLayer layer="answer" />
+          </g>
 
           {/* Symbol layers */}
           <SymbolLayer layer="problem" />
-          <SymbolLayer layer="answer" />
+          {/* Answer symbols with trial opacity */}
+          <g opacity={trialOpacity}>
+            <SymbolLayer layer="answer" />
+          </g>
 
           {/* Directional clue layer (Yajilin-style arrows with numbers) */}
           <DirectionalClueLayer layer="problem" arrowStyle={arrowStyle} />
-          <DirectionalClueLayer layer="answer" arrowStyle={arrowStyle} />
+          {/* Answer directional clues with trial opacity */}
+          <g opacity={trialOpacity}>
+            <DirectionalClueLayer layer="answer" arrowStyle={arrowStyle} />
+          </g>
 
           {/* Number layers (rendered last, on top) */}
           <NumberLayer layer="problem" />
-          <NumberLayer layer="answer" />
+          {/* Answer numbers with trial opacity */}
+          <g opacity={trialOpacity}>
+            <NumberLayer layer="answer" />
+          </g>
 
           {/* Solution area border (rendered on top of all puzzle elements) */}
           <SolutionAreaBorderLayer />

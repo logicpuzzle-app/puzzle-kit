@@ -123,7 +123,20 @@ export {
   type GenreInfo,
 } from './puzzleGenres';
 
-export type LayerType = 'problem' | 'answer';
+export type LayerType = 'grid' | 'problem' | 'answer' | 'constraint';
+
+/** Data layer type - layers that actually store puzzle elements */
+export type DataLayerType = 'problem' | 'answer';
+
+/** Convert LayerType to DataLayerType (virtual layers fall back to problem) */
+export function toDataLayer(layer: LayerType): DataLayerType {
+  return layer === 'problem' || layer === 'answer' ? layer : 'problem';
+}
+
+/** Check if the layer is a virtual layer (grid or constraint) */
+export function isVirtualLayer(layer: LayerType): boolean {
+  return layer === 'grid' || layer === 'constraint';
+}
 
 export type ToolCategory =
   | 'surface'
@@ -237,7 +250,7 @@ export interface SurfaceElement {
   id: string;
   cellId: string;
   color: string;
-  layer: LayerType;
+  layer: DataLayerType;
 }
 
 export interface LineElement {
@@ -247,7 +260,7 @@ export interface LineElement {
   style: LineStyle;
   thickness: LineThickness;
   color: string;
-  layer: LayerType;
+  layer: DataLayerType;
   // For freehand lines (not snapped to grid)
   isFree?: boolean;
   fromX?: number;  // SVG x coordinate
@@ -264,7 +277,7 @@ export interface EdgeElement {
   style: LineStyle;
   thickness: LineThickness;
   color: string;
-  layer: LayerType;
+  layer: DataLayerType;
 }
 
 export interface WallElement {
@@ -272,7 +285,7 @@ export interface WallElement {
   position: string;  // edge-h or edge-v point ID
   style: LineStyle;
   color: string;
-  layer: LayerType;
+  layer: DataLayerType;
 }
 
 export interface NumberElement {
@@ -285,18 +298,18 @@ export interface NumberElement {
   sideIndex?: number;    // 0-3 for sides (T, R, B, L)
   candidates?: number[]; // For candidates mode (1-9 for Sudoku)
   color: string;
-  layer: LayerType;
+  layer: DataLayerType;
 }
 
 export interface SymbolElement {
   id: string;
   cellId: string;
   symbolType: string;
-  size: 'large' | 'medium' | 'small';
+  size: 'largest' | 'large' | 'medium' | 'small';
   rotation: number;  // degrees
   color: string;
   fillColor?: string;
-  layer: LayerType;
+  layer: DataLayerType;
 }
 
 export interface CageElement {
@@ -305,7 +318,7 @@ export interface CageElement {
   style: 'solid' | 'dashed';
   color: string;
   label?: string;
-  layer: LayerType;
+  layer: DataLayerType;
 }
 
 export interface SpecialElement {
@@ -313,7 +326,7 @@ export interface SpecialElement {
   type: 'thermo' | 'arrow' | 'polygon';
   points: string[];  // point IDs in order
   color: string;
-  layer: LayerType;
+  layer: DataLayerType;
   data?: Record<string, unknown>;
 }
 
@@ -323,7 +336,7 @@ export interface BoxLineElement {
   id: string;
   cells: string[];  // cell IDs in order (forming a connected path)
   color: string;
-  layer: LayerType;
+  layer: DataLayerType;
 }
 
 // Grid type for different cell shapes (Tilings)
@@ -456,7 +469,7 @@ export interface MulticolorSurfaceElement {
   colors: number[]; // array of color indices (Penpa format: up to 4 colors per cell)
   pattern: 'cross' | 'x'; // Pattern layout: + (cross) or × (x)
   customColors?: string[]; // Custom colors array (idx 9+ map to this array)
-  layer: LayerType;
+  layer: DataLayerType;
 }
 
 export interface PuzzleState {
@@ -497,7 +510,7 @@ export interface ToolSettings {
   secondaryColor: string;
   lineStyle: LineStyle;
   lineThickness: LineThickness;
-  symbolSize: 'large' | 'medium' | 'small';
+  symbolSize: 'largest' | 'large' | 'medium' | 'small';
   numberSize: 'large' | 'medium' | 'small';
   symbolRotation: number; // degrees
   // Number tool submode settings
@@ -517,6 +530,7 @@ export interface ToolSettings {
   lineHalfMode: boolean;             // Half mode: allows lines between cell centers and edge centers
   // Symbol tool settings
   symbolGridPoints: LineGridPoint[]; // Which grid points symbols can be placed on
+  overrideSymbolType?: string; // Override the default symbol type (e.g., 'circle-filled' for constraint modes)
 }
 
 // Canvas state

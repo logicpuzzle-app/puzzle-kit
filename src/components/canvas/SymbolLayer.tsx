@@ -704,7 +704,7 @@ export const SymbolLayer: React.FC<SymbolLayerProps> = ({ layer }) => {
       if (!center) return;
 
       const sizeMultiplier =
-        symbol.size === 'large' ? 1 : symbol.size === 'medium' ? 0.7 : 0.5;
+        symbol.size === 'largest' ? 1.3 : symbol.size === 'large' ? 1 : symbol.size === 'medium' ? 0.7 : 0.5;
 
       elements.push(
         <g key={symbol.id}>

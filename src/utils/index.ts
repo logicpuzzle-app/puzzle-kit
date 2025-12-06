@@ -1,6 +1,7 @@
 // Grid utilities
 export * from './gridUtils';
 export * from './hexGridUtils';
+export * from './gridIds';
 
 // Grid topology (unified representation for irregular grids)
 export {

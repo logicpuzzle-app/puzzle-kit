@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trash2 } from 'lucide-react';
 import { usePuzzleStore } from '../../../store/puzzleStore';
-import { LineElement } from '../../../types';
+import { LineElement, toDataLayer } from '../../../types';
 
 // Group freehand lines by strokeId
 interface FreehandStroke {
@@ -19,9 +19,11 @@ export const FreehandLineList: React.FC = () => {
   const { t } = useTranslation();
   const { puzzle, activeLayer, removeLine } = usePuzzleStore();
 
+  const dataLayer = toDataLayer(activeLayer);
+
   // Get all freehand lines grouped by strokeId
   const strokes = React.useMemo(() => {
-    const layerData = puzzle[activeLayer];
+    const layerData = puzzle[dataLayer];
     const freeLines = Object.values(layerData.lines).filter((line: LineElement) => line.isFree);
 
     // Group lines by strokeId
@@ -60,7 +62,7 @@ export const FreehandLineList: React.FC = () => {
     });
 
     return result;
-  }, [puzzle, activeLayer]);
+  }, [puzzle, dataLayer]);
 
   // Delete all lines in a stroke
   const deleteStroke = (stroke: FreehandStroke) => {

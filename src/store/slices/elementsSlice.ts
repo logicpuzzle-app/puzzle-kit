@@ -26,6 +26,7 @@ import type {
   SpecialElement,
   BoxLineElement,
 } from '../../types';
+import { toDataLayer } from '../../types';
 import type { ElementsSlice, SliceCreator } from './types';
 import { createEmptyElements, createEmptyState } from './types';
 import { historyManager } from '../historyManager';
@@ -83,17 +84,18 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   removeSurface: (id) => {
     const state = get();
-    const layer = state.activeLayer;
+    const layer = toDataLayer(state.activeLayer);
     const element = state.puzzle[layer].surfaces[id];
     if (element) {
       set((state) => {
-        const newSurfaces = { ...state.puzzle[layer].surfaces };
+        const dataLayer = toDataLayer(state.activeLayer);
+        const newSurfaces = { ...state.puzzle[dataLayer].surfaces };
         delete newSurfaces[id];
         return {
           puzzle: {
             ...state.puzzle,
-            [layer]: {
-              ...state.puzzle[layer],
+            [dataLayer]: {
+              ...state.puzzle[dataLayer],
               surfaces: newSurfaces,
             },
           },
@@ -147,17 +149,18 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   removeLine: (id) => {
     const state = get();
-    const layer = state.activeLayer;
+    const layer = toDataLayer(state.activeLayer);
     const element = state.puzzle[layer].lines[id];
     if (element) {
       set((state) => {
-        const newLines = { ...state.puzzle[layer].lines };
+        const dataLayer = toDataLayer(state.activeLayer);
+        const newLines = { ...state.puzzle[dataLayer].lines };
         delete newLines[id];
         return {
           puzzle: {
             ...state.puzzle,
-            [layer]: {
-              ...state.puzzle[layer],
+            [dataLayer]: {
+              ...state.puzzle[dataLayer],
               lines: newLines,
             },
           },
@@ -192,17 +195,18 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   removeEdge: (id) => {
     const state = get();
-    const layer = state.activeLayer;
+    const layer = toDataLayer(state.activeLayer);
     const element = state.puzzle[layer].edges[id];
     if (element) {
       set((state) => {
-        const newEdges = { ...state.puzzle[layer].edges };
+        const dataLayer = toDataLayer(state.activeLayer);
+        const newEdges = { ...state.puzzle[dataLayer].edges };
         delete newEdges[id];
         return {
           puzzle: {
             ...state.puzzle,
-            [layer]: {
-              ...state.puzzle[layer],
+            [dataLayer]: {
+              ...state.puzzle[dataLayer],
               edges: newEdges,
             },
           },
@@ -237,17 +241,18 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   removeWall: (id) => {
     const state = get();
-    const layer = state.activeLayer;
+    const layer = toDataLayer(state.activeLayer);
     const element = state.puzzle[layer].walls[id];
     if (element) {
       set((state) => {
-        const newWalls = { ...state.puzzle[layer].walls };
+        const dataLayer = toDataLayer(state.activeLayer);
+        const newWalls = { ...state.puzzle[dataLayer].walls };
         delete newWalls[id];
         return {
           puzzle: {
             ...state.puzzle,
-            [layer]: {
-              ...state.puzzle[layer],
+            [dataLayer]: {
+              ...state.puzzle[dataLayer],
               walls: newWalls,
             },
           },
@@ -282,17 +287,18 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   removeNumber: (id) => {
     const state = get();
-    const layer = state.activeLayer;
+    const layer = toDataLayer(state.activeLayer);
     const element = state.puzzle[layer].numbers[id];
     if (element) {
       set((state) => {
-        const newNumbers = { ...state.puzzle[layer].numbers };
+        const dataLayer = toDataLayer(state.activeLayer);
+        const newNumbers = { ...state.puzzle[dataLayer].numbers };
         delete newNumbers[id];
         return {
           puzzle: {
             ...state.puzzle,
-            [layer]: {
-              ...state.puzzle[layer],
+            [dataLayer]: {
+              ...state.puzzle[dataLayer],
               numbers: newNumbers,
             },
           },
@@ -304,21 +310,24 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   updateNumber: (id, value) => {
     const state = get();
-    const layer = state.activeLayer;
+    const layer = toDataLayer(state.activeLayer);
     const element = state.puzzle[layer].numbers[id];
     if (element) {
-      set((state) => ({
-        puzzle: {
-          ...state.puzzle,
-          [layer]: {
-            ...state.puzzle[layer],
-            numbers: {
-              ...state.puzzle[layer].numbers,
-              [id]: { ...element, value },
+      set((state) => {
+        const dataLayer = toDataLayer(state.activeLayer);
+        return {
+          puzzle: {
+            ...state.puzzle,
+            [dataLayer]: {
+              ...state.puzzle[dataLayer],
+              numbers: {
+                ...state.puzzle[dataLayer].numbers,
+                [id]: { ...element, value },
+              },
             },
           },
-        },
-      }));
+        };
+      });
       historyManager.addAction(createUpdateNumberAction(id, element.value, value, layer));
     }
   },
@@ -348,17 +357,18 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   removeSymbol: (id) => {
     const state = get();
-    const layer = state.activeLayer;
+    const layer = toDataLayer(state.activeLayer);
     const element = state.puzzle[layer].symbols[id];
     if (element) {
       set((state) => {
-        const newSymbols = { ...state.puzzle[layer].symbols };
+        const dataLayer = toDataLayer(state.activeLayer);
+        const newSymbols = { ...state.puzzle[dataLayer].symbols };
         delete newSymbols[id];
         return {
           puzzle: {
             ...state.puzzle,
-            [layer]: {
-              ...state.puzzle[layer],
+            [dataLayer]: {
+              ...state.puzzle[dataLayer],
               symbols: newSymbols,
             },
           },
@@ -393,17 +403,18 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   removeCage: (id) => {
     const state = get();
-    const layer = state.activeLayer;
+    const layer = toDataLayer(state.activeLayer);
     const element = state.puzzle[layer].cages[id];
     if (element) {
       set((state) => {
-        const newCages = { ...state.puzzle[layer].cages };
+        const dataLayer = toDataLayer(state.activeLayer);
+        const newCages = { ...state.puzzle[dataLayer].cages };
         delete newCages[id];
         return {
           puzzle: {
             ...state.puzzle,
-            [layer]: {
-              ...state.puzzle[layer],
+            [dataLayer]: {
+              ...state.puzzle[dataLayer],
               cages: newCages,
             },
           },
@@ -438,17 +449,18 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   removeSpecial: (id) => {
     const state = get();
-    const layer = state.activeLayer;
+    const layer = toDataLayer(state.activeLayer);
     const element = state.puzzle[layer].specials[id];
     if (element) {
       set((state) => {
-        const newSpecials = { ...state.puzzle[layer].specials };
+        const dataLayer = toDataLayer(state.activeLayer);
+        const newSpecials = { ...state.puzzle[dataLayer].specials };
         delete newSpecials[id];
         return {
           puzzle: {
             ...state.puzzle,
-            [layer]: {
-              ...state.puzzle[layer],
+            [dataLayer]: {
+              ...state.puzzle[dataLayer],
               specials: newSpecials,
             },
           },
@@ -482,17 +494,18 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   removeBoxLine: (id) => {
     const state = get();
-    const layer = state.activeLayer;
+    const layer = toDataLayer(state.activeLayer);
     const boxLines = state.puzzle[layer].boxLines || {};
     if (boxLines[id]) {
       set((state) => {
-        const newBoxLines = { ...state.puzzle[layer].boxLines };
+        const dataLayer = toDataLayer(state.activeLayer);
+        const newBoxLines = { ...state.puzzle[dataLayer].boxLines };
         delete newBoxLines[id];
         return {
           puzzle: {
             ...state.puzzle,
-            [layer]: {
-              ...state.puzzle[layer],
+            [dataLayer]: {
+              ...state.puzzle[dataLayer],
               boxLines: newBoxLines,
             },
           },
@@ -503,22 +516,25 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   updateBoxLine: (id, cells) => {
     const state = get();
-    const layer = state.activeLayer;
+    const layer = toDataLayer(state.activeLayer);
     const boxLines = state.puzzle[layer].boxLines || {};
     const element = boxLines[id];
     if (element) {
-      set((state) => ({
-        puzzle: {
-          ...state.puzzle,
-          [layer]: {
-            ...state.puzzle[layer],
-            boxLines: {
-              ...state.puzzle[layer].boxLines,
-              [id]: { ...element, cells },
+      set((state) => {
+        const dataLayer = toDataLayer(state.activeLayer);
+        return {
+          puzzle: {
+            ...state.puzzle,
+            [dataLayer]: {
+              ...state.puzzle[dataLayer],
+              boxLines: {
+                ...state.puzzle[dataLayer].boxLines,
+                [id]: { ...element, cells },
+              },
             },
           },
-        },
-      }));
+        };
+      });
     }
   },
 
@@ -552,7 +568,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   removeDirectionalClue: (id) => {
     set((state) => {
-      const layer = state.activeLayer;
+      const layer = toDataLayer(state.activeLayer);
       const clues = { ...(state.puzzle[layer].directionalClues || {}) };
       delete clues[id];
       return {

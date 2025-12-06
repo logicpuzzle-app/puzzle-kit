@@ -14,6 +14,7 @@ import {
 import { generateLineId } from '../../utils/lineNormalization';
 import { useGridPointUtils } from '../useGridPointUtils';
 import type { Point } from '../../types';
+import { toDataLayer } from '../../types';
 
 interface UseLineToolHandlerOptions {
   drawStartPoint: string | null;
@@ -124,7 +125,7 @@ export function useLineToolHandler({
               style: toolSettings.lineStyle,
               thickness: toolSettings.lineThickness,
               color: colorToUse,
-              layer: activeLayer,
+              layer: toDataLayer(activeLayer),
               isFree: true,
               fromX: drawStartPosition.x,
               fromY: drawStartPosition.y,
@@ -174,7 +175,8 @@ export function useLineToolHandler({
         }
 
         // Draw lines for each segment in the path
-        const layerData = puzzle[activeLayer];
+        const dataLayer = toDataLayer(activeLayer);
+        const layerData = puzzle[dataLayer];
         let currentFrom = drawStartPoint;
 
         for (const toPoint of interpolatedPath) {
@@ -218,7 +220,7 @@ export function useLineToolHandler({
                   style: toolSettings.lineStyle,
                   thickness: toolSettings.lineThickness,
                   color: colorToUse,
-                  layer: activeLayer,
+                  layer: toDataLayer(activeLayer),
                 });
               }
               // Same color: do nothing (already drawn)
@@ -230,7 +232,7 @@ export function useLineToolHandler({
                 style: toolSettings.lineStyle,
                 thickness: toolSettings.lineThickness,
                 color: colorToUse,
-                layer: activeLayer,
+                layer: toDataLayer(activeLayer),
               });
             }
           }
@@ -271,7 +273,8 @@ export function useLineToolHandler({
         setDrawStartPoint(vertexId);
       } else if (drawStartPoint && drawStartPoint !== vertexId) {
         // Check if edge already exists
-        const layerData = puzzle[activeLayer];
+        const dataLayer = toDataLayer(activeLayer);
+        const layerData = puzzle[dataLayer];
         const existingEdge = Object.values(layerData.edges).find(
           (e) =>
             (e.from === drawStartPoint && e.to === vertexId) ||
@@ -293,7 +296,7 @@ export function useLineToolHandler({
               style: toolSettings.lineStyle,
               thickness: toolSettings.lineThickness,
               color: colorToUse,
-              layer: activeLayer,
+              layer: toDataLayer(activeLayer),
             });
           }
         } else if (!isShiftKey) {
@@ -304,7 +307,7 @@ export function useLineToolHandler({
             style: toolSettings.lineStyle,
             thickness: toolSettings.lineThickness,
             color: colorToUse,
-            layer: activeLayer,
+            layer: toDataLayer(activeLayer),
           });
         }
 
@@ -330,7 +333,8 @@ export function useLineToolHandler({
       if (!edgeId) return;
 
       const colorToUse = isRightClick ? toolSettings.secondaryColor : toolSettings.color;
-      const layerData = puzzle[activeLayer];
+      const dataLayer = toDataLayer(activeLayer);
+      const layerData = puzzle[dataLayer];
       const existingWall = Object.values(layerData.walls).find(
         (w) => w.position === edgeId
       );
@@ -349,7 +353,7 @@ export function useLineToolHandler({
             position: edgeId,
             style: toolSettings.lineStyle,
             color: colorToUse,
-            layer: activeLayer,
+            layer: toDataLayer(activeLayer),
           });
         }
       } else if (!isShiftKey) {
@@ -358,7 +362,7 @@ export function useLineToolHandler({
           position: edgeId,
           style: toolSettings.lineStyle,
           color: colorToUse,
-          layer: activeLayer,
+          layer: toDataLayer(activeLayer),
         });
       }
     },
@@ -379,7 +383,8 @@ export function useLineToolHandler({
       // Skip if same point as start
       if (drawStartPoint === pointId) return;
 
-      const layerData = puzzle[activeLayer];
+      const dataLayer = toDataLayer(activeLayer);
+      const layerData = puzzle[dataLayer];
 
       // Check if line already exists using normalized ID
       const lineId = generateLineId(drawStartPoint, pointId);
@@ -398,7 +403,7 @@ export function useLineToolHandler({
             style: toolSettings.lineStyle,
             thickness: toolSettings.lineThickness,
             color: colorToUse,
-            layer: activeLayer,
+            layer: toDataLayer(activeLayer),
           });
         }
       } else if (!isShiftKey) {
@@ -409,7 +414,7 @@ export function useLineToolHandler({
           style: toolSettings.lineStyle,
           thickness: toolSettings.lineThickness,
           color: colorToUse,
-          layer: activeLayer,
+          layer: toDataLayer(activeLayer),
         });
       }
     },

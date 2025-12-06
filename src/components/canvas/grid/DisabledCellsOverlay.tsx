@@ -8,7 +8,10 @@ import type { TopologyVertex } from '../../../utils/gridTopology';
  * In other modes: shows only border lines between enabled and disabled cells
  */
 export const DisabledCellsOverlay: React.FC = () => {
-  const { grid, isGridMode, useTopology, topology } = usePuzzleStore();
+  const { grid, activeLayer, useTopology, topology } = usePuzzleStore();
+
+  // Derived state: grid mode is when activeLayer is 'grid'
+  const isGridMode = activeLayer === 'grid';
   const {
     cellSize,
     outerPadding,

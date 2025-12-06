@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
 import { parseCellId, getCellCenter } from '../../utils/gridUtils';
-import type { BoxLineElement, LayerType } from '../../types';
+import type { BoxLineElement, DataLayerType } from '../../types';
 import type { TopologyVertex } from '../../utils/gridTopology';
 
 interface BoxLineLayerProps {
-  layer: LayerType;
+  layer: DataLayerType;
 }
 
 type Point = { x: number; y: number };

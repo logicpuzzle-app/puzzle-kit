@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
 import { parseCellId, getCellCenter } from '../../utils/gridUtils';
-import type { SurfaceElement, LayerType } from '../../types';
+import type { SurfaceElement, DataLayerType } from '../../types';
 import type { TopologyVertex } from '../../utils/gridTopology';
 
 interface SurfaceLayerProps {
-  layer: LayerType;
+  layer: DataLayerType;
 }
 
 export const SurfaceLayer: React.FC<SurfaceLayerProps> = ({ layer }) => {

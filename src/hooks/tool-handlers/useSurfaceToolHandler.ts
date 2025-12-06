@@ -3,6 +3,7 @@ import { usePuzzleStore } from '../../store/puzzleStore';
 import { findNearestCell, getCellId } from '../../utils/gridUtils';
 import { findNearestCellInTopology } from '../../utils/gridTopology';
 import type { Point } from '../../types';
+import { toDataLayer } from '../../types';
 
 /**
  * Hook providing surface-related tool handlers
@@ -62,7 +63,8 @@ export function useSurfaceToolHandler() {
       }
       processedCellsRef.current.add(cellId);
 
-      const layerData = puzzle[activeLayer];
+      const dataLayer = toDataLayer(activeLayer);
+      const layerData = puzzle[dataLayer];
 
       // Determine which color to use
       const colorToUse = isRightClick ? toolSettings.secondaryColor : toolSettings.color;
@@ -104,7 +106,7 @@ export function useSurfaceToolHandler() {
             addSurface({
               cellId,
               color: colorToUse,
-              layer: activeLayer,
+              layer: dataLayer,
             });
           }
           // Same color: do nothing (already filled)
@@ -113,7 +115,7 @@ export function useSurfaceToolHandler() {
           addSurface({
             cellId,
             color: colorToUse,
-            layer: activeLayer,
+            layer: dataLayer,
           });
         }
       }

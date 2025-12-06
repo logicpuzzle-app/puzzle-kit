@@ -262,9 +262,10 @@ export const SymbolPanel: React.FC = () => {
     : null;
 
   // Get font size in pixels based on current symbol size setting
-  // Button is 32px, so we use similar ratios as canvas (large=1, medium=0.7, small=0.5)
+  // Button is 32px, so we use similar ratios as canvas (largest=1.3, large=1, medium=0.7, small=0.5)
   const getFontSize = () => {
     switch (toolSettings.symbolSize) {
+      case 'largest': return 32; // Full button size (fills cell)
       case 'large': return 28;   // ~87% of button size
       case 'small': return 14;   // ~44% of button size
       default: return 20;        // ~62% of button size (medium)

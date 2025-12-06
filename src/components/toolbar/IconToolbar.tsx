@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
 import { usePuzzleStore } from '../../store/puzzleStore';
+import { useModalStore } from '../../store/modalStore';
 import {
   generateShareUrl,
   downloadAsJson,
@@ -153,6 +154,8 @@ export const IconToolbar: React.FC = () => {
     canRedo,
   } = usePuzzleStore();
 
+  const { showConfirm, showAlert } = useModalStore();
+
   const handleExportJson = () => {
     downloadAsJson(grid, puzzle, { title: 'Puzzle' });
   };
@@ -176,7 +179,11 @@ export const IconToolbar: React.FC = () => {
               });
             }
           } catch {
-            alert(t('error.invalidFile') || 'Invalid file');
+            showAlert({
+              title: t('error.invalidFile'),
+              message: t('error.invalidFile'),
+              variant: 'error',
+            });
           }
         };
         reader.readAsText(file);
@@ -198,7 +205,11 @@ export const IconToolbar: React.FC = () => {
   const handleShareUrl = () => {
     const url = generateShareUrl(grid, puzzle);
     navigator.clipboard.writeText(url).then(() => {
-      alert(t('share.copied') || 'URL copied to clipboard!');
+      showAlert({
+        title: t('share.copied'),
+        message: t('share.copied'),
+        variant: 'success',
+      });
     });
   };
 
@@ -213,7 +224,11 @@ export const IconToolbar: React.FC = () => {
     } else if (isPenpaUrl(url)) {
       result = parsePenpaUrl(url);
     } else {
-      alert(t('error.invalidPenpaUrl') || 'Invalid Penpa/puzz.link URL');
+      showAlert({
+        title: t('error.invalidPenpaUrl'),
+        message: t('error.invalidPenpaUrl'),
+        variant: 'error',
+      });
       return;
     }
 
@@ -222,9 +237,17 @@ export const IconToolbar: React.FC = () => {
         grid: result.grid,
         puzzle: result.state,
       });
-      alert(t('file.importSuccess') || 'Puzzle imported successfully!');
+      showAlert({
+        title: t('file.importSuccess'),
+        message: t('file.importSuccess'),
+        variant: 'success',
+      });
     } else {
-      alert(t('error.importFailed') || 'Failed to import puzzle');
+      showAlert({
+        title: t('error.importFailed'),
+        message: t('error.importFailed'),
+        variant: 'error',
+      });
     }
   };
 
@@ -316,9 +339,13 @@ export const IconToolbar: React.FC = () => {
         <ToolbarButton
           icon={<TrashIcon />}
           onClick={() => {
-            if (confirm(t('edit.confirmClearAll') || 'Clear all layers?')) {
-              clearAll();
-            }
+            showConfirm({
+              title: t('confirm.clearAll.title'),
+              message: t('confirm.clearAll.message'),
+              variant: 'danger',
+              confirmLabel: t('common.delete'),
+              onConfirm: () => clearAll(),
+            });
           }}
           title={t('edit.clearAll')}
         />

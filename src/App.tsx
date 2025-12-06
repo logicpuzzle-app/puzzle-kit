@@ -5,9 +5,11 @@ import { PuzzleCanvas, type TextClickInfo } from './components/canvas';
 import { MenuBar, IconToolbar, Ribbon } from './components/toolbar';
 import { PropertiesPanel, StatusBar } from './components/panels';
 import { TextInputDialog, type TextInputType, StorageErrorDialog } from './components/dialogs';
+import { CheckAnswerModal, ConfirmModal, AlertModal, ShortcutsModal } from './components/modals';
 import { usePuzzleStore } from './store/puzzleStore';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useStorageErrorHandler } from './hooks/useStorageErrorHandler';
+import { toDataLayer } from './types';
 
 function App() {
   const { t } = useTranslation();
@@ -44,7 +46,7 @@ function App() {
           size: toolSettings.symbolSize,
           rotation: 0,
           color: toolSettings.color,
-          layer: activeLayer,
+          layer: toDataLayer(activeLayer),
         });
       }
     },
@@ -93,6 +95,14 @@ function App() {
         dataSize={storageError?.dataSize ?? 0}
         errorType={storageError?.errorType ?? 'general'}
       />
+
+      {/* Check Answer Modal */}
+      <CheckAnswerModal />
+
+      {/* Global Modals */}
+      <ConfirmModal />
+      <AlertModal />
+      <ShortcutsModal />
     </div>
   );
 }

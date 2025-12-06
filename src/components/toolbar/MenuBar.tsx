@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
 import { usePuzzleStore } from '../../store/puzzleStore';
+import { useModalStore } from '../../store/modalStore';
 import {
   downloadAsJson,
   exportToPng,
@@ -53,7 +54,14 @@ export const MenuBar: React.FC = () => {
     useTopology,
     topologyPreset,
     topologyIntensity,
+    showConstraintLayer,
+    currentSchemaId,
   } = usePuzzleStore();
+
+  // Check if constraint mode is enabled (constraint layer visible + preset selected)
+  const isConstraintEnabled = showConstraintLayer && currentSchemaId !== null && currentSchemaId !== '__custom__';
+
+  const { showAlert, showShortcuts } = useModalStore();
 
   // Auto-save on changes
   useEffect(() => {
@@ -181,7 +189,11 @@ export const MenuBar: React.FC = () => {
               });
             }
           } catch {
-            alert(t('error.invalidFile') || 'Invalid file');
+            showAlert({
+              title: t('error.invalidFile'),
+              message: t('error.invalidFile'),
+              variant: 'error',
+            });
           }
         };
         reader.readAsText(file);
@@ -435,7 +447,11 @@ export const MenuBar: React.FC = () => {
     const adapter = getStorageAdapter();
 
     if (!adapter || !adapter.isAvailable()) {
-      alert(t('error.storageNotAvailable') || 'Storage is not available. Please try again later.');
+      showAlert({
+        title: t('error.storageNotAvailable'),
+        message: t('error.storageNotAvailable'),
+        variant: 'error',
+      });
       setActiveMenu(null);
       return;
     }
@@ -465,7 +481,11 @@ export const MenuBar: React.FC = () => {
       setShareUrlDialogOpen(true);
     } catch (error) {
       console.error('[Share URL] Failed to save puzzle:', error);
-      alert(t('error.shareFailed') || 'Failed to share puzzle. Please try again.');
+      showAlert({
+        title: t('error.shareFailed'),
+        message: t('error.shareFailed'),
+        variant: 'error',
+      });
     }
 
     setActiveMenu(null);
@@ -488,7 +508,11 @@ export const MenuBar: React.FC = () => {
     } else if (isPenpaUrl(url)) {
       result = parsePenpaUrl(url);
     } else {
-      alert(t('error.invalidPenpaUrl') || 'Invalid Penpa/puzz.link URL');
+      showAlert({
+        title: t('error.invalidPenpaUrl'),
+        message: t('error.invalidPenpaUrl'),
+        variant: 'error',
+      });
       return;
     }
 
@@ -499,9 +523,17 @@ export const MenuBar: React.FC = () => {
         grid: result.grid,
         puzzle: result.state,
       });
-      alert(t('file.importSuccess') || 'Puzzle imported successfully!');
+      showAlert({
+        title: t('file.importSuccess'),
+        message: t('file.importSuccess'),
+        variant: 'success',
+      });
     } else {
-      alert(t('error.importFailed') || 'Failed to import puzzle');
+      showAlert({
+        title: t('error.importFailed'),
+        message: t('error.importFailed'),
+        variant: 'error',
+      });
     }
     setActiveMenu(null);
   };
@@ -512,7 +544,11 @@ export const MenuBar: React.FC = () => {
 
     const url = generatePuzzlinkUrl(grid, puzzle, puzzleType);
     navigator.clipboard.writeText(url).then(() => {
-      alert(t('share.copied') || 'puzz.link URL copied to clipboard!');
+      showAlert({
+        title: t('share.copied'),
+        message: t('share.copied'),
+        variant: 'success',
+      });
     });
     setActiveMenu(null);
   };
@@ -549,7 +585,7 @@ export const MenuBar: React.FC = () => {
     {
       labelKey: 'menu.view',
       items: [
-        { labelKey: 'help.shortcuts', action: () => { alert(getShortcutsHelp()); setActiveMenu(null); } },
+        { labelKey: 'help.shortcuts', action: () => { showShortcuts(); setActiveMenu(null); } },
       ],
     },
     {
@@ -558,7 +594,7 @@ export const MenuBar: React.FC = () => {
         { labelKey: 'Language: 日本語', action: () => { i18n.changeLanguage('ja'); setActiveMenu(null); } },
         { labelKey: 'Language: English', action: () => { i18n.changeLanguage('en'); setActiveMenu(null); } },
         { divider: true, labelKey: '' },
-        { labelKey: 'help.shortcuts', action: () => { alert(getShortcutsHelp()); setActiveMenu(null); } },
+        { labelKey: 'help.shortcuts', action: () => { showShortcuts(); setActiveMenu(null); } },
         { divider: true, labelKey: '' },
         { labelKey: 'help.performanceTest', action: handlePerformanceTest },
       ],
@@ -612,7 +648,7 @@ export const MenuBar: React.FC = () => {
     >
       {/* App icon/title */}
       <div className="flex items-center px-2 mr-2">
-        <span className="text-office-accent font-semibold text-sm">
+        <span className={`font-semibold text-sm ${isConstraintEnabled ? 'text-purple-600' : 'text-office-accent'}`}>
           {t('app.title')}
         </span>
       </div>

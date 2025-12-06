@@ -72,8 +72,7 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
       hoverCell: null,
       numberSelection: null,
       toolSettings: { ...DEFAULT_TOOL_SETTINGS },
-      activeLayer: 'problem',
-      isGridMode: true,
+      activeLayer: 'grid',
       topology,
     });
     historyManager.clear();

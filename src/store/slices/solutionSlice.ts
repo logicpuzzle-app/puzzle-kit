@@ -3,6 +3,7 @@
  */
 
 import { generateMulticolorId } from '../../utils/idGenerator';
+import { toDataLayer } from '../../types';
 import type { SolutionSlice, SliceCreator } from './types';
 
 export const createSolutionSlice: SliceCreator<SolutionSlice> = (set) => ({
@@ -76,7 +77,7 @@ export const createSolutionSlice: SliceCreator<SolutionSlice> = (set) => ({
               colors,
               pattern,
               customColors,
-              layer: state.activeLayer,
+              layer: toDataLayer(state.activeLayer),
             },
           },
         },

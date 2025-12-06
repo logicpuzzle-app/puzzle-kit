@@ -13,9 +13,12 @@ import { createElementsSlice } from './slices/elementsSlice';
 import { createCanvasSlice } from './slices/canvasSlice';
 import { createToolSlice } from './slices/toolSlice';
 import { createLayerSlice } from './slices/layerSlice';
+import { createConstraintSlice } from './slices/constraintSlice';
 import { createSolutionSlice } from './slices/solutionSlice';
 import { createHistorySlice } from './slices/historySlice';
+import { createTrialSlice } from './slices/trialSlice';
 import { createPuzzleIOSlice } from './slices/puzzleIOSlice';
+import { createCursorSlice } from './slices/cursorSlice';
 import { actionExecutor } from './actionExecutor';
 
 // Re-export types for backward compatibility
@@ -57,8 +60,11 @@ export const usePuzzleStore = create<PuzzleStore>((...args) => {
     ...createCanvasSlice(...args),
     ...createToolSlice(...args),
     ...createLayerSlice(...args),
+    ...createConstraintSlice(...args),
     ...createSolutionSlice(...args),
     ...createHistorySlice(...args),
+    ...createTrialSlice(...args),
     ...createPuzzleIOSlice(...args),
+    ...createCursorSlice(...args),
   };
 });

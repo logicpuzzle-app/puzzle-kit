@@ -16,7 +16,7 @@
  * - useSculptMode: Isometric sculpting
  */
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import { usePuzzleStore } from '../store/puzzleStore';
 import { screenToSvg } from '../utils/gridUtils';
 import { useToolHandlers } from './useToolHandlers';
@@ -41,10 +41,13 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
     setPan,
     startHistoryGroup,
     endHistoryGroup,
-    isGridMode,
+    activeLayer,
     gridEditMode,
     topology,
   } = usePuzzleStore();
+
+  // Derived state: grid mode is when activeLayer is 'grid'
+  const isGridMode = activeLayer === 'grid';
 
   // Drawing state
   const [isPanning, setIsPanning] = useState(false);
@@ -58,6 +61,16 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
   const isDraggingRef = useRef(false);
   const isRightClickRef = useRef(false);
   const isShiftKeyRef = useRef(false);
+
+  // Clear cursor states when switching to non-editable layers
+  useEffect(() => {
+    if (activeLayer === 'constraint' || activeLayer === 'grid') {
+      setLineHoverPoint(null);
+      setSymbolHoverPoint(null);
+      setDrawStartPoint(null);
+      setDrawStartPosition(null);
+    }
+  }, [activeLayer]);
 
   // Get tool handlers
   const toolHandlers = useToolHandlers({
@@ -370,11 +383,11 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
     e.preventDefault();
   }, []);
 
-  // Update line hover point
+  // Update line hover point (for line and edge tools)
   const updateLineHoverPoint = useCallback(
     (point: Point) => {
       const tool = toolSettings.currentTool;
-      if (!tool.startsWith('line')) {
+      if (!tool.startsWith('line') && !tool.startsWith('edge')) {
         setLineHoverPoint(null);
         return;
       }

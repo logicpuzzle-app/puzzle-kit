@@ -12,7 +12,7 @@ import {
   getLineStyleProps,
   getPenpaColor,
 } from '../../types/penpaElements';
-import type { GridPoints, Point } from '../../types/point';
+import type { GridPoints } from '../../types/point';
 
 interface EdgeLayerProps {
   gridPoints?: GridPoints;
@@ -23,8 +23,8 @@ interface EdgeLayerProps {
  * Render a single edge line
  */
 const EdgeLine: React.FC<{
-  from: Point;
-  to: Point;
+  from: { x: number; y: number };
+  to: { x: number; y: number };
   style: PenpaLineStyle;
   color?: string | number;
 }> = ({ from, to, style, color }) => {
@@ -128,17 +128,46 @@ export const EdgeLayer: React.FC<EdgeLayerProps> = ({
     const edgeElements = puzzleLayer.edges || {};
 
     return Object.entries(edgeElements).map(([id, edge]) => {
-      // Parse edge key (format: "from,to")
-      const parts = edge.from.split(',').map(Number);
-      if (parts.length !== 2 || parts.some(isNaN)) {
-        return null;
+      let fromCoord: { x: number; y: number } | undefined;
+      let toCoord: { x: number; y: number } | undefined;
+
+      // Check if using Penpa-style numeric index format ("from,to")
+      const penpaFromParts = edge.from.split(',').map(Number);
+      if (penpaFromParts.length === 2 && !penpaFromParts.some(isNaN)) {
+        const [fromIdx, toIdx] = penpaFromParts;
+        const fromPoint = gridPoints.points[fromIdx];
+        const toPoint = gridPoints.points[toIdx];
+        if (fromPoint && toPoint) {
+          fromCoord = { x: fromPoint.x, y: fromPoint.y };
+          toCoord = { x: toPoint.x, y: toPoint.y };
+        }
+      }
+      // Check if using vertex ID format ("vertex-r-c")
+      else if (edge.from.startsWith('vertex-') && edge.to.startsWith('vertex-')) {
+        const fromMatch = edge.from.match(/vertex-(\d+)-(\d+)/);
+        const toMatch = edge.to.match(/vertex-(\d+)-(\d+)/);
+
+        if (fromMatch && toMatch) {
+          const fromRow = parseInt(fromMatch[1], 10);
+          const fromCol = parseInt(fromMatch[2], 10);
+          const toRow = parseInt(toMatch[1], 10);
+          const toCol = parseInt(toMatch[2], 10);
+
+          // Calculate vertex positions based on grid
+          // Vertices are at cell corners, so vertex(r,c) is at top-left of cell(r,c)
+          const { size, border } = gridPoints;
+          fromCoord = {
+            x: (border + fromCol) * size,
+            y: (border + fromRow) * size,
+          };
+          toCoord = {
+            x: (border + toCol) * size,
+            y: (border + toRow) * size,
+          };
+        }
       }
 
-      const [fromIdx, toIdx] = parts;
-      const fromPoint = gridPoints.points[fromIdx];
-      const toPoint = gridPoints.points[toIdx];
-
-      if (!fromPoint || !toPoint) {
+      if (!fromCoord || !toCoord) {
         return null;
       }
 
@@ -163,8 +192,8 @@ export const EdgeLayer: React.FC<EdgeLayerProps> = ({
 
       return {
         id,
-        from: fromPoint,
-        to: toPoint,
+        from: fromCoord,
+        to: toCoord,
         style: penpaStyle,
         color: edge.color,
       };

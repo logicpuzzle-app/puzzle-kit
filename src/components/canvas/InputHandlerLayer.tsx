@@ -14,7 +14,8 @@ import { usePuzzleStore } from '../../store/puzzleStore';
 import { useCanvasInteraction } from '../../hooks/useCanvasInteraction';
 import { screenToSvg, findNearestCell, getCellCenter, getCellCorners, parseCellId } from '../../utils/gridUtils';
 import { findNearestCellInTopology } from '../../utils/gridTopology';
-import type { NumberPosition, SymbolElement, Point } from '../../types';
+import type { NumberPosition, SymbolElement, Point, DataLayerType } from '../../types';
+import { toDataLayer } from '../../types';
 import type { TopologyVertex } from '../../utils/gridTopology';
 import { CanvasCursors } from './CanvasCursors';
 import { SpecialToolPreview } from './SpecialToolPreview';
@@ -84,9 +85,13 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     useTopology,
     topology: storeTopology,
     previewTopology,
-    isGridMode,
     gridEditMode,
   } = usePuzzleStore();
+
+  // Derived state: grid mode is when activeLayer is 'grid'
+  const isGridMode = activeLayer === 'grid';
+  // Constraint mode: editing is disabled
+  const isConstraintMode = activeLayer === 'constraint';
 
   // Use preview topology if available (for grid shape preview)
   const topology = previewTopology ?? storeTopology;
@@ -126,18 +131,10 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     getSculptHoverPolygons,
   } = useCanvasInteraction({ svgRef });
 
-  // Determine cursor based on current tool and panMode
-  const cursorClass = useMemo(() => {
-    // Pan mode has highest priority
-    if (canvas.panMode) {
-      return 'cursor-grab';
-    }
-    const tool = toolSettings.currentTool;
-    if (tool === 'select') {
-      return 'cursor-default';
-    }
-    return 'cursor-crosshair';
-  }, [toolSettings.currentTool, canvas.panMode]);
+  // Get cursor configuration from centralized cursor model
+  const { getCssCursor, getOverlayConfig } = usePuzzleStore();
+  const cursorClass = getCssCursor();
+  const overlayConfig = getOverlayConfig();
 
   const findTopologyCellId = useCallback(
     (row: number, col: number): string | null => {
@@ -156,6 +153,15 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       const tool = toolSettings.currentTool;
+
+      // In constraint mode, disable all editing (only allow pan/zoom)
+      if (isConstraintMode) {
+        // Still allow wheel/pan interactions via base handler for pan mode
+        if (canvas.panMode) {
+          baseHandleMouseDown(e);
+        }
+        return;
+      }
 
       // In grid mode, delegate to base handler (which handles merge/split/exclude)
       if (isGridMode) {
@@ -201,7 +207,8 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         setNumberSelection(targetCell);
         if (e.button === 2) {
           const cellIndex = targetCell.row * grid.cols + targetCell.col;
-          const existingId = Object.entries(puzzle[activeLayer].directionalClues || {}).find(
+          const dataLayer = toDataLayer(activeLayer);
+          const existingId = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
             ([, clue]) => clue.cell === cellIndex
           )?.[0];
           if (existingId) {
@@ -264,6 +271,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       canvas.zoom,
       canvas.panX,
       canvas.panY,
+      canvas.panMode,
       svgRef,
       onNumberClick,
       onTextClick,
@@ -281,6 +289,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       addDirectionalClue,
       toolSettings.arrowDirection,
       isGridMode,
+      isConstraintMode,
       gridEditMode,
     ]
   );
@@ -354,13 +363,15 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     [baseHandleMouseUp, setHoverCell]
   );
 
-  // Calculate hover cell position (only for non-line/symbol tools)
-  const isLineTool = toolSettings.currentTool.startsWith('line');
-  const isSymbolTool = toolSettings.currentTool.startsWith('symbol');
+  // Calculate hover cell position using overlay config
+  const isLineTool = overlayConfig.showLineCursor;
+  const isSymbolTool = overlayConfig.showSymbolCursor;
 
   // For topology mode, get polygon points for hover cell
   const hoverCellPolygon = useMemo(() => {
-    if (!hoverCell || isLineTool || isSymbolTool) return null;
+    // Use overlay config to determine if cell cursor should be shown
+    if (!overlayConfig.showCellCursor) return null;
+    if (!hoverCell) return null;
     if (!useTopology || !topology) return null;
     // Hide cursor during topology preview (but not in grid mode)
     if (previewTopology && !isGridMode) return null;
@@ -375,10 +386,12 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       .join(' ');
 
     return points;
-  }, [hoverCell, isLineTool, isSymbolTool, useTopology, topology, previewTopology, isGridMode]);
+  }, [hoverCell, overlayConfig.showCellCursor, useTopology, topology, previewTopology, isGridMode]);
 
   const hoverCellRect = useMemo(() => {
-    if (!hoverCell || isLineTool || isSymbolTool) return null;
+    // Use overlay config to determine if cell cursor should be shown
+    if (!overlayConfig.showCellCursor) return null;
+    if (!hoverCell) return null;
     if (useTopology && topology) return null; // Use polygon instead
     // Hide cursor during topology preview (but not in grid mode)
     if (previewTopology && !isGridMode) return null;
@@ -390,7 +403,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     const x = grid.outerPadding + col * grid.cellSize;
     const y = grid.outerPadding + row * grid.cellSize;
     return { x, y, size: grid.cellSize };
-  }, [hoverCell, grid.outerPadding, grid.cellSize, isLineTool, isSymbolTool, useTopology, topology, previewTopology, isGridMode]);
+  }, [hoverCell, grid.outerPadding, grid.cellSize, overlayConfig.showCellCursor, useTopology, topology, previewTopology, isGridMode]);
 
   // Get current special tool type
   const specialToolType = useMemo(() => {
@@ -626,7 +639,8 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       // Handle directional number tool
       if (tool === 'number-directional') {
         const cellIndex = target.row * grid.cols + target.col;
-        const existingEntry = Object.entries(puzzle[activeLayer].directionalClues || {}).find(
+        const dataLayer = toDataLayer(activeLayer);
+        const existingEntry = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
           ([, c]) => c.cell === cellIndex
         );
         const existingId = existingEntry?.[0];
@@ -651,14 +665,15 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           cell: cellIndex,
           direction,
           value: parseInt(value, 10),
-          layer: activeLayer,
+          layer: toDataLayer(activeLayer),
         });
         return;
       }
 
       // Handle normal number tools
       const cellId = `cell-${target.row}-${target.col}`;
-      const numbers = puzzle[activeLayer].numbers;
+      const dataLayerForNumbers = toDataLayer(activeLayer);
+      const numbers = puzzle[dataLayerForNumbers].numbers;
       const position = toolSettings.numberPosition;
       const cornerIndex = toolSettings.cornerIndex;
       const sideIndex = toolSettings.sideIndex;
@@ -705,7 +720,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
             cornerIndex: 0,
             sideIndex: 0,
             color: toolSettings.color,
-            layer: activeLayer,
+            layer: toDataLayer(activeLayer),
           });
         }
         return;
@@ -723,7 +738,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           cornerIndex,
           sideIndex,
           color: toolSettings.color,
-          layer: activeLayer,
+          layer: toDataLayer(activeLayer),
         });
       }
     };

@@ -18,6 +18,7 @@ import {
   findNearestEdgeInTopology,
 } from '../../utils/gridTopology';
 import type { Point } from '../../types';
+import { toDataLayer } from '../../types';
 
 interface UseElementToolHandlerOptions {
   specialPath: string[];
@@ -70,7 +71,8 @@ export function useElementToolHandler({
     (point: Point, isRightClick: boolean) => {
       const cellId = findCellId(point);
       if (!cellId) return;
-      const layerData = puzzle[activeLayer];
+      const dataLayer = toDataLayer(activeLayer);
+      const layerData = puzzle[dataLayer];
       const { numberPosition, cornerIndex, sideIndex, selectedCandidates } = toolSettings;
 
       // Find existing number at this position with same submode
@@ -122,10 +124,11 @@ export function useElementToolHandler({
 
   const handleSymbolTool = useCallback(
     (point: Point, isRightClick: boolean, _isShiftKey: boolean = false) => {
-      const layerData = puzzle[activeLayer];
+      const dataLayer = toDataLayer(activeLayer);
+      const layerData = puzzle[dataLayer];
 
-      // Get symbol type from current tool
-      const symbolType = toolSettings.currentTool.replace('symbol-', '');
+      // Get symbol type from current tool (or use override if set by constraint mode)
+      const symbolType = toolSettings.overrideSymbolType || toolSettings.currentTool.replace('symbol-', '');
 
       // Find the nearest grid point based on symbolGridPoints settings
       const symbolGridPoints = toolSettings.symbolGridPoints || ['cell'];
@@ -237,7 +240,7 @@ export function useElementToolHandler({
             size: toolSettings.symbolSize,
             rotation: toolSettings.symbolRotation,
             color: toolSettings.color,
-            layer: activeLayer,
+            layer: toDataLayer(activeLayer),
           });
         }
       } else {
@@ -248,7 +251,7 @@ export function useElementToolHandler({
           size: toolSettings.symbolSize,
           rotation: toolSettings.symbolRotation,
           color: toolSettings.color,
-          layer: activeLayer,
+          layer: toDataLayer(activeLayer),
         });
       }
     },
@@ -260,7 +263,8 @@ export function useElementToolHandler({
     (point: Point, isStart: boolean, isEnd: boolean, isRightClick: boolean) => {
       const cellId = findCellId(point);
       if (!cellId) return;
-      const layerData = puzzle[activeLayer];
+      const dataLayer = toDataLayer(activeLayer);
+      const layerData = puzzle[dataLayer];
 
       // Get special type from current tool (special-thermo -> thermo)
       const specialType = toolSettings.currentTool.replace('special-', '') as 'thermo' | 'arrow';
@@ -307,7 +311,7 @@ export function useElementToolHandler({
             type: specialType,
             points: finalPath,
             color: specialType === 'thermo' ? '#c0c0c0' : '#000000',
-            layer: activeLayer,
+            layer: toDataLayer(activeLayer),
           });
         }
         setSpecialPath([]);
@@ -321,7 +325,8 @@ export function useElementToolHandler({
     (point: Point, isRightClick: boolean) => {
       const cellId = findCellId(point);
       if (!cellId) return null;
-      const layerData = puzzle[activeLayer];
+      const dataLayer = toDataLayer(activeLayer);
+      const layerData = puzzle[dataLayer];
 
       // Get text type from current tool (text-alphabet -> alphabet)
       const textType = toolSettings.currentTool.replace('text-', '');
@@ -353,7 +358,8 @@ export function useElementToolHandler({
     (point: Point, isStart: boolean, isEnd: boolean, isRightClick: boolean) => {
       const cellId = findCellId(point);
       if (!cellId) return;
-      const layerData = puzzle[activeLayer];
+      const dataLayer = toDataLayer(activeLayer);
+      const layerData = puzzle[dataLayer];
 
       if (isRightClick) {
         // Right-click to remove existing cage at this cell
@@ -397,7 +403,7 @@ export function useElementToolHandler({
             cells: finalCells,
             style: 'dashed',
             color: '#000000',
-            layer: activeLayer,
+            layer: toDataLayer(activeLayer),
           });
         }
         setSpecialPath([]);
@@ -440,7 +446,8 @@ export function useElementToolHandler({
     (point: Point, isStart: boolean, isEnd: boolean, isRightClick: boolean) => {
       const cellId = findCellId(point);
       if (!cellId) return;
-      const layerData = puzzle[activeLayer];
+      const dataLayer = toDataLayer(activeLayer);
+      const layerData = puzzle[dataLayer];
       const boxLines = layerData.boxLines || {};
 
       if (isRightClick) {
@@ -496,7 +503,7 @@ export function useElementToolHandler({
           addBoxLine({
             cells: finalPath,
             color: toolSettings.color,
-            layer: activeLayer,
+            layer: toDataLayer(activeLayer),
           });
         }
         setSpecialPath([]);

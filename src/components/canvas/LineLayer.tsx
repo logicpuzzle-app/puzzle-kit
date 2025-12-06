@@ -1,8 +1,13 @@
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
-import { parseCellId, parseVertexId, getCellCenter, getVertexPosition, getEdgePosition } from '../../utils/gridUtils';
+import {
+  resolveGridIdToPosition,
+  resolveEdgeVertices,
+  parseEdgeId,
+  buildVertexGridToTopologyMap,
+} from '../../utils/gridIds';
 import type { LineElement, EdgeElement, WallElement, LayerType, LineStyle, LineThickness, Point, GridConfig } from '../../types';
-import type { GridTopology } from '../../utils/gridTopology';
+import type { GridTopology, TopologyVertex } from '../../utils/gridTopology';
 
 interface LineLayerProps {
   layer: LayerType;
@@ -38,66 +43,20 @@ const getStrokeDasharray = (style: LineStyle): string | undefined => {
 
 /**
  * Parse any grid point ID (cell, vertex, or edge) and return its position
- * Uses topology if available and in topology mode
+ * Uses topology if available, with fallback to grid-based calculations
+ *
+ * This function first tries topology lookup (for topology-mode IDs),
+ * then falls back to grid-based calculation (for grid-mode IDs like vertex-r-c).
  */
-const getPointPosition = (id: string, grid: GridConfig, topology?: GridTopology | null): Point | null => {
-  // If topology is provided, use it for positions
-  if (topology) {
-    // Try cell
-    const cell = topology.cells.get(id);
-    if (cell) return cell.center;
-
-    // Try vertex
-    const vertex = topology.vertices.get(id);
-    if (vertex) return vertex.position;
-
-    // Try edge
-    const edge = topology.edges.get(id);
-    if (edge) return edge.midpoint;
-
-    return null;
-  }
-
-  // Standard mode - use grid-based calculations
-  // Try cell ID: cell-row-col
-  const cellMatch = id.match(/^cell-(\d+)-(\d+)$/);
-  if (cellMatch) {
-    const row = parseInt(cellMatch[1]);
-    const col = parseInt(cellMatch[2]);
-    return getCellCenter(row, col, grid);
-  }
-
-  // Try vertex ID: vertex-row-col
-  const vertexMatch = id.match(/^vertex-(\d+)-(\d+)$/);
-  if (vertexMatch) {
-    const row = parseInt(vertexMatch[1]);
-    const col = parseInt(vertexMatch[2]);
-    return getVertexPosition(row, col, grid);
-  }
-
-  // Try horizontal edge ID: edge-h-row-col
-  const edgeHMatch = id.match(/^edge-h-(\d+)-(\d+)$/);
-  if (edgeHMatch) {
-    const row = parseInt(edgeHMatch[1]);
-    const col = parseInt(edgeHMatch[2]);
-    return getEdgePosition('h', row, col, grid);
-  }
-
-  // Try vertical edge ID: edge-v-row-col
-  const edgeVMatch = id.match(/^edge-v-(\d+)-(\d+)$/);
-  if (edgeVMatch) {
-    const row = parseInt(edgeVMatch[1]);
-    const col = parseInt(edgeVMatch[2]);
-    return getEdgePosition('v', row, col, grid);
-  }
-
-  // Fallback: try parsing as cell ID with grid type
-  const parsed = parseCellId(id, grid.gridType);
-  if (parsed) {
-    return getCellCenter(parsed.row, parsed.col, grid);
-  }
-
-  return null;
+const getPointPosition = (
+  id: string,
+  grid: GridConfig,
+  topology?: GridTopology | null,
+  vertexMap?: Map<string, TopologyVertex>
+): Point | null => {
+  // Use the unified resolver which handles both topology and grid modes
+  // and properly falls back to grid calculation for grid-mode IDs
+  return resolveGridIdToPosition(id, grid, topology);
 };
 
 /**
@@ -201,6 +160,12 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
     return elements;
   }, [puzzle, layer, grid, isVisible, activeTopology, isIsometric]);
 
+  // Build vertex lookup map for efficient grid-mode to topology-mode conversion
+  const vertexMap = useMemo(() => {
+    if (!activeTopology) return undefined;
+    return buildVertexGridToTopologyMap(activeTopology, grid);
+  }, [activeTopology, grid]);
+
   // Edges (vertex to vertex)
   const edges = useMemo(() => {
     if (!isVisible) return null;
@@ -209,43 +174,19 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
     const elements: React.ReactElement[] = [];
 
     Object.values(layerData.edges).forEach((edge: EdgeElement) => {
-      // In topology mode, use topology vertex positions
-      if (activeTopology) {
-        const fromVertex = activeTopology.vertices.get(edge.from);
-        const toVertex = activeTopology.vertices.get(edge.to);
-        if (!fromVertex || !toVertex) return;
-
-        elements.push(
-          <line
-            key={edge.id}
-            x1={fromVertex.position.x}
-            y1={fromVertex.position.y}
-            x2={toVertex.position.x}
-            y2={toVertex.position.y}
-            stroke={edge.color}
-            strokeWidth={getStrokeWidth(edge.thickness)}
-            strokeDasharray={getStrokeDasharray(edge.style)}
-            strokeLinecap="round"
-          />
-        );
-        return;
-      }
-
-      // Standard mode
-      const from = parseVertexId(edge.from);
-      const to = parseVertexId(edge.to);
-      if (!from || !to) return;
-
-      const fromPos = getVertexPosition(from.row, from.col, grid);
-      const toPos = getVertexPosition(to.row, to.col, grid);
+      // Use unified resolver that handles both topology-mode and grid-mode IDs
+      // This properly converts grid-mode IDs (vertex-r-c) to positions
+      // even when topology is active
+      const result = resolveEdgeVertices(edge.from, edge.to, grid, activeTopology, vertexMap);
+      if (!result) return;
 
       elements.push(
         <line
           key={edge.id}
-          x1={fromPos.x}
-          y1={fromPos.y}
-          x2={toPos.x}
-          y2={toPos.y}
+          x1={result.from.x}
+          y1={result.from.y}
+          x2={result.to.x}
+          y2={result.to.y}
           stroke={edge.color}
           strokeWidth={getStrokeWidth(edge.thickness)}
           strokeDasharray={getStrokeDasharray(edge.style)}
@@ -255,7 +196,7 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
     });
 
     return elements;
-  }, [puzzle, layer, grid, isVisible, activeTopology]);
+  }, [puzzle, layer, grid, isVisible, activeTopology, vertexMap]);
 
   // Walls
   const walls = useMemo(() => {
@@ -286,29 +227,28 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
                 strokeLinecap="round"
               />
             );
+            return;
           }
         }
-        return;
+        // Fall through to standard mode if topology lookup fails
       }
 
-      // Standard mode
-      const match = wall.position.match(/^edge-(h|v)-(\d+)-(\d+)$/);
-      if (!match) return;
+      // Standard mode - parse edge-h-r-c or edge-v-r-c format
+      const edgeCoord = parseEdgeId(wall.position);
+      if (!edgeCoord) return;
 
-      const type = match[1];
-      const row = parseInt(match[2]);
-      const col = parseInt(match[3]);
+      const { type, row, col } = edgeCoord;
 
       let x1: number, y1: number, x2: number, y2: number;
 
       if (type === 'h') {
-        // Horizontal edge (wall is vertical segment)
+        // Horizontal edge (wall is horizontal segment)
         x1 = outerPadding + col * cellSize;
         y1 = outerPadding + row * cellSize;
         x2 = outerPadding + (col + 1) * cellSize;
         y2 = y1;
       } else {
-        // Vertical edge (wall is horizontal segment)
+        // Vertical edge (wall is vertical segment)
         x1 = outerPadding + col * cellSize;
         y1 = outerPadding + row * cellSize;
         x2 = x1;

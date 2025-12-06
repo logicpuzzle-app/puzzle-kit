@@ -3,6 +3,7 @@ import { usePuzzleStore } from '../store/puzzleStore';
 import { findNearestCell, getCellId } from '../utils/gridUtils';
 import { findNearestCellInTopology } from '../utils/gridTopology';
 import type { Point } from '../types';
+import { toDataLayer } from '../types';
 
 // Selection rectangle interface
 export interface SelectionRect {
@@ -61,7 +62,8 @@ export function useSelectionTool({ getMousePosition }: UseSelectionToolOptions) 
       if (!cell) return null;
 
       const cellId = getCellId(cell.row, cell.col);
-      const layer = puzzle[activeLayer];
+      const dataLayer = toDataLayer(activeLayer);
+      const layer = puzzle[dataLayer];
 
       // Check surfaces
       for (const surface of Object.values(layer.surfaces)) {
@@ -95,7 +97,8 @@ export function useSelectionTool({ getMousePosition }: UseSelectionToolOptions) 
   const findElementsInRect = useCallback(
     (rect: SelectionRect): string[] => {
       const elements: string[] = [];
-      const layer = puzzle[activeLayer];
+      const dataLayer = toDataLayer(activeLayer);
+      const layer = puzzle[dataLayer];
 
       const minX = Math.min(rect.startX, rect.endX);
       const maxX = Math.max(rect.startX, rect.endX);

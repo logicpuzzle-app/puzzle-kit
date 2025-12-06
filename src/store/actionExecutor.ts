@@ -8,7 +8,7 @@
  */
 
 import type { PuzzleAction } from './actions';
-import type { PuzzleElements, LayerType, GridConfig } from '../types';
+import type { PuzzleElements, LayerType, DataLayerType, GridConfig } from '../types';
 import { historyManager } from './historyManager';
 
 // ========================================

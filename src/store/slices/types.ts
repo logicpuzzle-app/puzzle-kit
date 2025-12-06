@@ -188,13 +188,18 @@ export interface ToolSlice {
   setToolSettings: (settings: Partial<ToolSettings>) => void;
   setTool: (tool: ToolType, category: ToolCategory) => void;
 
-  // Grid mode
-  isGridMode: boolean;
-  setGridMode: (isGridMode: boolean) => void;
+  // Grid mode subtabs (only used when activeLayer === 'grid')
   gridSubTab: 'shape' | 'display';
   setGridSubTab: (tab: 'shape' | 'display') => void;
   gridEditMode: 'preset' | 'merge' | 'split' | 'exclude' | 'sculpt';
   setGridEditMode: (mode: 'preset' | 'merge' | 'split' | 'exclude' | 'sculpt') => void;
+
+  // Saved tool settings for normal mode (separate from constraint mode)
+  savedNormalToolSettings: {
+    problem: { tool: ToolType; category: ToolCategory };
+    answer: { tool: ToolType; category: ToolCategory };
+  };
+  setSavedNormalToolSettings: (layer: 'problem' | 'answer', tool: ToolType, category: ToolCategory) => void;
 
   // UI panels
   isPropertiesPanelOpen: boolean;
@@ -213,6 +218,83 @@ export interface LayerSlice {
   toggleProblemLayer: () => void;
   toggleAnswerLayer: () => void;
   toggleConstraintLayer: () => void;
+}
+
+// Constraint layer sub-categories: common (共通), edit (編集設定), play (プレイ設定), check (チェック設定)
+export type ConstraintSubCategory = 'common' | 'edit' | 'play' | 'check';
+
+// pzprjs-style input modes
+export type InputModeType =
+  | 'auto'
+  | 'number'
+  | 'number-'
+  | 'clear'
+  | 'line'
+  | 'peke'
+  | 'shade'
+  | 'unshade'
+  | 'border'
+  | 'subline'
+  | 'bgcolor'
+  | 'bgcolor1'
+  | 'bgcolor2'
+  | 'subcircle'
+  | 'subcross'
+  | 'circle-unshade'
+  | 'circle-shade'
+  | 'arrow'
+  | 'direc'
+  | 'bar'
+  | 'empty'
+  | 'ice'
+  | 'crossdot'
+  | 'objblank'
+  | 'completion'
+  | 'info-line'
+  | 'info-blk'
+  | 'info-ublk'
+  | 'info-room';
+
+// Validation result type (from validators)
+export interface ValidationResultState {
+  complete: boolean;
+  undecided: boolean;
+  errors: {
+    ruleId: string;
+    failcode: string;
+    messageKey: string;
+    elements?: string[];
+  }[];
+}
+
+export interface ConstraintSlice {
+  // Current puzzle schema ID (null = no preset selected)
+  currentSchemaId: string | null;
+  setCurrentSchemaId: (schemaId: string | null) => void;
+
+  // Constraint sub-category selection
+  constraintSubCategory: ConstraintSubCategory;
+  setConstraintSubCategory: (category: ConstraintSubCategory) => void;
+
+  // Current input mode (pzprjs-style)
+  currentInputMode: InputModeType;
+  savedInputModes: { edit: InputModeType; play: InputModeType };
+  setInputMode: (mode: InputModeType) => void;
+
+  // Validation rule overrides (rule ID → enabled/disabled)
+  validationOverrides: Record<string, boolean>;
+  setValidationOverride: (ruleId: string, enabled: boolean) => void;
+  resetValidationOverrides: () => void;
+
+  // Is a validation rule enabled?
+  isRuleEnabled: (ruleId: string, defaultOn?: boolean) => boolean;
+
+  // Validation state
+  lastValidationResult: ValidationResultState | null;
+  isValidationModalOpen: boolean;
+  checkAnswer: () => ValidationResultState | null;
+  openValidationModal: () => void;
+  closeValidationModal: () => void;
 }
 
 export interface SolutionSlice {
@@ -237,6 +319,32 @@ export interface HistorySlice {
   endHistoryGroup: () => void;
 }
 
+/**
+ * Trial mode (仮置き) state management
+ * Based on pzprjs trial mode implementation
+ */
+export interface TrialSlice {
+  /** Current trial stage (0 = normal, >0 = in trial mode) */
+  trialStage: number;
+  /** Stack of saved states for each trial level */
+  trialStack: PuzzleElements[];
+  /** Trial mode color scheme by depth */
+  trialColors: string[];
+
+  /** Enter trial mode - save current answer state */
+  enterTrial: () => void;
+  /** Accept trial - keep current changes and exit one level */
+  acceptTrial: () => void;
+  /** Reject trial - discard changes and restore saved state */
+  rejectTrial: () => void;
+  /** Reject current trial only (for nested trials) */
+  rejectCurrentTrial: () => void;
+  /** Check if in trial mode */
+  isInTrial: () => boolean;
+  /** Get current trial color for UI hints */
+  getCurrentTrialColor: () => string | null;
+}
+
 export interface PuzzleIOSlice {
   newPuzzle: (options?: {
     rows?: number;
@@ -251,15 +359,24 @@ export interface PuzzleIOSlice {
   importPuzzle: (json: string) => boolean;
 }
 
+// Re-export cursor types from cursorSlice
+export type { CursorSlice, CssCursorClass, CursorOverlay, CursorConfig } from './cursorSlice';
+
+// Import CursorSlice for combined type
+import type { CursorSlice } from './cursorSlice';
+
 // Combined store type
 export type PuzzleStore = GridSlice &
   ElementsSlice &
   CanvasSlice &
   ToolSlice &
   LayerSlice &
+  ConstraintSlice &
   SolutionSlice &
   HistorySlice &
-  PuzzleIOSlice;
+  TrialSlice &
+  PuzzleIOSlice &
+  CursorSlice;
 
 // Slice creator type
 export type SliceCreator<T> = StateCreator<PuzzleStore, [], [], T>;

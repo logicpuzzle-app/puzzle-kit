@@ -6,6 +6,7 @@ import React, { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trash2 } from 'lucide-react';
 import { usePuzzleStore } from '../../../../store/puzzleStore';
+import { useModalStore } from '../../../../store/modalStore';
 
 // Background fit mode options
 const fitModes = [
@@ -18,6 +19,7 @@ const fitModes = [
 export const GridDisplayContent: React.FC = () => {
   const { t } = useTranslation();
   const { grid, setGrid } = usePuzzleStore();
+  const { showAlert } = useModalStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -25,7 +27,11 @@ export const GridDisplayContent: React.FC = () => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert(t('error.invalidImageFile') || 'Please select an image file');
+      showAlert({
+        title: t('error.invalidImageFile'),
+        message: t('error.invalidImageFile'),
+        variant: 'error',
+      });
       return;
     }
 

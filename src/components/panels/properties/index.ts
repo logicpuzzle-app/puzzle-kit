@@ -4,3 +4,4 @@ export { NumberPositionSettings } from './NumberPositionSettings';
 export { ArrowDirectionSettings } from './ArrowDirectionSettings';
 export { GridPropertiesPanel } from './GridPropertiesPanel';
 export { FreehandLineList } from './FreehandLineList';
+export { TestCasePanel } from './TestCasePanel';

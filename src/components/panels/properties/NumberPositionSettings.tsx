@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../../store/puzzleStore';
+import { toDataLayer } from '../../../types';
 
 // Position icons as SVG components
 const PositionIconCenter: React.FC<{ active?: boolean }> = ({ active }) => (
@@ -56,11 +57,13 @@ const CandidatesSelector: React.FC = () => {
     removeNumber,
   } = usePuzzleStore();
 
+  const dataLayer = toDataLayer(activeLayer);
+
   // Get existing candidates in selected cell
   const getCellCandidates = (): Set<number> => {
     if (!numberSelection) return new Set();
     const cellId = `cell-${numberSelection.row}-${numberSelection.col}`;
-    const numbers = puzzle[activeLayer].numbers;
+    const numbers = puzzle[dataLayer].numbers;
     const candidates = new Set<number>();
 
     Object.values(numbers).forEach((n) => {
@@ -80,7 +83,7 @@ const CandidatesSelector: React.FC = () => {
   const handleToggleCandidate = (n: number) => {
     if (!numberSelection) return;
     const cellId = `cell-${numberSelection.row}-${numberSelection.col}`;
-    const numbers = puzzle[activeLayer].numbers;
+    const numbers = puzzle[dataLayer].numbers;
 
     // Find existing candidate
     const existingEntry = Object.entries(numbers).find(
@@ -100,7 +103,7 @@ const CandidatesSelector: React.FC = () => {
         cornerIndex: 0,
         sideIndex: 0,
         color: toolSettings.color,
-        layer: activeLayer,
+        layer: dataLayer,
       });
     }
   };
@@ -145,6 +148,8 @@ export const NumberPositionSettings: React.FC = () => {
     addNumber,
   } = usePuzzleStore();
 
+  const dataLayer = toDataLayer(activeLayer);
+
   const sizes: { value: 'large' | 'medium' | 'small'; labelKey: string }[] = [
     { value: 'large', labelKey: 'size.large' },
     { value: 'medium', labelKey: 'size.medium' },
@@ -179,7 +184,7 @@ export const NumberPositionSettings: React.FC = () => {
   const findExistingNumber = () => {
     if (!numberSelection) return null;
     const cellId = `cell-${numberSelection.row}-${numberSelection.col}`;
-    const numbers = puzzle[activeLayer].numbers;
+    const numbers = puzzle[dataLayer].numbers;
     const position = toolSettings.numberPosition;
     const cornerIndex = toolSettings.cornerIndex;
     const sideIndex = toolSettings.sideIndex;
@@ -208,7 +213,7 @@ export const NumberPositionSettings: React.FC = () => {
         cornerIndex: existing.cornerIndex,
         sideIndex: existing.sideIndex,
         color: existing.color,
-        layer: activeLayer,
+        layer: dataLayer,
       });
     }
   };
