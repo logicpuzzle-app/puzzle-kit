@@ -75,6 +75,7 @@ export const heyawakeSchema: ConstraintSchema = {
       pzpr: {
         pid: 'heyawake',
         checklist: ['checkAdjacentShadeCell'],
+        failcodes: ['csAdjacent'],
       },
     },
     {
@@ -87,6 +88,7 @@ export const heyawakeSchema: ConstraintSchema = {
       pzpr: {
         pid: 'heyawake',
         checklist: ['checkConnectUnshadeRB'],
+        failcodes: ['cuDivide'],
       },
     },
     {
@@ -99,6 +101,7 @@ export const heyawakeSchema: ConstraintSchema = {
       pzpr: {
         pid: 'heyawake',
         checklist: ['checkShadeCellCount'],
+        failcodes: ['nmShadeNe'],
       },
     },
     {
@@ -111,6 +114,7 @@ export const heyawakeSchema: ConstraintSchema = {
       pzpr: {
         pid: 'heyawake',
         checklist: ['checkCountinuousUnshadeCell'],
+        failcodes: ['cuBorderGe3'],
       },
     },
   ],

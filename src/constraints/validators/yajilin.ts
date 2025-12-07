@@ -53,10 +53,12 @@ function getCellLineCount(ctx: ValidationContext, row: number, col: number): num
 }
 
 /**
- * Convert PenpaDirectionalClue direction (1-4) to Direction string
+ * Convert PenpaDirectionalClue direction (0-4) to Direction string or null
+ * 0 = no direction (number only, no arrow constraint)
  */
-function penpaDirectionToDirection(dir: 1 | 2 | 3 | 4): Direction {
+function penpaDirectionToDirection(dir: 0 | 1 | 2 | 3 | 4): Direction | null {
   switch (dir) {
+    case 0: return null; // no direction
     case 1: return 'up';
     case 2: return 'down';
     case 3: return 'left';
@@ -66,8 +68,9 @@ function penpaDirectionToDirection(dir: 1 | 2 | 3 | 4): Direction {
 
 /**
  * Get directional clue at a cell (returns { direction, number } or null)
+ * If direction is null (no arrow), the clue is just a number without directional constraint
  */
-function getDirectionalClue(ctx: ValidationContext, row: number, col: number): { direction: Direction; number: number } | null {
+function getDirectionalClue(ctx: ValidationContext, row: number, col: number): { direction: Direction | null; number: number } | null {
   // Check for directional clues in problem layer
   const clues = ctx.puzzle.problem.directionalClues;
   if (!clues) return null;
@@ -216,6 +219,9 @@ function checkArrowNumber(ctx: ValidationContext): CheckResult {
     for (let col = 0; col < ctx.grid.cols; col++) {
       const clue = getDirectionalClue(ctx, row, col);
       if (!clue) continue;
+
+      // Skip clues without direction (number only, no arrow constraint)
+      if (!clue.direction) continue;
 
       const shadedCount = countShadedInDirection(ctx, row, col, clue.direction);
       if (shadedCount !== clue.number) {

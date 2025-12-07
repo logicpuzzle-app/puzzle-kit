@@ -237,12 +237,12 @@ export interface PenpaArrow {
 
 /**
  * Directional number clue (Yajilin-style)
- * Stores a direction (1=Up,2=Down,3=Left,4=Right) and clue value on a cell.
+ * Stores a direction (0=None,1=Up,2=Down,3=Left,4=Right) and clue value on a cell.
  */
 export interface PenpaDirectionalClue {
   id?: string;
   cell: number;
-  direction: 1 | 2 | 3 | 4;
+  direction: 0 | 1 | 2 | 3 | 4; // 0 = no direction (number only)
   value: number;
   color?: string;
   layer: 'problem' | 'answer';

@@ -63,7 +63,7 @@ export const DEFAULT_TOOL_SETTINGS: ToolSettings = {
   cornerIndex: 0,
   sideIndex: 0,
   selectedCandidates: [],
-  arrowDirection: 2,
+  arrowDirection: -1, // -1 = no direction (default), 0=up, 1=left, 2=right, 3=down
   multicolorSlots: [1, 0, 0, 0],
   multicolorPattern: 'cross',
   multicolorCustomColors: [],
