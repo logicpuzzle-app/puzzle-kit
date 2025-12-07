@@ -9,13 +9,14 @@
  * - Selection tool
  */
 
-import React, { useCallback, useMemo, RefObject, useRef, useEffect } from 'react';
+import React, { useCallback, useMemo, RefObject, useEffect } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
 import { useCanvasInteraction } from '../../hooks/useCanvasInteraction';
 import { useCellFinder } from '../../hooks/useCellFinder';
 import { useSpecialPreview } from '../../hooks/useSpecialPreview';
+import { useNumberKeyboard } from '../../hooks/useNumberKeyboard';
 import { screenToSvg, getCellCorners } from '../../utils/gridUtils';
-import type { NumberPosition, SymbolElement, Point, DataLayerType } from '../../types';
+import type { NumberPosition, SymbolElement, Point } from '../../types';
 import { toDataLayer } from '../../types';
 import type { TopologyVertex } from '../../utils/gridTopology';
 import { CanvasCursors } from './CanvasCursors';
@@ -76,11 +77,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     setHoverCell,
     puzzle,
     activeLayer,
-    addDirectionalClue,
     removeDirectionalClue,
-    addNumber,
-    removeNumber,
-    updateNumber,
     numberSelection,
     setNumberSelection,
     useTopology,
@@ -88,6 +85,9 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     previewTopology,
     gridEditMode,
   } = usePuzzleStore();
+
+  // Excel-like keyboard input for number tools
+  useNumberKeyboard();
 
   // Derived state: grid mode is when activeLayer is 'grid'
   const isGridMode = activeLayer === 'grid';
@@ -146,13 +146,18 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     (e: React.MouseEvent) => {
       const tool = toolSettings.currentTool;
 
-      // In constraint mode, disable all editing (only allow pan/zoom)
+      // In constraint mode, allow number/text tools for constraint input
+      // but disable other editing tools (only allow pan/zoom for non-input tools)
       if (isConstraintMode) {
-        // Still allow wheel/pan interactions via base handler for pan mode
-        if (canvas.panMode) {
-          baseHandleMouseDown(e);
+        // Allow number and text tools in constraint mode
+        if (!tool.startsWith('number') && !tool.startsWith('text')) {
+          // Still allow wheel/pan interactions via base handler for pan mode
+          if (canvas.panMode) {
+            baseHandleMouseDown(e);
+          }
+          return;
         }
-        return;
+        // Fall through to handle number/text tools below
       }
 
       // In grid mode, delegate to base handler (which handles merge/split/exclude)
@@ -175,7 +180,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         return;
       }
 
-      // Handle number tools (including directional) - select cell only
+      // Handle number tools (including directional)
       if (tool.startsWith('number')) {
         const point = screenToSvg(
           e.clientX,
@@ -199,6 +204,15 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           )?.[0];
           if (existingId) {
             removeDirectionalClue(existingId);
+          }
+          return;
+        }
+
+        // Call onNumberClick callback for dialog handling (if provided)
+        if (onNumberClick) {
+          const result = handleNumberTool(point, e.button === 2);
+          if (result) {
+            onNumberClick(result as NumberClickInfo);
           }
         }
         return;
@@ -233,7 +247,9 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       canvas.panY,
       canvas.panMode,
       svgRef,
+      onNumberClick,
       onTextClick,
+      handleNumberTool,
       handleTextTool,
       handleSelectTool,
       baseHandleMouseDown,
@@ -449,185 +465,6 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     const corners = getCellCorners(row, col, grid);
     return `M ${corners[0].x} ${corners[0].y} L ${corners[1].x} ${corners[1].y} L ${corners[2].x} ${corners[2].y} L ${corners[3].x} ${corners[3].y} Z`;
   }, [hoverCell, numberSelection, grid, toolSettings.currentTool, useTopology, topology, findCellIdByRowCol]);
-
-  // Excel-like typing for number tools (including directional)
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      const tool = toolSettings.currentTool;
-      if (!tool.startsWith('number')) return;
-      if ((e.target as HTMLElement)?.tagName) {
-        const tag = (e.target as HTMLElement).tagName;
-        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
-      }
-
-      // Handle arrow keys for cursor movement
-      const isArrowKey = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key);
-      if (isArrowKey) {
-        e.preventDefault();
-        const current = numberSelection || { row: 0, col: 0 };
-        let newRow = current.row;
-        let newCol = current.col;
-
-        switch (e.key) {
-          case 'ArrowUp':
-            newRow = Math.max(0, current.row - 1);
-            break;
-          case 'ArrowDown':
-            newRow = Math.min(grid.rows - 1, current.row + 1);
-            break;
-          case 'ArrowLeft':
-            newCol = Math.max(0, current.col - 1);
-            break;
-          case 'ArrowRight':
-            newCol = Math.min(grid.cols - 1, current.col + 1);
-            break;
-        }
-
-        if (newRow !== current.row || newCol !== current.col) {
-          setNumberSelection({ row: newRow, col: newCol });
-        }
-        return;
-      }
-
-      const target = numberSelection;
-      if (!target) return;
-
-      const value = e.key;
-      const isDigit = /^[0-9]$/.test(value);
-      const isDelete = e.key === 'Backspace' || e.key === 'Delete';
-      if (!isDigit && !isDelete) return;
-      e.preventDefault();
-
-      // Handle directional number tool
-      if (tool === 'number-directional') {
-        const cellIndex = target.row * grid.cols + target.col;
-        const dataLayer = toDataLayer(activeLayer);
-        const existingEntry = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
-          ([, c]) => c.cell === cellIndex
-        );
-        const existingId = existingEntry?.[0];
-
-        if (isDelete) {
-          if (existingId) {
-            removeDirectionalClue(existingId);
-          }
-          return;
-        }
-
-        // Convert arrowDirection (0=up, 1=left, 2=right, 3=down) to Penpa direction (1=up, 2=down, 3=left, 4=right)
-        const directionMap: Record<number, 1 | 2 | 3 | 4> = {
-          0: 1, // up
-          1: 3, // left
-          2: 4, // right
-          3: 2, // down
-        };
-        const direction = directionMap[toolSettings.arrowDirection] || 4;
-
-        addDirectionalClue({
-          cell: cellIndex,
-          direction,
-          value: parseInt(value, 10),
-          layer: toDataLayer(activeLayer),
-        });
-        return;
-      }
-
-      // Handle normal number tools
-      // Use unified cell finder for merged cells
-      const cellId = findCellIdByRowCol(target.row, target.col) ?? `cell-${target.row}-${target.col}`;
-      const dataLayerForNumbers = toDataLayer(activeLayer);
-      const numbers = puzzle[dataLayerForNumbers].numbers;
-      const position = toolSettings.numberPosition;
-      const cornerIndex = toolSettings.cornerIndex;
-      const sideIndex = toolSettings.sideIndex;
-
-      // For corner/side/candidates, find by position as well
-      const existingEntry = Object.entries(numbers).find(([, n]) => {
-        if (n.cellId !== cellId) return false;
-        if (position === 'center') {
-          return n.position === 'center';
-        } else if (position === 'corner') {
-          return n.position === 'corner' && n.cornerIndex === cornerIndex;
-        } else if (position === 'side') {
-          return n.position === 'side' && n.sideIndex === sideIndex;
-        } else if (position === 'candidates') {
-          // For candidates, we need special handling - each digit is separate
-          return n.position === 'candidates' && n.value === value;
-        }
-        return n.position === position;
-      });
-      const existingId = existingEntry?.[0];
-
-      if (isDelete) {
-        if (position === 'candidates') {
-          // For candidates mode, delete doesn't do anything special
-          // User toggles individual candidates
-        } else if (existingId) {
-          removeNumber(existingId);
-        }
-        return;
-      }
-
-      // For candidates mode, toggle the digit
-      if (position === 'candidates') {
-        if (existingId) {
-          // Remove existing candidate
-          removeNumber(existingId);
-        } else {
-          // Add new candidate
-          addNumber({
-            cellId,
-            value,
-            size: toolSettings.numberSize,
-            position: 'candidates',
-            cornerIndex: 0,
-            sideIndex: 0,
-            color: toolSettings.color,
-            layer: toDataLayer(activeLayer),
-          });
-        }
-        return;
-      }
-
-      // Add or update number for center/corner/side
-      if (existingId && existingEntry) {
-        updateNumber(existingId, value);
-      } else {
-        addNumber({
-          cellId,
-          value,
-          size: toolSettings.numberSize,
-          position,
-          cornerIndex,
-          sideIndex,
-          color: toolSettings.color,
-          layer: toDataLayer(activeLayer),
-        });
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [
-    numberSelection,
-    setNumberSelection,
-    toolSettings.currentTool,
-    toolSettings.numberSize,
-    toolSettings.numberPosition,
-    toolSettings.cornerIndex,
-    toolSettings.sideIndex,
-    toolSettings.arrowDirection,
-    toolSettings.color,
-    puzzle,
-    activeLayer,
-    grid.rows,
-    grid.cols,
-    addNumber,
-    removeNumber,
-    updateNumber,
-    addDirectionalClue,
-    removeDirectionalClue,
-    findCellIdByRowCol,
-  ]);
 
   return (
     <svg
