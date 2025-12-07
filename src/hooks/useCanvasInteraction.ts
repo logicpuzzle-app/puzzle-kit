@@ -95,6 +95,7 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
     handleSpecialTool,
     handleMulticolorSurfaceTool,
     handleSolutionAreaTool,
+    handleSurfaceCycleTool,
     handleTextTool,
     handleCageTool,
     handleBoxLineTool,
@@ -202,7 +203,9 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
 
       const tool = toolSettings.currentTool;
 
-      if (tool.startsWith('surface')) {
+      if (tool === 'surface-cycle') {
+        handleSurfaceCycleTool(point, isRightClick);
+      } else if (tool.startsWith('surface')) {
         handleSurfaceTool(point, isRightClick, isShiftKey);
       } else if (tool.startsWith('line')) {
         handleLineTool(point, true, isRightClick, isShiftKey);
@@ -236,6 +239,7 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
       handleSplitMode,
       handleSculptMode,
       handleSurfaceTool,
+      handleSurfaceCycleTool,
       handleLineTool,
       handleEdgeTool,
       handleWallTool,
@@ -280,7 +284,9 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
 
       const tool = toolSettings.currentTool;
 
-      if (tool.startsWith('surface')) {
+      if (tool === 'surface-cycle') {
+        handleSurfaceCycleTool(point, isRightClickRef.current);
+      } else if (tool.startsWith('surface')) {
         handleSurfaceTool(point, isRightClickRef.current, isShiftKeyRef.current);
       } else if (tool.startsWith('line')) {
         handleLineTool(point, false, isRightClickRef.current, isShiftKeyRef.current);
@@ -315,6 +321,7 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
       handleMergeMode,
       handleSplitMode,
       handleSurfaceTool,
+      handleSurfaceCycleTool,
       handleLineTool,
       handleEdgeTool,
       handleWallTool,

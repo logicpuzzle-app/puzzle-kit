@@ -20,6 +20,7 @@ interface UseTouchHandlersOptions {
   svgRef: React.RefObject<SVGSVGElement | null>;
   toolHandlers: {
     handleSurfaceTool: (point: Point, isRightClick: boolean, isShiftKey: boolean) => void;
+    handleSurfaceCycleTool: (point: Point, isRightClick: boolean) => void;
     handleLineTool: (point: Point, isStart: boolean, isRightClick: boolean, isShiftKey: boolean) => void;
     handleEdgeTool: (point: Point, isStart: boolean, isRightClick: boolean, isShiftKey: boolean) => void;
     handleWallTool: (point: Point, isRightClick: boolean, isShiftKey: boolean) => void;
@@ -105,6 +106,7 @@ export function useTouchHandlers({
 
   const {
     handleSurfaceTool,
+    handleSurfaceCycleTool,
     handleLineTool,
     handleEdgeTool,
     handleWallTool,
@@ -147,7 +149,9 @@ export function useTouchHandlers({
         isRightClickRef.current = false;
         isShiftKeyRef.current = false;
 
-        if (tool.startsWith('surface')) {
+        if (tool === 'surface-cycle') {
+          handleSurfaceCycleTool(point, false);
+        } else if (tool.startsWith('surface')) {
           handleSurfaceTool(point, false, false);
         } else if (tool.startsWith('line')) {
           handleLineTool(point, true, false, false);
@@ -176,6 +180,7 @@ export function useTouchHandlers({
       toolSettings.currentTool,
       setCanvasState,
       handleSurfaceTool,
+      handleSurfaceCycleTool,
       handleLineTool,
       handleEdgeTool,
       handleWallTool,
@@ -227,7 +232,9 @@ export function useTouchHandlers({
           const isRightClick = isRightClickRef.current;
           const isShiftKey = isShiftKeyRef.current;
 
-          if (tool.startsWith('surface')) {
+          if (tool === 'surface-cycle') {
+            handleSurfaceCycleTool(point, isRightClick);
+          } else if (tool.startsWith('surface')) {
             handleSurfaceTool(point, isRightClick, isShiftKey);
           } else if (tool.startsWith('line')) {
             handleLineTool(point, false, isRightClick, isShiftKey);
@@ -260,6 +267,7 @@ export function useTouchHandlers({
       getTouchPosition,
       toolSettings.currentTool,
       handleSurfaceTool,
+      handleSurfaceCycleTool,
       handleLineTool,
       handleEdgeTool,
       handleWallTool,
@@ -302,7 +310,9 @@ export function useTouchHandlers({
           const isSecondaryColor = initialTouches === 2;
           const isDeleteMode = initialTouches >= 3;
 
-          if (tool.startsWith('surface')) {
+          if (tool === 'surface-cycle') {
+            handleSurfaceCycleTool(point, isSecondaryColor);
+          } else if (tool.startsWith('surface')) {
             handleSurfaceTool(point, isSecondaryColor, isDeleteMode);
           } else if (tool.startsWith('line')) {
             handleLineTool(point, true, isSecondaryColor, isDeleteMode);
@@ -326,7 +336,10 @@ export function useTouchHandlers({
         const point = getTouchPosition(e.changedTouches[0]);
         const tool = toolSettings.currentTool;
 
-        if (tool.startsWith('surface')) {
+        if (tool === 'surface-cycle') {
+          // Long press on surface-cycle clears the cell
+          handleSurfaceCycleTool(point, false); // Will cycle, effectively clearing if already unshaded
+        } else if (tool.startsWith('surface')) {
           handleSurfaceTool(point, false, true);
         } else if (tool.startsWith('wall')) {
           handleWallTool(point, false, true);
@@ -372,6 +385,7 @@ export function useTouchHandlers({
       toolSettings.lineDirections,
       drawStartPoint,
       handleSurfaceTool,
+      handleSurfaceCycleTool,
       handleLineTool,
       handleEdgeTool,
       handleWallTool,

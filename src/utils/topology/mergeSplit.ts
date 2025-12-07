@@ -150,14 +150,32 @@ function buildMergedCell(
   const isCollinear = (a: Point, b: Point, c: Point) =>
     Math.abs((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) < 1e-6;
 
+  // Build a set of vertices that are on the outer boundary of the topology
+  // (vertices connected to edges with only 1 adjacent cell = boundary edges of the grid)
+  const outerBoundaryVertices = new Set<string>();
+  for (const edge of topology.edges.values()) {
+    if ((edge.adjacentCells?.length ?? 0) === 1) {
+      outerBoundaryVertices.add(edge.startVertex);
+      outerBoundaryVertices.add(edge.endVertex);
+    }
+  }
+
   const filtered: TopologyVertex[] = [];
   const n = loopVertices.length;
   for (let i = 0; i < n; i++) {
     const prev = loopVertices[(i - 1 + n) % n];
     const curr = loopVertices[i];
     const next = loopVertices[(i + 1) % n];
+
+    // Preserve vertices on the outer grid boundary (never drop)
+    const isOnOuterBoundary = outerBoundaryVertices.has(curr.id);
+
     const hasExternal = curr.adjacentCells.some(id => !cellIdSet.has(id));
-    if (!hasExternal && isCollinear(prev.position, curr.position, next.position)) {
+    // Only drop collinear vertices if:
+    // 1. They're not on the outer boundary of the grid
+    // 2. They have no external adjacent cells (internal to merge group)
+    // 3. They're collinear with neighbors
+    if (!isOnOuterBoundary && !hasExternal && isCollinear(prev.position, curr.position, next.position)) {
       continue; // internal collinear vertex, drop
     }
     filtered.push(curr);
