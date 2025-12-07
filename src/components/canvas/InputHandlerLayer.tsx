@@ -85,6 +85,8 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     previewTopology,
     gridEditMode,
     currentInputMode,
+    showConstraintLayer,
+    currentSchemaId,
   } = usePuzzleStore();
 
   // Excel-like keyboard input for number tools
@@ -92,8 +94,10 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
 
   // Derived state: grid mode is when activeLayer is 'grid'
   const isGridMode = activeLayer === 'grid';
-  // Constraint mode: editing is disabled
+  // Constraint mode: activeLayer === 'constraint'
   const isConstraintMode = activeLayer === 'constraint';
+  // Constraint enabled: showConstraintLayer + schema selected (for number input)
+  const isConstraintEnabled = showConstraintLayer && currentSchemaId !== null;
 
   // Use preview topology if available (for grid shape preview)
   const topology = previewTopology ?? storeTopology;
@@ -147,8 +151,8 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     (e: React.MouseEvent) => {
       const tool = toolSettings.currentTool;
 
-      // In constraint mode, handle input based on currentInputMode
-      if (isConstraintMode) {
+      // Handle constraint input based on currentInputMode (when constraint is enabled)
+      if (isConstraintEnabled) {
         const isNumberInputMode = currentInputMode === 'number' || currentInputMode === 'number-';
         const isDirecInputMode = currentInputMode === 'direc';
 
@@ -171,16 +175,16 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           handleNumberTool(point, e.button === 2);
           return;
         }
+        // Fall through to handle other tools (auto mode delegates to surface/line/etc.)
+      }
 
-        // Allow text tools in constraint mode
-        if (!tool.startsWith('text')) {
-          // Still allow wheel/pan interactions via base handler for pan mode
-          if (canvas.panMode) {
-            baseHandleMouseDown(e);
-          }
-          return;
+      // In constraint mode (activeLayer === 'constraint'), disable editing
+      if (isConstraintMode) {
+        // Still allow wheel/pan interactions via base handler for pan mode
+        if (canvas.panMode) {
+          baseHandleMouseDown(e);
         }
-        // Fall through to handle text tools below
+        return;
       }
 
       // In grid mode, delegate to base handler (which handles merge/split/exclude)
@@ -283,6 +287,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       removeDirectionalClue,
       isGridMode,
       isConstraintMode,
+      isConstraintEnabled,
       currentInputMode,
       findCellAtPoint,
     ]

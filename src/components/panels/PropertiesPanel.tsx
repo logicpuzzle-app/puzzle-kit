@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../store/puzzleStore';
 import { LineStyle, LineThickness } from '../../types';
 import { SymbolPanel } from './SymbolPanel';
-import { isInfoMode, getAutoModeConfig } from '../../constraints/inputModeMapping';
-import type { ConstraintSchema, InputMode } from '../../constraints/types';
+import { getAutoModeConfig } from '../../constraints/inputModeMapping';
+import type { ConstraintSchema } from '../../constraints/types';
 import {
   ColorSelector,
   MulticolorSettings,
@@ -13,9 +13,7 @@ import {
   NumberInputPanel,
   GridPropertiesPanel,
   FreehandLineList,
-  TestCasePanel,
 } from './properties';
-import { CONSTRAINT_ICONS } from '../toolbar/RibbonIcons';
 import { constraintCatalog } from '../../constraints';
 
 export const PropertiesPanel: React.FC = () => {
@@ -27,8 +25,6 @@ export const PropertiesPanel: React.FC = () => {
     isPropertiesPanelOpen,
     togglePropertiesPanel,
     currentSchemaId,
-    setCurrentSchemaId,
-    constraintSubCategory,
     showConstraintLayer,
     currentInputMode,
     setInputMode,
@@ -40,15 +36,6 @@ export const PropertiesPanel: React.FC = () => {
   const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
   // When constraint is enabled, hide tool settings (tool is auto-selected by inputMode)
   const isConstraintEnabled = showConstraintLayer && currentSchema !== null;
-
-  const getInfoModes = (schema: ConstraintSchema | null): InputMode[] => {
-    if (!schema) return [];
-    const modes: InputMode[] = [
-      ...schema.inputModes.edit,
-      ...schema.inputModes.play,
-    ];
-    return Array.from(new Set(modes.filter((m) => isInfoMode(m))));
-  };
 
   const lineStyles: { value: LineStyle; labelKey: string }[] = [
     { value: 'solid', labelKey: 'style.solid' },
@@ -131,256 +118,10 @@ export const PropertiesPanel: React.FC = () => {
           <GridPropertiesPanel />
         )}
 
-        {/* Constraint properties - show when in constraint mode */}
-        {isConstraintMode && (
-          <div className="space-y-3">
-            {/* Common/Preset tab: Preset tree list (for selecting puzzle type) */}
-            {constraintSubCategory === 'common' && (
-              <div>
-                <div className="text-xs font-medium text-office-text-secondary mb-2">
-                  {t('constraint.preset')}
-                </div>
-                <div className="border border-office-border rounded-sm bg-white max-h-48 overflow-y-auto">
-                  {/* None option (default) */}
-                  <button
-                    className={`w-full text-left px-2 py-1.5 text-xs flex items-center gap-2 transition-colors border-b border-office-border ${
-                      currentSchemaId === null
-                        ? 'bg-purple-100 text-purple-800'
-                        : 'hover:bg-gray-50'
-                    }`}
-                    onClick={() => setCurrentSchemaId(null)}
-                  >
-                    <span className={`text-sm ${currentSchemaId === null ? 'text-purple-600' : 'text-gray-400'}`}>○</span>
-                    <span>{t('constraint.none')}</span>
-                  </button>
-
-                  {/* Puzzle presets */}
-                  {constraintCatalog.getPuzzleIds().map((pid) => {
-                    const schema = constraintCatalog.getSchema(pid);
-                    if (!schema) return null;
-                    const isSelected = currentSchemaId === pid;
-                    return (
-                      <button
-                        key={pid}
-                        className={`w-full text-left px-2 py-1.5 text-xs flex items-center gap-2 transition-colors ${
-                          isSelected
-                            ? 'bg-purple-100 text-purple-800'
-                            : 'hover:bg-gray-50'
-                        }`}
-                        onClick={() => setCurrentSchemaId(pid)}
-                      >
-                        <CONSTRAINT_ICONS.preset size={12} className={isSelected ? 'text-purple-600' : 'text-gray-400'} />
-                        <span>{t(schema.nameKey)}</span>
-                      </button>
-                    );
-                  })}
-
-                  {/* Custom option - disabled for now */}
-                  <button
-                    className="w-full text-left px-2 py-1.5 text-xs flex items-center gap-2 transition-colors border-t border-office-border bg-gray-50 text-gray-400 cursor-not-allowed"
-                    disabled
-                    title={t('constraint.customDisabled')}
-                  >
-                    <CONSTRAINT_ICONS.constraint size={12} className="text-gray-300" />
-                    <span>{t('constraint.custom')}</span>
-                  </button>
-                </div>
-
-                {/* Notes for selected preset */}
-                {currentSchema && currentSchema.notes && currentSchema.notes.length > 0 && (
-                  <div className="mt-2 text-xs text-gray-500 p-2 bg-gray-50 rounded-sm">
-                    {currentSchema.notes.map((note, i) => (
-                      <div key={i}>• {note}</div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Test cases for selected preset */}
-                {currentSchemaId && currentSchemaId !== '__custom__' && (
-                  <div className="mt-3">
-                    <TestCasePanel />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Edit tab: Show problem input rules (editor constraints) */}
-            {constraintSubCategory === 'edit' && (
-              <div>
-                <div className="text-xs font-medium text-office-text-secondary mb-2">
-                  {t('constraint.rules')}
-                </div>
-                {currentSchemaId === null && (
-                  <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded-sm">
-                    {t('constraint.noneDesc')}
-                  </div>
-                )}
-                {currentSchemaId === '__custom__' && (
-                  <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded-sm">
-                    {t('constraint.customDesc')}
-                  </div>
-                )}
-                {currentSchema && (
-                  <div className="space-y-1">
-                    {currentSchema.problem.map((rule) => (
-                      <div key={rule.id} className="p-2 bg-purple-50 rounded-sm border border-purple-100">
-                        <div className="font-medium text-xs text-purple-800">{t(rule.title)}</div>
-                        <div className="text-xs text-purple-600 mt-0.5">{t(rule.description)}</div>
-                      </div>
-                    ))}
-                    {getInfoModes(currentSchema).length > 0 && (
-                      <div className="p-2 bg-blue-50 rounded-sm border border-blue-100">
-                        <div className="font-medium text-xs text-blue-800">
-                          {t('constraint.infoTools', 'Info tools')}
-                        </div>
-                        <div className="mt-1 space-y-0.5">
-                          {getInfoModes(currentSchema).map((mode) => (
-                            <div key={mode} className="text-xs text-blue-700">
-                              <span className="font-semibold mr-1">{t(`inputMode.${mode}`, mode)}</span>
-                              <span>{t(`inputMode.${mode}.desc`, '')}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Number input panel - show when in number mode */}
-                    {(currentInputMode === 'number' || currentInputMode === 'number-') && (
-                      <div className="mt-3 p-2 bg-gray-50 rounded-sm border border-gray-200">
-                        <div className="font-medium text-xs text-gray-700 mb-2">
-                          {t('tool.number.input', 'Number Input')}
-                        </div>
-                        <NumberInputPanel />
-                      </div>
-                    )}
-
-                    {/* Arrow direction panel - show when in direc mode */}
-                    {currentInputMode === 'direc' && (
-                      <div className="mt-3 p-2 bg-gray-50 rounded-sm border border-gray-200">
-                        <ArrowDirectionSettings />
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Play tab: Show answer input rules */}
-            {constraintSubCategory === 'play' && (
-              <div>
-                <div className="text-xs font-medium text-office-text-secondary mb-2">
-                  {t('constraint.rules')}
-                </div>
-                {currentSchemaId === null && (
-                  <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded-sm">
-                    {t('constraint.noneDesc')}
-                  </div>
-                )}
-                {currentSchemaId === '__custom__' && (
-                  <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded-sm">
-                    {t('constraint.customDesc')}
-                  </div>
-                )}
-                {currentSchema && (
-                  <div className="space-y-1">
-                    {currentSchema.answer.map((rule) => (
-                      <div key={rule.id} className="p-2 bg-purple-50 rounded-sm border border-purple-100">
-                        <div className="font-medium text-xs text-purple-800">{t(rule.title)}</div>
-                        <div className="text-xs text-purple-600 mt-0.5">{t(rule.description)}</div>
-                      </div>
-                    ))}
-                    {getInfoModes(currentSchema).length > 0 && (
-                      <div className="p-2 bg-blue-50 rounded-sm border border-blue-100">
-                        <div className="font-medium text-xs text-blue-800">
-                          {t('constraint.infoTools', 'Info tools')}
-                        </div>
-                        <div className="mt-1 space-y-0.5">
-                          {getInfoModes(currentSchema).map((mode) => (
-                            <div key={mode} className="text-xs text-blue-700">
-                              <span className="font-semibold mr-1">{t(`inputMode.${mode}`, mode)}</span>
-                              <span>{t(`inputMode.${mode}.desc`, '')}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Number input panel - show when in number mode */}
-                {(currentInputMode === 'number' || currentInputMode === 'number-') && (
-                  <div className="mt-3 p-2 bg-gray-50 rounded-sm border border-gray-200">
-                    <div className="font-medium text-xs text-gray-700 mb-2">
-                      {t('tool.number.input', 'Number Input')}
-                    </div>
-                    <NumberInputPanel />
-                  </div>
-                )}
-
-                {/* Arrow direction panel - show when in direc mode */}
-                {currentInputMode === 'direc' && (
-                  <div className="mt-3 p-2 bg-gray-50 rounded-sm border border-gray-200">
-                    <ArrowDirectionSettings />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Check tab: Show validation rules */}
-            {constraintSubCategory === 'check' && (
-              <div>
-                <div className="text-xs font-medium text-office-text-secondary mb-2">
-                  {t('constraint.rules')}
-                </div>
-                {currentSchemaId === null && (
-                  <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded-sm">
-                    {t('constraint.noneDesc')}
-                  </div>
-                )}
-                {currentSchemaId === '__custom__' && (
-                  <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded-sm">
-                    {t('constraint.customDesc')}
-                  </div>
-                )}
-                {currentSchema && (
-                  <div className="space-y-1">
-                    {currentSchema.validation.map((rule) => (
-                      <div
-                        key={rule.id}
-                        className={`p-2 rounded-sm border ${
-                          rule.defaultOn !== false
-                            ? 'bg-green-50 border-green-100'
-                            : 'bg-gray-50 border-gray-100'
-                        }`}
-                      >
-                        <div className={`font-medium text-xs ${
-                          rule.defaultOn !== false ? 'text-green-800' : 'text-gray-600'
-                        }`}>
-                          {t(rule.title)}
-                          <span className="ml-1 text-xs font-normal">
-                            ({rule.defaultOn !== false ? t('constraint.enabled') : t('constraint.disabled')})
-                          </span>
-                        </div>
-                        <div className={`text-xs mt-0.5 ${
-                          rule.defaultOn !== false ? 'text-green-600' : 'text-gray-500'
-                        }`}>
-                          {t(rule.description)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Auto mode panels - show when in constraint mode and auto input mode is active */}
+        {/* Auto mode panels - show when constraint is enabled and auto input mode is active */}
         {isConstraintEnabled && currentInputMode === 'auto' && (() => {
-          // Determine if we're in edit or play mode based on activeLayer and constraintSubCategory
-          const isEditMode = activeLayer === 'constraint'
-            ? constraintSubCategory === 'edit'
-            : activeLayer === 'problem';
+          // Determine if we're in edit or play mode based on activeLayer
+          const isEditMode = activeLayer === 'problem';
           const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
           const autoModeType = autoConfig.type;
 
