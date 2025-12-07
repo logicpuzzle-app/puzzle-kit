@@ -352,6 +352,7 @@ export function useLineToolHandler({
           addWall({
             position: edgeId,
             style: toolSettings.lineStyle,
+            thickness: toolSettings.lineThickness,
             color: colorToUse,
             layer: toDataLayer(activeLayer),
           });
@@ -361,6 +362,7 @@ export function useLineToolHandler({
         addWall({
           position: edgeId,
           style: toolSettings.lineStyle,
+          thickness: toolSettings.lineThickness,
           color: colorToUse,
           layer: toDataLayer(activeLayer),
         });

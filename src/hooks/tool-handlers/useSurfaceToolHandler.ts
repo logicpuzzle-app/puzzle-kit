@@ -44,12 +44,39 @@ export function useSurfaceToolHandler() {
   const processedCellsRef = useRef<Set<string>>(new Set());
   const surfaceFillModeRef = useRef<'fill' | 'erase' | null>(null);
   const gridFillModeRef = useRef<'disable' | 'enable' | null>(null);
+  // For noAdjacent constraint: track first cell's checker parity
+  const firstCellParityRef = useRef<boolean | null>(null);
+
+  // Helper to get cell row/col from cellId
+  const parseCellId = useCallback((cellId: string): { row: number; col: number } | null => {
+    // cellId format: "cell-{row}-{col}" (e.g., "cell-0-0", "cell-1-2")
+    const match = cellId.match(/^cell-(\d+)-(\d+)$/);
+    if (match) {
+      return { row: parseInt(match[1]), col: parseInt(match[2]) };
+    }
+    // Also try "r{row}c{col}" format (e.g., "r0c0", "r1c2")
+    const matchAlt = cellId.match(/^r(\d+)c(\d+)$/);
+    if (matchAlt) {
+      return { row: parseInt(matchAlt[1]), col: parseInt(matchAlt[2]) };
+    }
+    return null;
+  }, []);
+
+  // Helper to check if cell has same checker parity as first cell (for noAdjacent constraint)
+  const hasSameParity = useCallback((cellId: string): boolean => {
+    if (firstCellParityRef.current === null) return true;
+    const coords = parseCellId(cellId);
+    if (!coords) return true;
+    const parity = (coords.row + coords.col) % 2 === 0;
+    return parity === firstCellParityRef.current;
+  }, [parseCellId]);
 
   // Reset all fill modes (call on mouse down/touch start)
   const resetSurfaceFillModes = useCallback(() => {
     processedCellsRef.current.clear();
     surfaceFillModeRef.current = null;
     gridFillModeRef.current = null;
+    firstCellParityRef.current = null;
   }, []);
 
   const handleSurfaceTool = useCallback(
@@ -57,11 +84,13 @@ export function useSurfaceToolHandler() {
       const cellId = findCellId(point);
       if (!cellId) return;
 
+      // Debug: log inputConstraint at start
+      console.log('[handleSurfaceTool] Called with inputConstraint:', toolSettings.inputConstraint);
+
       // Skip if this cell was already processed during this drag
       if (processedCellsRef.current.has(cellId)) {
         return;
       }
-      processedCellsRef.current.add(cellId);
 
       const dataLayer = toDataLayer(activeLayer);
       const layerData = puzzle[dataLayer];
@@ -76,7 +105,8 @@ export function useSurfaceToolHandler() {
       const hasSameColorSurface = existingSurface && existingSurface.color === colorToUse;
 
       // Determine fill mode on first cell of drag
-      if (surfaceFillModeRef.current === null) {
+      const isFirstCell = surfaceFillModeRef.current === null;
+      if (isFirstCell) {
         if (isShiftKey) {
           // Shift always means erase
           surfaceFillModeRef.current = 'erase';
@@ -87,7 +117,37 @@ export function useSurfaceToolHandler() {
           // First cell is empty or has different color -> fill mode
           surfaceFillModeRef.current = 'fill';
         }
+
+        // For noAdjacent constraint: record first cell's checker parity
+        if (toolSettings.inputConstraint === 'noAdjacent') {
+          const coords = parseCellId(cellId);
+          if (coords) {
+            firstCellParityRef.current = (coords.row + coords.col) % 2 === 0;
+            console.log('[handleSurfaceTool] First cell parity set:', {
+              cellId,
+              coords,
+              parity: firstCellParityRef.current,
+              inputConstraint: toolSettings.inputConstraint,
+            });
+          }
+        }
       }
+
+      // noAdjacent constraint: skip cells with different checker parity when filling
+      if (toolSettings.inputConstraint === 'noAdjacent' && surfaceFillModeRef.current === 'fill') {
+        console.log('[handleSurfaceTool] noAdjacent check:', {
+          cellId,
+          inputConstraint: toolSettings.inputConstraint,
+          firstCellParity: firstCellParityRef.current,
+          hasSameParity: hasSameParity(cellId),
+        });
+        if (!hasSameParity(cellId)) {
+          console.log('[handleSurfaceTool] Skipping cell due to noAdjacent constraint');
+          return; // Skip this cell - different parity means adjacent to potential shaded cell
+        }
+      }
+
+      processedCellsRef.current.add(cellId);
 
       // Apply action based on current fill mode
       if (surfaceFillModeRef.current === 'erase') {
@@ -120,7 +180,7 @@ export function useSurfaceToolHandler() {
         }
       }
     },
-    [grid, puzzle, activeLayer, toolSettings.color, toolSettings.secondaryColor, addSurface, removeSurface, findCellId]
+    [grid, puzzle, activeLayer, toolSettings.color, toolSettings.secondaryColor, toolSettings.inputConstraint, addSurface, removeSurface, findCellId, parseCellId, hasSameParity]
   );
 
   const handleGridTool = useCallback(
@@ -202,11 +262,96 @@ export function useSurfaceToolHandler() {
     [grid, toggleSolutionAreaCell, findCellId]
   );
 
+  // Handle surface cycle tool (auto mode: none -> shade -> unshade -> none)
+  const handleSurfaceCycleTool = useCallback(
+    (point: Point, isRightClick: boolean) => {
+      const cellId = findCellId(point);
+      if (!cellId) return;
+
+      // Debug: log inputConstraint at start
+      console.log('[handleSurfaceCycleTool] Called with inputConstraint:', toolSettings.inputConstraint);
+
+      // Skip if this cell was already processed during this drag
+      if (processedCellsRef.current.has(cellId)) {
+        return;
+      }
+
+      const dataLayer = toDataLayer(activeLayer);
+      const layerData = puzzle[dataLayer];
+
+      const shadeColor = toolSettings.color; // black/shade
+      const unshadeColor = toolSettings.secondaryColor; // green/unshade
+
+      // Find existing surface
+      const existingSurface = Object.values(layerData.surfaces).find(
+        (s) => s.cellId === cellId
+      );
+
+      // For noAdjacent constraint: record first cell's checker parity on first cell
+      const isFirstCell = firstCellParityRef.current === null;
+      if (isFirstCell && toolSettings.inputConstraint === 'noAdjacent') {
+        const coords = parseCellId(cellId);
+        if (coords) {
+          firstCellParityRef.current = (coords.row + coords.col) % 2 === 0;
+        }
+      }
+
+      // Determine what action will happen
+      let willShade = false;
+      if (isRightClick) {
+        // unshade -> shade transition
+        willShade = existingSurface?.color === unshadeColor;
+      } else {
+        // none -> shade transition
+        willShade = !existingSurface;
+      }
+
+      // noAdjacent constraint: skip cells with different checker parity when shading
+      if (toolSettings.inputConstraint === 'noAdjacent' && willShade) {
+        if (!hasSameParity(cellId)) {
+          return; // Skip this cell - different parity means adjacent to potential shaded cell
+        }
+      }
+
+      processedCellsRef.current.add(cellId);
+
+      if (isRightClick) {
+        // Right click: reverse cycle (none -> unshade -> shade -> none)
+        if (!existingSurface) {
+          // none -> unshade
+          addSurface({ cellId, color: unshadeColor, layer: dataLayer });
+        } else if (existingSurface.color === unshadeColor) {
+          // unshade -> shade
+          removeSurface(existingSurface.id);
+          addSurface({ cellId, color: shadeColor, layer: dataLayer });
+        } else {
+          // shade -> none
+          removeSurface(existingSurface.id);
+        }
+      } else {
+        // Left click: forward cycle (none -> shade -> unshade -> none)
+        if (!existingSurface) {
+          // none -> shade
+          addSurface({ cellId, color: shadeColor, layer: dataLayer });
+        } else if (existingSurface.color === shadeColor) {
+          // shade -> unshade
+          removeSurface(existingSurface.id);
+          addSurface({ cellId, color: unshadeColor, layer: dataLayer });
+        } else {
+          // unshade -> none
+          removeSurface(existingSurface.id);
+        }
+      }
+    },
+    [grid, puzzle, activeLayer, toolSettings.color, toolSettings.secondaryColor, toolSettings.inputConstraint, addSurface, removeSurface, findCellId, parseCellId, hasSameParity]
+  );
+
   return {
     handleSurfaceTool,
     handleGridTool,
     handleMulticolorSurfaceTool,
     handleSolutionAreaTool,
+    handleSurfaceCycleTool,
     resetSurfaceFillModes,
   };
 }

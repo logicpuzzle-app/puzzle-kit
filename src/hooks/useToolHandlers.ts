@@ -35,6 +35,7 @@ export function useToolHandlers({
     handleGridTool,
     handleMulticolorSurfaceTool,
     handleSolutionAreaTool,
+    handleSurfaceCycleTool,
     resetSurfaceFillModes,
   } = useSurfaceToolHandler();
 
@@ -84,6 +85,7 @@ export function useToolHandlers({
     handleSpecialTool,
     handleMulticolorSurfaceTool,
     handleSolutionAreaTool,
+    handleSurfaceCycleTool,
     handleTextTool,
     handleCageTool,
     handleBoxLineTool,

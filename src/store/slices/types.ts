@@ -72,6 +72,8 @@ export const DEFAULT_TOOL_SETTINGS: ToolSettings = {
   lineDirections: ['orthogonal'],
   lineHalfMode: false,
   symbolGridPoints: ['cell'],
+  surfaceButtonMode: '1-button',  // Default to 1-button (cycle mode like puzz.link auto)
+  inputConstraint: 'none',  // Default to no input constraint
 };
 
 // ========================================
@@ -156,6 +158,10 @@ export interface ElementsSlice {
   updateBoxLine: (id: string, cells: string[]) => void;
   addDirectionalClue: (element: Omit<import('../../types').PenpaDirectionalClue, 'id'>) => string;
   removeDirectionalClue: (id: string) => void;
+
+  // Room map (for Heyawake, etc.)
+  setRoomMap: (roomMap: import('../../types').RoomMap) => void;
+  clearRoomMap: () => void;
 
   // Clear operations
   clearLayer: (layer: LayerType) => void;

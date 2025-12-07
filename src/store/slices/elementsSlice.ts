@@ -583,6 +583,31 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
     });
   },
 
+  // Room map operations (for Heyawake, etc.)
+  setRoomMap: (roomMap) => {
+    set((state) => ({
+      puzzle: {
+        ...state.puzzle,
+        problem: {
+          ...state.puzzle.problem,
+          roomMap,
+        },
+      },
+    }));
+  },
+
+  clearRoomMap: () => {
+    set((state) => {
+      const { roomMap, ...rest } = state.puzzle.problem;
+      return {
+        puzzle: {
+          ...state.puzzle,
+          problem: rest as typeof state.puzzle.problem,
+        },
+      };
+    });
+  },
+
   // Clear operations
   clearLayer: (layer) => {
     set((state) => ({
