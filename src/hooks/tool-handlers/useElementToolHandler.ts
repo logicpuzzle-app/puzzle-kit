@@ -36,7 +36,9 @@ export function useElementToolHandler({
     grid,
     toolSettings,
     activeLayer,
+    addNumber,
     removeNumber,
+    updateNumber,
     addSymbol,
     removeSymbol,
     addCage,
@@ -49,6 +51,7 @@ export function useElementToolHandler({
     puzzle,
     useTopology,
     topology,
+    currentInputMode,
   } = usePuzzleStore();
 
   // Helper to find cell ID considering topology mode
@@ -67,43 +70,157 @@ export function useElementToolHandler({
     return null;
   }, [grid, useTopology, topology]);
 
+  /**
+   * Get min/max values for number input based on grid size and input mode
+   * - For yajilin (direc mode): max is about half the max dimension
+   * - For other puzzles: max is based on total cells
+   */
+  const getNumberRange = useCallback((): { min: number; max: number } => {
+    if (currentInputMode === 'direc') {
+      // Yajilin arrow numbers: max is about half the dimension
+      const maxDimension = Math.max(grid.rows, grid.cols);
+      return { min: 0, max: Math.floor(maxDimension / 2) };
+    }
+    // Other puzzles: max is total cells (for island size, etc.)
+    const totalCells = grid.rows * grid.cols;
+    return { min: 0, max: totalCells };
+  }, [grid.rows, grid.cols, currentInputMode]);
+
   const handleNumberTool = useCallback(
     (point: Point, isRightClick: boolean) => {
       const cellId = findCellId(point);
-      if (!cellId) return;
+      if (!cellId) return null;
       const dataLayer = toDataLayer(activeLayer);
       const layerData = puzzle[dataLayer];
-      const { numberPosition, cornerIndex, sideIndex, selectedCandidates } = toolSettings;
+      const { numberPosition, cornerIndex, sideIndex, selectedCandidates, color, numberSize } = toolSettings;
 
       // Find existing number at this position with same submode
-      let existingNumber;
+      let existingNumber: (typeof layerData.numbers)[string] | undefined;
+      let existingId: string | undefined;
+
       if (numberPosition === 'center') {
-        existingNumber = Object.values(layerData.numbers).find(
-          (n) => n.cellId === cellId && n.position === 'center'
+        const entry = Object.entries(layerData.numbers).find(
+          ([, n]) => n.cellId === cellId && n.position === 'center'
         );
+        if (entry) {
+          existingId = entry[0];
+          existingNumber = entry[1];
+        }
       } else if (numberPosition === 'corner') {
-        existingNumber = Object.values(layerData.numbers).find(
-          (n) => n.cellId === cellId && n.position === 'corner' && n.cornerIndex === cornerIndex
+        const entry = Object.entries(layerData.numbers).find(
+          ([, n]) => n.cellId === cellId && n.position === 'corner' && n.cornerIndex === cornerIndex
         );
+        if (entry) {
+          existingId = entry[0];
+          existingNumber = entry[1];
+        }
       } else if (numberPosition === 'side') {
-        existingNumber = Object.values(layerData.numbers).find(
-          (n) => n.cellId === cellId && n.position === 'side' && n.sideIndex === sideIndex
+        const entry = Object.entries(layerData.numbers).find(
+          ([, n]) => n.cellId === cellId && n.position === 'side' && n.sideIndex === sideIndex
         );
+        if (entry) {
+          existingId = entry[0];
+          existingNumber = entry[1];
+        }
       } else if (numberPosition === 'candidates') {
-        existingNumber = Object.values(layerData.numbers).find(
-          (n) => n.cellId === cellId && n.position === 'candidates'
+        const entry = Object.entries(layerData.numbers).find(
+          ([, n]) => n.cellId === cellId && n.position === 'candidates'
         );
+        if (entry) {
+          existingId = entry[0];
+          existingNumber = entry[1];
+        }
       }
 
-      if (isRightClick && existingNumber) {
-        removeNumber(existingNumber.id);
+      // In constraint input mode (number/number-), use pzpr-puzzlink style click increment/decrement
+      if (currentInputMode === 'number' || currentInputMode === 'number-') {
+        const { min, max } = getNumberRange();
+        const currentNum = existingNumber ? parseInt(existingNumber.value, 10) : -1;
+        const isValidNum = !isNaN(currentNum) && currentNum >= min;
+
+        let newValue: number | null = null;
+
+        if (currentInputMode === 'number') {
+          // Normal mode: left click +1, right click -1
+          if (isRightClick) {
+            // Right click: decrement (空白 → max → max-1 → ... → min → 空白)
+            if (!isValidNum || currentNum === -1) {
+              newValue = max;
+            } else if (currentNum <= min) {
+              newValue = -1; // Clear
+            } else {
+              newValue = currentNum - 1;
+            }
+          } else {
+            // Left click: increment (空白 → min → min+1 → ... → max → 空白)
+            if (!isValidNum || currentNum === -1) {
+              newValue = min;
+            } else if (currentNum >= max) {
+              newValue = -1; // Clear
+            } else {
+              newValue = currentNum + 1;
+            }
+          }
+        } else {
+          // Reverse mode (number-): left click -1, right click +1
+          if (isRightClick) {
+            // Right click: increment
+            if (!isValidNum || currentNum === -1) {
+              newValue = min;
+            } else if (currentNum >= max) {
+              newValue = -1; // Clear
+            } else {
+              newValue = currentNum + 1;
+            }
+          } else {
+            // Left click: decrement
+            if (!isValidNum || currentNum === -1) {
+              newValue = max;
+            } else if (currentNum <= min) {
+              newValue = -1; // Clear
+            } else {
+              newValue = currentNum - 1;
+            }
+          }
+        }
+
+        // Apply the change
+        if (newValue === -1) {
+          // Clear
+          if (existingId) {
+            removeNumber(existingId);
+          }
+        } else if (newValue !== null) {
+          if (existingId) {
+            // Update existing number
+            updateNumber(existingId, String(newValue));
+          } else {
+            // Add new number
+            addNumber({
+              cellId,
+              value: String(newValue),
+              size: numberSize || 'large',
+              position: numberPosition,
+              cornerIndex: cornerIndex || 0,
+              sideIndex: sideIndex || 0,
+              color: color || '#000000',
+              layer: dataLayer,
+            });
+          }
+        }
+        return null; // Handled directly, no dialog needed
+      }
+
+      // Non-constraint mode: return info for dialog handling
+      if (isRightClick && existingId) {
+        removeNumber(existingId);
         return null;
       } else if (!isRightClick) {
         // For candidates mode, toggle the candidate directly
         if (numberPosition === 'candidates') {
           return {
             cellId,
-            existingNumber,
+            existingNumber: existingNumber,
             numberPosition,
             selectedCandidates: existingNumber?.candidates || selectedCandidates,
           };
@@ -111,7 +228,7 @@ export function useElementToolHandler({
         // Open number input dialog - handled by component
         return {
           cellId,
-          existingNumber,
+          existingNumber: existingNumber,
           numberPosition,
           cornerIndex: numberPosition === 'corner' ? cornerIndex : undefined,
           sideIndex: numberPosition === 'side' ? sideIndex : undefined,
@@ -119,7 +236,7 @@ export function useElementToolHandler({
       }
       return null;
     },
-    [grid, puzzle, activeLayer, toolSettings, removeNumber, findCellId]
+    [grid, puzzle, activeLayer, toolSettings, currentInputMode, getNumberRange, addNumber, removeNumber, updateNumber, findCellId]
   );
 
   const handleSymbolTool = useCallback(
