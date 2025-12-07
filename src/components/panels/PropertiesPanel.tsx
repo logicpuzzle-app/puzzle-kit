@@ -1,13 +1,16 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../store/puzzleStore';
 import { LineStyle, LineThickness } from '../../types';
 import { SymbolPanel } from './SymbolPanel';
+import { isInfoMode, getAutoModeConfig } from '../../constraints/inputModeMapping';
+import type { ConstraintSchema, InputMode } from '../../constraints/types';
 import {
   ColorSelector,
   MulticolorSettings,
   NumberPositionSettings,
   ArrowDirectionSettings,
+  NumberInputPanel,
   GridPropertiesPanel,
   FreehandLineList,
   TestCasePanel,
@@ -27,6 +30,8 @@ export const PropertiesPanel: React.FC = () => {
     setCurrentSchemaId,
     constraintSubCategory,
     showConstraintLayer,
+    currentInputMode,
+    setInputMode,
   } = usePuzzleStore();
 
   // Derived state
@@ -35,6 +40,15 @@ export const PropertiesPanel: React.FC = () => {
   const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
   // When constraint is enabled, hide tool settings (tool is auto-selected by inputMode)
   const isConstraintEnabled = showConstraintLayer && currentSchema !== null;
+
+  const getInfoModes = (schema: ConstraintSchema | null): InputMode[] => {
+    if (!schema) return [];
+    const modes: InputMode[] = [
+      ...schema.inputModes.edit,
+      ...schema.inputModes.play,
+    ];
+    return Array.from(new Set(modes.filter((m) => isInfoMode(m))));
+  };
 
   const lineStyles: { value: LineStyle; labelKey: string }[] = [
     { value: 'solid', labelKey: 'style.solid' },
@@ -62,6 +76,21 @@ export const PropertiesPanel: React.FC = () => {
   };
 
   const resetRotation = () => setToolSettings({ symbolRotation: 0 });
+
+  // Track if this is the first render to avoid re-applying input mode on mount
+  const isFirstRender = useRef(true);
+
+  // Re-apply input mode when surfaceButtonMode changes (to update the tool for auto mode)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    // Only re-apply if the current input mode is 'auto' (which depends on button mode)
+    if (currentInputMode === 'auto') {
+      setInputMode('auto');
+    }
+  }, [toolSettings.surfaceButtonMode, currentInputMode, setInputMode]);
 
   // Collapsed state - show only toggle button
   if (!isPropertiesPanelOpen) {
@@ -199,6 +228,38 @@ export const PropertiesPanel: React.FC = () => {
                         <div className="text-xs text-purple-600 mt-0.5">{t(rule.description)}</div>
                       </div>
                     ))}
+                    {getInfoModes(currentSchema).length > 0 && (
+                      <div className="p-2 bg-blue-50 rounded-sm border border-blue-100">
+                        <div className="font-medium text-xs text-blue-800">
+                          {t('constraint.infoTools', 'Info tools')}
+                        </div>
+                        <div className="mt-1 space-y-0.5">
+                          {getInfoModes(currentSchema).map((mode) => (
+                            <div key={mode} className="text-xs text-blue-700">
+                              <span className="font-semibold mr-1">{t(`inputMode.${mode}`, mode)}</span>
+                              <span>{t(`inputMode.${mode}.desc`, '')}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Number input panel - show when in number mode */}
+                    {(currentInputMode === 'number' || currentInputMode === 'number-') && (
+                      <div className="mt-3 p-2 bg-gray-50 rounded-sm border border-gray-200">
+                        <div className="font-medium text-xs text-gray-700 mb-2">
+                          {t('tool.number.input', 'Number Input')}
+                        </div>
+                        <NumberInputPanel />
+                      </div>
+                    )}
+
+                    {/* Arrow direction panel - show when in direc mode */}
+                    {currentInputMode === 'direc' && (
+                      <div className="mt-3 p-2 bg-gray-50 rounded-sm border border-gray-200">
+                        <ArrowDirectionSettings />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -228,6 +289,75 @@ export const PropertiesPanel: React.FC = () => {
                         <div className="text-xs text-purple-600 mt-0.5">{t(rule.description)}</div>
                       </div>
                     ))}
+                    {getInfoModes(currentSchema).length > 0 && (
+                      <div className="p-2 bg-blue-50 rounded-sm border border-blue-100">
+                        <div className="font-medium text-xs text-blue-800">
+                          {t('constraint.infoTools', 'Info tools')}
+                        </div>
+                        <div className="mt-1 space-y-0.5">
+                          {getInfoModes(currentSchema).map((mode) => (
+                            <div key={mode} className="text-xs text-blue-700">
+                              <span className="font-semibold mr-1">{t(`inputMode.${mode}`, mode)}</span>
+                              <span>{t(`inputMode.${mode}.desc`, '')}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {/* Button mode option - show when schema has 'auto' mode */}
+                    {currentSchema.inputModes.play.includes('auto') && (
+                      <div className="mt-3 p-2 bg-gray-50 rounded-sm border border-gray-200">
+                        <div className="font-medium text-xs text-gray-700 mb-2">
+                          {t('prop.buttonMode')}
+                        </div>
+                        <div className="flex gap-1">
+                          <button
+                            className={`flex-1 px-2 py-1.5 text-xs border rounded-sm transition-colors ${
+                              toolSettings.surfaceButtonMode === '1-button'
+                                ? 'bg-office-accent text-white border-office-accent'
+                                : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+                            }`}
+                            onClick={() => setToolSettings({ surfaceButtonMode: '1-button' })}
+                            title={t('prop.buttonMode.1button.desc')}
+                          >
+                            {t('prop.buttonMode.1button')}
+                          </button>
+                          <button
+                            className={`flex-1 px-2 py-1.5 text-xs border rounded-sm transition-colors ${
+                              toolSettings.surfaceButtonMode === '2-button'
+                                ? 'bg-office-accent text-white border-office-accent'
+                                : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+                            }`}
+                            onClick={() => setToolSettings({ surfaceButtonMode: '2-button' })}
+                            title={t('prop.buttonMode.2button.desc')}
+                          >
+                            {t('prop.buttonMode.2button')}
+                          </button>
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {toolSettings.surfaceButtonMode === '1-button'
+                            ? t('prop.buttonMode.1button.desc')
+                            : t('prop.buttonMode.2button.desc')}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Number input panel - show when in number mode */}
+                {(currentInputMode === 'number' || currentInputMode === 'number-') && (
+                  <div className="mt-3 p-2 bg-gray-50 rounded-sm border border-gray-200">
+                    <div className="font-medium text-xs text-gray-700 mb-2">
+                      {t('tool.number.input', 'Number Input')}
+                    </div>
+                    <NumberInputPanel />
+                  </div>
+                )}
+
+                {/* Arrow direction panel - show when in direc mode */}
+                {currentInputMode === 'direc' && (
+                  <div className="mt-3 p-2 bg-gray-50 rounded-sm border border-gray-200">
+                    <ArrowDirectionSettings />
                   </div>
                 )}
               </div>
@@ -279,6 +409,88 @@ export const PropertiesPanel: React.FC = () => {
                 )}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Auto mode panels - show when in constraint mode and auto input mode is active */}
+        {isConstraintEnabled && currentInputMode === 'auto' && (() => {
+          // Determine if we're in edit or play mode based on activeLayer and constraintSubCategory
+          const isEditMode = activeLayer === 'constraint'
+            ? constraintSubCategory === 'edit'
+            : activeLayer === 'problem';
+          const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
+          const autoModeType = autoConfig.type;
+
+          return (
+            <>
+              {/* Button mode toggle - only for 'cell' type (play mode) */}
+              {autoModeType === 'cell' && (
+                <div className="p-2 bg-gray-50 rounded-sm border border-gray-200">
+                  <div className="font-medium text-xs text-gray-700 mb-2">
+                    {t('prop.buttonMode')}
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      className={`flex-1 px-2 py-1.5 text-xs border rounded-sm transition-colors ${
+                        toolSettings.surfaceButtonMode === '1-button'
+                          ? 'bg-office-accent text-white border-office-accent'
+                          : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+                      }`}
+                      onClick={() => setToolSettings({ surfaceButtonMode: '1-button' })}
+                      title={t('prop.buttonMode.1button.desc')}
+                    >
+                      {t('prop.buttonMode.1button')}
+                    </button>
+                    <button
+                      className={`flex-1 px-2 py-1.5 text-xs border rounded-sm transition-colors ${
+                        toolSettings.surfaceButtonMode === '2-button'
+                          ? 'bg-office-accent text-white border-office-accent'
+                          : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+                      }`}
+                      onClick={() => setToolSettings({ surfaceButtonMode: '2-button' })}
+                      title={t('prop.buttonMode.2button.desc')}
+                    >
+                      {t('prop.buttonMode.2button')}
+                    </button>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {toolSettings.surfaceButtonMode === '1-button'
+                      ? t('prop.buttonMode.1button.desc')
+                      : t('prop.buttonMode.2button.desc')}
+                  </div>
+                </div>
+              )}
+
+              {/* Number input panel for number/direc/border-number auto mode types */}
+              {(autoModeType === 'number' || autoModeType === 'direc' || autoModeType === 'border-number') && (
+                <NumberInputPanel />
+              )}
+
+              {/* Arrow direction panel for direc auto mode type */}
+              {autoModeType === 'direc' && (
+                <ArrowDirectionSettings />
+              )}
+            </>
+          );
+        })()}
+
+        {/* Number input panel - show when in constraint mode and number/direc input mode is active */}
+        {isConstraintEnabled && (currentInputMode === 'number' || currentInputMode === 'number-' || currentInputMode === 'direc') && (
+          <div className="p-2 bg-gray-50 rounded-sm border border-gray-200">
+            <div className="font-medium text-xs text-gray-700 mb-2">
+              {t('tool.number.input', 'Number Input')}
+            </div>
+            <NumberInputPanel />
+          </div>
+        )}
+
+        {/* Arrow direction panel - show when in constraint mode and direc input mode is active */}
+        {isConstraintEnabled && currentInputMode === 'direc' && (
+          <div className="p-2 bg-gray-50 rounded-sm border border-gray-200">
+            <div className="font-medium text-xs text-gray-700 mb-2">
+              {t('prop.direction', 'Direction')}
+            </div>
+            <ArrowDirectionSettings />
           </div>
         )}
 

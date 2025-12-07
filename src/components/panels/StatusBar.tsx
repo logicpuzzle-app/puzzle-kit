@@ -5,7 +5,7 @@ import { historyManager } from '../../store/historyManager';
 
 export const StatusBar: React.FC = () => {
   const { t } = useTranslation();
-  const { grid, activeLayer, toolSettings, canvas } = usePuzzleStore();
+  const { grid, canvas } = usePuzzleStore();
 
   // Subscribe to history changes for reactive updates
   const [historyState, setHistoryState] = useState(() => historyManager.getState());
@@ -36,20 +36,6 @@ export const StatusBar: React.FC = () => {
       <span>
         {grid.rows} × {grid.cols}
       </span>
-
-      {/* Separator */}
-      <div className="mx-3 h-4 border-l border-office-border" />
-
-      {/* Active layer */}
-      <span>
-        {t('layer.active')}: {t(`layer.${activeLayer}`)}
-      </span>
-
-      {/* Separator */}
-      <div className="mx-3 h-4 border-l border-office-border" />
-
-      {/* Current tool */}
-      <span>{t(`tool.${toolSettings.currentTool.replace('-', '.')}`)}</span>
 
       {/* Right side */}
       <div className="ml-auto flex items-center gap-4">

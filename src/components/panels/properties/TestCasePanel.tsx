@@ -53,10 +53,20 @@ export const TestCasePanel: React.FC = () => {
       for (const [, sym] of Object.entries(problem.symbols)) {
         store.addSymbol(sym);
       }
+      for (const [, edge] of Object.entries(problem.edges)) {
+        store.addEdge(edge);
+      }
       if (problem.directionalClues) {
         for (const [, clue] of Object.entries(problem.directionalClues)) {
           store.addDirectionalClue(clue);
         }
+      }
+      // Import room map if present (for Heyawake, etc.)
+      if (problem.roomMap) {
+        console.log('[TestCasePanel] Setting roomMap with entries:', Object.keys(problem.roomMap).length);
+        store.setRoomMap(problem.roomMap);
+      } else {
+        console.log('[TestCasePanel] No roomMap in parsed result');
       }
 
       // Import answer elements

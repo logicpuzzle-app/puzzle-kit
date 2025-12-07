@@ -85,7 +85,7 @@ export const ToolModeSelector: React.FC<ToolModeSelectorProps> = ({
         ))}
       </div>
 
-      {/* Info mode buttons - shown separately */}
+      {/* Info mode buttons - shown separately, disabled until implemented */}
       {infoModes.length > 0 && (
         <>
           <div className="w-px h-6 bg-office-border mx-1" />
@@ -93,13 +93,9 @@ export const ToolModeSelector: React.FC<ToolModeSelectorProps> = ({
             {infoModes.map((mode) => (
               <button
                 key={mode}
-                className={`flex items-center gap-1 px-2 py-1 text-xs rounded-sm border transition-colors ${
-                  currentMode === mode
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white border-office-border hover:bg-office-ribbon-hover'
-                }`}
-                onClick={() => onModeChange(mode)}
-                title={t(`inputMode.${mode}.desc`, t(`inputMode.${mode}`))}
+                disabled
+                className="flex items-center gap-1 px-2 py-1 text-xs rounded-sm border bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                title={t(`inputMode.${mode}.desc`, t(`inputMode.${mode}`) + ' (未実装)')}
               >
                 <span>{INPUT_MODE_ICONS[mode] || 'ℹ'}</span>
                 <span>{t(`inputMode.${mode}`)}</span>
