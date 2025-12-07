@@ -7,6 +7,7 @@ import { slitherlinkTestData } from './slitherlink';
 import { mashuTestData } from './mashu';
 import { nurikabeTestData } from './nurikabe';
 import { yajilinTestData } from './yajilin';
+import { heyawakeTestData } from './heyawake';
 
 // Re-export types
 export * from './types';
@@ -19,6 +20,7 @@ const testDataMap: Record<string, PuzzleTestData> = {
   mashu: mashuTestData,
   nurikabe: nurikabeTestData,
   yajilin: yajilinTestData,
+  heyawake: heyawakeTestData,
 };
 
 /**

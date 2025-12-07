@@ -8,6 +8,7 @@ import {
   mashuSchema,
   yajilinSchema,
   nurikabeSchema,
+  heyawakeSchema,
 } from './schemas';
 
 /**
@@ -22,6 +23,7 @@ class ConstraintCatalogImpl implements IConstraintCatalog {
     this.registerSchema(mashuSchema);
     this.registerSchema(yajilinSchema);
     this.registerSchema(nurikabeSchema);
+    this.registerSchema(heyawakeSchema);
   }
 
   /**

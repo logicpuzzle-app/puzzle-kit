@@ -103,12 +103,13 @@ export function parsePzprv3(pzprv3String: string): Pzprv3ParseResult {
     }
 
     // Determine grid style based on puzzle type
-    const gridStyleMap: Record<string, { gridStyle: string; frameStyle: string }> = {
-      slither: { gridStyle: 'dots', frameStyle: 'none' },
-      mashu: { gridStyle: 'normal', frameStyle: 'normal' },
-      nurikabe: { gridStyle: 'normal', frameStyle: 'normal' },
-      yajirin: { gridStyle: 'normal', frameStyle: 'normal' },
-    };
+const gridStyleMap: Record<string, { gridStyle: string; frameStyle: string }> = {
+  slither: { gridStyle: 'dots', frameStyle: 'none' },
+  mashu: { gridStyle: 'normal', frameStyle: 'normal' },
+  nurikabe: { gridStyle: 'normal', frameStyle: 'normal' },
+  yajirin: { gridStyle: 'normal', frameStyle: 'normal' },
+  heyawake: { gridStyle: 'normal', frameStyle: 'normal' },
+};
     const styleConfig = gridStyleMap[pid] || { gridStyle: 'normal', frameStyle: 'normal' };
 
     // Create grid config
@@ -151,6 +152,9 @@ export function parsePzprv3(pzprv3String: string): Pzprv3ParseResult {
         break;
       case 'yajirin':
         parseYajilin(puzzle, rows, cols, remainingParts);
+        break;
+      case 'heyawake':
+        parseHeyawake(puzzle, rows, cols, remainingParts);
         break;
       default:
         return { success: false, error: `Unsupported puzzle type: ${pid}` };
@@ -588,5 +592,142 @@ function parseYajilin(puzzle: PuzzleState, rows: number, cols: number, parts: st
         };
       }
     }
+  }
+}
+
+/**
+ * Parse Heyawake puzzle (minimal support for test case display)
+ * Structure observed in pzprv3 strings:
+ *   1) Room count (unused)
+ *   2) Room id grid (rows lines of integers)
+ *   3) Clue grid (rows lines of numbers or '.')
+ *   4+) One or more grids of cell states (#=shade, +=unshade) for answer
+ */
+function parseHeyawake(puzzle: PuzzleState, rows: number, cols: number, parts: string[]): void {
+  let idx = 0;
+
+  // Skip room count if present
+  if (idx < parts.length && /^\d+$/.test(parts[idx].trim())) {
+    idx += 1;
+  }
+
+  // Room map (rows lines) - parse and store in puzzle.problem.roomMap
+  const roomMap: Record<string, number> = {};
+  if (idx + rows <= parts.length) {
+    for (let r = 0; r < rows; r++) {
+      const rowData = parseRowData(parts[idx + r]);
+      for (let c = 0; c < cols && c < rowData.length; c++) {
+        const val = rowData[c];
+        if (val !== '.' && val !== '-') {
+          const roomId = parseInt(val, 10);
+          if (!isNaN(roomId)) {
+            const cellId = `cell-${r}-${c}`;
+            roomMap[cellId] = roomId;
+          }
+        }
+      }
+    }
+    idx += rows;
+  }
+  puzzle.problem.roomMap = roomMap;
+
+  // Generate room border edges from roomMap
+  // Add edge wherever two adjacent cells have different room IDs
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cellId = `cell-${r}-${c}`;
+      const roomId = roomMap[cellId];
+
+      // Check right neighbor
+      if (c + 1 < cols) {
+        const rightCellId = `cell-${r}-${c + 1}`;
+        const rightRoomId = roomMap[rightCellId];
+        if (roomId !== rightRoomId) {
+          // Vertical edge between (r, c) and (r, c+1)
+          const edgeId = `edge-room-v-${r}-${c + 1}`;
+          puzzle.problem.edges[edgeId] = {
+            id: edgeId,
+            from: `vertex-${r}-${c + 1}`,
+            to: `vertex-${r + 1}-${c + 1}`,
+            style: 'solid',
+            thickness: 'normal',
+            color: '#000000',
+            layer: 'problem',
+          };
+        }
+      }
+
+      // Check bottom neighbor
+      if (r + 1 < rows) {
+        const bottomCellId = `cell-${r + 1}-${c}`;
+        const bottomRoomId = roomMap[bottomCellId];
+        if (roomId !== bottomRoomId) {
+          // Horizontal edge between (r, c) and (r+1, c)
+          const edgeId = `edge-room-h-${r + 1}-${c}`;
+          puzzle.problem.edges[edgeId] = {
+            id: edgeId,
+            from: `vertex-${r + 1}-${c}`,
+            to: `vertex-${r + 1}-${c + 1}`,
+            style: 'solid',
+            thickness: 'normal',
+            color: '#000000',
+            layer: 'problem',
+          };
+        }
+      }
+    }
+  }
+
+  // Clue grid (rows lines)
+  if (idx + rows <= parts.length) {
+    for (let r = 0; r < rows; r++) {
+      const rowData = parseRowData(parts[idx + r]);
+      for (let c = 0; c < cols && c < rowData.length; c++) {
+        const val = rowData[c];
+        if (val !== '.' && val !== '-') {
+          const cellId = `cell-${r}-${c}`;
+          const id = `num-${cellId}`;
+          puzzle.problem.numbers[id] = {
+            id,
+            cellId,
+            value: val,
+            size: 'medium',
+            position: 'center',
+            color: '#000000',
+            layer: 'problem',
+          };
+        }
+      }
+    }
+    idx += rows;
+  }
+
+  // Remaining sections: treat any rows-length block with '#'/'+' as answer shading
+  while (idx + rows <= parts.length) {
+    for (let r = 0; r < rows; r++) {
+      const rowData = parseRowData(parts[idx + r]);
+      for (let c = 0; c < cols && c < rowData.length; c++) {
+        const val = rowData[c];
+        const cellId = `cell-${r}-${c}`;
+        if (val === '#') {
+          const surfaceId = `surface-${cellId}`;
+          puzzle.answer.surfaces[surfaceId] = {
+            id: surfaceId,
+            cellId,
+            color: '#444444',
+            layer: 'answer',
+          };
+        } else if (val === '+') {
+          const surfaceId = `surface-${cellId}`;
+          puzzle.answer.surfaces[surfaceId] = {
+            id: surfaceId,
+            cellId,
+            color: '#A0FFA0',
+            layer: 'answer',
+          };
+        }
+      }
+    }
+    idx += rows;
   }
 }

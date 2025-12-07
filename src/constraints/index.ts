@@ -45,6 +45,7 @@ export {
 
 // Individual schemas (for direct import if needed)
 export * from './schemas';
+export * from './testCases';
 
 // Test cases
 export { testCaseRegistry } from './testCases';
