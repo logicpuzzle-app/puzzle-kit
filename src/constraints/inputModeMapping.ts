@@ -5,13 +5,18 @@
  * and puzzle-kit's tool/category system.
  */
 
-import type { InputMode, ConstraintSchema } from './types';
+import type { InputMode, ConstraintSchema, AutoModeType } from './types';
 import type { ToolType, ToolCategory } from '../types';
 
 /**
  * Input target - where the input is placed
  */
 export type InputTarget = 'cell' | 'edge' | 'vertex' | 'cross';
+
+/**
+ * Input constraint for shading tools
+ */
+export type InputConstraint = 'none' | 'noAdjacent';
 
 /**
  * Mapping from pzprjs inputMode to puzzle-kit tool configuration
@@ -25,6 +30,8 @@ export interface ToolMapping {
   target: InputTarget;
   /** Override symbol type (e.g., 'circle-filled' instead of 'circle') */
   symbolType?: string;
+  /** Input constraint for shading (e.g., 'noAdjacent' prevents shading adjacent cells) */
+  inputConstraint?: InputConstraint;
   /** Additional tool settings to apply */
   settings?: Partial<{
     color: string;
@@ -41,19 +48,35 @@ export interface ToolMapping {
  * Map pzprjs inputModes to puzzle-kit tools
  */
 export const inputModeToTool: Record<InputMode, ToolMapping | null> = {
-  // Auto mode - uses context-sensitive input
-  'auto': null, // No specific tool, handled by auto-detection
+  // Auto mode - behavior depends on autoModePlay/autoModeEdit in schema
+  // Default: cycle through states (none -> shade -> unshade -> none) for black cell puzzles
+  // This is overridden by getToolForInputMode() based on schema.autoModePlay/autoModeEdit
+  'auto': {
+    tool: 'surface-cycle',
+    category: 'surface',
+    target: 'cell',
+    settings: {
+      color: '#444444', // Shade color
+      secondaryColor: '#A0FFA0', // Unshade color
+    },
+  },
 
-  // Number input modes
+  // Number input modes - problem mode uses black
   'number': {
     tool: 'number-normal',
     category: 'number',
     target: 'cell',
+    settings: {
+      color: '#000000', // Black for problem mode numbers
+    },
   },
   'number-': {
     tool: 'number-normal',
     category: 'number',
     target: 'cell',
+    settings: {
+      color: '#000000', // Black for problem mode numbers
+    },
     // Note: number- means mouse buttons are inverted (handled separately)
   },
 
@@ -105,11 +128,16 @@ export const inputModeToTool: Record<InputMode, ToolMapping | null> = {
     },
   },
 
-  // Border drawing
+  // Border drawing (thick edge for room boundaries) - problem mode uses black
   'border': {
-    tool: 'wall-normal',
-    category: 'wall',
+    tool: 'edge-normal',
+    category: 'edge',
     target: 'edge',
+    settings: {
+      color: '#000000', // Black for problem mode borders
+      lineThickness: 'normal',
+      lineGridPoints: ['vertex'], // Edge lines connect vertices
+    },
   },
 
   // Auxiliary line
@@ -281,7 +309,234 @@ export function getToolForInputMode(mode: InputMode, schema?: ConstraintSchema |
 
   // Note: 'peke' (X mark) is always placed on edges, even for cell-line puzzles like Mashu
 
+  // If schema has noAdjacentShade=true and mode is 'shade', add input constraint
+  // This prevents shading cells that are orthogonally adjacent to already shaded cells
+  if (mode === 'shade' && schema?.noAdjacentShade) {
+    console.log('[getToolForInputMode] shade mode with noAdjacent:', { mode, noAdjacentShade: schema.noAdjacentShade });
+    return {
+      ...baseMapping,
+      inputConstraint: 'noAdjacent',
+    };
+  }
+
+  // If schema has noAdjacentShade=true and mode is 'auto', add input constraint
+  if (mode === 'auto' && schema?.noAdjacentShade) {
+    console.log('[getToolForInputMode] auto mode with noAdjacent:', { mode, noAdjacentShade: schema.noAdjacentShade });
+    return {
+      ...baseMapping,
+      inputConstraint: 'noAdjacent',
+    };
+  }
+
   return baseMapping;
+}
+
+/**
+ * Auto mode configuration - defines left/right button behaviors
+ */
+export interface AutoModeConfig {
+  /** Auto mode type identifier */
+  type: AutoModeType;
+  /** Tool mapping for left button */
+  leftButton: ToolMapping;
+  /** Tool mapping for right button */
+  rightButton: ToolMapping;
+  /** Whether noAdjacent constraint applies to shading */
+  noAdjacentShade?: boolean;
+}
+
+/**
+ * Get auto mode configuration based on schema
+ * @param schema - The constraint schema
+ * @param isEditMode - Whether we're in edit mode (vs play mode)
+ */
+export function getAutoModeConfig(schema: ConstraintSchema | null | undefined, isEditMode: boolean = false): AutoModeConfig {
+  const autoModeType = isEditMode
+    ? (schema?.autoModeEdit ?? 'cell')
+    : (schema?.autoModePlay ?? 'cell');
+
+  const noAdjacentShade = schema?.noAdjacentShade ?? false;
+
+  switch (autoModeType) {
+    // ===== Play mode types =====
+    case 'line':
+      // Loop puzzles: left=line, right=peke (Slitherlink)
+      return {
+        type: 'line',
+        leftButton: {
+          tool: schema?.lineTarget === 'cell' ? 'line-normal' : 'edge-normal',
+          category: schema?.lineTarget === 'cell' ? 'line' : 'edge',
+          target: 'edge',
+          settings: {
+            color: '#00A000',
+            lineStyle: 'solid',
+            lineThickness: 'normal',
+            lineGridPoints: schema?.lineTarget === 'cell' ? ['cell'] : ['vertex'],
+          },
+        },
+        rightButton: {
+          tool: 'symbol-cross',
+          category: 'symbol',
+          target: 'edge',
+          settings: {
+            color: '#007F00',
+            symbolSize: 'small',
+            symbolGridPoints: ['edge'],
+          },
+        },
+      };
+
+    case 'line-cell':
+      // Loop + black cell puzzles: left=line, right=shade/unshade (Yajilin)
+      return {
+        type: 'line-cell',
+        leftButton: {
+          tool: schema?.lineTarget === 'cell' ? 'line-normal' : 'edge-normal',
+          category: schema?.lineTarget === 'cell' ? 'line' : 'edge',
+          target: 'edge',
+          settings: {
+            color: '#00A000',
+            lineStyle: 'solid',
+            lineThickness: 'normal',
+            lineGridPoints: schema?.lineTarget === 'cell' ? ['cell'] : ['vertex'],
+          },
+        },
+        rightButton: {
+          tool: 'surface-cycle',
+          category: 'surface',
+          target: 'cell',
+          inputConstraint: noAdjacentShade ? 'noAdjacent' : undefined,
+          settings: {
+            color: '#444444',
+            secondaryColor: '#A0FFA0',
+          },
+        },
+        noAdjacentShade,
+      };
+
+    case 'cell':
+      // Black cell puzzles: cycle through shade/unshade/none (Nurikabe, Heyawake)
+      return {
+        type: 'cell',
+        leftButton: {
+          tool: 'surface-cycle',
+          category: 'surface',
+          target: 'cell',
+          inputConstraint: noAdjacentShade ? 'noAdjacent' : undefined,
+          settings: {
+            color: '#444444',
+            secondaryColor: '#A0FFA0',
+          },
+        },
+        rightButton: {
+          tool: 'surface-cycle',
+          category: 'surface',
+          target: 'cell',
+          inputConstraint: noAdjacentShade ? 'noAdjacent' : undefined,
+          settings: {
+            color: '#444444',
+            secondaryColor: '#A0FFA0',
+          },
+        },
+        noAdjacentShade,
+      };
+
+    // ===== Edit mode types =====
+    case 'number':
+      // Number input puzzles: enter numbers in cells (Nurikabe, Slitherlink)
+      return {
+        type: 'number',
+        leftButton: {
+          tool: 'number-normal',
+          category: 'number',
+          target: 'cell',
+          settings: {
+            color: '#000000',
+          },
+        },
+        rightButton: {
+          tool: 'number-normal',
+          category: 'number',
+          target: 'cell',
+          settings: {
+            color: '#000000',
+          },
+        },
+      };
+
+    case 'border-number':
+      // Room puzzles: drag=border, click=number (Heyawake)
+      return {
+        type: 'border-number',
+        leftButton: {
+          tool: 'edge-normal',
+          category: 'edge',
+          target: 'edge',
+          settings: {
+            color: '#000000',
+            lineThickness: 'normal',
+            lineGridPoints: ['vertex'],
+          },
+        },
+        rightButton: {
+          tool: 'number-normal',
+          category: 'number',
+          target: 'cell',
+          settings: {
+            color: '#000000',
+          },
+        },
+      };
+
+    case 'direc':
+      // Directional number puzzles: enter direction+number (Yajilin)
+      return {
+        type: 'direc',
+        leftButton: {
+          tool: 'number-directional',
+          category: 'number',
+          target: 'cell',
+          settings: {
+            color: '#000000',
+          },
+        },
+        rightButton: {
+          tool: 'number-directional',
+          category: 'number',
+          target: 'cell',
+          settings: {
+            color: '#000000',
+          },
+        },
+      };
+
+    default:
+      // Fallback to cell mode
+      return {
+        type: 'cell',
+        leftButton: {
+          tool: 'surface-cycle',
+          category: 'surface',
+          target: 'cell',
+          inputConstraint: noAdjacentShade ? 'noAdjacent' : undefined,
+          settings: {
+            color: '#444444',
+            secondaryColor: '#A0FFA0',
+          },
+        },
+        rightButton: {
+          tool: 'surface-cycle',
+          category: 'surface',
+          target: 'cell',
+          inputConstraint: noAdjacentShade ? 'noAdjacent' : undefined,
+          settings: {
+            color: '#444444',
+            secondaryColor: '#A0FFA0',
+          },
+        },
+        noAdjacentShade,
+      };
+  }
 }
 
 /**

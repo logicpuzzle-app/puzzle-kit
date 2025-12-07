@@ -154,6 +154,7 @@ export type ToolType =
   // Surface tools
   | 'surface-fill'
   | 'surface-dot'
+  | 'surface-cycle' // Cycle through states: none -> shade -> unshade -> none
   // Line tools (cell center to center)
   | 'line-normal'
   | 'line-diagonal'
@@ -284,6 +285,7 @@ export interface WallElement {
   id: string;
   position: string;  // edge-h or edge-v point ID
   style: LineStyle;
+  thickness?: LineThickness;  // optional, defaults to 'thick' in WallLayer
   color: string;
   layer: DataLayerType;
 }
@@ -442,6 +444,10 @@ export interface SplitLine {
   endPoint: SplitPoint;
 }
 
+// Room map for region-based puzzles (Heyawake, etc.)
+// Maps cell-{row}-{col} to room ID
+export type RoomMap = Record<string, number>;
+
 // Puzzle state
 export interface PuzzleElements {
   surfaces: Record<string, SurfaceElement>;
@@ -454,6 +460,7 @@ export interface PuzzleElements {
   specials: Record<string, SpecialElement>;
   boxLines: Record<string, BoxLineElement>;
   directionalClues?: Record<string, import('./penpaElements').PenpaDirectionalClue>;
+  roomMap?: RoomMap; // Optional room map for region-based puzzles
 }
 
 // Solution Area - cells where answer checking applies
@@ -531,6 +538,10 @@ export interface ToolSettings {
   // Symbol tool settings
   symbolGridPoints: LineGridPoint[]; // Which grid points symbols can be placed on
   overrideSymbolType?: string; // Override the default symbol type (e.g., 'circle-filled' for constraint modes)
+  // Surface button mode (for shading puzzles like Heyawake)
+  surfaceButtonMode: '2-button' | '1-button'; // 2-button: left=shade, right=unshade; 1-button: left cycles
+  // Input constraint for shading (e.g., 'noAdjacent' prevents shading adjacent cells)
+  inputConstraint?: 'none' | 'noAdjacent';
 }
 
 // Canvas state
