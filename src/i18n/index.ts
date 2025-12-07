@@ -92,8 +92,23 @@ const resources = {
       'constraint.correct': 'Correct!',
       'constraint.incorrect': 'There are errors',
       'constraint.testCases': 'Test Cases',
+      'constraint.infoTools': 'Info tools',
       'constraint.noTestCases': 'No test cases available for this puzzle type',
       'constraint.testCasesHelp': 'Click to load a test case. Green = complete, Red = has errors.',
+      'constraint.heyawake.rooms.title': 'Room borders',
+      'constraint.heyawake.rooms.description': 'Draw borders to divide the grid into rectangular rooms.',
+      'constraint.heyawake.roomNumber.title': 'Room clues',
+      'constraint.heyawake.roomNumber.description': 'Place room clues; number = shaded cells in the room.',
+      'constraint.heyawake.shading.title': 'Shading',
+      'constraint.heyawake.shading.description': 'Shade cells; black cells cannot touch orthogonally.',
+      'constraint.heyawake.noAdjacentShade.title': 'No adjacent blacks',
+      'constraint.heyawake.noAdjacentShade.description': 'Black cells may not share an edge.',
+      'constraint.heyawake.whiteConnected.title': 'White connectivity',
+      'constraint.heyawake.whiteConnected.description': 'All white cells must be connected.',
+      'constraint.heyawake.roomShadeCount.title': 'Room clue count',
+      'constraint.heyawake.roomShadeCount.description': 'Each room must contain exactly the number of black cells shown.',
+      'constraint.heyawake.noStraightThrough.title': 'Room boundary rule',
+      'constraint.heyawake.noStraightThrough.description': 'A straight white path cannot cross two or more room boundaries without a black cell.',
 
       // Trial mode (仮置き)
       'trial.title': 'Trial',
@@ -172,6 +187,7 @@ const resources = {
       'puzzle.mashu': 'Mashu',
       'puzzle.yajilin': 'Yajilin',
       'puzzle.nurikabe': 'Nurikabe',
+      'puzzle.heyawake': 'Heyawake',
 
       // Slitherlink constraints
       'constraint.slither.clueRange.title': 'Clue Range',
@@ -310,6 +326,10 @@ const resources = {
       'tool.number.cell': 'Cell',
       'tool.number.selectCandidates': 'Select candidates',
       'tool.number.noCandidatesSelected': 'Click numbers to toggle',
+      'tool.number.input': 'Number Input',
+      'tool.number.inputNumber': 'Click a number to input',
+      'tool.number.selectCell': 'Click a cell to select',
+      'tool.number.unknown': 'Unknown',
 
       // Text tools
       'tool.text.alphabet': 'Alphabet',
@@ -379,6 +399,22 @@ const resources = {
       'prop.cornerPosition': 'Corner',
       'prop.sidePosition': 'Side',
       'prop.halfMode': 'Half',
+      'prop.buttonMode': 'Button Mode',
+      'prop.buttonMode.2button': '2-Button',
+      'prop.buttonMode.1button': '1-Button',
+      'prop.buttonMode.2button.desc': 'Left=Shade, Right=Unshade',
+      'prop.buttonMode.1button.desc': 'Left click cycles states',
+
+      // Auto mode types
+      'prop.autoMode': 'Auto Mode',
+      // Play mode types
+      'prop.autoMode.cell.desc': 'Click cycles through shade/unshade/none',
+      'prop.autoMode.line.desc': 'Left: draw line, Right: peke (X)',
+      'prop.autoMode.lineCell.desc': 'Left: draw line, Right: shade/unshade',
+      // Edit mode types
+      'prop.autoMode.number.desc': 'Click to enter numbers',
+      'prop.autoMode.borderNumber.desc': 'Drag: border, Click: number',
+      'prop.autoMode.direc.desc': 'Click to enter directional numbers',
 
       // Directions
       'direction.up': 'Up',
@@ -409,6 +445,7 @@ const resources = {
 
       // Action
       'action.clear': 'Clear',
+      'action.backspace': 'Backspace',
 
       // Style options
       'style.solid': 'Solid',
@@ -653,6 +690,13 @@ const resources = {
       'validation.yajilin.multipleLoops': 'Multiple loops',
       'validation.yajilin.emptyCell': 'Empty cell',
 
+      // Heyawake validation
+      'validation.heyawake.noShade': 'No shaded cells',
+      'validation.heyawake.adjacentShade': 'Adjacent shaded cells',
+      'validation.heyawake.whiteNotConnected': 'White cells are not connected',
+      'validation.heyawake.roomShadeCount': 'Room shade count mismatch',
+      'validation.heyawake.straightThrough': 'White line crosses multiple room borders',
+
       // Actions
       'action.apply': 'Apply',
       'action.cancel': 'Cancel',
@@ -843,8 +887,23 @@ const resources = {
       'constraint.correct': '正解！',
       'constraint.incorrect': 'エラーがあります',
       'constraint.testCases': 'テストケース',
+      'constraint.infoTools': '情報ツール',
       'constraint.noTestCases': 'このパズルタイプにはテストケースがありません',
       'constraint.testCasesHelp': 'クリックでテストケースを読み込み。緑=完成、赤=エラーあり',
+      'constraint.heyawake.rooms.title': '部屋の境界',
+      'constraint.heyawake.rooms.description': '境界線を引いて長方形の部屋に分割する。',
+      'constraint.heyawake.roomNumber.title': '部屋の手がかり',
+      'constraint.heyawake.roomNumber.description': '部屋の数字＝その部屋の黒マス数。',
+      'constraint.heyawake.shading.title': '塗り',
+      'constraint.heyawake.shading.description': '黒マスを配置。黒同士は辺で接しない。',
+      'constraint.heyawake.noAdjacentShade.title': '黒の隣接なし',
+      'constraint.heyawake.noAdjacentShade.description': '黒マスは辺で接しない。',
+      'constraint.heyawake.whiteConnected.title': '白の連結',
+      'constraint.heyawake.whiteConnected.description': '白マスは全体で連結。',
+      'constraint.heyawake.roomShadeCount.title': '部屋の黒数',
+      'constraint.heyawake.roomShadeCount.description': '各部屋の黒マス数は数字どおり。',
+      'constraint.heyawake.noStraightThrough.title': '直進禁止',
+      'constraint.heyawake.noStraightThrough.description': '白の直線が2つ以上の部屋境界を連続で越えない。',
 
       // Trial mode (仮置き)
       'trial.title': '仮置き',
@@ -923,6 +982,7 @@ const resources = {
       'puzzle.mashu': 'ましゅ',
       'puzzle.yajilin': 'ヤジリン',
       'puzzle.nurikabe': 'ぬりかべ',
+      'puzzle.heyawake': 'へやわけ',
 
       // Slitherlink constraints
       'constraint.slither.clueRange.title': '数字の範囲',
@@ -1061,6 +1121,10 @@ const resources = {
       'tool.number.cell': 'マス',
       'tool.number.selectCandidates': '候補を選択',
       'tool.number.noCandidatesSelected': '数字をクリックして切り替え',
+      'tool.number.input': '数字入力',
+      'tool.number.inputNumber': '数字をクリックして入力',
+      'tool.number.selectCell': 'セルをクリックして選択',
+      'tool.number.unknown': '不明',
 
       // Text tools
       'tool.text.alphabet': 'アルファベット',
@@ -1130,6 +1194,22 @@ const resources = {
       'prop.cornerPosition': '角',
       'prop.sidePosition': '辺',
       'prop.halfMode': 'ハーフ',
+      'prop.buttonMode': 'ボタンモード',
+      'prop.buttonMode.2button': '左右ボタン',
+      'prop.buttonMode.1button': '1ボタン',
+      'prop.buttonMode.2button.desc': '左=黒マス, 右=白マス',
+      'prop.buttonMode.1button.desc': 'クリックで循環',
+
+      // Auto mode types
+      'prop.autoMode': '自動モード',
+      // Play mode types
+      'prop.autoMode.cell.desc': 'クリックで黒マス/白マス/なしを循環',
+      'prop.autoMode.line.desc': '左: 線を引く, 右: バツ (×)',
+      'prop.autoMode.lineCell.desc': '左: 線を引く, 右: 黒マス/白マス',
+      // Edit mode types
+      'prop.autoMode.number.desc': 'クリックで数字を入力',
+      'prop.autoMode.borderNumber.desc': 'ドラッグ: 境界線, クリック: 数字',
+      'prop.autoMode.direc.desc': 'クリックで方向付き数字を入力',
 
       // Directions
       'direction.up': '上',
@@ -1160,6 +1240,7 @@ const resources = {
 
       // Action
       'action.clear': 'クリア',
+      'action.backspace': '削除',
 
       // Style options
       'style.solid': '実線',
@@ -1401,6 +1482,13 @@ const resources = {
       'validation.yajilin.arrowCountNotMatch': '矢印の数字と黒マスの数が一致しません',
       'validation.yajilin.multipleLoops': '複数のループがあります',
       'validation.yajilin.emptyCell': '空白のマスがあります',
+
+      // Heyawake validation messages
+      'validation.heyawake.noShade': '黒マスがありません',
+      'validation.heyawake.adjacentShade': '黒マスが隣接しています',
+      'validation.heyawake.whiteNotConnected': '白マスがつながっていません',
+      'validation.heyawake.roomShadeCount': '部屋の黒マス数が合っていません',
+      'validation.heyawake.straightThrough': '白マスの直線が複数の部屋を横断しています',
 
       // Actions
       'action.apply': '適用',
