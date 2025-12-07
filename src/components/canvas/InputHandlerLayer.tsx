@@ -84,6 +84,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     topology: storeTopology,
     previewTopology,
     gridEditMode,
+    currentInputMode,
   } = usePuzzleStore();
 
   // Excel-like keyboard input for number tools
@@ -146,18 +147,40 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     (e: React.MouseEvent) => {
       const tool = toolSettings.currentTool;
 
-      // In constraint mode, allow number/text tools for constraint input
-      // but disable other editing tools (only allow pan/zoom for non-input tools)
+      // In constraint mode, handle input based on currentInputMode
       if (isConstraintMode) {
-        // Allow number and text tools in constraint mode
-        if (!tool.startsWith('number') && !tool.startsWith('text')) {
+        const isNumberInputMode = currentInputMode === 'number' || currentInputMode === 'number-';
+        const isDirecInputMode = currentInputMode === 'direc';
+
+        // Handle number/number-/direc input modes in constraint mode
+        if (isNumberInputMode || isDirecInputMode) {
+          const point = screenToSvg(
+            e.clientX,
+            e.clientY,
+            canvas.zoom,
+            canvas.panX,
+            canvas.panY,
+            svgRef.current
+          );
+          const cellInfo = findCellAtPoint(point);
+          if (!cellInfo || cellInfo.row === undefined || cellInfo.col === undefined) return;
+
+          setNumberSelection({ row: cellInfo.row, col: cellInfo.col });
+
+          // Call handleNumberTool for click increment/decrement
+          handleNumberTool(point, e.button === 2);
+          return;
+        }
+
+        // Allow text tools in constraint mode
+        if (!tool.startsWith('text')) {
           // Still allow wheel/pan interactions via base handler for pan mode
           if (canvas.panMode) {
             baseHandleMouseDown(e);
           }
           return;
         }
-        // Fall through to handle number/text tools below
+        // Fall through to handle text tools below
       }
 
       // In grid mode, delegate to base handler (which handles merge/split/exclude)
@@ -260,6 +283,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       removeDirectionalClue,
       isGridMode,
       isConstraintMode,
+      currentInputMode,
       findCellAtPoint,
     ]
   );
