@@ -137,10 +137,29 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
       }
       const valueStr = String(clue.value);
       const digitCount = valueStr.length;
+      const hasDirection = clue.direction >= UP && clue.direction <= RT;
+      const fontSize = grid.cellSize * 0.5;
 
-      if (arrowStyle === 'polygon') {
+      if (!hasDirection) {
+        // No direction - display as normal centered number
+        nodes.push(
+          <g key={`dirclue-${row}-${col}`} transform={`translate(${center.x},${center.y})`}>
+            <text
+              x={0}
+              y={0}
+              fill="#000"
+              fontSize={fontSize}
+              fontFamily="Helvetica, Verdana, Arial, sans-serif"
+              fontWeight="bold"
+              textAnchor="middle"
+              dominantBaseline="central"
+            >
+              {clue.value}
+            </text>
+          </g>
+        );
+      } else if (arrowStyle === 'polygon') {
         // pzprjs-style polygon arrow
-        const fontSize = grid.cellSize * 0.5;
         const offset = getNumberOffset(clue.direction, grid.cellSize);
         const arrowPath = getArrowPath(clue.direction, grid.cellSize, digitCount);
 
@@ -168,8 +187,6 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
         );
       } else {
         // Unicode arrow style (simple)
-        const fontSize = grid.cellSize * 0.5;
-
         nodes.push(
           <g key={`dirclue-${row}-${col}`} transform={`translate(${center.x},${center.y})`}>
             {/* Number above */}

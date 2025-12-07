@@ -29,6 +29,8 @@ export const NumberInputPanel: React.FC = () => {
     activeLayer,
     addNumber,
     removeNumber,
+    addDirectionalClue,
+    removeDirectionalClue,
     toolSettings,
     grid,
     currentSchemaId,
@@ -36,6 +38,9 @@ export const NumberInputPanel: React.FC = () => {
     useTopology,
     topology,
   } = usePuzzleStore();
+
+  // Check if we're in directional number mode
+  const isDirectionalMode = toolSettings.currentTool === 'number-directional' || currentInputMode === 'direc';
 
   const dataLayer = toDataLayer(activeLayer);
 
@@ -103,8 +108,24 @@ export const NumberInputPanel: React.FC = () => {
 
   const effectiveCellId = getEffectiveCellId();
 
+  // Get cell index for directional clues
+  const getCellIndex = (): number | null => {
+    if (!numberSelection) return null;
+    return numberSelection.row * grid.cols + numberSelection.col;
+  };
+
+  const cellIndex = getCellIndex();
+
   // Get current number value in selected cell (or merged cell group)
   const getCurrentValue = (): string | null => {
+    if (isDirectionalMode) {
+      // For directional mode, get value from directionalClues
+      if (cellIndex === null) return null;
+      const clues = puzzle[dataLayer].directionalClues || {};
+      const existing = Object.values(clues).find((c) => c.cell === cellIndex);
+      return existing?.value !== undefined ? String(existing.value) : null;
+    }
+
     if (!effectiveCellId) return null;
     const numbers = puzzle[dataLayer].numbers;
 
@@ -116,8 +137,42 @@ export const NumberInputPanel: React.FC = () => {
 
   const currentValue = getCurrentValue();
 
+  // Convert arrowDirection (-1=none, 0=up, 1=left, 2=right, 3=down) to Penpa direction (0=none, 1=up, 2=down, 3=left, 4=right)
+  const directionMap: Record<number, number> = {
+    [-1]: 0, // no direction
+    0: 1, // up
+    1: 3, // left
+    2: 4, // right
+    3: 2, // down
+  };
+
   // Update number value in cell (or merged cell group)
-  const updateNumber = (newValue: string) => {
+  const updateNumberValue = (newValue: string) => {
+    if (isDirectionalMode) {
+      // For directional mode, use directionalClue
+      if (cellIndex === null) return;
+
+      // Remove existing directional clue
+      const clues = puzzle[dataLayer].directionalClues || {};
+      const existingEntry = Object.entries(clues).find(([, c]) => c.cell === cellIndex);
+      if (existingEntry) {
+        removeDirectionalClue(existingEntry[0]);
+      }
+
+      // Add new directional clue if value is not empty
+      if (newValue) {
+        // Use 0 for no direction (will display as centered number without arrow)
+        const direction = directionMap[toolSettings.arrowDirection] ?? 0;
+        addDirectionalClue({
+          cell: cellIndex,
+          direction: direction as 0 | 1 | 2 | 3 | 4,
+          value: parseInt(newValue, 10),
+          layer: dataLayer,
+        });
+      }
+      return;
+    }
+
     if (!effectiveCellId) return;
 
     // Remove existing number at center position
@@ -151,21 +206,23 @@ export const NumberInputPanel: React.FC = () => {
 
     // If current value is '?' or null, replace with the new digit
     if (currentValue === '?' || currentValue === null) {
-      updateNumber(String(num));
+      updateNumberValue(String(num));
     } else if (currentValue.length >= maxDigits) {
       // At max digits: clear and start with the new digit
-      updateNumber(String(num));
+      updateNumberValue(String(num));
     } else {
       // Append digit to existing value
       const newValue = currentValue + String(num);
-      updateNumber(newValue);
+      updateNumberValue(newValue);
     }
   };
 
   // Handle special button click (? replaces entire value)
   const handleSpecialClick = (value: string) => {
     if (!numberSelection) return;
-    updateNumber(value);
+    // Special characters like '?' are not valid for directional clues
+    if (isDirectionalMode) return;
+    updateNumberValue(value);
   };
 
   // Handle backspace - remove last digit
@@ -174,17 +231,17 @@ export const NumberInputPanel: React.FC = () => {
 
     if (currentValue.length <= 1) {
       // Remove entirely if only one character
-      updateNumber('');
+      updateNumberValue('');
     } else {
       // Remove last digit
-      updateNumber(currentValue.slice(0, -1));
+      updateNumberValue(currentValue.slice(0, -1));
     }
   };
 
   // Handle clear button - remove all
   const handleClear = () => {
     if (!numberSelection) return;
-    updateNumber('');
+    updateNumberValue('');
   };
 
   const isDisabled = !numberSelection;
