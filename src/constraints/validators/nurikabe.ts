@@ -9,7 +9,11 @@
  * - checkNumberAndUnshadeSize (island size matches number)
  */
 
-import { registerValidator, type ValidationContext } from './core';
+import {
+  registerCheckFunction,
+  type ValidationContext,
+  type CheckResult,
+} from './core';
 
 // Shaded cell color (nurikabe uses black/dark)
 const SHADE_COLORS = ['#000000', '#444444', '#808080'];
@@ -70,34 +74,38 @@ function getConnectedRegion(
 }
 
 // ========================================
-// Check Functions
+// Data-Driven Check Functions
 // ========================================
 
 /**
  * check2x2ShadeCell - No 2x2 squares of shaded cells
  */
-function check2x2ShadeCell(ctx: ValidationContext): void {
+function check2x2ShadeCell(ctx: ValidationContext): CheckResult {
   for (let row = 0; row < ctx.grid.rows - 1; row++) {
     for (let col = 0; col < ctx.grid.cols - 1; col++) {
       if (isShaded(ctx, row, col) &&
           isShaded(ctx, row, col + 1) &&
           isShaded(ctx, row + 1, col) &&
           isShaded(ctx, row + 1, col + 1)) {
-        ctx.addError('nurikabe.no-2x2-shade', 'cs2x2', 'validation.nurikabe.2x2Shade', [
-          `cell-${row}-${col}`,
-          `cell-${row}-${col + 1}`,
-          `cell-${row + 1}-${col}`,
-          `cell-${row + 1}-${col + 1}`,
-        ]);
+        return {
+          ok: false,
+          elements: [
+            `cell-${row}-${col}`,
+            `cell-${row}-${col + 1}`,
+            `cell-${row + 1}-${col}`,
+            `cell-${row + 1}-${col + 1}`,
+          ],
+        };
       }
     }
   }
+  return { ok: true };
 }
 
 /**
  * checkNoNumberInUnshade - Each island (unshaded region) must have a number
  */
-function checkNoNumberInUnshade(ctx: ValidationContext): void {
+function checkNoNumberInUnshade(ctx: ValidationContext): CheckResult {
   const visited = new Set<string>();
 
   for (let row = 0; row < ctx.grid.rows; row++) {
@@ -123,16 +131,17 @@ function checkNoNumberInUnshade(ctx: ValidationContext): void {
       if (!hasNumber && island.size > 0) {
         // Get one cell from island for error reporting
         const [r, c] = Array.from(island)[0].split('-').map(Number);
-        ctx.addError('nurikabe.island-has-number', 'bkNoNum', 'validation.nurikabe.islandNoNumber', [`cell-${r}-${c}`]);
+        return { ok: false, elements: [`cell-${r}-${c}`] };
       }
     }
   }
+  return { ok: true };
 }
 
 /**
  * checkConnectShade - All shaded cells must be connected
  */
-function checkConnectShade(ctx: ValidationContext): void {
+function checkConnectShade(ctx: ValidationContext): CheckResult {
   // Find all shaded cells
   const shadedCells: { row: number; col: number }[] = [];
   for (let row = 0; row < ctx.grid.rows; row++) {
@@ -143,7 +152,7 @@ function checkConnectShade(ctx: ValidationContext): void {
     }
   }
 
-  if (shadedCells.length === 0) return;
+  if (shadedCells.length === 0) return { ok: true };
 
   // Get connected region starting from first shaded cell
   const connected = getConnectedRegion(
@@ -155,14 +164,15 @@ function checkConnectShade(ctx: ValidationContext): void {
 
   // Check if all shaded cells are connected
   if (connected.size !== shadedCells.length) {
-    ctx.addError('nurikabe.shade-connected', 'csDivide', 'validation.nurikabe.shadeNotConnected');
+    return { ok: false };
   }
+  return { ok: true };
 }
 
 /**
  * checkDoubleNumberInUnshade - Each island has at most one number
  */
-function checkDoubleNumberInUnshade(ctx: ValidationContext): void {
+function checkDoubleNumberInUnshade(ctx: ValidationContext): CheckResult {
   const visited = new Set<string>();
 
   for (let row = 0; row < ctx.grid.rows; row++) {
@@ -187,16 +197,17 @@ function checkDoubleNumberInUnshade(ctx: ValidationContext): void {
       }
 
       if (numberCount >= 2) {
-        ctx.addError('nurikabe.one-number-per-island', 'bkNumGe2', 'validation.nurikabe.multipleNumbers', [lastNumberCell]);
+        return { ok: false, elements: [lastNumberCell] };
       }
     }
   }
+  return { ok: true };
 }
 
 /**
  * checkNumberAndUnshadeSize - Island size must match the number
  */
-function checkNumberAndUnshadeSize(ctx: ValidationContext): void {
+function checkNumberAndUnshadeSize(ctx: ValidationContext): CheckResult {
   const visited = new Set<string>();
 
   for (let row = 0; row < ctx.grid.rows; row++) {
@@ -227,23 +238,19 @@ function checkNumberAndUnshadeSize(ctx: ValidationContext): void {
 
       // Check if island size matches the number
       if (islandNumber !== null && island.size !== islandNumber) {
-        ctx.addError('nurikabe.island-size', 'bkSizeNe', 'validation.nurikabe.islandSizeNotMatch', [numberCellId]);
+        return { ok: false, elements: [numberCellId] };
       }
     }
   }
+  return { ok: true };
 }
 
 // ========================================
-// Register Plugin
+// Register Check Functions
 // ========================================
 
-registerValidator({
-  pid: 'nurikabe',
-  checks: [
-    { name: 'check2x2ShadeCell', ruleId: 'nurikabe.no-2x2-shade', fn: check2x2ShadeCell },
-    { name: 'checkNoNumberInUnshade', ruleId: 'nurikabe.island-has-number', fn: checkNoNumberInUnshade },
-    { name: 'checkConnectShade', ruleId: 'nurikabe.shade-connected', fn: checkConnectShade },
-    { name: 'checkDoubleNumberInUnshade', ruleId: 'nurikabe.one-number-per-island', fn: checkDoubleNumberInUnshade },
-    { name: 'checkNumberAndUnshadeSize', ruleId: 'nurikabe.island-size', fn: checkNumberAndUnshadeSize },
-  ],
-});
+registerCheckFunction('check2x2ShadeCell', check2x2ShadeCell);
+registerCheckFunction('checkNoNumberInUnshade', checkNoNumberInUnshade);
+registerCheckFunction('checkConnectShade', checkConnectShade);
+registerCheckFunction('checkDoubleNumberInUnshade', checkDoubleNumberInUnshade);
+registerCheckFunction('checkNumberAndUnshadeSize', checkNumberAndUnshadeSize);

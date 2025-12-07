@@ -14,10 +14,20 @@ export const nurikabeSchema: ConstraintSchema = {
   gridStyle: 'normal', // Nurikabe uses normal grid style
   frameStyle: 'thick', // Nurikabe uses thick frame
 
+  // Shading constraint: prevent shading adjacent cells is NOT applied to nurikabe
+  // (nurikabe allows 2x2 shade blocks to form, unlike heyawake)
+  noAdjacentShade: false,
+
+  // Auto mode types based on pzprjs mouseinput_auto
+  // Edit: number input
+  // Play: shade/unshade cycle
+  autoModeEdit: 'number',
+  autoModePlay: 'cell',
+
   // Input modes from pzprjs/src/variety/nurikabe.js
   inputModes: {
-    edit: ['number', 'clear', 'info-blk'],
-    play: ['shade', 'unshade', 'info-blk'],
+    edit: ['auto', 'number', 'clear', 'info-blk'],
+    play: ['auto', 'shade', 'unshade', 'info-blk'],
   },
 
   problem: [

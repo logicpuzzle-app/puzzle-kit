@@ -10,52 +10,42 @@
  * - checkDeadendLine (vertex has exactly 1 line)
  */
 
-import { registerValidator, type ValidationContext, type Direction } from './core';
+import {
+  registerCheckFunction,
+  type ValidationContext,
+  type CheckResult,
+} from './core';
+
+// ========================================
+// Helper Functions
+// ========================================
 
 /**
- * Get the number of edge lines around a cell
- * Slitherlink uses edge-based lines (vertex to vertex on cell borders)
+ * Get the number of edge lines around a cell in topology mode
+ * Searches for edges between vertices of a specific cell
  */
-function getCellBorderLineCount(ctx: ValidationContext, row: number, col: number): number {
+function getCellBorderLineCountTopology(
+  ctx: ValidationContext,
+  cellId: string,
+  cellVertices: string[]
+): number {
   let count = 0;
   const edges = ctx.puzzle.answer.edges;
 
-  // Check all 4 edges of the cell
-  // Top edge: vertex(row,col) to vertex(row,col+1)
-  // Bottom edge: vertex(row+1,col) to vertex(row+1,col+1)
-  // Left edge: vertex(row,col) to vertex(row+1,col)
-  // Right edge: vertex(row,col+1) to vertex(row+1,col+1)
+  // Build a set of valid edge pairs for this cell
+  const validEdges = new Set<string>();
+  for (let i = 0; i < cellVertices.length; i++) {
+    const v1 = cellVertices[i];
+    const v2 = cellVertices[(i + 1) % cellVertices.length];
+    // Normalize edge key (smaller vertex ID first)
+    const key = v1 < v2 ? `${v1}|${v2}` : `${v2}|${v1}`;
+    validEdges.add(key);
+  }
 
+  // Count edges that are on this cell's border
   for (const edge of Object.values(edges)) {
-    // Parse vertex IDs (format: vertex-row-col)
-    const fromMatch = edge.from.match(/vertex-(\d+)-(\d+)/);
-    const toMatch = edge.to.match(/vertex-(\d+)-(\d+)/);
-    if (!fromMatch || !toMatch) continue;
-
-    const fromRow = parseInt(fromMatch[1]);
-    const fromCol = parseInt(fromMatch[2]);
-    const toRow = parseInt(toMatch[1]);
-    const toCol = parseInt(toMatch[2]);
-
-    // Check if this edge is on the border of our cell
-    // Top edge
-    if ((fromRow === row && fromCol === col && toRow === row && toCol === col + 1) ||
-        (fromRow === row && fromCol === col + 1 && toRow === row && toCol === col)) {
-      count++;
-    }
-    // Bottom edge
-    else if ((fromRow === row + 1 && fromCol === col && toRow === row + 1 && toCol === col + 1) ||
-             (fromRow === row + 1 && fromCol === col + 1 && toRow === row + 1 && toCol === col)) {
-      count++;
-    }
-    // Left edge
-    else if ((fromRow === row && fromCol === col && toRow === row + 1 && toCol === col) ||
-             (fromRow === row + 1 && fromCol === col && toRow === row && toCol === col)) {
-      count++;
-    }
-    // Right edge
-    else if ((fromRow === row && fromCol === col + 1 && toRow === row + 1 && toCol === col + 1) ||
-             (fromRow === row + 1 && fromCol === col + 1 && toRow === row && toCol === col + 1)) {
+    const key = edge.from < edge.to ? `${edge.from}|${edge.to}` : `${edge.to}|${edge.from}`;
+    if (validEdges.has(key)) {
       count++;
     }
   }
@@ -64,188 +54,169 @@ function getCellBorderLineCount(ctx: ValidationContext, row: number, col: number
 }
 
 /**
- * Get the number of lines connected to a vertex
+ * Build vertex connection counts from edges
  */
-function getVertexLineCount(ctx: ValidationContext, row: number, col: number): number {
-  let count = 0;
+function buildVertexCounts(ctx: ValidationContext): Map<string, number> {
+  const vertexCounts = new Map<string, number>();
   const edges = ctx.puzzle.answer.edges;
 
   for (const edge of Object.values(edges)) {
-    const fromMatch = edge.from.match(/vertex-(\d+)-(\d+)/);
-    const toMatch = edge.to.match(/vertex-(\d+)-(\d+)/);
-    if (!fromMatch || !toMatch) continue;
-
-    const fromRow = parseInt(fromMatch[1]);
-    const fromCol = parseInt(fromMatch[2]);
-    const toRow = parseInt(toMatch[1]);
-    const toCol = parseInt(toMatch[2]);
-
-    if ((fromRow === row && fromCol === col) || (toRow === row && toCol === col)) {
-      count++;
-    }
+    vertexCounts.set(edge.from, (vertexCounts.get(edge.from) || 0) + 1);
+    vertexCounts.set(edge.to, (vertexCounts.get(edge.to) || 0) + 1);
   }
 
-  return count;
-}
-
-/**
- * Get adjacent vertices connected by lines from a given vertex
- */
-function getConnectedVertices(ctx: ValidationContext, row: number, col: number): { row: number; col: number }[] {
-  const connected: { row: number; col: number }[] = [];
-  const edges = ctx.puzzle.answer.edges;
-
-  for (const edge of Object.values(edges)) {
-    const fromMatch = edge.from.match(/vertex-(\d+)-(\d+)/);
-    const toMatch = edge.to.match(/vertex-(\d+)-(\d+)/);
-    if (!fromMatch || !toMatch) continue;
-
-    const fromRow = parseInt(fromMatch[1]);
-    const fromCol = parseInt(fromMatch[2]);
-    const toRow = parseInt(toMatch[1]);
-    const toCol = parseInt(toMatch[2]);
-
-    if (fromRow === row && fromCol === col) {
-      connected.push({ row: toRow, col: toCol });
-    } else if (toRow === row && toCol === col) {
-      connected.push({ row: fromRow, col: fromCol });
-    }
-  }
-
-  return connected;
+  return vertexCounts;
 }
 
 // ========================================
-// Check Functions
+// Data-Driven Check Functions
 // ========================================
 
 /**
  * checkLineExist - Check if any edge lines exist
  */
-function checkLineExist(ctx: ValidationContext): void {
-  const hasLines = Object.keys(ctx.puzzle.answer.edges).length > 0;
-  if (!hasLines) {
-    ctx.addError('slither.line-exist', 'brNoLine', 'validation.slither.noLines');
+function checkLineExist(ctx: ValidationContext): CheckResult {
+  const edgeCount = Object.keys(ctx.puzzle.answer.edges).length;
+  if (edgeCount === 0) {
+    return { ok: false };
   }
+  return { ok: true };
 }
 
 /**
  * checkBranchLine - Check for branch points at vertices (more than 2 lines)
  */
-function checkBranchLine(ctx: ValidationContext): void {
-  // Vertices are at (0..rows, 0..cols) - one more than cells
-  for (let row = 0; row <= ctx.grid.rows; row++) {
-    for (let col = 0; col <= ctx.grid.cols; col++) {
-      const count = getVertexLineCount(ctx, row, col);
-      if (count > 2) {
-        ctx.addError('slither.no-branch', 'lnBranch', 'validation.slither.branch', [`vertex-${row}-${col}`]);
-      }
+function checkBranchLine(ctx: ValidationContext): CheckResult {
+  const vertexCounts = buildVertexCounts(ctx);
+
+  for (const [vertexId, count] of vertexCounts) {
+    if (count > 2) {
+      return { ok: false, elements: [vertexId] };
     }
   }
+  return { ok: true };
 }
 
 /**
  * checkCrossLine - Check for crossing at vertices (4 lines)
  */
-function checkCrossLine(ctx: ValidationContext): void {
-  for (let row = 0; row <= ctx.grid.rows; row++) {
-    for (let col = 0; col <= ctx.grid.cols; col++) {
-      const count = getVertexLineCount(ctx, row, col);
-      if (count === 4) {
-        ctx.addError('slither.no-cross', 'lnCross', 'validation.slither.cross', [`vertex-${row}-${col}`]);
-      }
+function checkCrossLine(ctx: ValidationContext): CheckResult {
+  const vertexCounts = buildVertexCounts(ctx);
+
+  for (const [vertexId, count] of vertexCounts) {
+    if (count === 4) {
+      return { ok: false, elements: [vertexId] };
     }
   }
+  return { ok: true };
 }
 
 /**
  * checkdir4BorderLine - Check that clue numbers match adjacent line count
  */
-function checkdir4BorderLine(ctx: ValidationContext): void {
-  for (let row = 0; row < ctx.grid.rows; row++) {
-    for (let col = 0; col < ctx.grid.cols; col++) {
-      const numStr = ctx.getNumber(row, col);
+function checkdir4BorderLine(ctx: ValidationContext): CheckResult {
+  // In topology mode, iterate over topology cells
+  if (ctx.topology) {
+    for (const cell of ctx.topology.cells.values()) {
+      // Get number for this cell (may be stored with originalCells ID)
+      let numStr: string | null = null;
+
+      // Try the cell ID directly first
+      numStr = ctx.getNumberByCellId(cell.id);
+
+      // If not found, try original cells
+      if (numStr === null && cell.originalCells) {
+        for (const origId of cell.originalCells) {
+          numStr = ctx.getNumberByCellId(origId);
+          if (numStr !== null) break;
+        }
+      }
+
       if (numStr === null) continue;
 
       const clue = parseInt(numStr);
       if (isNaN(clue) || clue < 0 || clue > 4) continue;
 
-      const lineCount = getCellBorderLineCount(ctx, row, col);
+      // Count lines on this cell's boundary using topology
+      const lineCount = getCellBorderLineCountTopology(ctx, cell.id, cell.boundaryVertices);
       if (lineCount !== clue) {
-        ctx.addError('slither.clue-count', 'nmLineNe', 'validation.slither.clueNotMatch', [`cell-${row}-${col}`]);
+        return { ok: false, elements: [cell.id] };
       }
     }
   }
+
+  return { ok: true };
 }
 
 /**
  * checkDeadendLine - Check for dead ends at vertices (exactly 1 line)
  */
-function checkDeadendLine(ctx: ValidationContext): void {
-  for (let row = 0; row <= ctx.grid.rows; row++) {
-    for (let col = 0; col <= ctx.grid.cols; col++) {
-      const count = getVertexLineCount(ctx, row, col);
-      if (count === 1) {
-        ctx.addError('slither.no-deadend', 'lnDeadEnd', 'validation.slither.deadend', [`vertex-${row}-${col}`]);
-      }
+function checkDeadendLine(ctx: ValidationContext): CheckResult {
+  const vertexCounts = buildVertexCounts(ctx);
+
+  for (const [vertexId, count] of vertexCounts) {
+    if (count === 1) {
+      return { ok: false, elements: [vertexId] };
     }
   }
+  return { ok: true };
 }
 
 /**
  * checkOneLoop - Check that all lines form a single connected loop
  */
-function checkOneLoop(ctx: ValidationContext): void {
-  // Find all vertices with lines
-  const verticesWithLines: { row: number; col: number }[] = [];
-  for (let row = 0; row <= ctx.grid.rows; row++) {
-    for (let col = 0; col <= ctx.grid.cols; col++) {
-      const count = getVertexLineCount(ctx, row, col);
-      if (count > 0) {
-        verticesWithLines.push({ row, col });
-      }
-    }
+function checkOneLoop(ctx: ValidationContext): CheckResult {
+  const edges = ctx.puzzle.answer.edges;
+  const edgeList = Object.values(edges);
+
+  if (edgeList.length === 0) return { ok: true };
+
+  // Build adjacency from edges (vertex ID based)
+  const adjacency = new Map<string, string[]>();
+
+  for (const edge of edgeList) {
+    if (!adjacency.has(edge.from)) adjacency.set(edge.from, []);
+    if (!adjacency.has(edge.to)) adjacency.set(edge.to, []);
+    adjacency.get(edge.from)!.push(edge.to);
+    adjacency.get(edge.to)!.push(edge.from);
   }
 
-  if (verticesWithLines.length === 0) return;
+  const allVertices = Array.from(adjacency.keys());
+  if (allVertices.length === 0) return { ok: true };
 
-  // BFS to find connected component
+  // BFS to find connected component using vertex IDs
   const visited = new Set<string>();
-  const queue: { row: number; col: number }[] = [verticesWithLines[0]];
-  visited.add(`${verticesWithLines[0].row}-${verticesWithLines[0].col}`);
+  const queue: string[] = [allVertices[0]];
+  visited.add(allVertices[0]);
 
   while (queue.length > 0) {
     const current = queue.shift()!;
-    const connected = getConnectedVertices(ctx, current.row, current.col);
+    const connected = adjacency.get(current) || [];
 
     for (const neighbor of connected) {
-      const key = `${neighbor.row}-${neighbor.col}`;
-      if (!visited.has(key)) {
-        visited.add(key);
+      if (!visited.has(neighbor)) {
+        visited.add(neighbor);
         queue.push(neighbor);
       }
     }
   }
 
   // Check if all vertices with lines are connected
-  const allConnected = verticesWithLines.every(v => visited.has(`${v.row}-${v.col}`));
+  const allConnected = allVertices.every(v => visited.has(v));
+
   if (!allConnected) {
-    ctx.addError('slither.single-loop', 'lnPlLoop', 'validation.slither.multipleLoops');
+    return { ok: false };
   }
+  return { ok: true };
 }
 
 // ========================================
-// Register Plugin
+// Register Check Functions
 // ========================================
 
-registerValidator({
-  pid: 'slither',
-  checks: [
-    { name: 'checkLineExist', ruleId: 'slither.line-exist', fn: checkLineExist },
-    { name: 'checkBranchLine', ruleId: 'slither.no-branch', fn: checkBranchLine },
-    { name: 'checkCrossLine', ruleId: 'slither.no-cross', fn: checkCrossLine },
-    { name: 'checkdir4BorderLine', ruleId: 'slither.clue-count', fn: checkdir4BorderLine },
-    { name: 'checkOneLoop', ruleId: 'slither.single-loop', fn: checkOneLoop },
-    { name: 'checkDeadendLine', ruleId: 'slither.no-deadend', fn: checkDeadendLine },
-  ],
-});
+registerCheckFunction('checkLineExist', checkLineExist);
+registerCheckFunction('checkBranchLine', checkBranchLine);
+registerCheckFunction('checkCrossLine', checkCrossLine);
+registerCheckFunction('checkdir4BorderLine', checkdir4BorderLine);
+registerCheckFunction('checkDeadendLine', checkDeadendLine);
+registerCheckFunction('checkOneLoop', checkOneLoop);

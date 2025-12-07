@@ -12,7 +12,12 @@
  * - checkEmptyCell_yajilin
  */
 
-import { registerValidator, type ValidationContext, type Direction } from './core';
+import {
+  registerCheckFunction,
+  type ValidationContext,
+  type CheckResult,
+  type Direction,
+} from './core';
 
 // Shaded cell color
 const SHADE_COLORS = ['#000000', '#444444', '#808080'];
@@ -111,97 +116,102 @@ function countShadedInDirection(ctx: ValidationContext, row: number, col: number
 }
 
 // ========================================
-// Check Functions
+// Data-Driven Check Functions
 // ========================================
 
 /**
  * checkBranchLine - Check for branch points (more than 2 lines at a cell)
  */
-function checkBranchLine(ctx: ValidationContext): void {
+function checkBranchLine(ctx: ValidationContext): CheckResult {
   for (let row = 0; row < ctx.grid.rows; row++) {
     for (let col = 0; col < ctx.grid.cols; col++) {
       const count = getCellLineCount(ctx, row, col);
       if (count > 2) {
-        ctx.addError('yajilin.no-branch', 'lnBranch', 'validation.yajilin.branch', [`cell-${row}-${col}`]);
+        return { ok: false, elements: [`cell-${row}-${col}`] };
       }
     }
   }
+  return { ok: true };
 }
 
 /**
  * checkCrossLine - Check for crossing lines (4 lines at a cell)
  */
-function checkCrossLine(ctx: ValidationContext): void {
+function checkCrossLine(ctx: ValidationContext): CheckResult {
   for (let row = 0; row < ctx.grid.rows; row++) {
     for (let col = 0; col < ctx.grid.cols; col++) {
       const count = getCellLineCount(ctx, row, col);
       if (count === 4) {
-        ctx.addError('yajilin.no-cross', 'lnCross', 'validation.yajilin.cross', [`cell-${row}-${col}`]);
+        return { ok: false, elements: [`cell-${row}-${col}`] };
       }
     }
   }
+  return { ok: true };
 }
 
 /**
  * checkLineOnShadeCell - Lines cannot pass through shaded cells
  */
-function checkLineOnShadeCell(ctx: ValidationContext): void {
+function checkLineOnShadeCell(ctx: ValidationContext): CheckResult {
   for (let row = 0; row < ctx.grid.rows; row++) {
     for (let col = 0; col < ctx.grid.cols; col++) {
       if (isShaded(ctx, row, col)) {
         const count = getCellLineCount(ctx, row, col);
         if (count > 0) {
-          ctx.addError('yajilin.no-line-on-shade', 'lnOnShade', 'validation.yajilin.lineOnShade', [`cell-${row}-${col}`]);
+          return { ok: false, elements: [`cell-${row}-${col}`] };
         }
       }
     }
   }
+  return { ok: true };
 }
 
 /**
  * checkAdjacentShadeCell - Shaded cells cannot be orthogonally adjacent
  */
-function checkAdjacentShadeCell(ctx: ValidationContext): void {
+function checkAdjacentShadeCell(ctx: ValidationContext): CheckResult {
   for (let row = 0; row < ctx.grid.rows; row++) {
     for (let col = 0; col < ctx.grid.cols; col++) {
       if (!isShaded(ctx, row, col)) continue;
 
       // Check right neighbor
       if (col + 1 < ctx.grid.cols && isShaded(ctx, row, col + 1)) {
-        ctx.addError('yajilin.no-adjacent-shade', 'csAdjacent', 'validation.yajilin.adjacentShade', [
-          `cell-${row}-${col}`,
-          `cell-${row}-${col + 1}`,
-        ]);
+        return {
+          ok: false,
+          elements: [`cell-${row}-${col}`, `cell-${row}-${col + 1}`],
+        };
       }
       // Check bottom neighbor
       if (row + 1 < ctx.grid.rows && isShaded(ctx, row + 1, col)) {
-        ctx.addError('yajilin.no-adjacent-shade', 'csAdjacent', 'validation.yajilin.adjacentShade', [
-          `cell-${row}-${col}`,
-          `cell-${row + 1}-${col}`,
-        ]);
+        return {
+          ok: false,
+          elements: [`cell-${row}-${col}`, `cell-${row + 1}-${col}`],
+        };
       }
     }
   }
+  return { ok: true };
 }
 
 /**
  * checkDeadendLine - Check for dead ends (exactly 1 line at a cell)
  */
-function checkDeadendLine(ctx: ValidationContext): void {
+function checkDeadendLine(ctx: ValidationContext): CheckResult {
   for (let row = 0; row < ctx.grid.rows; row++) {
     for (let col = 0; col < ctx.grid.cols; col++) {
       const count = getCellLineCount(ctx, row, col);
       if (count === 1) {
-        ctx.addError('yajilin.no-deadend', 'lnDeadEnd', 'validation.yajilin.deadend', [`cell-${row}-${col}`]);
+        return { ok: false, elements: [`cell-${row}-${col}`] };
       }
     }
   }
+  return { ok: true };
 }
 
 /**
  * checkArrowNumber - Arrow number must match shaded cells in that direction
  */
-function checkArrowNumber(ctx: ValidationContext): void {
+function checkArrowNumber(ctx: ValidationContext): CheckResult {
   for (let row = 0; row < ctx.grid.rows; row++) {
     for (let col = 0; col < ctx.grid.cols; col++) {
       const clue = getDirectionalClue(ctx, row, col);
@@ -209,16 +219,17 @@ function checkArrowNumber(ctx: ValidationContext): void {
 
       const shadedCount = countShadedInDirection(ctx, row, col, clue.direction);
       if (shadedCount !== clue.number) {
-        ctx.addError('yajilin.arrow-count', 'anShadeNe', 'validation.yajilin.arrowCountNotMatch', [`cell-${row}-${col}`]);
+        return { ok: false, elements: [`cell-${row}-${col}`] };
       }
     }
   }
+  return { ok: true };
 }
 
 /**
  * checkOneLoop - All lines form a single connected loop
  */
-function checkOneLoop(ctx: ValidationContext): void {
+function checkOneLoop(ctx: ValidationContext): CheckResult {
   // Find all cells with lines
   const cellsWithLines: { row: number; col: number }[] = [];
   for (let row = 0; row < ctx.grid.rows; row++) {
@@ -230,7 +241,7 @@ function checkOneLoop(ctx: ValidationContext): void {
     }
   }
 
-  if (cellsWithLines.length === 0) return;
+  if (cellsWithLines.length === 0) return { ok: true };
 
   // BFS to find connected component
   const visited = new Set<string>();
@@ -264,14 +275,15 @@ function checkOneLoop(ctx: ValidationContext): void {
   // Check if all cells with lines are connected
   const allConnected = cellsWithLines.every(c => visited.has(`${c.row}-${c.col}`));
   if (!allConnected) {
-    ctx.addError('yajilin.single-loop', 'lnPlLoop', 'validation.yajilin.multipleLoops');
+    return { ok: false };
   }
+  return { ok: true };
 }
 
 /**
  * checkEmptyCell_yajilin - No cell should be empty (not shaded, no line, no clue)
  */
-function checkEmptyCell_yajilin(ctx: ValidationContext): void {
+function checkEmptyCell_yajilin(ctx: ValidationContext): CheckResult {
   for (let row = 0; row < ctx.grid.rows; row++) {
     for (let col = 0; col < ctx.grid.cols; col++) {
       const lineCount = getCellLineCount(ctx, row, col);
@@ -279,26 +291,22 @@ function checkEmptyCell_yajilin(ctx: ValidationContext): void {
       const hasClue = getDirectionalClue(ctx, row, col) !== null;
 
       if (lineCount === 0 && !shaded && !hasClue) {
-        ctx.addError('yajilin.no-empty-cell', 'ceEmpty', 'validation.yajilin.emptyCell', [`cell-${row}-${col}`]);
+        return { ok: false, elements: [`cell-${row}-${col}`] };
       }
     }
   }
+  return { ok: true };
 }
 
 // ========================================
-// Register Plugin
+// Register Check Functions
 // ========================================
 
-registerValidator({
-  pid: 'yajilin',
-  checks: [
-    { name: 'checkBranchLine', ruleId: 'yajilin.no-branch', fn: checkBranchLine },
-    { name: 'checkCrossLine', ruleId: 'yajilin.no-cross', fn: checkCrossLine },
-    { name: 'checkLineOnShadeCell', ruleId: 'yajilin.no-line-on-shade', fn: checkLineOnShadeCell },
-    { name: 'checkAdjacentShadeCell', ruleId: 'yajilin.no-adjacent-shade', fn: checkAdjacentShadeCell },
-    { name: 'checkDeadendLine', ruleId: 'yajilin.no-deadend', fn: checkDeadendLine },
-    { name: 'checkArrowNumber', ruleId: 'yajilin.arrow-count', fn: checkArrowNumber },
-    { name: 'checkOneLoop', ruleId: 'yajilin.single-loop', fn: checkOneLoop },
-    { name: 'checkEmptyCell_yajilin', ruleId: 'yajilin.no-empty-cell', fn: checkEmptyCell_yajilin },
-  ],
-});
+registerCheckFunction('checkBranchLine', checkBranchLine);
+registerCheckFunction('checkCrossLine', checkCrossLine);
+registerCheckFunction('checkLineOnShadeCell', checkLineOnShadeCell);
+registerCheckFunction('checkAdjacentShadeCell', checkAdjacentShadeCell);
+registerCheckFunction('checkDeadendLine', checkDeadendLine);
+registerCheckFunction('checkArrowNumber', checkArrowNumber);
+registerCheckFunction('checkOneLoop', checkOneLoop);
+registerCheckFunction('checkEmptyCell_yajilin', checkEmptyCell_yajilin);

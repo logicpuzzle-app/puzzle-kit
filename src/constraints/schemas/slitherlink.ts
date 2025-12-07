@@ -14,10 +14,19 @@ export const slitherlinkSchema: ConstraintSchema = {
   gridStyle: 'dots', // Slitherlink uses dots grid style
   frameStyle: 'none', // Slitherlink has no frame
 
+  // Line target: Lines drawn on cell edges (vertices connected)
+  lineTarget: 'edge',
+
+  // Auto mode types based on pzprjs mouseinput_auto
+  // Edit: number input (0-3)
+  // Play: left=line, right=peke
+  autoModeEdit: 'number',
+  autoModePlay: 'line',
+
   // Input modes from pzprjs/src/variety/slither.js
   inputModes: {
-    edit: ['number', 'clear', 'info-line'],
-    play: ['line', 'peke', 'bgcolor', 'bgcolor1', 'bgcolor2', 'clear', 'info-line'],
+    edit: ['auto', 'number', 'clear', 'info-line'],
+    play: ['auto', 'line', 'peke', 'bgcolor', 'bgcolor1', 'bgcolor2', 'clear', 'info-line'],
   },
 
   problem: [

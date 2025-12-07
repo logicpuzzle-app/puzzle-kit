@@ -14,7 +14,12 @@
  * - checkOneLoop
  */
 
-import { registerValidator, type ValidationContext, type Direction } from './core';
+import {
+  registerCheckFunction,
+  type ValidationContext,
+  type CheckResult,
+  type Direction,
+} from './core';
 
 /**
  * Get pearl type at a cell
@@ -47,52 +52,55 @@ function inBounds(ctx: ValidationContext, row: number, col: number): boolean {
 }
 
 // ========================================
-// Check Functions (pzprjs-style)
+// Data-Driven Check Functions
 // ========================================
 
 /**
  * checkLineExist - Check if any lines exist
  */
-function checkLineExist(ctx: ValidationContext): void {
+function checkLineExist(ctx: ValidationContext): CheckResult {
   const hasLines = Object.keys(ctx.puzzle.answer.lines).length > 0;
   if (!hasLines) {
-    ctx.addError('mashu.line-exist', 'brNoLine', 'validation.mashu.noLines');
+    return { ok: false };
   }
+  return { ok: true };
 }
 
 /**
  * checkBranchLine - Check for branch points (more than 2 lines at a cell)
  */
-function checkBranchLine(ctx: ValidationContext): void {
+function checkBranchLine(ctx: ValidationContext): CheckResult {
   for (let row = 0; row < ctx.grid.rows; row++) {
     for (let col = 0; col < ctx.grid.cols; col++) {
       const lineInfo = ctx.getCellLines(row, col);
       if (lineInfo.count > 2) {
-        ctx.addError('mashu.no-branch', 'lnBranch', 'validation.mashu.branch', [`cell-${row}-${col}`]);
+        return { ok: false, elements: [`cell-${row}-${col}`] };
       }
     }
   }
+  return { ok: true };
 }
 
 /**
  * checkCrossLine - Check for crossing lines (4 lines at a cell)
  * Note: In cell-based line puzzles like Mashu, this is essentially same as branch check
  */
-function checkCrossLine(ctx: ValidationContext): void {
+function checkCrossLine(ctx: ValidationContext): CheckResult {
   for (let row = 0; row < ctx.grid.rows; row++) {
     for (let col = 0; col < ctx.grid.cols; col++) {
       const lineInfo = ctx.getCellLines(row, col);
       if (lineInfo.count === 4) {
-        ctx.addError('mashu.no-cross', 'lnCross', 'validation.mashu.cross', [`cell-${row}-${col}`]);
+        return { ok: false, elements: [`cell-${row}-${col}`] };
       }
     }
   }
+  return { ok: true };
 }
 
 /**
  * checkWhitePearl1 - White pearls must have straight lines (not curves)
  */
-function checkWhitePearl1(ctx: ValidationContext): void {
+function checkWhitePearl1(ctx: ValidationContext): CheckResult {
   for (let row = 0; row < ctx.grid.rows; row++) {
     for (let col = 0; col < ctx.grid.cols; col++) {
       const pearl = getPearlType(ctx, row, col);
@@ -100,16 +108,17 @@ function checkWhitePearl1(ctx: ValidationContext): void {
 
       const lineInfo = ctx.getCellLines(row, col);
       if (lineInfo.count === 2 && lineInfo.isCurve) {
-        ctx.addError('mashu.white-straight', 'mashuWCurve', 'validation.mashu.whiteNotStraight', [`cell-${row}-${col}`]);
+        return { ok: false, elements: [`cell-${row}-${col}`] };
       }
     }
   }
+  return { ok: true };
 }
 
 /**
  * checkBlackPearl1 - Black pearls must have turning lines (not straight)
  */
-function checkBlackPearl1(ctx: ValidationContext): void {
+function checkBlackPearl1(ctx: ValidationContext): CheckResult {
   for (let row = 0; row < ctx.grid.rows; row++) {
     for (let col = 0; col < ctx.grid.cols; col++) {
       const pearl = getPearlType(ctx, row, col);
@@ -117,17 +126,18 @@ function checkBlackPearl1(ctx: ValidationContext): void {
 
       const lineInfo = ctx.getCellLines(row, col);
       if (lineInfo.count === 2 && lineInfo.isStraight) {
-        ctx.addError('mashu.black-turn', 'mashuBStrig', 'validation.mashu.blackNotTurn', [`cell-${row}-${col}`]);
+        return { ok: false, elements: [`cell-${row}-${col}`] };
       }
     }
   }
+  return { ok: true };
 }
 
 /**
  * checkBlackPearl2 - Black pearls' neighbors in line directions must continue straight
  * (i.e., neighbors must NOT be curves)
  */
-function checkBlackPearl2(ctx: ValidationContext): void {
+function checkBlackPearl2(ctx: ValidationContext): CheckResult {
   for (let row = 0; row < ctx.grid.rows; row++) {
     for (let col = 0; col < ctx.grid.cols; col++) {
       const pearl = getPearlType(ctx, row, col);
@@ -146,19 +156,19 @@ function checkBlackPearl2(ctx: ValidationContext): void {
         // Actually, pzprjs checks if neighbor is curve - if so, that's an error
         // The black pearl requires extension straight, so neighbor should be straight or continue
         if (neighborInfo.count === 2 && neighborInfo.isCurve) {
-          ctx.addError('mashu.black-extend', 'mashuBCvNbr', 'validation.mashu.blackNoExtend', [`cell-${row}-${col}`]);
-          break; // One error per pearl is enough
+          return { ok: false, elements: [`cell-${row}-${col}`] };
         }
       }
     }
   }
+  return { ok: true };
 }
 
 /**
  * checkWhitePearl2 - White pearls require that at least one neighbor in line direction turns
  * (neighbors must NOT all be straight)
  */
-function checkWhitePearl2(ctx: ValidationContext): void {
+function checkWhitePearl2(ctx: ValidationContext): CheckResult {
   for (let row = 0; row < ctx.grid.rows; row++) {
     for (let col = 0; col < ctx.grid.cols; col++) {
       const pearl = getPearlType(ctx, row, col);
@@ -181,16 +191,17 @@ function checkWhitePearl2(ctx: ValidationContext): void {
 
       // If both neighbors are straight, that's an error (white pearl needs a turn at neighbor)
       if (straightCount >= 2) {
-        ctx.addError('mashu.white-turn-neighbor', 'mashuWStNbr', 'validation.mashu.whiteNoTurnNeighbor', [`cell-${row}-${col}`]);
+        return { ok: false, elements: [`cell-${row}-${col}`] };
       }
     }
   }
+  return { ok: true };
 }
 
 /**
  * checkNoLinePearl - All pearls must have lines passing through
  */
-function checkNoLinePearl(ctx: ValidationContext): void {
+function checkNoLinePearl(ctx: ValidationContext): CheckResult {
   for (let row = 0; row < ctx.grid.rows; row++) {
     for (let col = 0; col < ctx.grid.cols; col++) {
       const pearl = getPearlType(ctx, row, col);
@@ -198,30 +209,32 @@ function checkNoLinePearl(ctx: ValidationContext): void {
 
       const lineInfo = ctx.getCellLines(row, col);
       if (lineInfo.count === 0) {
-        ctx.addError('mashu.pass-all-pearls', 'mashuOnLine', 'validation.mashu.pearlNoLine', [`cell-${row}-${col}`]);
+        return { ok: false, elements: [`cell-${row}-${col}`] };
       }
     }
   }
+  return { ok: true };
 }
 
 /**
  * checkDeadendLine - Check for dead ends (exactly 1 line at a cell)
  */
-function checkDeadendLine(ctx: ValidationContext): void {
+function checkDeadendLine(ctx: ValidationContext): CheckResult {
   for (let row = 0; row < ctx.grid.rows; row++) {
     for (let col = 0; col < ctx.grid.cols; col++) {
       const lineInfo = ctx.getCellLines(row, col);
       if (lineInfo.count === 1) {
-        ctx.addError('mashu.no-deadend', 'lnDeadEnd', 'validation.mashu.deadend', [`cell-${row}-${col}`]);
+        return { ok: false, elements: [`cell-${row}-${col}`] };
       }
     }
   }
+  return { ok: true };
 }
 
 /**
  * checkOneLoop - Check for single connected loop (no multiple loops)
  */
-function checkOneLoop(ctx: ValidationContext): void {
+function checkOneLoop(ctx: ValidationContext): CheckResult {
   // Find all cells with lines
   const cellsWithLines: { row: number; col: number }[] = [];
   for (let row = 0; row < ctx.grid.rows; row++) {
@@ -233,7 +246,7 @@ function checkOneLoop(ctx: ValidationContext): void {
     }
   }
 
-  if (cellsWithLines.length === 0) return;
+  if (cellsWithLines.length === 0) return { ok: true };
 
   // BFS to find connected component
   const visited = new Set<string>();
@@ -261,26 +274,22 @@ function checkOneLoop(ctx: ValidationContext): void {
   // Check if all cells with lines are connected
   const allConnected = cellsWithLines.every(c => visited.has(`${c.row}-${c.col}`));
   if (!allConnected) {
-    ctx.addError('mashu.single-loop', 'lnPlLoop', 'validation.mashu.multipleLoops');
+    return { ok: false };
   }
+  return { ok: true };
 }
 
 // ========================================
-// Register Plugin
+// Register Check Functions
 // ========================================
 
-registerValidator({
-  pid: 'mashu',
-  checks: [
-    { name: 'checkLineExist', ruleId: 'mashu.line-exist', fn: checkLineExist },
-    { name: 'checkBranchLine', ruleId: 'mashu.no-branch', fn: checkBranchLine },
-    { name: 'checkCrossLine', ruleId: 'mashu.no-cross', fn: checkCrossLine },
-    { name: 'checkWhitePearl1', ruleId: 'mashu.white-straight', fn: checkWhitePearl1 },
-    { name: 'checkBlackPearl1', ruleId: 'mashu.black-turn', fn: checkBlackPearl1 },
-    { name: 'checkBlackPearl2', ruleId: 'mashu.black-extend', fn: checkBlackPearl2 },
-    { name: 'checkWhitePearl2', ruleId: 'mashu.white-turn-neighbor', fn: checkWhitePearl2 },
-    { name: 'checkNoLinePearl', ruleId: 'mashu.pass-all-pearls', fn: checkNoLinePearl },
-    { name: 'checkDeadendLine', ruleId: 'mashu.no-deadend', fn: checkDeadendLine },
-    { name: 'checkOneLoop', ruleId: 'mashu.single-loop', fn: checkOneLoop },
-  ],
-});
+registerCheckFunction('checkLineExist', checkLineExist);
+registerCheckFunction('checkBranchLine', checkBranchLine);
+registerCheckFunction('checkCrossLine', checkCrossLine);
+registerCheckFunction('checkWhitePearl1', checkWhitePearl1);
+registerCheckFunction('checkBlackPearl1', checkBlackPearl1);
+registerCheckFunction('checkBlackPearl2', checkBlackPearl2);
+registerCheckFunction('checkWhitePearl2', checkWhitePearl2);
+registerCheckFunction('checkNoLinePearl', checkNoLinePearl);
+registerCheckFunction('checkDeadendLine', checkDeadendLine);
+registerCheckFunction('checkOneLoop', checkOneLoop);

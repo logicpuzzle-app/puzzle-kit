@@ -17,7 +17,7 @@ export type GridType = 'square' | 'hex' | 'tri' | 'pyramid' | 'special';
 /**
  * Target element types that constraints can apply to
  */
-export type ConstraintTarget = 'cell' | 'edge' | 'vertex' | 'region';
+export type ConstraintTarget = 'cell' | 'edge' | 'vertex' | 'region' | 'border';
 
 /**
  * Tool ID reference for palette configuration
@@ -126,6 +126,22 @@ export type FrameStyleType = 'normal' | 'thick' | 'double' | 'none';
 export type LineTargetType = 'edge' | 'cell';
 
 /**
+ * Auto mode type - what actions the auto mode performs
+ * Based on pzprjs autoplay_func / autoedit_func / mouseinput_auto
+ *
+ * Play mode types:
+ * 'cell': Black cell puzzles - cycle through shade/unshade/none (Nurikabe, Heyawake)
+ * 'line': Loop puzzles - left=line, right=peke (Slitherlink)
+ * 'line-cell': Loop + black cell puzzles - left=line, right=shade/unshade (Yajilin)
+ *
+ * Edit mode types:
+ * 'number': Number input puzzles - enter numbers in cells (Nurikabe, Slitherlink)
+ * 'border-number': Room puzzles - drag=border, click=number (Heyawake)
+ * 'direc': Directional number puzzles - enter direction+number (Yajilin)
+ */
+export type AutoModeType = 'cell' | 'line' | 'line-cell' | 'number' | 'border-number' | 'direc';
+
+/**
  * Complete constraint schema for a puzzle type
  */
 export interface ConstraintSchema {
@@ -149,6 +165,15 @@ export interface ConstraintSchema {
 
   /** Line target type for this puzzle (default: 'edge') */
   lineTarget?: LineTargetType;
+
+  /** Whether shading is constrained to non-adjacent cells (pzprjs: RBShadeCell) */
+  noAdjacentShade?: boolean;
+
+  /** Auto mode type for play mode (default: 'cell' for shade/unshade cycling) */
+  autoModePlay?: AutoModeType;
+
+  /** Auto mode type for edit mode (default: 'cell' for shade/unshade cycling) */
+  autoModeEdit?: AutoModeType;
 
   /** Input modes for edit/play (pzprjs-style) */
   inputModes: InputModes;

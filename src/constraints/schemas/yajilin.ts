@@ -14,10 +14,22 @@ export const yajilinSchema: ConstraintSchema = {
   gridStyle: 'normal', // Yajilin uses normal grid style
   frameStyle: 'thick', // Yajilin uses thick frame
 
+  // Shading constraint: Yajilin has noAdjacent shading rule
+  noAdjacentShade: true,
+
+  // Line target: Lines connect cell centers (not vertices like Slitherlink)
+  lineTarget: 'cell',
+
+  // Auto mode types based on pzprjs mouseinput_auto
+  // Edit: directional number input
+  // Play: left=line, right=shade/unshade
+  autoModeEdit: 'direc',
+  autoModePlay: 'line-cell',
+
   // Input modes from pzprjs/src/variety/yajilin.js
   inputModes: {
-    edit: ['number', 'direc', 'clear', 'info-line'],
-    play: ['line', 'peke', 'shade', 'unshade', 'info-line', 'completion'],
+    edit: ['auto', 'number', 'direc', 'clear', 'info-line'],
+    play: ['auto', 'line', 'peke', 'shade', 'unshade', 'info-line', 'completion'],
   },
 
   problem: [

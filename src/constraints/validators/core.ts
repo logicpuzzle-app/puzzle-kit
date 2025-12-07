@@ -6,7 +6,8 @@
  */
 
 import type { PuzzleState, GridConfig, LineElement, SymbolElement } from '../../types';
-import type { ConstraintSchema } from '../types';
+import type { ConstraintSchema, ConstraintRule } from '../types';
+import type { GridTopology } from '../../utils/topology';
 
 // ========================================
 // Types
@@ -48,6 +49,8 @@ export interface ValidationContext {
   grid: GridConfig;
   /** Constraint schema */
   schema: ConstraintSchema;
+  /** Grid topology (for topology-aware validation) */
+  topology: GridTopology | null;
   /** Set of enabled rule IDs */
   enabledRules: Set<string>;
   /** List of errors (mutable - validators add to this) */
@@ -58,8 +61,10 @@ export interface ValidationContext {
   getEdgeLines: () => Map<string, LineElement>;
   /** Helper: Get symbol at cell */
   getSymbol: (row: number, col: number) => SymbolElement | null;
-  /** Helper: Get number at cell */
+  /** Helper: Get number at cell (by row/col or by cellId) */
   getNumber: (row: number, col: number) => string | null;
+  /** Helper: Get number by cell ID */
+  getNumberByCellId: (cellId: string) => string | null;
   /** Helper: Check if cell has surface fill */
   isCellShaded: (row: number, col: number) => boolean;
   /** Helper: Check if a rule is enabled */
@@ -88,45 +93,52 @@ export interface CellLineInfo {
 }
 
 /**
- * Validator function type - a single check function
+ * Result of a single check function
  */
-export type ValidatorCheckFn = (ctx: ValidationContext) => void;
-
-/**
- * Validator plugin - collection of check functions for a puzzle type
- */
-export interface ValidatorPlugin {
-  /** Puzzle ID this validator handles */
-  pid: string;
-  /** Check functions in order (same as pzprjs checklist) */
-  checks: {
-    /** Check function name/ID */
-    name: string;
-    /** Associated rule ID */
-    ruleId: string;
-    /** The check function */
-    fn: ValidatorCheckFn;
-  }[];
-}
-
-// ========================================
-// Registry
-// ========================================
-
-const validatorPlugins: Map<string, ValidatorPlugin> = new Map();
-
-/**
- * Register a validator plugin
- */
-export function registerValidator(plugin: ValidatorPlugin): void {
-  validatorPlugins.set(plugin.pid, plugin);
+export interface CheckResult {
+  /** Whether the check passed */
+  ok: boolean;
+  /** Optional tag for multi-failcode rules */
+  tag?: string;
+  /** Affected element IDs (cells, edges, etc.) */
+  elements?: string[];
 }
 
 /**
- * Get a validator plugin by puzzle ID
+ * Data-driven check function type
+ * Returns a CheckResult instead of directly adding errors
  */
-export function getValidator(pid: string): ValidatorPlugin | undefined {
-  return validatorPlugins.get(pid);
+export type DataDrivenCheckFn = (ctx: ValidationContext) => CheckResult;
+
+// ========================================
+// Check Function Registry
+// ========================================
+
+/**
+ * Registry of check functions by name
+ * Maps pzpr-style check function names to implementations
+ */
+const checkFunctionRegistry: Map<string, DataDrivenCheckFn> = new Map();
+
+/**
+ * Register a check function
+ */
+export function registerCheckFunction(name: string, fn: DataDrivenCheckFn): void {
+  checkFunctionRegistry.set(name, fn);
+}
+
+/**
+ * Get a check function by name
+ */
+export function getCheckFunction(name: string): DataDrivenCheckFn | undefined {
+  return checkFunctionRegistry.get(name);
+}
+
+/**
+ * Get all registered check function names
+ */
+export function getRegisteredCheckFunctions(): string[] {
+  return Array.from(checkFunctionRegistry.keys());
 }
 
 // ========================================
@@ -222,7 +234,7 @@ function createSymbolHelper(puzzle: PuzzleState): (row: number, col: number) => 
 }
 
 /**
- * Create number helper
+ * Create number helper (by row/col)
  */
 function createNumberHelper(puzzle: PuzzleState): (row: number, col: number) => string | null {
   const numberMap = new Map<string, string>();
@@ -233,6 +245,21 @@ function createNumberHelper(puzzle: PuzzleState): (row: number, col: number) => 
 
   return (row: number, col: number) => {
     return numberMap.get(`cell-${row}-${col}`) || null;
+  };
+}
+
+/**
+ * Create number helper (by cellId)
+ */
+function createNumberByCellIdHelper(puzzle: PuzzleState): (cellId: string) => string | null {
+  const numberMap = new Map<string, string>();
+
+  for (const num of Object.values(puzzle.problem.numbers)) {
+    numberMap.set(num.cellId, num.value);
+  }
+
+  return (cellId: string) => {
+    return numberMap.get(cellId) || null;
   };
 }
 
@@ -255,32 +282,43 @@ function createShadedHelper(puzzle: PuzzleState): (row: number, col: number) => 
 }
 
 // ========================================
-// Main Validation Function
+// Data-Driven Validation
 // ========================================
 
 /**
- * Validate a puzzle against its schema
+ * Map a check result to a failcode using the rule's pzpr configuration
  */
-export function validatePuzzle(
+function mapFailcode(rule: ConstraintRule, result: CheckResult): string {
+  const failcodes = rule.pzpr?.failcodes;
+  if (!failcodes || failcodes.length === 0) {
+    return 'unknown';
+  }
+
+  // If result has a tag, use it to look up the failcode
+  if (result.tag && failcodes.length > 1) {
+    // Try to find a matching failcode by tag
+    const index = parseInt(result.tag, 10);
+    if (!isNaN(index) && index >= 0 && index < failcodes.length) {
+      return failcodes[index];
+    }
+  }
+
+  // Default to first failcode
+  return failcodes[0];
+}
+
+/**
+ * Run data-driven validation using schema's pzpr checklist
+ * This is the new approach that uses registered check functions
+ */
+export function runDataDrivenValidation(
   puzzle: PuzzleState,
   grid: GridConfig,
   schema: ConstraintSchema,
-  validationOverrides: Record<string, boolean> = {}
+  validationOverrides: Record<string, boolean> = {},
+  topology: GridTopology | null = null
 ): ValidationResult {
-  const plugin = validatorPlugins.get(schema.pid);
-
-  if (!plugin) {
-    // No validator available - return undecided
-    return {
-      complete: false,
-      undecided: true,
-      errors: [{
-        ruleId: 'no-validator',
-        failcode: 'noValidator',
-        messageKey: 'validation.noValidator',
-      }],
-    };
-  }
+  const errors: ValidationError[] = [];
 
   // Build set of enabled rules
   const enabledRules = new Set<string>();
@@ -292,17 +330,18 @@ export function validatePuzzle(
   }
 
   // Create validation context
-  const errors: ValidationError[] = [];
   const ctx: ValidationContext = {
     puzzle,
     grid,
     schema,
+    topology,
     enabledRules,
     errors,
     getCellLines: createCellLineHelper(puzzle, grid),
     getEdgeLines: createEdgeLinesHelper(puzzle),
     getSymbol: createSymbolHelper(puzzle),
     getNumber: createNumberHelper(puzzle),
+    getNumberByCellId: createNumberByCellIdHelper(puzzle),
     isCellShaded: createShadedHelper(puzzle),
     isRuleEnabled: (ruleId: string) => enabledRules.has(ruleId),
     addError: (ruleId: string, failcode: string, messageKey: string, elements?: string[]) => {
@@ -310,15 +349,32 @@ export function validatePuzzle(
     },
   };
 
-  // Run all checks
-  for (const check of plugin.checks) {
-    if (ctx.isRuleEnabled(check.ruleId)) {
-      check.fn(ctx);
+  // Run checks in order defined by schema's validation rules
+  for (const rule of schema.validation) {
+    if (!enabledRules.has(rule.id)) continue;
+
+    const checklist = rule.pzpr?.checklist ?? [];
+    for (const checkName of checklist) {
+      const checkFn = getCheckFunction(checkName);
+      if (!checkFn) {
+        console.warn(`[runDataDrivenValidation] Check function not found: ${checkName}`);
+        continue;
+      }
+
+      const result = checkFn(ctx);
+      if (!result.ok) {
+        const failcode = mapFailcode(rule, result);
+        errors.push({
+          ruleId: rule.id,
+          failcode,
+          messageKey: `validation.${schema.pid}.${failcode}`,
+          elements: result.elements,
+        });
+      }
     }
   }
 
   // Determine overall status
-  // Check if there are any answer elements
   const hasAnswerElements =
     Object.keys(puzzle.answer.lines).length > 0 ||
     Object.keys(puzzle.answer.edges).length > 0 ||
