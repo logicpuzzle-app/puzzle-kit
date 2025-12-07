@@ -304,43 +304,6 @@ export const PropertiesPanel: React.FC = () => {
                         </div>
                       </div>
                     )}
-                    {/* Button mode option - show when schema has 'auto' mode */}
-                    {currentSchema.inputModes.play.includes('auto') && (
-                      <div className="mt-3 p-2 bg-gray-50 rounded-sm border border-gray-200">
-                        <div className="font-medium text-xs text-gray-700 mb-2">
-                          {t('prop.buttonMode')}
-                        </div>
-                        <div className="flex gap-1">
-                          <button
-                            className={`flex-1 px-2 py-1.5 text-xs border rounded-sm transition-colors ${
-                              toolSettings.surfaceButtonMode === '1-button'
-                                ? 'bg-office-accent text-white border-office-accent'
-                                : 'bg-white border-office-border hover:bg-office-ribbon-hover'
-                            }`}
-                            onClick={() => setToolSettings({ surfaceButtonMode: '1-button' })}
-                            title={t('prop.buttonMode.1button.desc')}
-                          >
-                            {t('prop.buttonMode.1button')}
-                          </button>
-                          <button
-                            className={`flex-1 px-2 py-1.5 text-xs border rounded-sm transition-colors ${
-                              toolSettings.surfaceButtonMode === '2-button'
-                                ? 'bg-office-accent text-white border-office-accent'
-                                : 'bg-white border-office-border hover:bg-office-ribbon-hover'
-                            }`}
-                            onClick={() => setToolSettings({ surfaceButtonMode: '2-button' })}
-                            title={t('prop.buttonMode.2button.desc')}
-                          >
-                            {t('prop.buttonMode.2button')}
-                          </button>
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          {toolSettings.surfaceButtonMode === '1-button'
-                            ? t('prop.buttonMode.1button.desc')
-                            : t('prop.buttonMode.2button.desc')}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
 
@@ -423,44 +386,6 @@ export const PropertiesPanel: React.FC = () => {
 
           return (
             <>
-              {/* Button mode toggle - only for 'cell' type (play mode) */}
-              {autoModeType === 'cell' && (
-                <div className="p-2 bg-gray-50 rounded-sm border border-gray-200">
-                  <div className="font-medium text-xs text-gray-700 mb-2">
-                    {t('prop.buttonMode')}
-                  </div>
-                  <div className="flex gap-1">
-                    <button
-                      className={`flex-1 px-2 py-1.5 text-xs border rounded-sm transition-colors ${
-                        toolSettings.surfaceButtonMode === '1-button'
-                          ? 'bg-office-accent text-white border-office-accent'
-                          : 'bg-white border-office-border hover:bg-office-ribbon-hover'
-                      }`}
-                      onClick={() => setToolSettings({ surfaceButtonMode: '1-button' })}
-                      title={t('prop.buttonMode.1button.desc')}
-                    >
-                      {t('prop.buttonMode.1button')}
-                    </button>
-                    <button
-                      className={`flex-1 px-2 py-1.5 text-xs border rounded-sm transition-colors ${
-                        toolSettings.surfaceButtonMode === '2-button'
-                          ? 'bg-office-accent text-white border-office-accent'
-                          : 'bg-white border-office-border hover:bg-office-ribbon-hover'
-                      }`}
-                      onClick={() => setToolSettings({ surfaceButtonMode: '2-button' })}
-                      title={t('prop.buttonMode.2button.desc')}
-                    >
-                      {t('prop.buttonMode.2button')}
-                    </button>
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {toolSettings.surfaceButtonMode === '1-button'
-                      ? t('prop.buttonMode.1button.desc')
-                      : t('prop.buttonMode.2button.desc')}
-                  </div>
-                </div>
-              )}
-
               {/* Number input panel for number/direc/border-number auto mode types */}
               {(autoModeType === 'number' || autoModeType === 'direc' || autoModeType === 'border-number') && (
                 <NumberInputPanel />
