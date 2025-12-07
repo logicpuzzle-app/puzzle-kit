@@ -653,49 +653,48 @@ const resources = {
       'validation.congratulations': 'Congratulations! The puzzle is complete!',
       'validation.noValidator': 'No validator available for this puzzle type',
 
-      // Mashu validation messages
-      'validation.mashu.noLines': 'No lines drawn',
-      'validation.mashu.branch': 'Branch at cell',
-      'validation.mashu.cross': 'Crossing lines',
-      'validation.mashu.whiteNotStraight': 'White pearl: line must go straight',
-      'validation.mashu.blackNotTurn': 'Black pearl: line must turn',
-      'validation.mashu.blackNoExtend': 'Black pearl: must extend straight',
-      'validation.mashu.whiteNoTurnNeighbor': 'White pearl: neighbor must turn',
-      'validation.mashu.pearlNoLine': 'Pearl has no line',
-      'validation.mashu.deadend': 'Dead end',
-      'validation.mashu.multipleLoops': 'Multiple loops',
+      // Mashu validation messages (pzpr failcode keys)
+      'validation.mashu.brNoLine': 'No lines drawn',
+      'validation.mashu.lnBranch': 'Branch at cell',
+      'validation.mashu.lnCross': 'Crossing lines',
+      'validation.mashu.mashuWCurve': 'White pearl: line must go straight',
+      'validation.mashu.mashuBStrig': 'Black pearl: line must turn',
+      'validation.mashu.mashuBCvNbr': 'Black pearl: must extend straight',
+      'validation.mashu.mashuWStNbr': 'White pearl: neighbor must turn',
+      'validation.mashu.mashuOnLine': 'Pearl has no line',
+      'validation.mashu.lnDeadEnd': 'Dead end',
+      'validation.mashu.lnPlLoop': 'Multiple loops',
 
-      // Slitherlink validation messages
-      'validation.slither.noLines': 'No lines drawn',
-      'validation.slither.branch': 'Branch at vertex',
-      'validation.slither.cross': 'Crossing lines',
-      'validation.slither.clueNotMatch': 'Clue number mismatch',
-      'validation.slither.deadend': 'Dead end',
-      'validation.slither.multipleLoops': 'Multiple loops',
+      // Slitherlink validation messages (pzpr failcode keys)
+      'validation.slither.brNoLine': 'No lines drawn',
+      'validation.slither.lnBranch': 'Branch at vertex',
+      'validation.slither.lnCross': 'Crossing lines',
+      'validation.slither.nmLineNe': 'Clue number mismatch',
+      'validation.slither.lnDeadEnd': 'Dead end',
+      'validation.slither.lnPlLoop': 'Multiple loops',
 
-      // Nurikabe validation messages
-      'validation.nurikabe.2x2Shade': '2x2 shaded square',
-      'validation.nurikabe.islandNoNumber': 'Island has no number',
-      'validation.nurikabe.shadeNotConnected': 'Shaded cells not connected',
-      'validation.nurikabe.multipleNumbers': 'Multiple numbers in island',
-      'validation.nurikabe.islandSizeNotMatch': 'Island size mismatch',
+      // Nurikabe validation messages (pzpr failcode keys)
+      'validation.nurikabe.cs2x2': '2x2 shaded square',
+      'validation.nurikabe.bkNoNum': 'Island has no number',
+      'validation.nurikabe.csDivide': 'Shaded cells not connected',
+      'validation.nurikabe.bkNumGe2': 'Multiple numbers in island',
+      'validation.nurikabe.bkSizeNe': 'Island size mismatch',
 
-      // Yajilin validation messages
-      'validation.yajilin.branch': 'Branch at cell',
-      'validation.yajilin.cross': 'Crossing lines',
-      'validation.yajilin.lineOnShade': 'Line on shaded cell',
-      'validation.yajilin.adjacentShade': 'Adjacent shaded cells',
-      'validation.yajilin.deadend': 'Dead end',
-      'validation.yajilin.arrowCountNotMatch': 'Arrow count mismatch',
-      'validation.yajilin.multipleLoops': 'Multiple loops',
-      'validation.yajilin.emptyCell': 'Empty cell',
+      // Yajilin validation messages (pzpr failcode keys)
+      'validation.yajilin.lnBranch': 'Branch at cell',
+      'validation.yajilin.lnCross': 'Crossing lines',
+      'validation.yajilin.lnOnShade': 'Line on shaded cell',
+      'validation.yajilin.csAdjacent': 'Adjacent shaded cells',
+      'validation.yajilin.lnDeadEnd': 'Dead end',
+      'validation.yajilin.anShadeNe': 'Arrow count mismatch',
+      'validation.yajilin.lnPlLoop': 'Multiple loops',
+      'validation.yajilin.ceEmpty': 'Empty cell',
 
-      // Heyawake validation
-      'validation.heyawake.noShade': 'No shaded cells',
-      'validation.heyawake.adjacentShade': 'Adjacent shaded cells',
-      'validation.heyawake.whiteNotConnected': 'White cells are not connected',
-      'validation.heyawake.roomShadeCount': 'Room shade count mismatch',
-      'validation.heyawake.straightThrough': 'White line crosses multiple room borders',
+      // Heyawake validation (pzpr failcode keys)
+      'validation.heyawake.csAdjacent': 'Adjacent shaded cells',
+      'validation.heyawake.cuDivide': 'White cells are not connected',
+      'validation.heyawake.nmShadeNe': 'Room shade count mismatch',
+      'validation.heyawake.cuBorderGe3': 'White line crosses multiple room borders',
 
       // Actions
       'action.apply': 'Apply',
@@ -1446,49 +1445,48 @@ const resources = {
       'validation.congratulations': 'おめでとうございます! パズルは完成です!',
       'validation.noValidator': 'このパズルタイプのバリデータがありません',
 
-      // Mashu validation messages
-      'validation.mashu.noLines': '線がありません',
-      'validation.mashu.branch': '分岐点があります',
-      'validation.mashu.cross': '線が交差しています',
-      'validation.mashu.whiteNotStraight': '白丸: 線は直進する必要があります',
-      'validation.mashu.blackNotTurn': '黒丸: 線は曲がる必要があります',
-      'validation.mashu.blackNoExtend': '黒丸: 隣のマスまで直進する必要があります',
-      'validation.mashu.whiteNoTurnNeighbor': '白丸: 隣のマスで曲がる必要があります',
-      'validation.mashu.pearlNoLine': '丸を通る線がありません',
-      'validation.mashu.deadend': '行き止まりがあります',
-      'validation.mashu.multipleLoops': '複数のループがあります',
+      // Mashu validation messages (pzpr failcode keys)
+      'validation.mashu.brNoLine': '線がありません',
+      'validation.mashu.lnBranch': '分岐点があります',
+      'validation.mashu.lnCross': '線が交差しています',
+      'validation.mashu.mashuWCurve': '白丸: 線は直進する必要があります',
+      'validation.mashu.mashuBStrig': '黒丸: 線は曲がる必要があります',
+      'validation.mashu.mashuBCvNbr': '黒丸: 隣のマスまで直進する必要があります',
+      'validation.mashu.mashuWStNbr': '白丸: 隣のマスで曲がる必要があります',
+      'validation.mashu.mashuOnLine': '丸を通る線がありません',
+      'validation.mashu.lnDeadEnd': '行き止まりがあります',
+      'validation.mashu.lnPlLoop': '複数のループがあります',
 
-      // Slitherlink validation messages
-      'validation.slither.noLines': '線がありません',
-      'validation.slither.branch': '分岐点があります',
-      'validation.slither.cross': '線が交差しています',
-      'validation.slither.clueNotMatch': '数字と線の数が一致しません',
-      'validation.slither.deadend': '行き止まりがあります',
-      'validation.slither.multipleLoops': '複数のループがあります',
+      // Slitherlink validation messages (pzpr failcode keys)
+      'validation.slither.brNoLine': '線がありません',
+      'validation.slither.lnBranch': '分岐点があります',
+      'validation.slither.lnCross': '線が交差しています',
+      'validation.slither.nmLineNe': '数字と線の数が一致しません',
+      'validation.slither.lnDeadEnd': '行き止まりがあります',
+      'validation.slither.lnPlLoop': '複数のループがあります',
 
-      // Nurikabe validation messages
-      'validation.nurikabe.2x2Shade': '2x2の黒マスがあります',
-      'validation.nurikabe.islandNoNumber': '島に数字がありません',
-      'validation.nurikabe.shadeNotConnected': '黒マスがつながっていません',
-      'validation.nurikabe.multipleNumbers': '島に複数の数字があります',
-      'validation.nurikabe.islandSizeNotMatch': '島の大きさが数字と一致しません',
+      // Nurikabe validation messages (pzpr failcode keys)
+      'validation.nurikabe.cs2x2': '2x2の黒マスがあります',
+      'validation.nurikabe.bkNoNum': '島に数字がありません',
+      'validation.nurikabe.csDivide': '黒マスがつながっていません',
+      'validation.nurikabe.bkNumGe2': '島に複数の数字があります',
+      'validation.nurikabe.bkSizeNe': '島の大きさが数字と一致しません',
 
-      // Yajilin validation messages
-      'validation.yajilin.branch': '分岐点があります',
-      'validation.yajilin.cross': '線が交差しています',
-      'validation.yajilin.lineOnShade': '黒マスに線があります',
-      'validation.yajilin.adjacentShade': '黒マスが隣接しています',
-      'validation.yajilin.deadend': '行き止まりがあります',
-      'validation.yajilin.arrowCountNotMatch': '矢印の数字と黒マスの数が一致しません',
-      'validation.yajilin.multipleLoops': '複数のループがあります',
-      'validation.yajilin.emptyCell': '空白のマスがあります',
+      // Yajilin validation messages (pzpr failcode keys)
+      'validation.yajilin.lnBranch': '分岐点があります',
+      'validation.yajilin.lnCross': '線が交差しています',
+      'validation.yajilin.lnOnShade': '黒マスに線があります',
+      'validation.yajilin.csAdjacent': '黒マスが隣接しています',
+      'validation.yajilin.lnDeadEnd': '行き止まりがあります',
+      'validation.yajilin.anShadeNe': '矢印の数字と黒マスの数が一致しません',
+      'validation.yajilin.lnPlLoop': '複数のループがあります',
+      'validation.yajilin.ceEmpty': '空白のマスがあります',
 
-      // Heyawake validation messages
-      'validation.heyawake.noShade': '黒マスがありません',
-      'validation.heyawake.adjacentShade': '黒マスが隣接しています',
-      'validation.heyawake.whiteNotConnected': '白マスがつながっていません',
-      'validation.heyawake.roomShadeCount': '部屋の黒マス数が合っていません',
-      'validation.heyawake.straightThrough': '白マスの直線が複数の部屋を横断しています',
+      // Heyawake validation messages (pzpr failcode keys)
+      'validation.heyawake.csAdjacent': '黒マスが隣接しています',
+      'validation.heyawake.cuDivide': '白マスがつながっていません',
+      'validation.heyawake.nmShadeNe': '部屋の黒マス数が合っていません',
+      'validation.heyawake.cuBorderGe3': '白マスの直線が複数の部屋を横断しています',
 
       // Actions
       'action.apply': '適用',
