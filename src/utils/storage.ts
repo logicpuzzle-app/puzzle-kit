@@ -16,6 +16,7 @@ const STORAGE_KEYS = {
   RECENT_PUZZLES: 'puzzlekit_recent_puzzles',
   LANGUAGE: 'puzzlekit_language',
   TOPOLOGY: 'puzzlekit_topology',
+  CONSTRAINT: 'puzzlekit_constraint',
 } as const;
 
 const STORAGE_VERSION = 1;
@@ -303,4 +304,41 @@ export function loadTopologyState(): PersistedTopologyState & { deserializedTopo
 
 export function clearTopologyState(): void {
   removeItem(STORAGE_KEYS.TOPOLOGY);
+}
+
+// ===========================
+// Constraint Settings Persistence
+// ===========================
+
+export interface PersistedConstraintState {
+  currentSchemaId: string | null;
+  currentInputMode: string;
+  validationOverrides: Record<string, boolean>;
+}
+
+const DEFAULT_CONSTRAINT_STATE: PersistedConstraintState = {
+  currentSchemaId: null,
+  currentInputMode: 'auto',
+  validationOverrides: {},
+};
+
+export function saveConstraintState(
+  currentSchemaId: string | null,
+  currentInputMode: string,
+  validationOverrides: Record<string, boolean>
+): boolean {
+  const data: PersistedConstraintState = {
+    currentSchemaId,
+    currentInputMode,
+    validationOverrides,
+  };
+  return setItem(STORAGE_KEYS.CONSTRAINT, data);
+}
+
+export function loadConstraintState(): PersistedConstraintState {
+  return getItem(STORAGE_KEYS.CONSTRAINT, DEFAULT_CONSTRAINT_STATE);
+}
+
+export function clearConstraintState(): void {
+  removeItem(STORAGE_KEYS.CONSTRAINT);
 }

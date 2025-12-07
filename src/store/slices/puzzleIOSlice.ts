@@ -91,6 +91,11 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
         topologyPreset: state.topologyPreset,
         topologyIntensity: state.topologyIntensity,
       },
+      constraintSettings: {
+        currentSchemaId: state.currentSchemaId,
+        currentInputMode: state.currentInputMode,
+        validationOverrides: state.validationOverrides,
+      },
       metadata: {
         created: new Date().toISOString(),
         modified: new Date().toISOString(),
@@ -121,6 +126,11 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
         const topologyPreset = data.topologySettings?.topologyPreset ?? data.topologyPreset ?? 'square';
         const topologyIntensity = data.topologySettings?.topologyIntensity ?? data.topologyIntensity ?? 0.5;
 
+        // Load constraint settings (if present)
+        const currentSchemaId = data.constraintSettings?.currentSchemaId ?? null;
+        const currentInputMode = data.constraintSettings?.currentInputMode ?? 'auto';
+        const validationOverrides = data.constraintSettings?.validationOverrides ?? {};
+
         // Regenerate topology from grid config
         const base = gridConfigToTopology(data.grid);
         const topology = useTopology
@@ -137,6 +147,9 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
           topologyPreset,
           topologyIntensity,
           topology,
+          currentSchemaId,
+          currentInputMode,
+          validationOverrides,
         } as any);
         historyManager.clear();
         return true;

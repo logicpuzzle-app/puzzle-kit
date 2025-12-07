@@ -17,6 +17,8 @@ import {
   loadCanvasState,
   saveTopologyState,
   loadTopologyState,
+  saveConstraintState,
+  loadConstraintState,
   isStorageAvailable,
 } from '../utils/storage';
 
@@ -39,12 +41,18 @@ export function useStoragePersistence() {
     topologyIntensity,
     showProblemLayer,
     showAnswerLayer,
+    currentSchemaId,
+    currentInputMode,
+    validationOverrides,
     setToolSettings,
     setGrid,
     setCanvasState,
     setUseTopology,
     setTopologyPreset,
     setTopologyIntensity,
+    setCurrentSchemaId,
+    setInputMode,
+    setValidationOverride,
   } = usePuzzleStore();
 
   const hasInitialized = useRef(false);
@@ -61,6 +69,7 @@ export function useStoragePersistence() {
     const persistedUIPrefs = loadUIPreferences();
     const persistedCanvasState = loadCanvasState();
     const persistedTopologyState = loadTopologyState();
+    const persistedConstraintState = loadConstraintState();
 
     // Apply to store (merge with defaults)
     setToolSettings({
@@ -88,13 +97,27 @@ export function useStoragePersistence() {
     // Note: topology itself is restored via setGrid which regenerates it,
     // or via importPuzzle which includes topology data
 
+    // Apply constraint state
+    if (persistedConstraintState.currentSchemaId !== undefined) {
+      setCurrentSchemaId(persistedConstraintState.currentSchemaId);
+    }
+    if (persistedConstraintState.currentInputMode) {
+      // Cast to InputModeType - the stored value should always be valid
+      setInputMode(persistedConstraintState.currentInputMode as Parameters<typeof setInputMode>[0]);
+    }
+    if (persistedConstraintState.validationOverrides) {
+      for (const [ruleId, enabled] of Object.entries(persistedConstraintState.validationOverrides)) {
+        setValidationOverride(ruleId, enabled);
+      }
+    }
+
     // Apply UI preferences
     if (persistedUIPrefs.showProblemLayer !== undefined) {
       // Would need toggleProblemLayer/toggleAnswerLayer if needed
     }
 
     hasInitialized.current = true;
-  }, [setToolSettings, setGrid, setCanvasState, setUseTopology, setTopologyPreset, setTopologyIntensity]);
+  }, [setToolSettings, setGrid, setCanvasState, setUseTopology, setTopologyPreset, setTopologyIntensity, setCurrentSchemaId, setInputMode, setValidationOverride]);
 
   // Save tool settings when they change (debounced)
   useEffect(() => {
@@ -181,6 +204,25 @@ export function useStoragePersistence() {
       showAnswerLayer,
     });
   }, [showProblemLayer, showAnswerLayer]);
+
+  // Save constraint state when it changes (debounced)
+  useEffect(() => {
+    if (!hasInitialized.current || !isStorageAvailable()) return;
+
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(() => {
+      saveConstraintState(currentSchemaId, currentInputMode, validationOverrides);
+    }, SAVE_DEBOUNCE_MS);
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [currentSchemaId, currentInputMode, validationOverrides]);
 
   return {
     isInitialized: hasInitialized.current,
