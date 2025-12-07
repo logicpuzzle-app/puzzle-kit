@@ -428,10 +428,12 @@ export interface GridConfig {
   sculptOperations?: SculptOperation[];
 }
 
-// Sculpt operation - records a vertex rotation for replay
+// Sculpt operation - records a vertex operation for replay
+// - 'rotate': Flip 3 cells around the vertex (existing behavior)
+// - 'cut': Remove vertex and connect 3 adjacent vertices with a triangle
 export interface SculptOperation {
-  type: 'rotate';
-  vertexId: string;  // The vertex around which the cluster was rotated
+  type: 'rotate' | 'cut';
+  vertexId: string;  // The vertex around which the operation is performed
 }
 
 export type SplitPoint =
@@ -461,6 +463,12 @@ export interface PuzzleElements {
   boxLines: Record<string, BoxLineElement>;
   directionalClues?: Record<string, import('./penpaElements').PenpaDirectionalClue>;
   roomMap?: RoomMap; // Optional room map for region-based puzzles
+  // Optional fields for specific puzzle types
+  borders?: Record<string, unknown>;
+  clueCells?: Record<string, any>;
+  rowClues?: Record<string, any>;
+  colClues?: Record<string, any>;
+  tapaClues?: Record<string, any>;
 }
 
 // Solution Area - cells where answer checking applies

@@ -29,7 +29,7 @@ export const yajilinSchema: ConstraintSchema = {
   // Input modes from pzprjs/src/variety/yajilin.js
   inputModes: {
     edit: ['auto', 'number', 'direc', 'clear', 'info-line'],
-    play: ['auto', 'line', 'peke', 'shade', 'unshade', 'info-line', 'completion'],
+    play: ['auto', 'line', 'peke', 'shade', 'unshade', 'info-line'],
   },
 
   problem: [

@@ -274,9 +274,6 @@ export const inputModeToTool: Record<InputMode, ToolMapping | null> = {
     target: 'cell',
   },
 
-  // Completion marker (for clue cells)
-  'completion': null, // Handled as a special action
-
   // Info modes (display only, not input tools)
   'info-line': null,
   'info-blk': null,
@@ -550,7 +547,7 @@ export function isInfoMode(mode: InputMode): boolean {
  * Check if an inputMode requires special handling
  */
 export function isSpecialMode(mode: InputMode): boolean {
-  return mode === 'auto' || mode === 'clear' || mode === 'completion' || isInfoMode(mode);
+  return mode === 'auto' || mode === 'clear' || isInfoMode(mode);
 }
 
 /**

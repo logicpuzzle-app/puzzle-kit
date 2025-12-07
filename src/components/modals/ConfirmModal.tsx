@@ -50,22 +50,22 @@ export const ConfirmModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-      <div className="bg-white border border-office-border shadow-lg max-w-sm w-full mx-4">
+      <div className="bg-gray-100 border border-gray-400 shadow-lg max-w-sm w-full mx-4">
         {/* Title bar */}
-        <div className="h-8 bg-office-ribbon border-b border-office-border flex items-center justify-between px-3">
-          <span className="text-xs font-medium text-office-text truncate">
+        <div className="h-8 bg-gray-200 border-b border-gray-400 flex items-center justify-between px-3">
+          <span className="text-xs font-medium text-gray-800 truncate">
             {title}
           </span>
           <button
             onClick={handleCancel}
-            className="w-5 h-5 flex items-center justify-center text-office-text-secondary hover:bg-red-500 hover:text-white transition-colors text-sm"
+            className="w-5 h-5 flex items-center justify-center text-gray-600 hover:bg-red-500 hover:text-white transition-colors text-sm"
           >
             ×
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-4">
+        <div className="p-4 bg-white">
           <div className="flex items-start gap-3">
             {/* Icon */}
             <div
@@ -74,26 +74,26 @@ export const ConfirmModal: React.FC = () => {
               {icon}
             </div>
             {/* Message */}
-            <p className="text-sm text-office-text leading-relaxed pt-1">
+            <p className="text-sm text-gray-800 leading-relaxed pt-1">
               {message}
             </p>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-4 pb-4 flex justify-end gap-2">
+        <div className="px-4 py-3 bg-gray-100 flex justify-end gap-2 border-t border-gray-300">
           <button
             onClick={handleCancel}
-            className="px-4 py-1.5 text-xs bg-white border border-office-border hover:bg-office-ribbon transition-colors min-w-[70px]"
+            className="h-7 px-3 text-xs bg-white border border-gray-400 rounded-sm hover:bg-gray-50 transition-colors min-w-[70px]"
           >
             {cancelLabel || t('common.cancel')}
           </button>
           <button
             onClick={handleConfirm}
-            className={`px-4 py-1.5 text-xs border transition-colors min-w-[70px] ${
+            className={`h-7 px-3 text-xs border rounded-sm transition-colors min-w-[70px] ${
               variant === 'danger'
                 ? 'bg-red-500 border-red-600 text-white hover:bg-red-600'
-                : 'bg-office-accent border-office-accent text-white hover:bg-blue-600'
+                : 'bg-blue-600 border-blue-700 text-white hover:bg-blue-700'
             }`}
           >
             {confirmLabel || t('common.confirm')}

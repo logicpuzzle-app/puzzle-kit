@@ -48,22 +48,22 @@ export const CheckAnswerModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-      <div className="bg-white border border-office-border shadow-lg max-w-sm w-full mx-4">
+      <div className="bg-gray-100 border border-gray-400 shadow-lg max-w-sm w-full mx-4">
         {/* Title bar */}
-        <div className="h-8 bg-office-ribbon border-b border-office-border flex items-center justify-between px-3">
-          <span className="text-xs font-medium text-office-text">
+        <div className="h-8 bg-gray-200 border-b border-gray-400 flex items-center justify-between px-3">
+          <span className="text-xs font-medium text-gray-800">
             {t('constraint.checkAnswer')}
           </span>
           <button
             onClick={closeValidationModal}
-            className="w-5 h-5 flex items-center justify-center text-office-text-secondary hover:bg-red-500 hover:text-white transition-colors text-sm"
+            className="w-5 h-5 flex items-center justify-center text-gray-600 hover:bg-red-500 hover:text-white transition-colors text-sm"
           >
             ×
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-4">
+        <div className="p-4 bg-white">
           {/* Status */}
           <div className="flex items-center gap-3 mb-3">
             <span className={`text-2xl ${statusColor}`}>{statusIcon}</span>
@@ -74,21 +74,21 @@ export const CheckAnswerModal: React.FC = () => {
 
           {/* Error list */}
           {errors.length > 0 && (
-            <div className="border border-office-border bg-office-ribbon p-2 max-h-40 overflow-y-auto">
-              <div className="text-xs text-office-text-secondary mb-1">
+            <div className="border border-gray-300 bg-gray-50 p-2 max-h-40 overflow-y-auto">
+              <div className="text-xs text-gray-500 mb-1">
                 {t('validation.errorCount', { count: errors.length })}
               </div>
               <ul className="space-y-1">
                 {uniqueErrors.map(({ error, count }) => (
                   <li
                     key={error.ruleId}
-                    className="text-xs text-office-text flex items-start gap-1"
+                    className="text-xs text-gray-800 flex items-start gap-1"
                   >
                     <span className="text-red-500">•</span>
                     <span>
                       {t(error.messageKey, { defaultValue: error.failcode })}
                       {count > 1 && (
-                        <span className="text-office-text-secondary ml-1">
+                        <span className="text-gray-500 ml-1">
                           (×{count})
                         </span>
                       )}
@@ -108,10 +108,10 @@ export const CheckAnswerModal: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div className="px-4 pb-4 flex justify-end">
+        <div className="px-4 py-3 bg-gray-100 flex justify-end border-t border-gray-300">
           <button
             onClick={closeValidationModal}
-            className="px-4 py-1 text-xs bg-office-ribbon border border-office-border hover:bg-office-ribbon-hover transition-colors"
+            className="h-7 px-3 text-xs bg-white border border-gray-400 rounded-sm hover:bg-gray-50 transition-colors min-w-[70px]"
           >
             {t('common.close')}
           </button>

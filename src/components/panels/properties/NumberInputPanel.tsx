@@ -39,8 +39,17 @@ export const NumberInputPanel: React.FC = () => {
     topology,
   } = usePuzzleStore();
 
-  // Check if we're in directional number mode
-  const isDirectionalMode = toolSettings.currentTool === 'number-directional' || currentInputMode === 'direc';
+  // Check if we're in directional number mode or constraint number mode
+  // All constraint number modes (number, number-, direc) use directionalClues with direction=0 for no arrow
+  const isDirectionalMode = toolSettings.currentTool === 'number-directional' ||
+    currentInputMode === 'direc' ||
+    currentInputMode === 'number' ||
+    currentInputMode === 'number-';
+
+  // Check if we're in regular number mode (for non-constraint number input)
+  const isRegularNumberMode = toolSettings.currentTool.startsWith('number') &&
+    toolSettings.currentTool !== 'number-directional' &&
+    !isDirectionalMode;
 
   const dataLayer = toDataLayer(activeLayer);
 
@@ -128,10 +137,22 @@ export const NumberInputPanel: React.FC = () => {
 
     if (!effectiveCellId) return null;
     const numbers = puzzle[dataLayer].numbers;
+    const position = toolSettings.numberPosition || 'center';
+    const cornerIndex = toolSettings.cornerIndex ?? 0;
+    const sideIndex = toolSettings.sideIndex ?? 0;
 
-    const existing = Object.values(numbers).find(
-      (n) => n.cellId === effectiveCellId && n.position === 'center'
-    );
+    // Find number matching position and index
+    const existing = Object.values(numbers).find((n) => {
+      if (n.cellId !== effectiveCellId) return false;
+      if (position === 'center') {
+        return n.position === 'center';
+      } else if (position === 'corner') {
+        return n.position === 'corner' && n.cornerIndex === cornerIndex;
+      } else if (position === 'side') {
+        return n.position === 'side' && n.sideIndex === sideIndex;
+      }
+      return n.position === position;
+    });
     return existing?.value || null;
   };
 
@@ -175,11 +196,23 @@ export const NumberInputPanel: React.FC = () => {
 
     if (!effectiveCellId) return;
 
-    // Remove existing number at center position
+    const position = toolSettings.numberPosition || 'center';
+    const cornerIndex = toolSettings.cornerIndex ?? 0;
+    const sideIndex = toolSettings.sideIndex ?? 0;
+
+    // Remove existing number at current position
     const numbers = puzzle[dataLayer].numbers;
-    const existingEntry = Object.entries(numbers).find(
-      ([, n]) => n.cellId === effectiveCellId && n.position === 'center'
-    );
+    const existingEntry = Object.entries(numbers).find(([, n]) => {
+      if (n.cellId !== effectiveCellId) return false;
+      if (position === 'center') {
+        return n.position === 'center';
+      } else if (position === 'corner') {
+        return n.position === 'corner' && n.cornerIndex === cornerIndex;
+      } else if (position === 'side') {
+        return n.position === 'side' && n.sideIndex === sideIndex;
+      }
+      return n.position === position;
+    });
 
     if (existingEntry) {
       removeNumber(existingEntry[0]);
@@ -191,9 +224,9 @@ export const NumberInputPanel: React.FC = () => {
         cellId: effectiveCellId,
         value: newValue,
         size: toolSettings.numberSize || 'large',
-        position: 'center',
-        cornerIndex: 0,
-        sideIndex: 0,
+        position,
+        cornerIndex,
+        sideIndex,
         color: toolSettings.color || '#000000',
         layer: dataLayer,
       });
@@ -247,29 +280,23 @@ export const NumberInputPanel: React.FC = () => {
   const isDisabled = !numberSelection;
 
   return (
-    <div className="space-y-2">
-      <div className="text-xs text-office-text-secondary">
-        {numberSelection
-          ? t('tool.number.inputNumber', 'Click a number to input')
-          : t('tool.number.selectCell', 'Click a cell to select')}
-      </div>
-
-      {/* Current value display */}
+    <div className="space-y-1">
+      {/* Current value display - compact */}
       {numberSelection && (
-        <div className="text-center p-2 bg-gray-50 rounded-sm border border-gray-200">
-          <span className="text-lg font-medium font-mono">
+        <div className="text-center py-1 px-2 bg-gray-50 rounded-sm border border-gray-200">
+          <span className="text-sm font-medium font-mono">
             {currentValue || '-'}
           </span>
         </div>
       )}
 
-      {/* Number pad grid */}
-      <div className="grid grid-cols-3 gap-1">
+      {/* Number pad grid - tenkey layout, compact size */}
+      <div className="grid grid-cols-3 gap-0.5">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
           <button
             key={num}
             disabled={isDisabled}
-            className={`w-full h-10 text-lg font-medium border rounded-sm transition-colors ${
+            className={`w-full h-7 text-sm font-medium border rounded-sm transition-colors ${
               isDisabled
                 ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                 : 'bg-white border-office-border hover:bg-office-ribbon-hover active:bg-office-accent active:text-white'
@@ -282,10 +309,10 @@ export const NumberInputPanel: React.FC = () => {
       </div>
 
       {/* Bottom row: ?, 0, Backspace */}
-      <div className="grid grid-cols-3 gap-1">
+      <div className="grid grid-cols-3 gap-0.5">
         <button
           disabled={isDisabled}
-          className={`w-full h-10 text-lg font-medium border rounded-sm transition-colors ${
+          className={`w-full h-7 text-sm font-medium border rounded-sm transition-colors ${
             currentValue === '?'
               ? 'bg-office-accent text-white border-office-accent'
               : isDisabled
@@ -299,7 +326,7 @@ export const NumberInputPanel: React.FC = () => {
         </button>
         <button
           disabled={isDisabled}
-          className={`w-full h-10 text-lg font-medium border rounded-sm transition-colors ${
+          className={`w-full h-7 text-sm font-medium border rounded-sm transition-colors ${
             isDisabled
               ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
               : 'bg-white border-office-border hover:bg-office-ribbon-hover active:bg-office-accent active:text-white'
@@ -310,7 +337,7 @@ export const NumberInputPanel: React.FC = () => {
         </button>
         <button
           disabled={isDisabled}
-          className={`w-full h-10 text-lg font-medium border rounded-sm transition-colors ${
+          className={`w-full h-7 text-sm font-medium border rounded-sm transition-colors ${
             isDisabled
               ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
               : 'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100'
@@ -322,10 +349,10 @@ export const NumberInputPanel: React.FC = () => {
         </button>
       </div>
 
-      {/* Clear button */}
+      {/* Clear button - compact */}
       <button
         disabled={isDisabled}
-        className={`w-full h-8 text-xs font-medium border rounded-sm transition-colors ${
+        className={`w-full h-6 text-xs font-medium border rounded-sm transition-colors ${
           isDisabled
             ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
             : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'

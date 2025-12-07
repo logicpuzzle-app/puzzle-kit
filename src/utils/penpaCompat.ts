@@ -15,6 +15,7 @@ import { SurfaceColorPalette, LineColorPalette, SymbolColorPalette, PenpaColors 
 export interface PuzzlinkData {
   grid: GridConfig;
   state: PuzzleState;
+  puzzleType?: string; // puzz.link puzzle type (e.g., 'yajilin', 'slitherlink')
 }
 
 // Penpa URL parameter names
@@ -618,6 +619,88 @@ export function isPuzzlinkUrl(url: string): boolean {
 }
 
 /**
+ * Check if a URL is a puzsq (Puzzle Square) URL
+ * Format: https://puzsq.logicpuzzle.app/puzzle/{id}
+ */
+export function isPuzsqUrl(url: string): boolean {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname === 'puzsq.logicpuzzle.app' && urlObj.pathname.startsWith('/puzzle/');
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Extract puzzle ID from puzsq URL
+ */
+export function extractPuzsqId(url: string): string | null {
+  try {
+    const urlObj = new URL(url);
+    const match = urlObj.pathname.match(/^\/puzzle\/(\d+)/);
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fetch puzzle data from puzsq API and parse it
+ * Uses CORS proxy to bypass browser restrictions
+ * @param url puzsq puzzle URL (e.g., https://puzsq.logicpuzzle.app/puzzle/166830)
+ * @returns Promise of PuzzlinkData or null if failed
+ */
+export async function fetchPuzsqPuzzle(url: string): Promise<PuzzlinkData | null> {
+  const puzzleId = extractPuzsqId(url);
+  if (!puzzleId) {
+    console.error('[fetchPuzsqPuzzle] Invalid puzsq URL:', url);
+    return null;
+  }
+
+  try {
+    const apiUrl = `https://puzsq.logicpuzzle.app/api/problem/prob/${puzzleId}`;
+
+    // Try direct fetch first (works if CORS is enabled on server)
+    let response: Response;
+    try {
+      response = await fetch(apiUrl);
+    } catch {
+      // If direct fetch fails due to CORS, try with a CORS proxy
+      // Using corsproxy.io as a fallback
+      console.log('[fetchPuzsqPuzzle] Direct fetch failed, trying CORS proxy...');
+      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`;
+      response = await fetch(proxyUrl);
+    }
+
+    if (!response.ok) {
+      console.error('[fetchPuzsqPuzzle] API request failed:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+
+    // API returns { "puzzleId": { ...puzzleData } }
+    const puzzleData = data[puzzleId];
+    if (!puzzleData) {
+      console.error('[fetchPuzsqPuzzle] Puzzle not found in response');
+      return null;
+    }
+
+    // Check if url field exists
+    if (!puzzleData.url) {
+      console.error('[fetchPuzsqPuzzle] No puzz.link URL in response');
+      return null;
+    }
+
+    // Parse the puzz.link URL
+    return parsePuzzlinkUrl(puzzleData.url);
+  } catch (error) {
+    console.error('[fetchPuzsqPuzzle] Error fetching puzzle:', error);
+    return null;
+  }
+}
+
+/**
  * Parse puzz.link URL format
  * Format: https://puzz.link/p?{type}/{width}/{height}/{data}
  * or: https://puzz.link/p/{type}/{width}/{height}/{data}
@@ -653,14 +736,50 @@ export function parsePuzzlinkUrl(url: string): PuzzlinkData | null {
     }
 
     const puzzleType = parts[0];
-    const width = parseInt(parts[1]);
-    const height = parseInt(parts[2]);
-    const data = parts.slice(3).join('/');
+
+    // Handle variant flags (e.g., yajilin/b/10/10/data where 'b' is a flag)
+    // pzprjs uses single-letter flags between type and dimensions
+    // Check if parts[1] is a number or a variant flag
+    let partIndex = 1;
+    let variantFlags = '';
+    while (partIndex < parts.length && isNaN(parseInt(parts[partIndex]))) {
+      variantFlags += parts[partIndex];
+      partIndex++;
+    }
+
+    if (partIndex + 1 >= parts.length) {
+      console.error('Invalid puzz.link URL format: need dimensions after type/flags');
+      return null;
+    }
+
+    const width = parseInt(parts[partIndex]);
+    const height = parseInt(parts[partIndex + 1]);
+    const data = parts.slice(partIndex + 2).join('/');
 
     if (isNaN(width) || isNaN(height) || width <= 0 || height <= 0) {
       console.error('Invalid dimensions in puzz.link URL');
       return null;
     }
+
+    // Determine grid style and frame style based on puzzle type
+    const getGridStyles = (type: string): { gridStyle: GridConfig['gridStyle']; frameStyle: GridConfig['frameStyle'] } => {
+      switch (type) {
+        case 'slither':
+        case 'slitherlink':
+          return { gridStyle: 'dots', frameStyle: 'none' };
+        case 'mashu':
+        case 'masyu':
+        case 'nurikabe':
+        case 'heyawake':
+        case 'yajilin':
+          return { gridStyle: 'normal', frameStyle: 'thick' };
+        case 'sudoku':
+          return { gridStyle: 'sudoku', frameStyle: 'thick' };
+        default:
+          return { gridStyle: 'normal', frameStyle: 'normal' };
+      }
+    };
+    const styles = getGridStyles(puzzleType);
 
     const grid: GridConfig = {
       rows: height,
@@ -668,13 +787,13 @@ export function parsePuzzlinkUrl(url: string): PuzzlinkData | null {
       cellSize: 40,
       outerPadding: 20,
       showGrid: true,
-      gridStyle: puzzleType === 'sudoku' ? 'sudoku' : 'normal',
+      gridStyle: styles.gridStyle,
       gridType: 'square',
       marginTop: 0,
       marginBottom: 0,
       marginLeft: 0,
       marginRight: 0,
-      frameStyle: 'normal',
+      frameStyle: styles.frameStyle,
       frameColor: '#000000',
       gridColor: '#000000',
       backgroundColor: '#ffffff',
@@ -703,7 +822,7 @@ export function parsePuzzlinkUrl(url: string): PuzzlinkData | null {
       parsePuzzlinkData(puzzleType, data, width, height, state);
     }
 
-    return { grid, state };
+    return { grid, state, puzzleType };
   } catch (error) {
     console.error('Failed to parse puzz.link URL:', error);
     return null;
@@ -716,8 +835,8 @@ export function parsePuzzlinkUrl(url: string): PuzzlinkData | null {
 function parsePuzzlinkData(
   puzzleType: string,
   data: string,
-  _width: number,
-  _height: number,
+  width: number,
+  height: number,
   state: PuzzleState
 ): void {
   // puzz.link uses a base64-like encoding with run-length compression
@@ -727,10 +846,30 @@ function parsePuzzlinkData(
     case 'sudoku':
       parseSudokuData(data, state);
       break;
-    case 'nurikabe':
-    case 'shakashaka':
+    case 'yajilin':
+    case 'lixloop':
+      parseYajilinData(data, width, height, state);
+      break;
     case 'slitherlink':
+    case 'slither':
+      // Slitherlink uses decode4Cell encoding (0-4 values)
+      parseSlitherlinkData(data, width, height, state);
+      break;
+    case 'nurikabe':
+      // Nurikabe uses decodeNumber16 encoding
+      parseNurikabeData(data, width, height, state);
+      break;
     case 'masyu':
+    case 'mashu':
+      // Masyu uses decode4Cell encoding (1=white, 2=black)
+      parseMasyuData(data, width, height, state);
+      break;
+    case 'heyawake':
+    case 'ayeheya':
+      // Heyawake uses decodeBorder + decodeRoomNumber16
+      parseHeyawakeData(data, width, height, state);
+      break;
+    case 'shakashaka':
     case 'akari':
       // These puzzles use similar number-based encoding
       parseGenericNumberData(data, state);
@@ -738,6 +877,113 @@ function parsePuzzlinkData(
     default:
       // Try generic parsing for unknown types
       parseGenericNumberData(data, state);
+  }
+}
+
+/**
+ * Parse Yajilin data from puzz.link
+ * Format: decodeArrowNumber16 from pzprjs
+ *
+ * URL format: yajilin/{width}/{height}/{data}
+ * Data encoding:
+ * - 'a'-'z': skip cells (a=1, b=2, ... z=26)
+ * - '0'-'4': direction (0=none, 1=↑, 2=↓, 3=←, 4=→), next char is number (0-f or '.')
+ * - '5'-'9': direction (0-4), next 2 chars are hex number
+ * - '-': direction in next char, next 3 chars are hex number
+ * - '+': no direction marker (qnum=-3)
+ *
+ * Direction mapping (pzprjs): 1=UP, 2=DOWN, 3=LEFT, 4=RIGHT
+ * Direction mapping (puzzle-kit): 1=UP, 2=DOWN, 3=LEFT, 4=RIGHT
+ */
+function parseYajilinData(data: string, width: number, height: number, state: PuzzleState): void {
+  const totalCells = width * height;
+  let cellIndex = 0;
+  let i = 0;
+
+  while (i < data.length && cellIndex < totalCells) {
+    const ca = data.charAt(i);
+
+    if (ca >= 'a' && ca <= 'z') {
+      // Skip cells: pzprjs uses c += parseInt(ca, 36) - 10
+      // 'a' = 10 in base36, so 'a' = 0 skip, 'b' = 1 skip, etc.
+      const skip = parseInt(ca, 36) - 10;
+      cellIndex += skip;
+    } else if (ca === '+') {
+      // No direction marker (qnum = -3 in pzprjs, skip for now)
+      // This is a special marker, not a regular arrow clue
+    } else if (ca >= '0' && ca <= '4') {
+      // Direction 0-4, next char is number (single hex digit or '.')
+      const dir = parseInt(ca, 10);
+      const ca1 = data.charAt(i + 1);
+      let num: number;
+
+      if (ca1 === '.') {
+        num = -2; // Unknown number (hatena/?)
+      } else {
+        num = parseInt(ca1, 16);
+      }
+      i++;
+
+      // dir > 0 means has direction, num >= 0 OR num === -2 (hatena) are valid
+      if (dir > 0 && (num >= 0 || num === -2)) {
+        // Create directional clue
+        const row = Math.floor(cellIndex / width);
+        const col = cellIndex % width;
+        const id = `dirclue-${row}-${col}`;
+
+        state.problem.directionalClues = state.problem.directionalClues || {};
+        state.problem.directionalClues[id] = {
+          id,
+          cell: cellIndex,
+          direction: dir as 1 | 2 | 3 | 4,
+          value: num, // -2 means "?" (hatena)
+          layer: 'problem',
+        };
+      }
+    } else if (ca >= '5' && ca <= '9') {
+      // Direction (char - 5), next 2 chars are hex number
+      const dir = parseInt(ca, 10) - 5;
+      const num = parseInt(data.substr(i + 1, 2), 16);
+      i += 2;
+
+      if (dir > 0 && num >= 0) {
+        const row = Math.floor(cellIndex / width);
+        const col = cellIndex % width;
+        const id = `dirclue-${row}-${col}`;
+
+        state.problem.directionalClues = state.problem.directionalClues || {};
+        state.problem.directionalClues[id] = {
+          id,
+          cell: cellIndex,
+          direction: dir as 1 | 2 | 3 | 4,
+          value: num,
+          layer: 'problem',
+        };
+      }
+    } else if (ca === '-') {
+      // Direction in next char, next 3 chars are hex number
+      const dir = parseInt(data.charAt(i + 1), 16);
+      const num = parseInt(data.substr(i + 2, 3), 16);
+      i += 4;
+
+      if (dir > 0 && num >= 0) {
+        const row = Math.floor(cellIndex / width);
+        const col = cellIndex % width;
+        const id = `dirclue-${row}-${col}`;
+
+        state.problem.directionalClues = state.problem.directionalClues || {};
+        state.problem.directionalClues[id] = {
+          id,
+          cell: cellIndex,
+          direction: dir as 1 | 2 | 3 | 4,
+          value: num,
+          layer: 'problem',
+        };
+      }
+    }
+
+    cellIndex++;
+    i++;
   }
 }
 
@@ -780,6 +1026,461 @@ function parseSudokuData(data: string, state: PuzzleState): void {
     while (col >= 9) {
       col -= 9;
       row++;
+    }
+  }
+}
+
+/**
+ * Parse Slitherlink data from puzz.link
+ * Format: decode4Cell from pzprjs
+ *
+ * Data encoding (decode4Cell):
+ * - '0'-'4': cell value (0-4), advance 1
+ * - '5'-'9': cell value (hex-5 = 0-4), skip 1 additional cell (total advance 2)
+ * - 'a'-'e': cell value (hex-10 = 0-4), skip 2 additional cells (total advance 3)
+ * - 'g'-'z': skip cells (base36 - 16), no value placed
+ * - '.': question mark (-2), advance 1
+ *
+ * Important: In pzprjs, after placing a value, c++ happens at end of loop.
+ * So '5'-'9' places value at c, then c++, then c++ at end = advance 2.
+ * And 'a'-'e' places value at c, then c+=2, then c++ at end = advance 3.
+ */
+function parseSlitherlinkData(data: string, width: number, height: number, state: PuzzleState): void {
+  const totalCells = width * height;
+  let cellIndex = 0;
+  let i = 0;
+
+  while (i < data.length && cellIndex < totalCells) {
+    const char = data[i];
+
+    if (char >= '0' && char <= '4') {
+      // Direct value 0-4, advance 1
+      const value = parseInt(char, 16);
+      if (value >= 0 && value <= 3) {
+        const row = Math.floor(cellIndex / width);
+        const col = cellIndex % width;
+
+        const clueId = `clue-${row}-${col}`;
+        if (!state.problem.directionalClues) {
+          state.problem.directionalClues = {};
+        }
+        state.problem.directionalClues[clueId] = {
+          id: clueId,
+          cell: cellIndex,
+          direction: 0,
+          value: value,
+          layer: 'problem',
+        };
+      }
+      cellIndex++;
+    } else if (char >= '5' && char <= '9') {
+      // Value (hex - 5), then skip 1 extra cell (total advance 2)
+      const value = parseInt(char, 16) - 5;
+      if (value >= 0 && value <= 3) {
+        const row = Math.floor(cellIndex / width);
+        const col = cellIndex % width;
+
+        const clueId = `clue-${row}-${col}`;
+        if (!state.problem.directionalClues) {
+          state.problem.directionalClues = {};
+        }
+        state.problem.directionalClues[clueId] = {
+          id: clueId,
+          cell: cellIndex,
+          direction: 0,
+          value: value,
+          layer: 'problem',
+        };
+      }
+      cellIndex += 2; // c++ in loop, then c++ at end
+    } else if (char >= 'a' && char <= 'e') {
+      // Value (hex - 10 = 0-4), then skip 2 extra cells (total advance 3)
+      const value = parseInt(char, 16) - 10;
+      if (value >= 0 && value <= 3) {
+        const row = Math.floor(cellIndex / width);
+        const col = cellIndex % width;
+
+        const clueId = `clue-${row}-${col}`;
+        if (!state.problem.directionalClues) {
+          state.problem.directionalClues = {};
+        }
+        state.problem.directionalClues[clueId] = {
+          id: clueId,
+          cell: cellIndex,
+          direction: 0,
+          value: value,
+          layer: 'problem',
+        };
+      }
+      cellIndex += 3; // c+=2 in loop, then c++ at end
+    } else if (char >= 'g' && char <= 'z') {
+      // Skip cells: base36 value - 16, then +1 at end
+      const skip = parseInt(char, 36) - 16;
+      cellIndex += skip + 1;
+    } else if (char === '.') {
+      // Question mark (-2 in pzprjs), skip for now
+      cellIndex++;
+    } else if (char === 'f') {
+      // 'f' is not used in decode4Cell, but handle as empty
+      cellIndex++;
+    }
+
+    i++;
+  }
+}
+
+/**
+ * Parse Nurikabe data from puzz.link
+ * Format: decodeNumber16 from pzprjs
+ *
+ * Data encoding:
+ * - 'a'-'z': skip cells (a=0, b=1, ... z=25)
+ * - '0'-'9','a'-'f': single hex digit (0-15)
+ * - '-': followed by 2 hex digits for numbers 16-255
+ * - '+': followed by 3 hex digits for larger numbers
+ * - '.': question mark (unknown number)
+ */
+function parseNurikabeData(data: string, width: number, height: number, state: PuzzleState): void {
+  const totalCells = width * height;
+  let cellIndex = 0;
+  let i = 0;
+
+  while (i < data.length && cellIndex < totalCells) {
+    const char = data[i];
+
+    if (char >= 'g' && char <= 'z') {
+      // Skip cells: 'g'=0, 'h'=1, ... 'z'=19 (but pzprjs uses different offset)
+      // Actually in decodeNumber16: letters skip cells
+      const skip = char.charCodeAt(0) - 'f'.charCodeAt(0);
+      cellIndex += skip;
+    } else if (char >= '0' && char <= '9') {
+      // Single digit number
+      const value = parseInt(char, 10);
+      const row = Math.floor(cellIndex / width);
+      const col = cellIndex % width;
+
+      const clueId = `clue-${row}-${col}`;
+      if (!state.problem.directionalClues) {
+        state.problem.directionalClues = {};
+      }
+      state.problem.directionalClues[clueId] = {
+        id: clueId,
+        cell: cellIndex,
+        direction: 0,
+        value: value,
+        layer: 'problem',
+      };
+      cellIndex++;
+    } else if (char >= 'a' && char <= 'f') {
+      // Hex digit 10-15
+      const value = parseInt(char, 16);
+      const row = Math.floor(cellIndex / width);
+      const col = cellIndex % width;
+
+      const clueId = `clue-${row}-${col}`;
+      if (!state.problem.directionalClues) {
+        state.problem.directionalClues = {};
+      }
+      state.problem.directionalClues[clueId] = {
+        id: clueId,
+        cell: cellIndex,
+        direction: 0,
+        value: value,
+        layer: 'problem',
+      };
+      cellIndex++;
+    } else if (char === '-') {
+      // 2-digit hex number (16-255)
+      const hex = data.substring(i + 1, i + 3);
+      const value = parseInt(hex, 16);
+      i += 2;
+
+      const row = Math.floor(cellIndex / width);
+      const col = cellIndex % width;
+
+      const clueId = `clue-${row}-${col}`;
+      if (!state.problem.directionalClues) {
+        state.problem.directionalClues = {};
+      }
+      state.problem.directionalClues[clueId] = {
+        id: clueId,
+        cell: cellIndex,
+        direction: 0,
+        value: value,
+        layer: 'problem',
+      };
+      cellIndex++;
+    } else if (char === '+') {
+      // 3-digit hex number
+      const hex = data.substring(i + 1, i + 4);
+      const value = parseInt(hex, 16);
+      i += 3;
+
+      const row = Math.floor(cellIndex / width);
+      const col = cellIndex % width;
+
+      const clueId = `clue-${row}-${col}`;
+      if (!state.problem.directionalClues) {
+        state.problem.directionalClues = {};
+      }
+      state.problem.directionalClues[clueId] = {
+        id: clueId,
+        cell: cellIndex,
+        direction: 0,
+        value: value,
+        layer: 'problem',
+      };
+      cellIndex++;
+    } else if (char === '.') {
+      // Question mark - skip for now
+      cellIndex++;
+    }
+
+    i++;
+  }
+}
+
+/**
+ * Parse Masyu data from puzz.link
+ * Format: decodeCircle from pzprjs (base-27, 3 cells per character)
+ *
+ * Values: 0=empty, 1=white circle, 2=black circle
+ * Each character encodes 3 cells using base-27:
+ * - val = parseInt(char, 27)
+ * - cell0 = floor(val / 9) % 3
+ * - cell1 = floor(val / 3) % 3
+ * - cell2 = val % 3
+ */
+function parseMasyuData(data: string, width: number, height: number, state: PuzzleState): void {
+  const totalCells = width * height;
+  const tri = [9, 3, 1]; // Divisors for extracting 3 values from base-27
+  let cellIndex = 0;
+
+  for (let i = 0; i < data.length && cellIndex < totalCells; i++) {
+    const char = data[i];
+    const ca = parseInt(char, 27); // base-27
+
+    // Each character encodes up to 3 cells
+    for (let w = 0; w < 3 && cellIndex < totalCells; w++) {
+      const val = Math.floor(ca / tri[w]) % 3;
+
+      if (val > 0) {
+        const row = Math.floor(cellIndex / width);
+        const col = cellIndex % width;
+        const cellId = `cell-${row}-${col}`;
+        const symId = `sym-${row}-${col}`;
+
+        state.problem.symbols[symId] = {
+          id: symId,
+          cellId,
+          symbolType: val === 1 ? 'circle-empty' : 'circle-filled',
+          size: 'large',
+          color: '#000000',
+          rotation: 0,
+          layer: 'problem',
+        };
+      }
+      cellIndex++;
+    }
+  }
+}
+
+/**
+ * Parse Heyawake data from puzz.link
+ * Format: decodeBorder + decodeRoomNumber16 from pzprjs
+ *
+ * Data structure:
+ * 1. Border data (base-32 encoded, 5 borders per character)
+ *    - Vertical borders: (cols-1)*rows borders
+ *    - Horizontal borders: cols*(rows-1) borders
+ * 2. Room numbers (decodeNumber16 format after border data)
+ */
+function parseHeyawakeData(data: string, width: number, height: number, state: PuzzleState): void {
+  // Calculate border data length
+  const verticalBorderCount = (width - 1) * height;
+  const horizontalBorderCount = width * (height - 1);
+  const verticalChars = Math.ceil(verticalBorderCount / 5);
+  const horizontalChars = Math.ceil(horizontalBorderCount / 5);
+  const borderChars = verticalChars + horizontalChars;
+
+  // Parse border data
+  const borderData = data.substring(0, Math.min(borderChars, data.length));
+  const numberData = data.substring(borderChars);
+
+  // Decode borders (base-32, 5 bits per character)
+  const twi = [16, 8, 4, 2, 1]; // Bit weights for extracting 5 values
+
+  // Vertical borders (between columns): stored as array [row][col]
+  // There are (width-1) vertical borders per row
+  const verticalBorders: boolean[][] = Array.from({ length: height }, () =>
+    Array(width - 1).fill(false)
+  );
+
+  let borderIndex = 0;
+  for (let i = 0; i < verticalChars && i < borderData.length; i++) {
+    const ca = parseInt(borderData.charAt(i), 32);
+    for (let w = 0; w < 5; w++) {
+      if (borderIndex < verticalBorderCount) {
+        const row = Math.floor(borderIndex / (width - 1));
+        const col = borderIndex % (width - 1);
+        verticalBorders[row][col] = (ca & twi[w]) !== 0;
+        borderIndex++;
+      }
+    }
+  }
+
+  // Horizontal borders (between rows): stored after vertical borders
+  // There are width horizontal borders per inter-row gap
+  const horizontalBorders: boolean[][] = Array.from({ length: height - 1 }, () =>
+    Array(width).fill(false)
+  );
+
+  borderIndex = 0;
+  for (let i = verticalChars; i < verticalChars + horizontalChars && i < borderData.length; i++) {
+    const ca = parseInt(borderData.charAt(i), 32);
+    for (let w = 0; w < 5; w++) {
+      if (borderIndex < horizontalBorderCount) {
+        const row = Math.floor(borderIndex / width);
+        const col = borderIndex % width;
+        horizontalBorders[row][col] = (ca & twi[w]) !== 0;
+        borderIndex++;
+      }
+    }
+  }
+
+  // Convert borders to walls
+  let wallId = 1;
+
+  // Add vertical walls (between column col and col+1)
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width - 1; col++) {
+      if (verticalBorders[row][col]) {
+        const id = `wall-${wallId++}`;
+        state.problem.walls[id] = {
+          id,
+          position: `edge-v-${row}-${col + 1}`,
+          style: 'solid',
+          color: '#000000',
+          layer: 'problem',
+        };
+      }
+    }
+  }
+
+  // Add horizontal walls (between row r and r+1)
+  for (let row = 0; row < height - 1; row++) {
+    for (let col = 0; col < width; col++) {
+      if (horizontalBorders[row][col]) {
+        const id = `wall-${wallId++}`;
+        state.problem.walls[id] = {
+          id,
+          position: `edge-h-${row + 1}-${col}`,
+          style: 'solid',
+          color: '#000000',
+          layer: 'problem',
+        };
+      }
+    }
+  }
+
+  // Build rooms from borders using flood fill
+  const cellRoom: number[][] = Array.from({ length: height }, () =>
+    Array(width).fill(-1)
+  );
+  let roomId = 0;
+  const roomTopLeftCells: { row: number; col: number }[] = [];
+
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      if (cellRoom[row][col] === -1) {
+        // Found unvisited cell - flood fill to find room
+        const queue: { r: number; c: number }[] = [{ r: row, c: col }];
+        cellRoom[row][col] = roomId;
+        roomTopLeftCells.push({ row, col });
+
+        while (queue.length > 0) {
+          const { r, c } = queue.shift()!;
+
+          // Check up (no horizontal border above)
+          if (r > 0 && !horizontalBorders[r - 1][c] && cellRoom[r - 1][c] === -1) {
+            cellRoom[r - 1][c] = roomId;
+            queue.push({ r: r - 1, c });
+          }
+          // Check down (no horizontal border below)
+          if (r < height - 1 && !horizontalBorders[r][c] && cellRoom[r + 1][c] === -1) {
+            cellRoom[r + 1][c] = roomId;
+            queue.push({ r: r + 1, c });
+          }
+          // Check left (no vertical border to the left)
+          if (c > 0 && !verticalBorders[r][c - 1] && cellRoom[r][c - 1] === -1) {
+            cellRoom[r][c - 1] = roomId;
+            queue.push({ r, c: c - 1 });
+          }
+          // Check right (no vertical border to the right)
+          if (c < width - 1 && !verticalBorders[r][c] && cellRoom[r][c + 1] === -1) {
+            cellRoom[r][c + 1] = roomId;
+            queue.push({ r, c: c + 1 });
+          }
+        }
+        roomId++;
+      }
+    }
+  }
+
+  // Parse room numbers using decodeNumber16 (same as genericDecodeNumber16)
+  const roomNumbers: (number | null)[] = Array(roomId).fill(null);
+  let roomIndex = 0;
+  let i = 0;
+
+  while (i < numberData.length && roomIndex < roomId) {
+    const ca = numberData.charAt(i);
+
+    // readNumber16 equivalent
+    if ((ca >= '0' && ca <= '9') || (ca >= 'a' && ca <= 'f')) {
+      // Single hex digit (0-15)
+      roomNumbers[roomIndex] = parseInt(ca, 16);
+      roomIndex++;
+      i++;
+    } else if (ca === '-') {
+      // 2-digit hex number (16-255)
+      roomNumbers[roomIndex] = parseInt(numberData.substring(i + 1, i + 3), 16);
+      roomIndex++;
+      i += 3;
+    } else if (ca === '+') {
+      // 3-digit hex number (256-4095)
+      roomNumbers[roomIndex] = parseInt(numberData.substring(i + 1, i + 4), 16);
+      roomIndex++;
+      i += 4;
+    } else if (ca === '.') {
+      // Question mark (-2 in pzprjs)
+      roomNumbers[roomIndex] = -2;
+      roomIndex++;
+      i++;
+    } else if (ca >= 'g' && ca <= 'z') {
+      // Skip rooms: 'g'=1, 'h'=2, ... 'z'=20 (base36 - 15)
+      const skip = parseInt(ca, 36) - 15;
+      roomIndex += skip;
+      i++;
+    } else {
+      i++;
+    }
+  }
+
+  // Place room numbers at top-left cell of each room
+  for (let r = 0; r < roomId; r++) {
+    const num = roomNumbers[r];
+    if (num !== null && num >= 0) {
+      const { row, col } = roomTopLeftCells[r];
+      const id = `number-${row}-${col}`;
+      state.problem.numbers[id] = {
+        id,
+        cellId: `cell-${row}-${col}`,
+        value: String(num),
+        size: 'medium',
+        position: 'center',
+        color: '#000000',
+        layer: 'problem',
+      };
     }
   }
 }

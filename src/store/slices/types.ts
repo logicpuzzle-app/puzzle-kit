@@ -72,7 +72,7 @@ export const DEFAULT_TOOL_SETTINGS: ToolSettings = {
   lineDirections: ['orthogonal'],
   lineHalfMode: false,
   symbolGridPoints: ['cell'],
-  surfaceButtonMode: '1-button',  // Default to 1-button (cycle mode like puzz.link auto)
+  surfaceButtonMode: '2-button',  // Default to 2-button (left=shade, right=unshade)
   inputConstraint: 'none',  // Default to no input constraint
 };
 
@@ -119,7 +119,10 @@ export interface GridSlice {
   setCellDisabled: (cellId: string, disabled: boolean) => void;
 
   // Sculpt mode
+  sculptMode: 'rotate' | 'cut';
+  setSculptMode: (mode: 'rotate' | 'cut') => void;
   sculptRotateCluster: (vertexId: string) => void;
+  sculptCutCluster: (vertexId: string) => void;
 
   // Merge/Split cells
   mergeCells: (cellIds: string[]) => void;
@@ -255,7 +258,6 @@ export type InputModeType =
   | 'ice'
   | 'crossdot'
   | 'objblank'
-  | 'completion'
   | 'info-line'
   | 'info-blk'
   | 'info-ublk'
@@ -360,16 +362,21 @@ export interface PuzzleIOSlice {
     level?: number;
     isometricFaces?: import('../../types').IsometricFace[];
     isometricView?: import('../../types').IsometricView;
+    schemaId?: string;
   }) => void;
   exportPuzzle: () => string;
   importPuzzle: (json: string) => boolean;
 }
+
+// Re-export SolverSlice from solverSlice
+export type { SolverSlice } from './solverSlice';
 
 // Re-export cursor types from cursorSlice
 export type { CursorSlice, CssCursorClass, CursorOverlay, CursorConfig } from './cursorSlice';
 
 // Import CursorSlice for combined type
 import type { CursorSlice } from './cursorSlice';
+import type { SolverSlice } from './solverSlice';
 
 // Combined store type
 export type PuzzleStore = GridSlice &
@@ -382,7 +389,8 @@ export type PuzzleStore = GridSlice &
   HistorySlice &
   TrialSlice &
   PuzzleIOSlice &
-  CursorSlice;
+  CursorSlice &
+  SolverSlice;
 
 // Slice creator type
 export type SliceCreator<T> = StateCreator<PuzzleStore, [], [], T>;

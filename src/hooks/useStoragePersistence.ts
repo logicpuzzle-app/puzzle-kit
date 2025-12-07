@@ -56,8 +56,11 @@ export function useStoragePersistence() {
   } = usePuzzleStore();
 
   const hasInitialized = useRef(false);
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toolSettingsSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const gridSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const canvasSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const topologySaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const constraintSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Initialize from localStorage on mount
   useEffect(() => {
@@ -123,17 +126,17 @@ export function useStoragePersistence() {
   useEffect(() => {
     if (!hasInitialized.current || !isStorageAvailable()) return;
 
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
+    if (toolSettingsSaveTimeoutRef.current) {
+      clearTimeout(toolSettingsSaveTimeoutRef.current);
     }
 
-    saveTimeoutRef.current = setTimeout(() => {
+    toolSettingsSaveTimeoutRef.current = setTimeout(() => {
       saveToolSettings(toolSettings);
     }, SAVE_DEBOUNCE_MS);
 
     return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
+      if (toolSettingsSaveTimeoutRef.current) {
+        clearTimeout(toolSettingsSaveTimeoutRef.current);
       }
     };
   }, [toolSettings]);
@@ -142,17 +145,17 @@ export function useStoragePersistence() {
   useEffect(() => {
     if (!hasInitialized.current || !isStorageAvailable()) return;
 
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
+    if (gridSaveTimeoutRef.current) {
+      clearTimeout(gridSaveTimeoutRef.current);
     }
 
-    saveTimeoutRef.current = setTimeout(() => {
+    gridSaveTimeoutRef.current = setTimeout(() => {
       saveGridConfig(grid);
     }, SAVE_DEBOUNCE_MS);
 
     return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
+      if (gridSaveTimeoutRef.current) {
+        clearTimeout(gridSaveTimeoutRef.current);
       }
     };
   }, [grid]);
@@ -161,17 +164,17 @@ export function useStoragePersistence() {
   useEffect(() => {
     if (!hasInitialized.current || !isStorageAvailable()) return;
 
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
+    if (canvasSaveTimeoutRef.current) {
+      clearTimeout(canvasSaveTimeoutRef.current);
     }
 
-    saveTimeoutRef.current = setTimeout(() => {
+    canvasSaveTimeoutRef.current = setTimeout(() => {
       saveCanvasState(canvas);
     }, SAVE_DEBOUNCE_MS);
 
     return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
+      if (canvasSaveTimeoutRef.current) {
+        clearTimeout(canvasSaveTimeoutRef.current);
       }
     };
   }, [canvas.zoom]); // Only save on zoom change, not pan
@@ -209,17 +212,17 @@ export function useStoragePersistence() {
   useEffect(() => {
     if (!hasInitialized.current || !isStorageAvailable()) return;
 
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
+    if (constraintSaveTimeoutRef.current) {
+      clearTimeout(constraintSaveTimeoutRef.current);
     }
 
-    saveTimeoutRef.current = setTimeout(() => {
+    constraintSaveTimeoutRef.current = setTimeout(() => {
       saveConstraintState(currentSchemaId, currentInputMode, validationOverrides);
     }, SAVE_DEBOUNCE_MS);
 
     return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
+      if (constraintSaveTimeoutRef.current) {
+        clearTimeout(constraintSaveTimeoutRef.current);
       }
     };
   }, [currentSchemaId, currentInputMode, validationOverrides]);

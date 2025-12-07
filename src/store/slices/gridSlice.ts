@@ -148,7 +148,11 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       return state;
     }),
 
-  // Sculpt mode: flip a 3-cell cluster vertically around pivot
+  // Sculpt mode type: 'rotate' (flip cells) or 'cut' (triangle cut)
+  sculptMode: 'rotate' as 'rotate' | 'cut',
+  setSculptMode: (mode: 'rotate' | 'cut') => set({ sculptMode: mode }),
+
+  // Sculpt rotate: flip a 3-cell cluster vertically around pivot
   sculptRotateCluster: (vertexId: string) =>
     set((state) => {
       if (!state.topology || state.grid.gridType !== 'iso') return state;
@@ -435,6 +439,256 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
         grid: { ...state.grid, sculptOperations: newSculptOps },
         topology: {
           ...state.topology,
+          vertices: newVertices,
+          edges: newEdges,
+          cells: newCells,
+          bounds,
+        },
+      };
+    }),
+
+  // Sculpt cut: Remove vertex and connect 3 adjacent vertices with a triangle
+  // This removes the 3 cells around the vertex and creates a new triangular cell
+  sculptCutCluster: (vertexId: string) =>
+    set((state) => {
+      if (!state.topology || state.grid.gridType !== 'iso') return state;
+      const topology = state.topology;
+      const pivot = topology.vertices.get(vertexId);
+      if (!pivot || pivot.adjacentCells.length !== 3) return state;
+
+      const clusterCellIds = new Set(pivot.adjacentCells);
+
+      // Validate: all adjacent cells must be quadrilaterals (not triangles from previous cuts)
+      const cells = pivot.adjacentCells
+        .map((id) => topology.cells.get(id))
+        .filter((c): c is NonNullable<typeof c> => !!c);
+
+      // Check for cells created by previous cut operations
+      const hasCutCell = cells.some(
+        (c) => c.id.startsWith('cell-triangle-') || c.id.startsWith('cell-trapezoid-')
+      );
+      if (hasCutCell) {
+        console.log('[sculptCutCluster] abort: vertex is adjacent to a cut cell');
+        return state;
+      }
+
+      // Verify all cells are quadrilaterals
+      const allQuads = cells.every((c) => c.boundaryVertices.length === 4);
+      if (!allQuads) {
+        console.log('[sculptCutCluster] abort: not all adjacent cells are quadrilaterals');
+        return state;
+      }
+
+      // Find outer ring: 6 vertices around pivot (excluding pivot itself)
+      const outerVertexIds = new Set<string>();
+      clusterCellIds.forEach((cellId) => {
+        const cell = topology.cells.get(cellId);
+        cell?.boundaryVertices.forEach((vId) => {
+          if (vId !== pivot.id) outerVertexIds.add(vId);
+        });
+      });
+
+      if (outerVertexIds.size !== 6) {
+        console.log('[sculptCutCluster] abort: expected 6 outer vertices, got', outerVertexIds.size);
+        return state;
+      }
+
+      // Order outer vertices by angle around pivot
+      const orderedOuter = Array.from(outerVertexIds)
+        .map((vid) => {
+          const v = topology.vertices.get(vid)!;
+          return {
+            vid,
+            angle: Math.atan2(v.position.y - pivot.position.y, v.position.x - pivot.position.x),
+          };
+        })
+        .sort((a, b) => a.angle - b.angle);
+
+      // Find the 3 vertices that are shared between adjacent cells (the "corner" vertices)
+      // These are at indices 0, 2, 4 (every other vertex in the hexagon)
+      // We need to identify which set (0,2,4 or 1,3,5) are the corner vertices
+      // Corner vertices are those that belong to exactly 2 of the 3 cluster cells
+      const vertexCellCount = new Map<string, number>();
+      clusterCellIds.forEach((cellId) => {
+        const cell = topology.cells.get(cellId);
+        cell?.boundaryVertices.forEach((vId) => {
+          if (vId !== pivot.id) {
+            vertexCellCount.set(vId, (vertexCellCount.get(vId) || 0) + 1);
+          }
+        });
+      });
+
+      // Corner vertices belong to 2 cells, edge midpoint vertices belong to 1 cell
+      const cornerVertexIds = orderedOuter
+        .filter(({ vid }) => vertexCellCount.get(vid) === 2)
+        .map(({ vid }) => vid);
+
+      if (cornerVertexIds.length !== 3) {
+        console.log('[sculptCutCluster] abort: expected 3 corner vertices, got', cornerVertexIds.length);
+        return state;
+      }
+
+      // Get edge-only vertices (belong to only 1 of the 3 cluster cells)
+      const edgeOnlyVertexIds = orderedOuter
+        .filter(({ vid }) => vertexCellCount.get(vid) === 1)
+        .map(({ vid }) => vid);
+
+      console.log('[sculptCutCluster] cutting vertex', vertexId, 'corners:', cornerVertexIds, 'edgeOnly:', edgeOnlyVertexIds);
+
+      // Create new Maps for mutation
+      const newVertices = new Map(topology.vertices);
+      const newCells = new Map(topology.cells);
+      const newEdges = new Map(topology.edges);
+
+      // Remove the pivot vertex
+      newVertices.delete(pivot.id);
+
+      // Create a new triangular cell connecting the 3 corner vertices
+      const triangleId = `cell-triangle-${vertexId}`;
+      const cornerPositions = cornerVertexIds.map((vid) => newVertices.get(vid)!.position);
+      const triangleCenter: Point = {
+        x: cornerPositions.reduce((sum, p) => sum + p.x, 0) / 3,
+        y: cornerPositions.reduce((sum, p) => sum + p.y, 0) / 3,
+      };
+
+      newCells.set(triangleId, {
+        id: triangleId,
+        boundaryVertices: cornerVertexIds,
+        boundaryEdges: [],
+        center: triangleCenter,
+        adjacentCells: [], // Will be updated below
+      });
+
+      // Transform each original quadrilateral cell into a triangle (trapezoid remainder)
+      // by removing the pivot vertex and keeping the other 3 vertices
+      // Original quad: [pivot, corner1, opposite, corner2] -> Triangle: [corner1, opposite, corner2]
+      const cornerSet = new Set(cornerVertexIds);
+      clusterCellIds.forEach((cellId) => {
+        const cell = topology.cells.get(cellId);
+        if (!cell) return;
+
+        // Build new boundary: remove pivot vertex, keep the other 3 vertices
+        const newBoundary = cell.boundaryVertices.filter((vid) => vid !== pivot.id);
+
+        if (newBoundary.length !== 3) {
+          console.log('[sculptCutCluster] unexpected: remaining boundary has', newBoundary.length, 'vertices');
+          return;
+        }
+
+        // Calculate new center (centroid of triangle)
+        const positions = newBoundary
+          .map((vid) => newVertices.get(vid)?.position)
+          .filter((p): p is Point => !!p);
+        const newCenter: Point = {
+          x: positions.reduce((sum, p) => sum + p.x, 0) / positions.length,
+          y: positions.reduce((sum, p) => sum + p.y, 0) / positions.length,
+        };
+
+        // Update the cell with new triangle boundary
+        const trapezoidId = `cell-trapezoid-${cellId.replace('cell-', '')}`;
+        newCells.delete(cellId);
+        newCells.set(trapezoidId, {
+          id: trapezoidId,
+          boundaryVertices: newBoundary,
+          boundaryEdges: [],
+          center: newCenter,
+          adjacentCells: [], // Will be updated below
+        });
+      });
+
+      // Rebuild edges from cells
+      const edgeKey = (a: string, b: string) => (a < b ? `${a}-${b}` : `${b}-${a}`);
+      const edgeAccumulator = new Map<string, { startVertex: string; endVertex: string; cells: string[] }>();
+
+      newCells.forEach((cell, cellId) => {
+        const verts = cell.boundaryVertices;
+        for (let i = 0; i < verts.length; i++) {
+          const start = verts[i];
+          const end = verts[(i + 1) % verts.length];
+          const key = edgeKey(start, end);
+          const acc = edgeAccumulator.get(key) ?? { startVertex: start, endVertex: end, cells: [] };
+          if (!acc.cells.includes(cellId)) acc.cells.push(cellId);
+          edgeAccumulator.set(key, acc);
+        }
+      });
+
+      newEdges.clear();
+      edgeAccumulator.forEach((acc, key) => {
+        const v1 = newVertices.get(acc.startVertex);
+        const v2 = newVertices.get(acc.endVertex);
+        if (!v1 || !v2) return;
+        newEdges.set(key, {
+          id: key,
+          startVertex: acc.startVertex,
+          endVertex: acc.endVertex,
+          midpoint: {
+            x: (v1.position.x + v2.position.x) / 2,
+            y: (v1.position.y + v2.position.y) / 2,
+          },
+          adjacentCells: acc.cells,
+          isBoundary: acc.cells.length === 1,
+        });
+      });
+
+      // Update adjacentCells for all cells
+      newCells.forEach((cell, cellId) => {
+        const adjCells = new Set<string>();
+        const verts = cell.boundaryVertices;
+        for (let i = 0; i < verts.length; i++) {
+          const start = verts[i];
+          const end = verts[(i + 1) % verts.length];
+          const key = edgeKey(start, end);
+          const edge = newEdges.get(key);
+          if (edge) {
+            edge.adjacentCells.forEach((cId) => {
+              if (cId !== cellId) adjCells.add(cId);
+            });
+          }
+        }
+        newCells.set(cellId, { ...cell, adjacentCells: Array.from(adjCells) });
+      });
+
+      // Rebuild vertex adjacentCells from cells
+      const vertexToCells = new Map<string, Set<string>>();
+      newCells.forEach((cell, cellId) => {
+        cell.boundaryVertices.forEach((vid: string) => {
+          if (!vertexToCells.has(vid)) vertexToCells.set(vid, new Set());
+          vertexToCells.get(vid)!.add(cellId);
+        });
+      });
+      vertexToCells.forEach((cellIds, vid) => {
+        const v = newVertices.get(vid);
+        if (v) {
+          newVertices.set(vid, { ...v, adjacentCells: Array.from(cellIds) });
+        }
+      });
+
+      // Recalculate bounds
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      newVertices.forEach((v) => {
+        minX = Math.min(minX, v.position.x);
+        minY = Math.min(minY, v.position.y);
+        maxX = Math.max(maxX, v.position.x);
+        maxY = Math.max(maxY, v.position.y);
+      });
+      const prevBounds = topology.bounds;
+      const bounds = {
+        minX,
+        minY,
+        maxX,
+        maxY,
+        width: prevBounds.width,
+        height: prevBounds.height,
+      };
+
+      // Save operation to grid config for regeneration on load
+      const currentSculptOps = state.grid.sculptOperations || [];
+      const newSculptOps = [...currentSculptOps, { type: 'cut' as const, vertexId }];
+
+      return {
+        grid: { ...state.grid, sculptOperations: newSculptOps },
+        topology: {
+          ...topology,
           vertices: newVertices,
           edges: newEdges,
           cells: newCells,

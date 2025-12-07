@@ -23,12 +23,20 @@ import {
 
 /**
  * Get pearl type at a cell
+ * White pearls: circle, circle-empty, circle-unshade
+ * Black pearls: circle-filled, circle-shade
  */
 function getPearlType(ctx: ValidationContext, row: number, col: number): 'white' | 'black' | null {
   const symbol = ctx.getSymbol(row, col);
   if (!symbol) return null;
-  if (symbol.symbolType === 'circle') return 'white';
-  if (symbol.symbolType === 'circle-filled') return 'black';
+  // White pearls
+  if (symbol.symbolType === 'circle' || symbol.symbolType === 'circle-empty' || symbol.symbolType === 'circle-unshade') {
+    return 'white';
+  }
+  // Black pearls
+  if (symbol.symbolType === 'circle-filled' || symbol.symbolType === 'circle-shade') {
+    return 'black';
+  }
   return null;
 }
 

@@ -15,7 +15,7 @@ import {
   isPenpaUrl,
   type PenpaExportData,
 } from '../../utils/penpaSerializer';
-import { parsePuzzlinkUrl, type PuzzlinkData } from '../../utils/penpaCompat';
+import { parsePuzzlinkUrl, isPuzsqUrl, fetchPuzsqPuzzle, type PuzzlinkData } from '../../utils/penpaCompat';
 import {
   exportToJson,
   exportSvgToPng,
@@ -118,6 +118,15 @@ export const ImportExportDialog: React.FC<ImportExportDialogProps> = ({
           setSuccess('Puzzle imported successfully!');
         } else {
           setError('Invalid JSON format');
+        }
+      } else if (isPuzsqUrl(input)) {
+        // puzsq URL - needs async fetch
+        const data = await fetchPuzsqPuzzle(input);
+        if (data) {
+          onImport?.(data);
+          setSuccess('Puzzle imported from Puzzle Square!');
+        } else {
+          setError('Failed to fetch puzzle from Puzzle Square');
         }
       } else if (input.includes('puzz.link') || input.includes('pzv.jp')) {
         // puzz.link URL

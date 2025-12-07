@@ -13,3 +13,4 @@ export { createHistorySlice, applyActionToState } from './historySlice';
 export { createTrialSlice } from './trialSlice';
 export { createPuzzleIOSlice } from './puzzleIOSlice';
 export { createCursorSlice } from './cursorSlice';
+export { createSolverSlice } from './solverSlice';

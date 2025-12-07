@@ -106,3 +106,62 @@ export const GridExcludeContent: React.FC = () => {
     </div>
   );
 };
+
+// Sculpt mode content (for isometric grids)
+export const GridSculptContent: React.FC = () => {
+  const { t } = useTranslation();
+  const { sculptMode, setSculptMode, grid, setGrid } = usePuzzleStore();
+
+  const sculptCount = grid.sculptOperations?.length ?? 0;
+
+  return (
+    <div className="space-y-3">
+      {/* Sculpt mode selector */}
+      <div>
+        <label className="block text-xs text-office-text-secondary mb-1">
+          {t('gridEdit.sculptMode')}
+        </label>
+        <div className="flex gap-1">
+          {(['rotate', 'cut'] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              className={`flex-1 px-2 py-1.5 text-xs border rounded-sm transition-colors ${
+                sculptMode === mode
+                  ? 'bg-office-accent text-white border-office-accent'
+                  : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+              }`}
+              onClick={() => setSculptMode(mode)}
+            >
+              {t(`gridEdit.sculptMode.${mode}`)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Mode description */}
+      <div className="text-xs text-office-text-secondary">
+        {sculptMode === 'rotate'
+          ? t('gridEdit.sculptHelp.rotate')
+          : t('gridEdit.sculptHelp.cut')}
+      </div>
+
+      {/* Sculpt operations count */}
+      <div className="space-y-1">
+        <div className="text-xs text-office-text-secondary">
+          {t('gridEdit.sculptOperations')}: <span className="font-medium text-office-text">{sculptCount}</span>
+        </div>
+      </div>
+
+      {/* Clear all sculpt operations */}
+      {sculptCount > 0 && (
+        <button
+          className="w-full px-2 py-1.5 text-xs border border-office-border rounded-sm hover:bg-red-50 hover:border-red-300 text-red-600"
+          onClick={() => setGrid({ sculptOperations: undefined })}
+        >
+          {t('gridEdit.clearAllSculpt')}
+        </button>
+      )}
+    </div>
+  );
+};

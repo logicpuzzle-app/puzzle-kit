@@ -9,6 +9,8 @@
 
 import type { SliceCreator } from './types';
 import type { ToolType, LayerType } from '../../types';
+import { constraintCatalog } from '../../constraints';
+import { getAutoModeConfig } from '../../constraints/inputModeMapping';
 
 // ========================================
 // Cursor Configuration Types
@@ -245,6 +247,9 @@ export const createCursorSlice: SliceCreator<CursorSlice> = (_set, get) => ({
       toolSettings,
       activeLayer,
       gridEditMode,
+      showConstraintLayer,
+      currentSchemaId,
+      currentInputMode,
     } = get();
 
     // Start with default config
@@ -268,7 +273,7 @@ export const createCursorSlice: SliceCreator<CursorSlice> = (_set, get) => ({
       };
     }
 
-    // Constraint mode - no editing, default cursor
+    // Constraint mode (activeLayer === 'constraint') - no editing, default cursor
     if (activeLayer === 'constraint') {
       return {
         css: 'cursor-default',
@@ -291,6 +296,114 @@ export const createCursorSlice: SliceCreator<CursorSlice> = (_set, get) => ({
       const gridConfig = GRID_EDIT_CURSOR_MAP[gridEditMode] || {};
       config = mergeCursorConfig(config, gridConfig);
       return config;
+    }
+
+    // Check if constraint is enabled (not in constraint layer, but constraint mode is active)
+    const isConstraintEnabled = showConstraintLayer && currentSchemaId !== null;
+
+    if (isConstraintEnabled) {
+      // Get cursor based on currentInputMode and auto mode type
+      const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
+      const isEditMode = activeLayer === 'problem';
+      const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
+
+      // Determine cursor type based on input mode
+      const isNumberInputMode = currentInputMode === 'number' || currentInputMode === 'number-';
+      const isDirecInputMode = currentInputMode === 'direc';
+      const isAutoNumberMode = currentInputMode === 'auto' && autoConfig.type === 'number';
+      const isAutoDirecMode = currentInputMode === 'auto' && autoConfig.type === 'direc';
+      const isAutoBorderNumberMode = currentInputMode === 'auto' && autoConfig.type === 'border-number';
+      const isAutoLineMode = currentInputMode === 'auto' && autoConfig.type === 'line';
+      const isAutoLineCellMode = currentInputMode === 'auto' && autoConfig.type === 'line-cell';
+      const isAutoCellMode = currentInputMode === 'auto' && autoConfig.type === 'cell';
+
+      // Number input modes - show number cursor
+      if (isNumberInputMode || isDirecInputMode || isAutoNumberMode || isAutoDirecMode || isAutoBorderNumberMode) {
+        return {
+          css: 'cursor-crosshair',
+          overlay: {
+            showCellCursor: false,
+            showLineCursor: false,
+            showSymbolCursor: false,
+            showNumberCursor: true,
+            showSelectionRect: false,
+            showMergePreview: false,
+            showSplitPreview: false,
+            showSculptPreview: false,
+            showSpecialPreview: false,
+          },
+        };
+      }
+
+      // Line input modes - show line cursor
+      if (isAutoLineMode) {
+        return {
+          css: 'cursor-crosshair',
+          overlay: {
+            showCellCursor: false,
+            showLineCursor: true,
+            showSymbolCursor: false,
+            showNumberCursor: false,
+            showSelectionRect: false,
+            showMergePreview: false,
+            showSplitPreview: false,
+            showSculptPreview: false,
+            showSpecialPreview: false,
+          },
+        };
+      }
+
+      // Line-cell mode (Yajilin) - show cell cursor (both line and shade use cell)
+      if (isAutoLineCellMode) {
+        return {
+          css: 'cursor-crosshair',
+          overlay: {
+            showCellCursor: true,
+            showLineCursor: false,
+            showSymbolCursor: false,
+            showNumberCursor: false,
+            showSelectionRect: false,
+            showMergePreview: false,
+            showSplitPreview: false,
+            showSculptPreview: false,
+            showSpecialPreview: false,
+          },
+        };
+      }
+
+      // Cell input modes (shade/unshade) - show cell cursor
+      if (isAutoCellMode) {
+        return {
+          css: 'cursor-crosshair',
+          overlay: {
+            showCellCursor: true,
+            showLineCursor: false,
+            showSymbolCursor: false,
+            showNumberCursor: false,
+            showSelectionRect: false,
+            showMergePreview: false,
+            showSplitPreview: false,
+            showSculptPreview: false,
+            showSpecialPreview: false,
+          },
+        };
+      }
+
+      // Other constraint modes - show cell cursor by default
+      return {
+        css: 'cursor-crosshair',
+        overlay: {
+          showCellCursor: true,
+          showLineCursor: false,
+          showSymbolCursor: false,
+          showNumberCursor: false,
+          showSelectionRect: false,
+          showMergePreview: false,
+          showSplitPreview: false,
+          showSculptPreview: false,
+          showSpecialPreview: false,
+        },
+      };
     }
 
     // Normal editing mode - use tool cursor

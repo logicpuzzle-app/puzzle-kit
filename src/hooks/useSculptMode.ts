@@ -4,7 +4,9 @@
  * Handles:
  * - Finding nearest hexagon center from mouse position
  * - Calculating hexagon polygon for cursor display
- * - Flipping hexagons (toggling 3 cells)
+ * - Two modes:
+ *   - 'rotate': Flipping hexagons (toggling 3 cells)
+ *   - 'cut': Triangle cut (removes vertex and connects 3 corners)
  */
 
 import { useCallback, useMemo, useState } from 'react';
@@ -23,7 +25,7 @@ interface SculptHover {
 }
 
 export function useSculptMode({ grid, topology }: UseSculptModeOptions) {
-  const { sculptRotateCluster } = usePuzzleStore();
+  const { sculptMode, sculptRotateCluster, sculptCutCluster } = usePuzzleStore();
   const [sculptHover, setSculptHover] = useState<SculptHover | null>(null);
 
   const candidates = useMemo(() => {
@@ -42,6 +44,22 @@ export function useSculptMode({ grid, topology }: UseSculptModeOptions) {
           .map((id) => topology.cells.get(id))
           .filter((c): c is TopologyCell => !!c);
         if (cells.length === 3) {
+          // Exclude vertices that are adjacent to cells created by cut operation
+          // These include: 'cell-triangle-' (center triangle) and 'cell-trapezoid-' (remaining triangles)
+          const hasCutCell = cells.some(
+            (c) => c.id.startsWith('cell-triangle-') || c.id.startsWith('cell-trapezoid-')
+          );
+          if (hasCutCell) {
+            return; // Skip this vertex - it's adjacent to a cut cell
+          }
+
+          // Also verify all adjacent cells are quadrilaterals (4 vertices)
+          // This ensures we're targeting original isometric grid vertices
+          const allQuads = cells.every((c) => c.boundaryVertices.length === 4);
+          if (!allQuads) {
+            return; // Skip - not all cells are quadrilaterals
+          }
+
           result.push({ vertex: v, cellIds: cells.map((c) => c.id) });
         }
       }
@@ -73,10 +91,15 @@ export function useSculptMode({ grid, topology }: UseSculptModeOptions) {
     (point: Point, _isRightClick: boolean) => {
       const hit = findNearestVertex(point);
       if (hit) {
-        sculptRotateCluster(hit.vertexId);
+        // Call appropriate function based on sculptMode
+        if (sculptMode === 'cut') {
+          sculptCutCluster(hit.vertexId);
+        } else {
+          sculptRotateCluster(hit.vertexId);
+        }
       }
     },
-    [findNearestVertex, sculptRotateCluster]
+    [findNearestVertex, sculptMode, sculptRotateCluster, sculptCutCluster]
   );
 
   const updateSculptHover = useCallback(
@@ -108,6 +131,7 @@ export function useSculptMode({ grid, topology }: UseSculptModeOptions) {
 
   return {
     sculptHover,
+    sculptMode,
     handleSculptMode,
     updateSculptHover,
     getSculptHoverPolygons,

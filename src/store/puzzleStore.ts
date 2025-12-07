@@ -19,6 +19,7 @@ import { createHistorySlice } from './slices/historySlice';
 import { createTrialSlice } from './slices/trialSlice';
 import { createPuzzleIOSlice } from './slices/puzzleIOSlice';
 import { createCursorSlice } from './slices/cursorSlice';
+import { createSolverSlice } from './slices/solverSlice';
 import { actionExecutor } from './actionExecutor';
 
 // Re-export types for backward compatibility
@@ -66,5 +67,6 @@ export const usePuzzleStore = create<PuzzleStore>((...args) => {
     ...createTrialSlice(...args),
     ...createPuzzleIOSlice(...args),
     ...createCursorSlice(...args),
+    ...createSolverSlice(...args),
   };
 });

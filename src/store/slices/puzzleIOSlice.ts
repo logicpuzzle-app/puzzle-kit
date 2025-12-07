@@ -24,6 +24,7 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
       level,
       isometricFaces,
       isometricView,
+      schemaId,
     } = options;
 
     const baseGrid: GridConfig = {
@@ -74,6 +75,11 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
       toolSettings: { ...DEFAULT_TOOL_SETTINGS },
       activeLayer: 'grid',
       topology,
+      // Set constraint schema if provided
+      currentSchemaId: schemaId ?? null,
+      showConstraintLayer: schemaId ? true : false,
+      currentInputMode: 'auto',
+      validationOverrides: {},
     });
     historyManager.clear();
   },

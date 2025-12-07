@@ -11,7 +11,7 @@ import {
   loadAutoSave,
 } from '../../utils/serialization';
 import { gridConfigToTopology, applyTopologyPreset } from '../../utils/gridTopology';
-import { parsePenpaUrl, isPenpaUrl, parsePuzzlinkUrl, isPuzzlinkUrl, generatePuzzlinkUrl } from '../../utils/penpaCompat';
+import { parsePenpaUrl, isPenpaUrl, parsePuzzlinkUrl, isPuzzlinkUrl, isPuzsqUrl, fetchPuzsqPuzzle, generatePuzzlinkUrl } from '../../utils/penpaCompat';
 import { NewPuzzleDialog } from '../dialogs/NewPuzzleDialog';
 import { PerformanceTestDialog } from '../dialogs/PerformanceTestDialog';
 import { ShareUrlDialog } from '../dialogs/ShareUrlDialog';
@@ -27,6 +27,7 @@ interface MenuItem {
   disabled?: boolean;
   strikethrough?: boolean;
   suffix?: string;
+  checked?: boolean;
 }
 
 interface MenuDefinition {
@@ -45,6 +46,7 @@ export const MenuBar: React.FC = () => {
 
   const {
     grid,
+    setGrid,
     puzzle,
     undo,
     redo,
@@ -55,7 +57,16 @@ export const MenuBar: React.FC = () => {
     topologyPreset,
     topologyIntensity,
     showConstraintLayer,
+    toggleConstraintLayer,
     currentSchemaId,
+    setCurrentSchemaId,
+    setActiveLayer,
+    showAdjacency,
+    setShowAdjacency,
+    showProblemLayer,
+    showAnswerLayer,
+    toggleProblemLayer,
+    toggleAnswerLayer,
   } = usePuzzleStore();
 
   // Check if constraint mode is enabled (constraint layer visible + preset selected)
@@ -497,45 +508,78 @@ export const MenuBar: React.FC = () => {
   };
 
   const handleImportPenpaUrl = () => {
-    const url = prompt(t('file.importPenpaUrl') || 'Enter Penpa or puzz.link URL:');
-    if (!url) return;
-
-    let result = null;
-
-    // Try puzz.link format first
-    if (isPuzzlinkUrl(url)) {
-      result = parsePuzzlinkUrl(url);
-    } else if (isPenpaUrl(url)) {
-      result = parsePenpaUrl(url);
-    } else {
-      showAlert({
-        title: t('error.invalidPenpaUrl'),
-        message: t('error.invalidPenpaUrl'),
-        variant: 'error',
-      });
-      return;
-    }
-
-    if (result) {
-      // Sync ID counters to avoid collisions
-      syncCountersFromPuzzleState(result.state);
-      usePuzzleStore.setState({
-        grid: result.grid,
-        puzzle: result.state,
-      });
-      showAlert({
-        title: t('file.importSuccess'),
-        message: t('file.importSuccess'),
-        variant: 'success',
-      });
-    } else {
-      showAlert({
-        title: t('error.importFailed'),
-        message: t('error.importFailed'),
-        variant: 'error',
-      });
-    }
+    const { showUrlImport } = useModalStore.getState();
     setActiveMenu(null);
+
+    showUrlImport(async (url) => {
+      let result = null;
+      let puzzleType: string | undefined = undefined;
+
+      // Try puzsq format first (needs async fetch)
+      if (isPuzsqUrl(url)) {
+        result = await fetchPuzsqPuzzle(url);
+        puzzleType = result?.puzzleType;
+      // Try puzz.link format
+      } else if (isPuzzlinkUrl(url)) {
+        result = parsePuzzlinkUrl(url);
+        puzzleType = result?.puzzleType;
+      } else if (isPenpaUrl(url)) {
+        result = parsePenpaUrl(url);
+      } else {
+        showAlert({
+          title: t('error.invalidPenpaUrl'),
+          message: t('error.invalidPenpaUrl'),
+          variant: 'error',
+        });
+        return;
+      }
+
+      if (result) {
+        // Sync ID counters to avoid collisions
+        syncCountersFromPuzzleState(result.state);
+        usePuzzleStore.setState({
+          grid: result.grid,
+          puzzle: result.state,
+        });
+
+        // If puzz.link puzzle type is known, enable constraint mode
+        if (puzzleType) {
+          // Map puzz.link puzzle types to constraint schema IDs
+          const puzzleTypeToSchemaId: Record<string, string> = {
+            'yajilin': 'yajilin',
+            'lixloop': 'yajilin', // lixloop uses yajilin schema
+            'slitherlink': 'slither',
+            'slither': 'slither',
+            'mashu': 'mashu',
+            'nurikabe': 'nurikabe',
+            'heyawake': 'heyawake',
+          };
+
+          const schemaId = puzzleTypeToSchemaId[puzzleType];
+          if (schemaId) {
+            // Enable constraint mode with the appropriate schema
+            setCurrentSchemaId(schemaId);
+            // Also enable constraint layer visibility and set active layer to problem
+            usePuzzleStore.setState({
+              showConstraintLayer: true,
+              activeLayer: 'problem',
+            });
+          }
+        }
+
+        showAlert({
+          title: t('file.importSuccess'),
+          message: t('file.importSuccess'),
+          variant: 'success',
+        });
+      } else {
+        showAlert({
+          title: t('error.importFailed'),
+          message: t('error.importFailed'),
+          variant: 'error',
+        });
+      }
+    });
   };
 
   const handleExportPuzzlink = () => {
@@ -577,6 +621,12 @@ export const MenuBar: React.FC = () => {
         { labelKey: 'edit.undo', shortcut: 'Ctrl+Z', action: () => { undo(); setActiveMenu(null); } },
         { labelKey: 'edit.redo', shortcut: 'Ctrl+Y', action: () => { redo(); setActiveMenu(null); } },
         { divider: true, labelKey: '' },
+        {
+          labelKey: 'edit.constraintMode',
+          checked: showConstraintLayer,
+          action: () => { toggleConstraintLayer(); setActiveMenu(null); },
+        },
+        { divider: true, labelKey: '' },
         { labelKey: 'edit.clearProblem', action: () => { clearLayer('problem'); setActiveMenu(null); } },
         { labelKey: 'edit.clearAnswer', action: () => { clearLayer('answer'); setActiveMenu(null); } },
         { labelKey: 'edit.clearAll', action: () => { clearAll(); setActiveMenu(null); } },
@@ -585,7 +635,27 @@ export const MenuBar: React.FC = () => {
     {
       labelKey: 'menu.view',
       items: [
-        { labelKey: 'help.shortcuts', action: () => { showShortcuts(); setActiveMenu(null); } },
+        {
+          labelKey: 'view.showGrid',
+          checked: grid.showGrid,
+          action: () => { setGrid({ showGrid: !grid.showGrid }); setActiveMenu(null); },
+        },
+        {
+          labelKey: 'view.showAdjacency',
+          checked: showAdjacency,
+          action: () => { setShowAdjacency(!showAdjacency); setActiveMenu(null); },
+        },
+        { divider: true, labelKey: '' },
+        {
+          labelKey: 'view.showProblem',
+          checked: showProblemLayer,
+          action: () => { toggleProblemLayer(); setActiveMenu(null); },
+        },
+        {
+          labelKey: 'view.showAnswer',
+          checked: showAnswerLayer,
+          action: () => { toggleAnswerLayer(); setActiveMenu(null); },
+        },
       ],
     },
     {
@@ -688,7 +758,12 @@ export const MenuBar: React.FC = () => {
                     onClick={() => !item.disabled && item.action?.()}
                     disabled={item.disabled}
                   >
-                    <span className={item.strikethrough ? 'line-through' : ''}>
+                    <span className={`flex items-center gap-2 ${item.strikethrough ? 'line-through' : ''}`}>
+                      {item.checked !== undefined && (
+                        <span className="w-4 text-center">
+                          {item.checked ? '✓' : ''}
+                        </span>
+                      )}
                       {t(item.labelKey)}{item.suffix ? ` ${item.suffix}` : ''}
                     </span>
                     {item.shortcut && (

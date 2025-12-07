@@ -438,6 +438,11 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
     handleContextMenu,
     handleNumberTool,
     handleTextTool,
+    // Surface handlers (exposed for line-cell auto mode)
+    handleSurfaceCycleTool,
+    resetFillModes,
+    // Symbol handlers (exposed for line auto mode - peke input)
+    handleSymbolTool,
     // Touch handlers
     handleTouchStart,
     handleTouchMove,

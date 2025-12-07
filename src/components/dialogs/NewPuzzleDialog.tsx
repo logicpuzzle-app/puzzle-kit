@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../store/puzzleStore';
+import { constraintCatalog } from '../../constraints';
 import type { GridType, IsometricFace } from '../../types';
 
 interface NewPuzzleDialogProps {
@@ -35,6 +36,14 @@ export const NewPuzzleDialog: React.FC<NewPuzzleDialogProps> = ({
   const [level, setLevel] = useState(5);
   // Default: all faces enabled
   const [isometricFaces, setIsometricFaces] = useState<IsometricFace[]>(['top', 'left', 'right']);
+  // Preset schema selection (null = no constraint)
+  const [selectedSchemaId, setSelectedSchemaId] = useState<string | null>(null);
+
+  // Get available schemas for current grid type
+  const availableSchemas = useMemo(() => {
+    const schemas = constraintCatalog.getAllSchemas();
+    return schemas.filter((schema) => schema.grid === gridType);
+  }, [gridType]);
 
   const toggleFace = (face: IsometricFace) => {
     setIsometricFaces((prev) => {
@@ -49,11 +58,16 @@ export const NewPuzzleDialog: React.FC<NewPuzzleDialogProps> = ({
   };
 
   const handleCreate = () => {
-    if (gridType === 'iso') {
-      newPuzzle({ gridType, rows, cols, level, isometricFaces });
-    } else {
-      newPuzzle({ gridType, rows, cols });
-    }
+    const baseOptions = gridType === 'iso'
+      ? { gridType, rows, cols, level, isometricFaces }
+      : { gridType, rows, cols };
+
+    // Add schema if selected
+    const options = selectedSchemaId
+      ? { ...baseOptions, schemaId: selectedSchemaId }
+      : baseOptions;
+
+    newPuzzle(options);
     onClose();
   };
 
@@ -94,6 +108,8 @@ export const NewPuzzleDialog: React.FC<NewPuzzleDialogProps> = ({
                 }`}
                 onClick={() => {
                   setGridType(type.id);
+                  // Reset schema selection when grid type changes
+                  setSelectedSchemaId(null);
                   // Set default 5x5x5 for isometric grid
                   if (type.id === 'iso') {
                     setRows(5);
@@ -193,6 +209,47 @@ export const NewPuzzleDialog: React.FC<NewPuzzleDialogProps> = ({
             </div>
           </div>
         )}
+
+        {/* Puzzle Preset */}
+        <div className="mb-4">
+          <label className="block text-xs text-office-text-secondary mb-2">
+            {t('puzzle.preset', 'Puzzle Preset')}
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {/* No constraint option */}
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-sm border rounded-sm transition-colors ${
+                selectedSchemaId === null
+                  ? 'bg-office-accent text-white border-office-accent'
+                  : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+              }`}
+              onClick={() => setSelectedSchemaId(null)}
+            >
+              {t('puzzle.noConstraint', 'No Constraint')}
+            </button>
+            {/* Available schema options */}
+            {availableSchemas.map((schema) => (
+              <button
+                key={schema.pid}
+                type="button"
+                className={`px-3 py-1.5 text-sm border rounded-sm transition-colors ${
+                  selectedSchemaId === schema.pid
+                    ? 'bg-office-accent text-white border-office-accent'
+                    : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+                }`}
+                onClick={() => setSelectedSchemaId(schema.pid)}
+              >
+                {t(schema.nameKey, schema.name)}
+              </button>
+            ))}
+          </div>
+          {availableSchemas.length === 0 && gridType !== 'square' && (
+            <p className="text-xs text-gray-500 mt-1">
+              {t('puzzle.noPresetsForGrid', 'No presets available for this grid type')}
+            </p>
+          )}
+        </div>
 
         {/* Action buttons */}
         <div className="flex gap-2 justify-end border-t border-office-border pt-3">

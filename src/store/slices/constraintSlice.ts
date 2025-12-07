@@ -194,13 +194,22 @@ export const createConstraintSlice: SliceCreator<ConstraintSlice> = (set, get) =
   isValidationModalOpen: false,
 
   checkAnswer: () => {
-    const { currentSchemaId, puzzle, grid, validationOverrides, topology } = get();
+    const { currentSchemaId, puzzle, grid, validationOverrides, topology, isSolverMode, solverResult } = get();
     if (!currentSchemaId) return null;
 
     const schema = constraintCatalog.getSchema(currentSchemaId);
     if (!schema) return null;
 
-    const result = runDataDrivenValidation(puzzle, grid, schema, validationOverrides, topology);
+    // In solver mode, use solver result as the answer
+    // Otherwise use the normal puzzle answer
+    const puzzleToValidate = isSolverMode && solverResult
+      ? {
+          problem: puzzle.problem,
+          answer: solverResult,
+        }
+      : puzzle;
+
+    const result = runDataDrivenValidation(puzzleToValidate, grid, schema, validationOverrides, topology);
 
     // Store result and open modal
     set({

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
 import {
   findNearestCell,
@@ -19,6 +19,8 @@ import {
 } from '../../utils/gridTopology';
 import type { Point } from '../../types';
 import { toDataLayer } from '../../types';
+import { constraintCatalog } from '../../constraints';
+import { getAutoModeConfig } from '../../constraints/inputModeMapping';
 
 interface UseElementToolHandlerOptions {
   specialPath: string[];
@@ -48,11 +50,44 @@ export function useElementToolHandler({
     addBoxLine,
     removeBoxLine,
     updateBoxLine,
+    addDirectionalClue,
+    removeDirectionalClue,
     puzzle,
     useTopology,
     topology,
     currentInputMode,
+    currentSchemaId,
   } = usePuzzleStore();
+
+  // Check if auto mode is direc type
+  const isAutoDirecMode = useMemo(() => {
+    if (currentInputMode !== 'auto' || !currentSchemaId) return false;
+    const schema = constraintCatalog.getSchema(currentSchemaId);
+    if (!schema) return false;
+    // For auto mode, check edit mode config (problem layer uses edit mode)
+    const autoConfig = getAutoModeConfig(schema, true);
+    return autoConfig.type === 'direc';
+  }, [currentInputMode, currentSchemaId]);
+
+  // Check if auto mode is number type (e.g., Nurikabe edit mode)
+  const isAutoNumberMode = useMemo(() => {
+    if (currentInputMode !== 'auto' || !currentSchemaId) return false;
+    const schema = constraintCatalog.getSchema(currentSchemaId);
+    if (!schema) return false;
+    // For auto mode, check edit mode config (problem layer uses edit mode)
+    const autoConfig = getAutoModeConfig(schema, true);
+    return autoConfig.type === 'number';
+  }, [currentInputMode, currentSchemaId]);
+
+  // Check if auto mode is border-number type (e.g., Heyawake edit mode)
+  const isAutoBorderNumberMode = useMemo(() => {
+    if (currentInputMode !== 'auto' || !currentSchemaId) return false;
+    const schema = constraintCatalog.getSchema(currentSchemaId);
+    if (!schema) return false;
+    // For auto mode, check edit mode config (problem layer uses edit mode)
+    const autoConfig = getAutoModeConfig(schema, true);
+    return autoConfig.type === 'border-number';
+  }, [currentInputMode, currentSchemaId]);
 
   // Helper to find cell ID considering topology mode
   const findCellId = useCallback((point: Point): string | null => {
@@ -72,19 +107,20 @@ export function useElementToolHandler({
 
   /**
    * Get min/max values for number input based on grid size and input mode
-   * - For yajilin (direc mode): max is about half the max dimension
-   * - For other puzzles: max is based on total cells
+   * - For yajilin (direc mode or auto-direc): max is about half the max dimension
+   * - For other puzzles (nurikabe, etc.): max is based on total cells (island size)
    */
   const getNumberRange = useCallback((): { min: number; max: number } => {
-    if (currentInputMode === 'direc') {
+    if (currentInputMode === 'direc' || isAutoDirecMode) {
       // Yajilin arrow numbers: max is about half the dimension
       const maxDimension = Math.max(grid.rows, grid.cols);
       return { min: 0, max: Math.floor(maxDimension / 2) };
     }
-    // Other puzzles: max is total cells (for island size, etc.)
+    // Other puzzles (nurikabe, etc.): max is total cells (for island size)
+    // Start from 1 for island-based puzzles
     const totalCells = grid.rows * grid.cols;
-    return { min: 0, max: totalCells };
-  }, [grid.rows, grid.cols, currentInputMode]);
+    return { min: 1, max: totalCells };
+  }, [grid.rows, grid.cols, currentInputMode, isAutoDirecMode]);
 
   const handleNumberTool = useCallback(
     (point: Point, isRightClick: boolean) => {
@@ -132,16 +168,36 @@ export function useElementToolHandler({
         }
       }
 
-      // In constraint input mode (number/number-), use pzpr-puzzlink style click increment/decrement
-      if (currentInputMode === 'number' || currentInputMode === 'number-') {
+      // In constraint input mode (number/number-/direc/auto-direc/auto-number/auto-border-number), use pzpr-puzzlink style click increment/decrement
+      // Store as directionalClues with direction=0 (no arrow) to allow later arrow direction conversion
+      // direc mode and auto-direc: same as number mode (click for number, flick for direction)
+      // auto-number mode (Nurikabe): click increment/decrement for island size numbers
+      // auto-border-number mode (Heyawake): click for number input
+      const isConstraintNumberMode = currentInputMode === 'number' || currentInputMode === 'number-' || currentInputMode === 'direc' || isAutoDirecMode || isAutoNumberMode || isAutoBorderNumberMode;
+      if (isConstraintNumberMode) {
         const { min, max } = getNumberRange();
-        const currentNum = existingNumber ? parseInt(existingNumber.value, 10) : -1;
+
+        // Convert cellId to cell index for directionalClues
+        const cellMatch = cellId.match(/cell-(\d+)-(\d+)/);
+        const cellIndex = cellMatch ? parseInt(cellMatch[1], 10) * grid.cols + parseInt(cellMatch[2], 10) : -1;
+        if (cellIndex === -1) return null;
+
+        // Check existing directionalClue for this cell
+        const existingClueEntry = Object.entries(layerData.directionalClues || {}).find(
+          ([, c]) => c.cell === cellIndex
+        );
+        const existingClue = existingClueEntry ? existingClueEntry[1] : null;
+        const existingClueId = existingClueEntry ? existingClueEntry[0] : null;
+
+        // Get current value from directionalClue or fallback to numbers
+        const currentNum = existingClue ? existingClue.value :
+          (existingNumber ? parseInt(existingNumber.value, 10) : -1);
         const isValidNum = !isNaN(currentNum) && currentNum >= min;
 
         let newValue: number | null = null;
 
-        if (currentInputMode === 'number') {
-          // Normal mode: left click +1, right click -1
+        if (currentInputMode === 'number' || currentInputMode === 'direc' || isAutoDirecMode || isAutoNumberMode || isAutoBorderNumberMode) {
+          // Normal mode (number/direc/auto-direc/auto-number/auto-border-number): left click +1, right click -1
           if (isRightClick) {
             // Right click: decrement (空白 → max → max-1 → ... → min → 空白)
             if (!isValidNum || currentNum === -1) {
@@ -184,59 +240,99 @@ export function useElementToolHandler({
           }
         }
 
-        // Apply the change
+        // Apply the change using directionalClues (direction=0 for no arrow)
         if (newValue === -1) {
-          // Clear
+          // Clear - remove both directionalClue and legacy number
+          if (existingClueId) {
+            removeDirectionalClue(existingClueId);
+          }
           if (existingId) {
             removeNumber(existingId);
           }
         } else if (newValue !== null) {
+          // Preserve existing direction if updating, otherwise use 0 (no direction)
+          const direction = existingClue?.direction ?? 0;
+          addDirectionalClue({
+            cell: cellIndex,
+            direction: direction as 0 | 1 | 2 | 3 | 4,
+            value: newValue,
+            layer: dataLayer,
+          });
+          // Remove legacy number if it exists (migrate to directionalClues)
           if (existingId) {
-            // Update existing number
-            updateNumber(existingId, String(newValue));
-          } else {
-            // Add new number
-            addNumber({
-              cellId,
-              value: String(newValue),
-              size: numberSize || 'large',
-              position: numberPosition,
-              cornerIndex: cornerIndex || 0,
-              sideIndex: sideIndex || 0,
-              color: color || '#000000',
-              layer: dataLayer,
-            });
+            removeNumber(existingId);
           }
         }
         return null; // Handled directly, no dialog needed
       }
 
-      // Non-constraint mode: return info for dialog handling
-      if (isRightClick && existingId) {
-        removeNumber(existingId);
-        return null;
-      } else if (!isRightClick) {
-        // For candidates mode, toggle the candidate directly
-        if (numberPosition === 'candidates') {
-          return {
-            cellId,
-            existingNumber: existingNumber,
-            numberPosition,
-            selectedCandidates: existingNumber?.candidates || selectedCandidates,
-          };
-        }
-        // Open number input dialog - handled by component
+      // Non-constraint mode: click increment/decrement (pzpr-puzzlink style)
+      // For candidates mode, return info for panel handling
+      if (numberPosition === 'candidates') {
         return {
           cellId,
           existingNumber: existingNumber,
           numberPosition,
-          cornerIndex: numberPosition === 'corner' ? cornerIndex : undefined,
-          sideIndex: numberPosition === 'side' ? sideIndex : undefined,
+          selectedCandidates: existingNumber?.candidates || selectedCandidates,
         };
+      }
+
+      // For center/corner/side modes: implement click +1/-1
+      const currentNum = existingNumber ? parseInt(existingNumber.value, 10) : -1;
+      const isValidNum = !isNaN(currentNum) && currentNum >= 0;
+      // Use sensible range for non-constraint mode (0-99)
+      const min = 0;
+      const max = 99;
+
+      let newValue: number | null = null;
+
+      if (isRightClick) {
+        // Right click: decrement (空白 → max → max-1 → ... → min → 空白)
+        if (!isValidNum || currentNum === -1) {
+          newValue = max;
+        } else if (currentNum <= min) {
+          newValue = -1; // Clear
+        } else {
+          newValue = currentNum - 1;
+        }
+      } else {
+        // Left click: increment (空白 → min → min+1 → ... → max → 空白)
+        if (!isValidNum || currentNum === -1) {
+          newValue = min;
+        } else if (currentNum >= max) {
+          newValue = -1; // Clear
+        } else {
+          newValue = currentNum + 1;
+        }
+      }
+
+      // Apply the change
+      if (newValue === -1) {
+        // Clear
+        if (existingId) {
+          removeNumber(existingId);
+        }
+      } else if (newValue !== null) {
+        if (existingId) {
+          // Update existing number
+          updateNumber(existingId, String(newValue));
+        } else {
+          // Add new number
+          addNumber({
+            cellId,
+            value: String(newValue),
+            size: numberSize || 'large',
+            position: numberPosition,
+            cornerIndex: numberPosition === 'corner' ? cornerIndex : 0,
+            sideIndex: numberPosition === 'side' ? sideIndex : 0,
+            color: color || '#000000',
+            layer: dataLayer,
+          });
+        }
       }
       return null;
     },
-    [grid, puzzle, activeLayer, toolSettings, currentInputMode, getNumberRange, addNumber, removeNumber, updateNumber, findCellId]
+    [grid, puzzle, activeLayer, toolSettings, currentInputMode, isAutoDirecMode, isAutoNumberMode, isAutoBorderNumberMode, getNumberRange, addNumber, removeNumber, updateNumber, addDirectionalClue, removeDirectionalClue, findCellId]
   );
 
   const handleSymbolTool = useCallback(

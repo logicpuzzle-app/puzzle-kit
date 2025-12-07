@@ -11,10 +11,11 @@
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../store/puzzleStore';
-import { ToolCategory } from '../../types';
+import { ToolCategory, toDataLayer } from '../../types';
 import { ConstraintSubCategory, InputModeType } from '../../store/slices/types';
 import { constraintCatalog } from '../../constraints';
 import type { ConstraintSchema, InputMode } from '../../constraints';
+import { solverWorkerManager, SolverCancelledError } from '../../solver';
 
 // Import sub-components
 import {
@@ -24,6 +25,8 @@ import {
   CheckboxEmptyIcon,
   SPECIAL_TOOL_ICONS,
   CONSTRAINT_ICONS,
+  CATEGORY_ICONS,
+  NoneIcon,
 } from './RibbonIcons';
 import { ToolModeSelector } from './ToolModeSelector';
 // Note: CheckboxIcon/CheckboxEmptyIcon are used for Constraint layer toggle (enables/disables constraint checking)
@@ -77,7 +80,59 @@ export const Ribbon: React.FC = () => {
     checkAnswer,
     // Clear
     clearLayer,
+    // Puzzle state
+    puzzle,
+    // Solver mode state
+    isSolverMode,
+    isSolving,
+    solverError,
+    enterSolverMode,
+    setSolving,
+    setSolverError,
+    cancelSolver,
+    // Properties panel
+    setPropertiesPanelOpen,
   } = usePuzzleStore();
+
+  // Handle solve button click
+  const handleSolve = useCallback(async () => {
+    if (!currentSchemaId || isSolving) return;
+
+    // Check if solver is available for this puzzle type
+    if (!solverWorkerManager.hasSolver(currentSchemaId)) {
+      setSolverError(t('solver.notAvailable'));
+      return;
+    }
+
+    // Open properties panel to show solver progress
+    setPropertiesPanelOpen(true);
+
+    setSolving(true);
+    setSolverError(null);
+
+    try {
+      const result = await solverWorkerManager.solve(currentSchemaId, grid, puzzle.problem);
+
+      // Enter solver mode with the result
+      enterSolverMode(result);
+    } catch (e) {
+      // Don't show error if cancelled
+      if (e instanceof SolverCancelledError) {
+        return;
+      }
+      setSolverError(e instanceof Error ? e.message : t('solver.failed'));
+      setSolving(false);
+    }
+  }, [currentSchemaId, isSolving, grid, puzzle.problem, t, enterSolverMode, setSolving, setSolverError, setPropertiesPanelOpen]);
+
+  // Handle cancel solver click
+  const handleCancelSolver = useCallback(() => {
+    solverWorkerManager.cancelAll();
+    cancelSolver();
+  }, [cancelSolver]);
+
+  // Check if solver is available for current puzzle
+  const hasSolver = currentSchemaId ? solverWorkerManager.hasSolver(currentSchemaId) : false;
 
   // Derived state
   const isGridMode = activeLayer === 'grid';
@@ -118,6 +173,38 @@ export const Ribbon: React.FC = () => {
       <div className="flex items-center px-2 py-1 border-b border-office-border">
         {/* Layer switcher with visibility toggles */}
         <div className="flex items-center gap-2 px-2 border-r border-office-border mr-2">
+          {/* Constraint layer - button with checkbox on right (placed first) */}
+          <div className="flex items-center">
+            <button
+              className={`h-7 px-2 text-xs rounded-l-sm border border-r-0 transition-colors ${
+                isConstraintMode
+                  ? 'bg-purple-600 text-white border-purple-600'
+                  : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+              }`}
+              onClick={() => handleLayerClick('constraint')}
+              title={t('layer.constraint')}
+            >
+              {t('layer.constraint')}
+            </button>
+            <button
+              className={`h-7 w-7 flex items-center justify-center rounded-r-sm border-t border-b border-r transition-colors ${
+                currentSchemaId === null
+                  ? 'bg-gray-100 border-gray-200 text-gray-300 cursor-not-allowed'
+                  : isConstraintMode
+                    ? showConstraintLayer
+                      ? 'bg-purple-600 text-white border-purple-600'
+                      : 'bg-purple-600/60 text-white/70 border-purple-600'
+                    : showConstraintLayer
+                      ? 'bg-white border-office-border text-office-text hover:bg-office-ribbon-hover'
+                      : 'bg-white border-office-border text-gray-400 hover:bg-office-ribbon-hover'
+              }`}
+              onClick={currentSchemaId !== null ? toggleConstraintLayer : undefined}
+              disabled={currentSchemaId === null}
+              title={currentSchemaId === null ? t('constraint.selectPresetFirst') : t('constraint.toggle')}
+            >
+              {showConstraintLayer ? <CheckboxIcon size={14} /> : <CheckboxEmptyIcon size={14} />}
+            </button>
+          </div>
           {/* Grid button + toggle */}
           <div className="flex items-center">
             <button
@@ -272,38 +359,6 @@ export const Ribbon: React.FC = () => {
               </div>
             )}
           </div>
-          {/* Constraint layer - button with checkbox on right */}
-          <div className="flex items-center">
-            <button
-              className={`h-7 px-2 text-xs rounded-l-sm border border-r-0 transition-colors ${
-                isConstraintMode
-                  ? 'bg-purple-600 text-white border-purple-600'
-                  : 'bg-white border-office-border hover:bg-office-ribbon-hover'
-              }`}
-              onClick={() => handleLayerClick('constraint')}
-              title={t('layer.constraint')}
-            >
-              {t('layer.constraint')}
-            </button>
-            <button
-              className={`h-7 w-7 flex items-center justify-center rounded-r-sm border-t border-b border-r transition-colors ${
-                currentSchemaId === null
-                  ? 'bg-gray-100 border-gray-200 text-gray-300 cursor-not-allowed'
-                  : isConstraintMode
-                    ? showConstraintLayer
-                      ? 'bg-purple-600 text-white border-purple-600'
-                      : 'bg-purple-600/60 text-white/70 border-purple-600'
-                    : showConstraintLayer
-                      ? 'bg-white border-office-border text-office-text hover:bg-office-ribbon-hover'
-                      : 'bg-white border-office-border text-gray-400 hover:bg-office-ribbon-hover'
-              }`}
-              onClick={currentSchemaId !== null ? toggleConstraintLayer : undefined}
-              disabled={currentSchemaId === null}
-              title={currentSchemaId === null ? t('constraint.selectPresetFirst') : t('constraint.toggle')}
-            >
-              {showConstraintLayer ? <CheckboxIcon size={14} /> : <CheckboxEmptyIcon size={14} />}
-            </button>
-          </div>
         </div>
 
         {/* Grid mode subtabs - 盤面形状 / 盤面表示 */}
@@ -335,20 +390,23 @@ export const Ribbon: React.FC = () => {
         {/* Main category buttons - shown in problem/answer mode when constraint is disabled */}
         {!isGridMode && !isConstraintMode && !isConstraintEnabled && (
           <div className="flex items-center gap-1">
-            {mainCategories.map((category) => (
-              <button
-                key={category.id}
-                className={`flex items-center gap-1 h-7 px-2 text-xs rounded-sm border transition-colors ${
-                  toolSettings.currentCategory === category.id
-                    ? 'bg-office-accent text-white border-office-accent'
-                    : 'bg-white border-office-border hover:bg-office-ribbon-hover'
-                }`}
-                onClick={() => handleCategoryClick(category)}
-              >
-                <span className="text-sm">{category.icon}</span>
-                <span>{t(category.labelKey)}</span>
-              </button>
-            ))}
+            {mainCategories.map((category) => {
+              const CategoryIcon = CATEGORY_ICONS[category.id];
+              return (
+                <button
+                  key={category.id}
+                  className={`flex items-center gap-1 h-7 px-2 text-xs rounded-sm border transition-colors ${
+                    toolSettings.currentCategory === category.id
+                      ? 'bg-office-accent text-white border-office-accent'
+                      : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+                  }`}
+                  onClick={() => handleCategoryClick(category)}
+                >
+                  {CategoryIcon ? <CategoryIcon size={14} /> : <span className="text-sm">{category.icon}</span>}
+                  <span>{t(category.labelKey)}</span>
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -388,10 +446,33 @@ export const Ribbon: React.FC = () => {
             <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 border border-purple-300 rounded-sm">
               <CONSTRAINT_ICONS.preset size={14} className="text-purple-600" />
               <span className="text-xs text-purple-800 font-medium">{t(currentSchema!.nameKey)}</span>
-              <span className="text-xs text-purple-600">
-                ({isProblemMode ? t('constraint.edit') : t('constraint.play')})
-              </span>
             </div>
+
+            {/* Solve/Cancel button - shown in problem mode when solver is available */}
+            {isProblemMode && hasSolver && (
+              <div className="flex items-center gap-1">
+                {isSolving ? (
+                  <button
+                    className="h-7 px-2 text-xs border rounded-sm transition-colors bg-red-500 text-white border-red-600 hover:bg-red-600"
+                    onClick={handleCancelSolver}
+                    title={t('solver.cancel')}
+                  >
+                    {t('solver.cancel')}
+                  </button>
+                ) : (
+                  <button
+                    className="h-7 px-2 text-xs border rounded-sm transition-colors bg-blue-600 text-white border-blue-700 hover:bg-blue-700"
+                    onClick={handleSolve}
+                    title={t('solver.solve')}
+                  >
+                    {t('solver.solve')}
+                  </button>
+                )}
+                {solverError && solverError !== 'No solution exists' && (
+                  <span className="text-xs text-red-600 ml-1">{solverError}</span>
+                )}
+              </div>
+            )}
 
             {/* Check Answer button and Clear Answer button - between puzzle name and trial controls */}
             {isAnswerMode && (
@@ -467,7 +548,7 @@ export const Ribbon: React.FC = () => {
             {/* None selected */}
             {currentSchemaId === null && (
               <div className="flex items-center gap-1 text-gray-500">
-                <span className="text-sm">○</span>
+                <NoneIcon size={14} />
                 <span className="text-xs">{t('constraint.none')}</span>
               </div>
             )}

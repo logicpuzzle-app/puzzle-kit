@@ -9,18 +9,33 @@
  * - Selection tool
  */
 
-import React, { useCallback, useMemo, RefObject, useEffect } from 'react';
+import React, { useCallback, useMemo, RefObject, useEffect, useRef } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
 import { useCanvasInteraction } from '../../hooks/useCanvasInteraction';
 import { useCellFinder } from '../../hooks/useCellFinder';
 import { useSpecialPreview } from '../../hooks/useSpecialPreview';
 import { useNumberKeyboard } from '../../hooks/useNumberKeyboard';
-import { screenToSvg, getCellCorners } from '../../utils/gridUtils';
+import { screenToSvg, getCellCorners, getCellCenter } from '../../utils/gridUtils';
 import type { NumberPosition, SymbolElement, Point } from '../../types';
 import { toDataLayer } from '../../types';
 import type { TopologyVertex } from '../../utils/gridTopology';
 import { CanvasCursors } from './CanvasCursors';
 import { SpecialToolPreview } from './SpecialToolPreview';
+import { constraintCatalog } from '../../constraints';
+import { getAutoModeConfig } from '../../constraints/inputModeMapping';
+
+// Flick input state for directional number input (pzpr-puzzlink style)
+// - mousedown: initialize flick state (record start position)
+// - mousemove: if moved far enough, set direction (flick)
+// - mouseup: if no flick occurred (notInputted), do number input (click)
+interface FlickState {
+  startCell: { row: number; col: number } | null;
+  startPoint: Point | null;
+  inputted: boolean; // true if direction was set during drag (flick)
+  rightButton: boolean; // true if right mouse button was used
+  // For line-cell auto mode (Yajilin): track if line was drawn during drag
+  lineDrawn: boolean; // true if any line segment was drawn during drag
+}
 
 // ========================================
 // Types
@@ -72,12 +87,15 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
   const {
     canvas,
     toolSettings,
+    setToolSettings,
     grid,
     hoverCell,
     setHoverCell,
     puzzle,
     activeLayer,
+    addDirectionalClue,
     removeDirectionalClue,
+    removeNumber,
     numberSelection,
     setNumberSelection,
     useTopology,
@@ -88,6 +106,9 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     showConstraintLayer,
     currentSchemaId,
   } = usePuzzleStore();
+
+  // Flick input state for directional number input (pzpr-puzzlink style)
+  const flickStateRef = useRef<FlickState>({ startCell: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false });
 
   // Excel-like keyboard input for number tools
   useNumberKeyboard();
@@ -122,6 +143,9 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     handleTouchEnd,
     handleNumberTool,
     handleTextTool,
+    handleSurfaceCycleTool,
+    handleSymbolTool,
+    resetFillModes,
     handleSelectTool,
     isSelecting,
     selectionRect,
@@ -156,8 +180,49 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         const isNumberInputMode = currentInputMode === 'number' || currentInputMode === 'number-';
         const isDirecInputMode = currentInputMode === 'direc';
 
-        // Handle number/number-/direc input modes in constraint mode
-        if (isNumberInputMode || isDirecInputMode) {
+        // Check if auto mode is direc type (for flick input support)
+        const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
+        const isEditMode = activeLayer === 'problem';
+        const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
+        const isAutoDirecMode = currentInputMode === 'auto' && autoConfig.type === 'direc';
+
+        // Handle direc input mode or auto mode with direc type (flick gesture for arrow direction)
+        // pzprjs style: mousedown starts flick, mouseup does number input if no flick occurred
+        if (isDirecInputMode || isAutoDirecMode) {
+          const point = screenToSvg(
+            e.clientX,
+            e.clientY,
+            canvas.zoom,
+            canvas.panX,
+            canvas.panY,
+            svgRef.current
+          );
+          const cellInfo = findCellAtPoint(point);
+          if (!cellInfo || cellInfo.row === undefined || cellInfo.col === undefined) return;
+
+          setNumberSelection({ row: cellInfo.row, col: cellInfo.col });
+
+          // Initialize flick state - record start position for direction detection on mouse move
+          // Number input is deferred to mouseup (if no flick occurred)
+          flickStateRef.current = {
+            startCell: { row: cellInfo.row, col: cellInfo.col },
+            startPoint: point,
+            inputted: false, // Will be set to true if flick direction is input
+            rightButton: e.button === 2,
+            lineDrawn: false,
+          };
+
+          // Don't do number input here - defer to mouseup (pzprjs style)
+          return;
+        }
+
+        // Check if auto mode is number type (Nurikabe: click increment/decrement)
+        const isAutoNumberMode = currentInputMode === 'auto' && autoConfig.type === 'number';
+        // Check if auto mode is border-number type (Heyawake: click for number)
+        const isAutoBorderNumberMode = currentInputMode === 'auto' && autoConfig.type === 'border-number';
+
+        // Handle number/number- input modes or auto number/border-number mode in constraint mode
+        if (isNumberInputMode || isAutoNumberMode || isAutoBorderNumberMode) {
           const point = screenToSvg(
             e.clientX,
             e.clientY,
@@ -174,6 +239,80 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           // Call handleNumberTool for click increment/decrement
           handleNumberTool(point, e.button === 2);
           return;
+        }
+
+        // Check if auto mode is line-cell type (Yajilin: left=line, right=shade, click=shade)
+        // Reuse currentSchema and autoConfig from above (direc mode check)
+        const isAutoLineCellMode = currentInputMode === 'auto' && autoConfig.type === 'line-cell';
+
+        if (isAutoLineCellMode) {
+          const point = screenToSvg(
+            e.clientX,
+            e.clientY,
+            canvas.zoom,
+            canvas.panX,
+            canvas.panY,
+            svgRef.current
+          );
+          const cellInfo = findCellAtPoint(point);
+
+          // Initialize flick state to track if line was drawn
+          // If no line is drawn by mouseup, we'll input shade instead
+          flickStateRef.current = {
+            startCell: cellInfo ? { row: cellInfo.row!, col: cellInfo.col! } : null,
+            startPoint: point,
+            inputted: false,
+            rightButton: e.button === 2,
+            lineDrawn: false,
+          };
+
+          // Let base handler handle the line drawing (left button) or we handle shade (right button) later
+          // The base handler will draw lines; we track lineDrawn in mouse move
+        }
+
+        // Check if auto mode is line type (Slitherlink: left drag=line, left click=peke, right=peke)
+        const isAutoLineMode = currentInputMode === 'auto' && autoConfig.type === 'line';
+
+        if (isAutoLineMode) {
+          const point = screenToSvg(
+            e.clientX,
+            e.clientY,
+            canvas.zoom,
+            canvas.panX,
+            canvas.panY,
+            svgRef.current
+          );
+
+          // Initialize flick state to track if line was drawn during drag
+          // If no line is drawn by mouseup (click only), we'll input peke instead
+          flickStateRef.current = {
+            startCell: null,
+            startPoint: point,
+            inputted: false,
+            rightButton: e.button === 2,
+            lineDrawn: false,
+          };
+
+          // Right click: immediately handle peke (don't wait for mouseup)
+          if (e.button === 2) {
+            // Apply peke (X mark) settings from autoConfig.rightButton
+            const rightButtonSettings = autoConfig.rightButton.settings;
+            if (rightButtonSettings) {
+              setToolSettings({
+                currentTool: 'symbol-cross',
+                currentCategory: 'symbol',
+                color: rightButtonSettings.color || '#007F00',
+                symbolSize: rightButtonSettings.symbolSize || 'small',
+                symbolGridPoints: rightButtonSettings.symbolGridPoints || ['edge'],
+              });
+            }
+            // Input peke (X mark) on the nearest edge
+            handleSymbolTool(point, false, false); // Add peke symbol
+            flickStateRef.current.inputted = true;
+            return; // Don't fall through to base handler
+          }
+
+          // Left click: let base handler start line drawing, we'll check on mouseup
         }
         // Fall through to handle other tools (auto mode delegates to surface/line/etc.)
       }
@@ -222,25 +361,37 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
 
         setNumberSelection({ row: cellInfo.row, col: cellInfo.col });
 
-        // Handle right-click delete for directional number tool
-        if (tool === 'number-directional' && e.button === 2) {
-          const cellIndex = cellInfo.row * grid.cols + cellInfo.col;
-          const dataLayer = toDataLayer(activeLayer);
-          const existingId = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
-            ([, clue]) => clue.cell === cellIndex
-          )?.[0];
-          if (existingId) {
-            removeDirectionalClue(existingId);
+        // For directional number tool: use flick input (like constraint direc mode)
+        if (tool === 'number-directional') {
+          // Initialize flick state for direction detection
+          flickStateRef.current = {
+            startCell: { row: cellInfo.row, col: cellInfo.col },
+            startPoint: point,
+            inputted: false,
+            rightButton: e.button === 2,
+            lineDrawn: false,
+          };
+
+          // Handle right-click delete
+          if (e.button === 2) {
+            const cellIndex = cellInfo.row * grid.cols + cellInfo.col;
+            const dataLayer = toDataLayer(activeLayer);
+            const existingId = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
+              ([, clue]) => clue.cell === cellIndex
+            )?.[0];
+            if (existingId) {
+              removeDirectionalClue(existingId);
+            }
           }
+          // Don't call handleNumberTool here - defer to mouseup (pzprjs style)
           return;
         }
 
-        // Call onNumberClick callback for dialog handling (if provided)
-        if (onNumberClick) {
-          const result = handleNumberTool(point, e.button === 2);
-          if (result) {
-            onNumberClick(result as NumberClickInfo);
-          }
+        // For other number tools: always call handleNumberTool for click increment/decrement
+        const result = handleNumberTool(point, e.button === 2);
+        // If result is returned (candidates mode), call onNumberClick callback for dialog handling
+        if (result && onNumberClick) {
+          onNumberClick(result as NumberClickInfo);
         }
         return;
       }
@@ -315,6 +466,105 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         setHoverCell(cellId);
       }
 
+      // Handle flick input for direc mode, auto mode with direc type, or number-directional tool
+      // Check if flick input should be active
+      const shouldHandleFlick = flickStateRef.current.startCell && flickStateRef.current.startPoint;
+      const isNumberDirectionalTool = toolSettings.currentTool === 'number-directional';
+
+      if (shouldHandleFlick) {
+        // Check if we're in direc mode or auto mode with direc type (constraint mode)
+        const isDirecInputMode = currentInputMode === 'direc';
+        const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
+        const isEditMode = activeLayer === 'problem';
+        const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
+        const isAutoDirecMode = currentInputMode === 'auto' && autoConfig.type === 'direc';
+
+        // Process flick for constraint mode or number-directional tool
+        if ((isConstraintEnabled && (isDirecInputMode || isAutoDirecMode)) || isNumberDirectionalTool) {
+          const { startCell, startPoint } = flickStateRef.current;
+          const cellIndex = startCell!.row * grid.cols + startCell!.col;
+          const dataLayer = toDataLayer(activeLayer);
+
+          // Check if there's a directional clue at the start cell
+          const existingClueEntry = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
+            ([, clue]) => clue.cell === cellIndex
+          );
+
+          // Also check if there's a regular number at this cell (for conversion)
+          const cellId = `cell-${startCell!.row}-${startCell!.col}`;
+          const existingNumberEntry = Object.entries(puzzle[dataLayer].numbers || {}).find(
+            ([, n]) => n.cellId === cellId && n.position === 'center'
+          );
+
+          // Calculate direction from start point to current point (pzprjs-style)
+          const dx = point.x - startPoint!.x;
+          const dy = point.y - startPoint!.y;
+          const threshold = grid.cellSize * 0.3; // 30% of cell size
+
+          let direction: 0 | 1 | 2 | 3 | 4 = 0; // 0 = no direction
+          if (Math.abs(dy) > threshold && Math.abs(dy) > Math.abs(dx)) {
+            // Vertical movement
+            direction = dy < 0 ? 1 : 2; // 1 = up, 2 = down
+          } else if (Math.abs(dx) > threshold && Math.abs(dx) > Math.abs(dy)) {
+            // Horizontal movement
+            direction = dx < 0 ? 3 : 4; // 3 = left, 4 = right
+          }
+
+          if (direction !== 0) {
+            if (existingClueEntry) {
+              // Update existing directional clue's direction
+              const [, clue] = existingClueEntry;
+              if (direction !== clue.direction) {
+                addDirectionalClue({
+                  cell: cellIndex,
+                  direction,
+                  value: clue.value,
+                  layer: dataLayer,
+                });
+                flickStateRef.current.inputted = true;
+              }
+            } else if (existingNumberEntry) {
+              // Convert regular number to directional clue with arrow
+              const [numberId, num] = existingNumberEntry;
+              const numValue = parseInt(num.value, 10);
+              if (!isNaN(numValue)) {
+                // Add directional clue with the number value and direction
+                addDirectionalClue({
+                  cell: cellIndex,
+                  direction,
+                  value: numValue,
+                  layer: dataLayer,
+                });
+                // Remove the original number
+                removeNumber(numberId);
+                flickStateRef.current.inputted = true;
+              }
+            }
+          }
+        }
+      }
+
+      // For line-cell/line auto mode: track if we've moved enough to consider it a line drag
+      if (isConstraintEnabled && flickStateRef.current.startPoint && !flickStateRef.current.lineDrawn) {
+        const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
+        const isPlayMode = activeLayer === 'answer';
+        const autoConfig = getAutoModeConfig(currentSchema, !isPlayMode);
+        const isAutoLineCellMode = currentInputMode === 'auto' && autoConfig.type === 'line-cell';
+        const isAutoLineMode = currentInputMode === 'auto' && autoConfig.type === 'line';
+
+        if (isAutoLineCellMode || isAutoLineMode) {
+          const startPoint = flickStateRef.current.startPoint;
+          const dx = point.x - startPoint.x;
+          const dy = point.y - startPoint.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          // If moved more than half a cell size, consider it a line drag
+          const threshold = grid.cellSize * 0.5;
+          if (distance > threshold) {
+            flickStateRef.current.lineDrawn = true;
+          }
+        }
+      }
+
       // Update line hover point for line tool cursor
       updateLineHoverPoint(point);
 
@@ -331,15 +581,192 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         updateSculptHover(point);
       }
     },
-    [baseHandleMouseMove, canvas.zoom, canvas.panX, canvas.panY, svgRef, hoverCell, setHoverCell, updateLineHoverPoint, updateSymbolHoverPoint, findCellAtPoint, isGridMode, gridEditMode, updateSplitHoverVertex, updateSculptHover]
+    [baseHandleMouseMove, canvas.zoom, canvas.panX, canvas.panY, svgRef, hoverCell, setHoverCell, updateLineHoverPoint, updateSymbolHoverPoint, findCellAtPoint, isGridMode, gridEditMode, updateSplitHoverVertex, updateSculptHover, isConstraintEnabled, currentInputMode, currentSchemaId, grid.cols, grid.cellSize, puzzle, activeLayer, addDirectionalClue]
   );
 
   // Handle mouse up for selection end
   const handleMouseUp = useCallback(
     (e: React.MouseEvent) => {
+      // Handle deferred number input for direc/auto-direc mode (pzprjs style)
+      // If no flick occurred (notInputted), do number input now
+      const flickState = flickStateRef.current;
+      const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
+      const isEditMode = activeLayer === 'problem';
+      const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
+
+      if (flickState.startCell && !flickState.inputted) {
+        // Check if we're in direc mode or auto mode with direc type
+        const isDirecInputMode = currentInputMode === 'direc';
+        const isAutoDirecMode = currentInputMode === 'auto' && autoConfig.type === 'direc';
+
+        if ((isDirecInputMode || isAutoDirecMode) && isConstraintEnabled) {
+          // Do number input at the start cell position
+          const point = screenToSvg(
+            e.clientX,
+            e.clientY,
+            canvas.zoom,
+            canvas.panX,
+            canvas.panY,
+            svgRef.current
+          );
+          // Use start cell for number input (not current mouse position)
+          const { row, col } = flickState.startCell;
+          const cellInfo = findCellAtPoint(point);
+          // Only input if mouse is still on the same cell (or close enough)
+          const isSameCell = cellInfo && cellInfo.row === row && cellInfo.col === col;
+          if (isSameCell) {
+            handleNumberTool(point, flickState.rightButton);
+          }
+        }
+      }
+
+      // Handle number-directional tool: if no flick occurred, do number increment/decrement
+      const isNumberDirectionalTool = toolSettings.currentTool === 'number-directional';
+      if (isNumberDirectionalTool && flickState.startCell && !flickState.inputted && !flickState.rightButton) {
+        const point = screenToSvg(
+          e.clientX,
+          e.clientY,
+          canvas.zoom,
+          canvas.panX,
+          canvas.panY,
+          svgRef.current
+        );
+        const cellInfo = findCellAtPoint(point);
+        const { row, col } = flickState.startCell;
+        const isSameCell = cellInfo && cellInfo.row === row && cellInfo.col === col;
+
+        if (isSameCell) {
+          // Increment/decrement the directional clue value (or create new one with value 1)
+          const cellIndex = row * grid.cols + col;
+          const dataLayer = toDataLayer(activeLayer);
+          const existingEntry = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
+            ([, clue]) => clue.cell === cellIndex
+          );
+
+          if (existingEntry) {
+            // Increment existing value
+            const [, clue] = existingEntry;
+            const newValue = (clue.value ?? 0) + 1;
+            addDirectionalClue({
+              cell: cellIndex,
+              direction: clue.direction,
+              value: newValue,
+              layer: dataLayer,
+            });
+          } else {
+            // Check if there's a regular number to convert
+            const existingNumber = Object.entries(puzzle[dataLayer].numbers).find(
+              ([, num]) => {
+                const numRow = Math.floor(parseInt(num.cellId.split('-')[1], 10));
+                const numCol = parseInt(num.cellId.split('-')[2], 10);
+                return numRow === row && numCol === col && num.position === 'center';
+              }
+            );
+
+            if (existingNumber) {
+              // Convert regular number to directional clue (with direction=0 for no arrow)
+              const [numberId, num] = existingNumber;
+              const numValue = parseInt(num.value, 10);
+              if (!isNaN(numValue)) {
+                addDirectionalClue({
+                  cell: cellIndex,
+                  direction: 0,
+                  value: numValue + 1,
+                  layer: dataLayer,
+                });
+                removeNumber(numberId);
+              }
+            } else {
+              // Create new directional clue with value 1 (no arrow)
+              addDirectionalClue({
+                cell: cellIndex,
+                direction: 0,
+                value: 1,
+                layer: dataLayer,
+              });
+            }
+          }
+        }
+      }
+
+      // Handle line-cell auto mode (Yajilin): if no line was drawn, input shade
+      // pzprjs behavior: left click without drag OR right click = shade cycle
+      const isAutoLineCellMode = currentInputMode === 'auto' && autoConfig.type === 'line-cell';
+      if (isAutoLineCellMode && isConstraintEnabled && flickState.startCell) {
+        const point = screenToSvg(
+          e.clientX,
+          e.clientY,
+          canvas.zoom,
+          canvas.panX,
+          canvas.panY,
+          svgRef.current
+        );
+        const cellInfo = findCellAtPoint(point);
+        const { row, col } = flickState.startCell;
+        const isSameCell = cellInfo && cellInfo.row === row && cellInfo.col === col;
+
+        // Determine shade input based on button mode
+        // 2-button mode: Right button = shade
+        // 1-button mode: Left click without drag = shade, Drag = line
+        const is2ButtonMode = toolSettings.surfaceButtonMode === '2-button';
+        const shouldInputShade = is2ButtonMode
+          ? flickState.rightButton // 2-button: only right click triggers shade
+          : (!flickState.lineDrawn && isSameCell); // 1-button: click without drag triggers shade
+
+        if (shouldInputShade) {
+          // Reset fill modes before surface cycle to start fresh
+          resetFillModes();
+
+          // Apply color settings from autoConfig.rightButton before calling surface cycle
+          const rightButtonSettings = autoConfig.rightButton.settings;
+          if (rightButtonSettings) {
+            setToolSettings({
+              color: rightButtonSettings.color || '#444444',
+              secondaryColor: rightButtonSettings.secondaryColor || '#A0FFA0',
+              inputConstraint: autoConfig.rightButton.inputConstraint || 'none',
+            });
+          }
+
+          // Apply noAdjacent constraint from schema
+          handleSurfaceCycleTool(point, false); // false = not right click (forward cycle)
+        }
+      }
+
+      // Handle line auto mode (Slitherlink): if left click without drag, input peke
+      // pzprjs behavior: left click without drag = peke, right click = peke (already handled in mouseDown)
+      const isAutoLineMode = currentInputMode === 'auto' && autoConfig.type === 'line';
+      if (isAutoLineMode && isConstraintEnabled && flickState.startPoint && !flickState.inputted) {
+        // Left click without drag: input peke (X mark)
+        if (!flickState.rightButton && !flickState.lineDrawn) {
+          const point = screenToSvg(
+            e.clientX,
+            e.clientY,
+            canvas.zoom,
+            canvas.panX,
+            canvas.panY,
+            svgRef.current
+          );
+          // Apply peke (X mark) settings from autoConfig.rightButton
+          const rightButtonSettings = autoConfig.rightButton.settings;
+          if (rightButtonSettings) {
+            setToolSettings({
+              currentTool: 'symbol-cross',
+              currentCategory: 'symbol',
+              color: rightButtonSettings.color || '#007F00',
+              symbolSize: rightButtonSettings.symbolSize || 'small',
+              symbolGridPoints: rightButtonSettings.symbolGridPoints || ['edge'],
+            });
+          }
+          // Input peke (X mark) on the nearest edge
+          handleSymbolTool(point, false, false);
+        }
+      }
+
+      // Reset flick state on mouse up
+      flickStateRef.current = { startCell: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false };
       baseHandleMouseUp(e);
     },
-    [baseHandleMouseUp]
+    [baseHandleMouseUp, currentInputMode, currentSchemaId, activeLayer, isConstraintEnabled, canvas.zoom, canvas.panX, canvas.panY, svgRef, findCellAtPoint, handleNumberTool, handleSurfaceCycleTool, handleSymbolTool, resetFillModes, setToolSettings, toolSettings.surfaceButtonMode, toolSettings.currentTool, grid.cols, puzzle, addDirectionalClue, removeNumber]
   );
 
   // Handle mouse leave - clear hover cell
@@ -347,6 +774,8 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     (e: React.MouseEvent) => {
       baseHandleMouseUp(e);
       setHoverCell(null);
+      // Reset flick state on mouse leave
+      flickStateRef.current = { startCell: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false };
     },
     [baseHandleMouseUp, setHoverCell]
   );
@@ -499,7 +928,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     <svg
       id="puzzle-canvas"
       ref={svgRef}
-      className={`w-full h-full touch-none ${cursorClass}`}
+      className={`w-full h-full touch-none select-none ${cursorClass}`}
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}

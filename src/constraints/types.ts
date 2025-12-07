@@ -92,7 +92,6 @@ export type InputMode =
   | 'ice'
   | 'crossdot'
   | 'objblank'
-  | 'completion'
   | 'info-line'
   | 'info-blk'
   | 'info-ublk'

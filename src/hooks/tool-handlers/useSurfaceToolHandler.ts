@@ -2,8 +2,43 @@ import { useCallback, useRef } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
 import { findNearestCell, getCellId } from '../../utils/gridUtils';
 import { findNearestCellInTopology } from '../../utils/gridTopology';
-import type { Point } from '../../types';
+import type { Point, PuzzleState } from '../../types';
 import { toDataLayer } from '../../types';
+
+/**
+ * Parse cell ID to row/col
+ */
+function parseCellIdHelper(cellId: string): { row: number; col: number } | null {
+  const match = cellId.match(/^cell-(\d+)-(\d+)$/);
+  if (match) {
+    return { row: parseInt(match[1]), col: parseInt(match[2]) };
+  }
+  return null;
+}
+
+/**
+ * Check if a cell has a directional clue (Yajilin arrow+number)
+ */
+function cellHasDirectionalClue(cellId: string, puzzle: PuzzleState, cols: number): boolean {
+  const directionalClues = puzzle.problem.directionalClues;
+  if (!directionalClues) return false;
+
+  // Convert cellId to linear index
+  const coords = parseCellIdHelper(cellId);
+  if (!coords) return false;
+  const cellIndex = coords.row * cols + coords.col;
+
+  return Object.values(directionalClues).some(clue => clue.cell === cellIndex);
+}
+
+/**
+ * Check if a cell has lines passing through it (connected to this cell)
+ */
+function cellHasLine(cellId: string, puzzle: PuzzleState): boolean {
+  // Check answer layer lines
+  const lines = puzzle.answer.lines;
+  return Object.values(lines).some(line => line.from === cellId || line.to === cellId);
+}
 
 /**
  * Hook providing surface-related tool handlers
@@ -133,7 +168,7 @@ export function useSurfaceToolHandler() {
         }
       }
 
-      // noAdjacent constraint: skip cells with different checker parity when filling
+      // noAdjacent constraint: skip cells that cannot be shaded when filling
       if (toolSettings.inputConstraint === 'noAdjacent' && surfaceFillModeRef.current === 'fill') {
         console.log('[handleSurfaceTool] noAdjacent check:', {
           cellId,
@@ -141,9 +176,20 @@ export function useSurfaceToolHandler() {
           firstCellParity: firstCellParityRef.current,
           hasSameParity: hasSameParity(cellId),
         });
+        // Check 1: skip cells with different checker parity (adjacent to potential shaded cell)
         if (!hasSameParity(cellId)) {
           console.log('[handleSurfaceTool] Skipping cell due to noAdjacent constraint');
-          return; // Skip this cell - different parity means adjacent to potential shaded cell
+          return;
+        }
+        // Check 2: skip cells with directional clues (Yajilin arrow+number)
+        if (cellHasDirectionalClue(cellId, puzzle, grid.cols)) {
+          console.log('[handleSurfaceTool] Skipping cell with directional clue');
+          return;
+        }
+        // Check 3: skip cells with lines passing through (Yajilin loop)
+        if (cellHasLine(cellId, puzzle)) {
+          console.log('[handleSurfaceTool] Skipping cell with line');
+          return;
         }
       }
 
@@ -306,10 +352,19 @@ export function useSurfaceToolHandler() {
         willShade = !existingSurface;
       }
 
-      // noAdjacent constraint: skip cells with different checker parity when shading
+      // noAdjacent constraint: skip cells that cannot be shaded
       if (toolSettings.inputConstraint === 'noAdjacent' && willShade) {
+        // Check 1: skip cells with different checker parity (adjacent to potential shaded cell)
         if (!hasSameParity(cellId)) {
-          return; // Skip this cell - different parity means adjacent to potential shaded cell
+          return;
+        }
+        // Check 2: skip cells with directional clues (Yajilin arrow+number)
+        if (cellHasDirectionalClue(cellId, puzzle, grid.cols)) {
+          return;
+        }
+        // Check 3: skip cells with lines passing through (Yajilin loop)
+        if (cellHasLine(cellId, puzzle)) {
+          return;
         }
       }
 

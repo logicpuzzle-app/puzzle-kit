@@ -135,8 +135,9 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
       } else {
         center = getCellCenter(row, col, grid);
       }
-      const valueStr = String(clue.value);
-      const digitCount = valueStr.length;
+      // Handle special values: -2 = "?" (hatena/unknown)
+      const displayValue = clue.value === -2 ? '?' : String(clue.value);
+      const digitCount = displayValue.length;
       const hasDirection = clue.direction >= UP && clue.direction <= RT;
       const fontSize = grid.cellSize * 0.5;
 
@@ -154,7 +155,7 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
               textAnchor="middle"
               dominantBaseline="central"
             >
-              {clue.value}
+              {displayValue}
             </text>
           </g>
         );
@@ -181,7 +182,7 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
               textAnchor="middle"
               dominantBaseline="central"
             >
-              {clue.value}
+              {displayValue}
             </text>
           </g>
         );
@@ -200,7 +201,7 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
               textAnchor="middle"
               dominantBaseline="middle"
             >
-              {clue.value}
+              {displayValue}
             </text>
             {/* Unicode arrow below */}
             <text

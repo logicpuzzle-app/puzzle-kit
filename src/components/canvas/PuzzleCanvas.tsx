@@ -22,6 +22,7 @@ import { SpecialLayer } from './SpecialLayer';
 import { DirectionalClueLayer, ArrowStyle } from './DirectionalClueLayer';
 import { SolutionAreaMaskLayer, SolutionAreaBorderLayer } from './SolutionAreaLayer';
 import { AdjacencyOverlay } from './AdjacencyOverlay';
+import { SolverLayer } from './SolverLayer';
 
 // Re-export types from InputHandlerLayer
 export type { NumberClickInfo, TextClickInfo } from './InputHandlerLayer';
@@ -232,6 +233,9 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
 
           {/* Solution area border (rendered on top of all puzzle elements) */}
           <SolutionAreaBorderLayer />
+
+          {/* Solver layer (rendered on top of everything when solver mode is active) */}
+          <SolverLayer />
           </g>
         </g>
       </InputHandlerLayer>

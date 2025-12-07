@@ -14,6 +14,7 @@
     "deploy": "npm run build && firebase deploy --only hosting"
   },
   "dependencies": {
+    "@logicpuzzle-app/solver-kit": "^0.2.1",
     "firebase": "^12.6.0",
     "i18next": "^25.6.3",
     "lucide-react": "^0.555.0",

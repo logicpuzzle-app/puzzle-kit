@@ -85,7 +85,7 @@ export const AlertModal: React.FC = () => {
           <button
             onClick={closeAlert}
             autoFocus
-            className="px-4 py-1.5 text-xs bg-white border border-gray-400 hover:bg-gray-50 transition-colors min-w-[70px]"
+            className="h-7 px-3 text-xs bg-white border border-gray-400 rounded-sm hover:bg-gray-50 transition-colors min-w-[70px]"
           >
             {closeLabel || t('common.close')}
           </button>

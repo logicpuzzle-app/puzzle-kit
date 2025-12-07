@@ -3,9 +3,10 @@
  *
  * Handles:
  * - Arrow key navigation between cells
- * - Digit input for numbers
+ * - Digit input for numbers (multi-digit support)
  * - Delete/Backspace for removing numbers
  * - Directional number tool support (Yajilin-style)
+ * - Constraint mode number input (number/direc/auto modes)
  * - Candidates mode (pencil marks)
  */
 
@@ -13,6 +14,8 @@ import { useEffect } from 'react';
 import { usePuzzleStore } from '../store/puzzleStore';
 import { useCellFinder } from './useCellFinder';
 import { toDataLayer } from '../types';
+import { constraintCatalog } from '../constraints';
+import { getAutoModeConfig } from '../constraints/inputModeMapping';
 
 /**
  * Hook for handling keyboard input for number tools
@@ -30,14 +33,42 @@ export function useNumberKeyboard() {
     updateNumber,
     addDirectionalClue,
     removeDirectionalClue,
+    currentInputMode,
+    currentSchemaId,
+    showConstraintLayer,
   } = usePuzzleStore();
 
   const { findCellIdByRowCol } = useCellFinder();
 
+  // Check if constraint mode number input is active
+  const isConstraintEnabled = showConstraintLayer && currentSchemaId !== null;
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tool = toolSettings.currentTool;
-      if (!tool.startsWith('number')) return;
+
+      // Check if we should handle keyboard input
+      // 1. Number tool is active (number-normal, number-directional, etc.)
+      // 2. Constraint mode with number/direc/auto-number/auto-direc input
+      const isNumberTool = tool.startsWith('number');
+
+      let isConstraintNumberInput = false;
+      if (isConstraintEnabled) {
+        const isNumberInputMode = currentInputMode === 'number' || currentInputMode === 'number-';
+        const isDirecInputMode = currentInputMode === 'direc';
+
+        // Check auto mode type
+        const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
+        const isEditMode = activeLayer === 'problem';
+        const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
+        const isAutoNumberMode = currentInputMode === 'auto' && autoConfig.type === 'number';
+        const isAutoDirecMode = currentInputMode === 'auto' && autoConfig.type === 'direc';
+        const isAutoBorderNumberMode = currentInputMode === 'auto' && autoConfig.type === 'border-number';
+
+        isConstraintNumberInput = isNumberInputMode || isDirecInputMode || isAutoNumberMode || isAutoDirecMode || isAutoBorderNumberMode;
+      }
+
+      if (!isNumberTool && !isConstraintNumberInput) return;
 
       // Skip if focus is on input elements
       if ((e.target as HTMLElement)?.tagName) {
@@ -83,7 +114,13 @@ export function useNumberKeyboard() {
       if (!isDigit && !isDelete) return;
       e.preventDefault();
 
-      // Handle directional number tool
+      // Handle constraint mode number input (uses directionalClues for unified storage)
+      if (isConstraintNumberInput) {
+        handleConstraintNumber(target, value, isDelete);
+        return;
+      }
+
+      // Handle directional number tool (non-constraint mode)
       if (tool === 'number-directional') {
         handleDirectionalNumber(target, value, isDelete);
         return;
@@ -115,10 +152,106 @@ export function useNumberKeyboard() {
     addDirectionalClue,
     removeDirectionalClue,
     findCellIdByRowCol,
+    isConstraintEnabled,
+    currentInputMode,
+    currentSchemaId,
   ]);
 
   /**
-   * Handle directional number input (Yajilin-style)
+   * Calculate max digits based on puzzle type and grid size
+   */
+   function getMaxDigits(): number {
+    // Check if direc mode
+    const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
+    const isEditMode = activeLayer === 'problem';
+    const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
+    const isDirecType = currentInputMode === 'direc' ||
+      (currentInputMode === 'auto' && autoConfig.type === 'direc');
+
+    if (isDirecType) {
+      // Yajilin arrow numbers: max is about half the dimension
+      const maxDimension = Math.max(grid.rows, grid.cols);
+      if (maxDimension <= 20) return 1;
+      if (maxDimension <= 200) return 2;
+      return 3;
+    }
+
+    // Other puzzles: based on total cells
+    const totalCells = grid.rows * grid.cols;
+    if (totalCells >= 3000) return 4;
+    if (totalCells >= 300) return 3;
+    return 2;
+  }
+
+  /**
+   * Handle constraint mode number input (multi-digit, uses directionalClues)
+   * Used for: number, number-, direc, auto-number, auto-direc modes
+   */
+  function handleConstraintNumber(
+    target: { row: number; col: number },
+    value: string,
+    isDelete: boolean
+  ) {
+    const cellIndex = target.row * grid.cols + target.col;
+    const dataLayer = toDataLayer(activeLayer);
+    const existingEntry = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
+      ([, c]) => c.cell === cellIndex
+    );
+    const existingClue = existingEntry?.[1];
+    const existingId = existingEntry?.[0];
+    const currentValue = existingClue?.value !== undefined ? String(existingClue.value) : null;
+
+    // Delete/Backspace handling
+    if (isDelete) {
+      if (!currentValue || currentValue.length <= 1) {
+        // Remove entirely
+        if (existingId) {
+          removeDirectionalClue(existingId);
+        }
+      } else {
+        // Remove last digit
+        const newValue = currentValue.slice(0, -1);
+        const direction = existingClue?.direction ?? 0;
+        addDirectionalClue({
+          cell: cellIndex,
+          direction: direction as 0 | 1 | 2 | 3 | 4,
+          value: parseInt(newValue, 10),
+          layer: dataLayer,
+        });
+      }
+      return;
+    }
+
+    // Digit input - append to existing value
+    const maxDigits = getMaxDigits();
+    let newValue: string;
+
+    if (!currentValue) {
+      newValue = value;
+    } else if (currentValue.length >= maxDigits) {
+      // At max digits: replace with new digit
+      newValue = value;
+    } else {
+      // Append digit
+      newValue = currentValue + value;
+    }
+
+    // Preserve existing direction, or use current arrowDirection setting
+    const directionMap: Record<number, 0 | 1 | 2 | 3 | 4> = {
+      [-1]: 0, 0: 1, 1: 3, 2: 4, 3: 2,
+    };
+    const direction = existingClue?.direction ?? directionMap[toolSettings.arrowDirection] ?? 0;
+
+    addDirectionalClue({
+      cell: cellIndex,
+      direction: direction as 0 | 1 | 2 | 3 | 4,
+      value: parseInt(newValue, 10),
+      layer: dataLayer,
+    });
+  }
+
+  /**
+   * Handle directional number input (Yajilin-style) - non-constraint mode
    */
   function handleDirectionalNumber(
     target: { row: number; col: number },

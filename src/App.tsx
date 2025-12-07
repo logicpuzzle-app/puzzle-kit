@@ -5,7 +5,7 @@ import { PuzzleCanvas, type TextClickInfo } from './components/canvas';
 import { MenuBar, IconToolbar, Ribbon } from './components/toolbar';
 import { PropertiesPanel, StatusBar } from './components/panels';
 import { TextInputDialog, type TextInputType, StorageErrorDialog } from './components/dialogs';
-import { CheckAnswerModal, ConfirmModal, AlertModal, ShortcutsModal } from './components/modals';
+import { CheckAnswerModal, ConfirmModal, AlertModal, ShortcutsModal, UrlImportModal } from './components/modals';
 import { usePuzzleStore } from './store/puzzleStore';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useStorageErrorHandler } from './hooks/useStorageErrorHandler';
@@ -103,6 +103,7 @@ function App() {
       <ConfirmModal />
       <AlertModal />
       <ShortcutsModal />
+      <UrlImportModal />
     </div>
   );
 }

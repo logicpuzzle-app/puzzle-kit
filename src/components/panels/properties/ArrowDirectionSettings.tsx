@@ -87,17 +87,13 @@ export const ArrowDirectionSettings: React.FC = () => {
   };
 
   return (
-    <div className="space-y-2">
-      <label className="block text-xs text-office-text-secondary">
-        {t('prop.direction')}
-      </label>
-
-      {/* Visual direction selector - grid layout matching NumberInputPanel */}
-      <div className="grid grid-cols-3 gap-1">
+    <div className="space-y-1">
+      {/* Visual direction selector - 3x3 grid layout, compact size */}
+      <div className="grid grid-cols-3 gap-0.5">
         {/* Top row: empty, up, empty */}
         <div />
         <button
-          className={`w-full h-10 text-lg font-medium border rounded-sm transition-colors ${
+          className={`w-full h-7 text-sm font-medium border rounded-sm transition-colors ${
             activeDirection === 0
               ? 'bg-office-accent text-white border-office-accent'
               : 'bg-white border-office-border hover:bg-office-ribbon-hover'
@@ -111,7 +107,7 @@ export const ArrowDirectionSettings: React.FC = () => {
 
         {/* Middle row: left, no-direction center, right */}
         <button
-          className={`w-full h-10 text-lg font-medium border rounded-sm transition-colors ${
+          className={`w-full h-7 text-sm font-medium border rounded-sm transition-colors ${
             activeDirection === 1
               ? 'bg-office-accent text-white border-office-accent'
               : 'bg-white border-office-border hover:bg-office-ribbon-hover'
@@ -122,7 +118,7 @@ export const ArrowDirectionSettings: React.FC = () => {
           ←
         </button>
         <button
-          className={`w-full h-10 text-lg font-medium border rounded-sm transition-colors ${
+          className={`w-full h-7 text-sm font-medium border rounded-sm transition-colors ${
             activeDirection === -1 || (numberSelection && !currentCellClue)
               ? 'bg-office-accent text-white border-office-accent'
               : 'bg-white border-office-border hover:bg-office-ribbon-hover'
@@ -133,7 +129,7 @@ export const ArrowDirectionSettings: React.FC = () => {
           ○
         </button>
         <button
-          className={`w-full h-10 text-lg font-medium border rounded-sm transition-colors ${
+          className={`w-full h-7 text-sm font-medium border rounded-sm transition-colors ${
             activeDirection === 2
               ? 'bg-office-accent text-white border-office-accent'
               : 'bg-white border-office-border hover:bg-office-ribbon-hover'
@@ -147,7 +143,7 @@ export const ArrowDirectionSettings: React.FC = () => {
         {/* Bottom row: empty, down, empty */}
         <div />
         <button
-          className={`w-full h-10 text-lg font-medium border rounded-sm transition-colors ${
+          className={`w-full h-7 text-sm font-medium border rounded-sm transition-colors ${
             activeDirection === 3
               ? 'bg-office-accent text-white border-office-accent'
               : 'bg-white border-office-border hover:bg-office-ribbon-hover'

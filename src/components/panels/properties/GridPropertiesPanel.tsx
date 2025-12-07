@@ -7,6 +7,7 @@
  * - GridMergeContent: Merge mode management
  * - GridSplitContent: Split mode (placeholder)
  * - GridExcludeContent: Exclude/disable cells mode
+ * - GridSculptContent: Sculpt mode for isometric grids
  */
 
 import React from 'react';
@@ -17,6 +18,7 @@ import {
   GridMergeContent,
   GridSplitContent,
   GridExcludeContent,
+  GridSculptContent,
 } from './grid';
 
 export const GridPropertiesPanel: React.FC = () => {
@@ -34,6 +36,8 @@ export const GridPropertiesPanel: React.FC = () => {
         return <GridSplitContent />;
       case 'exclude':
         return <GridExcludeContent />;
+      case 'sculpt':
+        return <GridSculptContent />;
       default:
         return gridSubTab === 'shape' ? <GridShapeContent /> : <GridDisplayContent />;
     }

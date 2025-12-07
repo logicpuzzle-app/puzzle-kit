@@ -41,6 +41,7 @@ const resources = {
       'edit.clearProblem': 'Clear Problem Layer',
       'edit.clearAnswer': 'Clear Answer Layer',
       'edit.clearAll': 'Clear All',
+      'edit.constraintMode': 'Constraint Mode',
 
       // View menu
       'view.zoomIn': 'Zoom In',
@@ -52,6 +53,7 @@ const resources = {
       'view.showProblem': 'Show Problem Layer',
       'view.showAnswer': 'Show Answer Layer',
       'view.showConstraint': 'Show Constraint Layer',
+      'view.showAdjacency': 'Show Adjacent Cells',
 
       // Layers
       'layer.problem': 'Problem',
@@ -181,6 +183,11 @@ const resources = {
       'inputMode.info-ublk.desc': 'Show unshaded island info',
       'inputMode.info-room': 'Info (Room)',
       'inputMode.info-room.desc': 'Show room info',
+
+      // Puzzle preset
+      'puzzle.preset': 'Puzzle Preset',
+      'puzzle.noConstraint': 'No Constraint',
+      'puzzle.noPresetsForGrid': 'No presets available for this grid type',
 
       // Puzzle names
       'puzzle.slitherlink': 'Slitherlink',
@@ -402,8 +409,8 @@ const resources = {
       'prop.buttonMode': 'Button Mode',
       'prop.buttonMode.2button': '2-Button',
       'prop.buttonMode.1button': '1-Button',
-      'prop.buttonMode.2button.desc': 'Left=Shade, Right=Unshade',
-      'prop.buttonMode.1button.desc': 'Left click cycles states',
+      'prop.buttonMode.2button.desc': 'Left: line, Right: shade',
+      'prop.buttonMode.1button.desc': 'Click: shade, Drag: line',
 
       // Auto mode types
       'prop.autoMode': 'Auto Mode',
@@ -542,7 +549,13 @@ const resources = {
       'gridEdit.splitNotImplemented': 'Cell splitting is not yet implemented.',
       'gridEdit.disabledDuringPreview': 'Apply or cancel grid changes first',
       'gridEdit.sculpt': 'Sculpt',
-      'gridEdit.sculptHelp': 'Click hexagon centers to add/remove unit cubes.',
+      'gridEdit.sculptMode': 'Sculpt Mode',
+      'gridEdit.sculptMode.rotate': 'Build',
+      'gridEdit.sculptMode.cut': 'Cut',
+      'gridEdit.sculptHelp.rotate': 'Click hexagon centers to flip 3 cells around the vertex.',
+      'gridEdit.sculptHelp.cut': 'Click hexagon centers to cut with a triangle (removes vertex).',
+      'gridEdit.sculptOperations': 'Sculpt operations',
+      'gridEdit.clearAllSculpt': 'Clear all sculpt operations',
 
       // Tiling types
       'tiling.regular': 'Regular Tilings',
@@ -637,6 +650,7 @@ const resources = {
       'shortcuts.zoomIn': 'Zoom In',
       'shortcuts.zoomOut': 'Zoom Out',
       'shortcuts.resetZoom': 'Reset Zoom',
+      'shortcuts.panMode': 'Pan Mode',
       'shortcuts.pan': 'Pan',
       'shortcuts.zoom': 'Zoom',
       'shortcuts.mouseWheel': 'Wheel',
@@ -706,6 +720,7 @@ const resources = {
       'action.save': 'Save',
       'action.add': 'Add',
       'action.delete': 'Delete',
+      'action.dismiss': 'Dismiss',
 
       // Grid properties
       'grid.exportPadding': 'Padding',
@@ -746,6 +761,9 @@ const resources = {
       'file.exportPuzzlink': 'Export to puzz.link',
       'file.importPenpaUrl': 'Enter Penpa or puzz.link URL:',
       'file.importSuccess': 'Puzzle imported successfully!',
+      'file.importFromUrl': 'Import from URL',
+      'file.urlImportDescription': 'Enter a Penpa Edit or puzz.link puzzle URL:',
+      'file.urlImportHint': 'Supports Penpa Edit, puzz.link, and pzv.jp URLs',
       'share.copied': 'URL copied to clipboard!',
 
       // Help
@@ -794,6 +812,26 @@ const resources = {
       'error.importFailed': 'Failed to import puzzle',
       'error.storageNotAvailable': 'Storage is not available. Please try again later.',
       'error.shareFailed': 'Failed to share puzzle. Please try again.',
+
+      // Solver
+      'solver.solve': 'Solve',
+      'solver.solving': 'Solving...',
+      'solver.failed': 'Failed to solve',
+      'solver.notAvailable': 'Solver not available for this puzzle',
+      'solver.mode': 'Solver Mode',
+      'solver.status': 'Status',
+      'solver.solved': 'Solved',
+      'solver.time': 'Time',
+      'solver.exit': 'Exit',
+      'solver.runningInBackground': 'Running in background',
+      'solver.cancel': 'Cancel',
+      'solver.multiple': 'Multiple solutions exist',
+      'solver.multipleSub': 'Showing confirmed cells only',
+      'solver.timeout': 'Solver timed out',
+      'solver.timeoutSub': 'Showing progress so far',
+      'solver.unsolvable': 'No solution exists',
+      'solver.unsolvableSub': 'Showing deduced cells',
+      'solver.partial': 'Partial Result',
     },
   },
   ja: {
@@ -835,6 +873,7 @@ const resources = {
       'edit.clearProblem': '問題レイヤーをクリア',
       'edit.clearAnswer': '解答レイヤーをクリア',
       'edit.clearAll': 'すべてクリア',
+      'edit.constraintMode': '制約モード',
 
       // View menu
       'view.zoomIn': '拡大',
@@ -846,6 +885,7 @@ const resources = {
       'view.showProblem': '問題レイヤーを表示',
       'view.showAnswer': '解答レイヤーを表示',
       'view.showConstraint': '制約レイヤーを表示',
+      'view.showAdjacency': '隣接セルを表示',
 
       // Layers
       'layer.problem': '問題',
@@ -975,6 +1015,11 @@ const resources = {
       'inputMode.info-ublk.desc': '白マス島情報を表示',
       'inputMode.info-room': '情報(部屋)',
       'inputMode.info-room.desc': '部屋情報を表示',
+
+      // Puzzle preset
+      'puzzle.preset': 'パズルプリセット',
+      'puzzle.noConstraint': '制約なし',
+      'puzzle.noPresetsForGrid': 'このグリッドタイプ用のプリセットはありません',
 
       // Puzzle names
       'puzzle.slitherlink': 'スリザーリンク',
@@ -1196,8 +1241,8 @@ const resources = {
       'prop.buttonMode': 'ボタンモード',
       'prop.buttonMode.2button': '左右ボタン',
       'prop.buttonMode.1button': '1ボタン',
-      'prop.buttonMode.2button.desc': '左=黒マス, 右=白マス',
-      'prop.buttonMode.1button.desc': 'クリックで循環',
+      'prop.buttonMode.2button.desc': '左: 線, 右: 黒マス',
+      'prop.buttonMode.1button.desc': 'クリック: 黒マス, ドラッグ: 線',
 
       // Auto mode types
       'prop.autoMode': '自動モード',
@@ -1260,7 +1305,7 @@ const resources = {
       'size.small': '小',
 
       // Grid settings
-      'grid.title': 'グリッド',
+      'grid.title': '盤面',
       'grid.settings': 'グリッド設定',
       'grid.size': 'サイズ',
       'grid.rows': '行数',
@@ -1336,7 +1381,13 @@ const resources = {
       'gridEdit.splitNotImplemented': 'セル分割は未実装です。',
       'gridEdit.disabledDuringPreview': 'グリッド変更を適用またはキャンセルしてください',
       'gridEdit.sculpt': 'スカルプト',
-      'gridEdit.sculptHelp': '六角形の中心をクリックしてキューブを追加/削除します。',
+      'gridEdit.sculptMode': 'スカルプトモード',
+      'gridEdit.sculptMode.rotate': 'ビルド',
+      'gridEdit.sculptMode.cut': 'カット',
+      'gridEdit.sculptHelp.rotate': '六角形の中心をクリックして3つのセルを頂点周りに回転します。',
+      'gridEdit.sculptHelp.cut': '六角形の中心をクリックして三角形でカット（頂点を削除）します。',
+      'gridEdit.sculptOperations': 'スカルプト操作',
+      'gridEdit.clearAllSculpt': '全てのスカルプト操作をクリア',
 
       // Tiling types
       'tiling.regular': '正則タイリング',
@@ -1431,6 +1482,7 @@ const resources = {
       'shortcuts.zoomIn': '拡大',
       'shortcuts.zoomOut': '縮小',
       'shortcuts.resetZoom': 'ズームリセット',
+      'shortcuts.panMode': 'パンモード',
       'shortcuts.pan': 'パン',
       'shortcuts.zoom': 'ズーム',
       'shortcuts.mouseWheel': 'ホイール',
@@ -1498,6 +1550,7 @@ const resources = {
       'action.save': '保存',
       'action.add': '追加',
       'action.delete': '削除',
+      'action.dismiss': '終了',
 
       // Grid properties
       'grid.exportPadding': '余白',
@@ -1538,6 +1591,9 @@ const resources = {
       'file.exportPuzzlink': 'puzz.linkにエクスポート',
       'file.importPenpaUrl': 'PenpaまたはpuzzlinkのURLを入力:',
       'file.importSuccess': 'パズルをインポートしました！',
+      'file.importFromUrl': 'URLからインポート',
+      'file.urlImportDescription': 'Penpa Editまたはpuzz.linkのパズルURLを入力してください:',
+      'file.urlImportHint': 'Penpa Edit、puzz.link、pzv.jp形式のURLに対応',
       'share.copied': 'URLをクリップボードにコピーしました',
 
       // Help
@@ -1586,6 +1642,26 @@ const resources = {
       'error.importFailed': 'パズルのインポートに失敗しました',
       'error.storageNotAvailable': 'ストレージが利用できません。しばらくしてから再度お試しください。',
       'error.shareFailed': 'パズルの共有に失敗しました。再度お試しください。',
+
+      // Solver
+      'solver.solve': '解く',
+      'solver.solving': '解答中...',
+      'solver.failed': '解答に失敗しました',
+      'solver.notAvailable': 'このパズルのソルバーは利用できません',
+      'solver.mode': 'ソルバーモード',
+      'solver.status': '状態',
+      'solver.solved': '解決',
+      'solver.time': '時間',
+      'solver.exit': '終了',
+      'solver.runningInBackground': 'バックグラウンドで実行中',
+      'solver.cancel': '中断',
+      'solver.multiple': '複数の解が存在します',
+      'solver.multipleSub': '確定部分のみ表示',
+      'solver.timeout': 'タイムアウトしました',
+      'solver.timeoutSub': '途中経過を表示',
+      'solver.unsolvable': '解が存在しません',
+      'solver.unsolvableSub': '',
+      'solver.partial': '部分解',
     },
   },
 };

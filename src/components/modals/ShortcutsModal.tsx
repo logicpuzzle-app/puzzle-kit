@@ -44,50 +44,23 @@ export const ShortcutsModal: React.FC = () => {
 
   const shortcutGroups: ShortcutGroup[] = [
     {
-      title: t('shortcuts.primaryTools'),
+      title: t('shortcuts.edit'),
       items: [
-        { key: 'S', description: t('shortcuts.surfaceFill') },
-        { key: 'Shift+S', description: t('shortcuts.surfaceDot') },
-        { key: 'L', description: t('shortcuts.lineNormal') },
-        { key: 'Shift+L', description: t('shortcuts.lineDiagonal') },
-        { key: 'E', description: t('shortcuts.edgeNormal') },
-        { key: 'Shift+E', description: t('shortcuts.edgeDiagonal') },
-        { key: 'W', description: t('shortcuts.wall') },
-        { key: 'N', description: t('shortcuts.numberNormal') },
-        { key: 'Shift+N', description: t('shortcuts.numberCorner') },
-        { key: 'O', description: t('shortcuts.circle') },
-        { key: 'Shift+O', description: t('shortcuts.triangle') },
-        { key: 'X', description: t('shortcuts.cross') },
-        { key: 'V', description: t('shortcuts.select') },
+        { key: 'Ctrl+Z', description: t('shortcuts.undo') },
+        { key: 'Ctrl+Shift+Z', description: t('shortcuts.redo') },
+        { key: 'Ctrl+Y', description: t('shortcuts.redo') },
+      ],
+    },
+    {
+      title: t('shortcuts.layers'),
+      items: [
+        { key: 'Tab', description: t('shortcuts.toggleLayer') },
       ],
     },
     {
       title: t('shortcuts.colors'),
       items: [
         { key: 'Space', description: t('shortcuts.swapColors') },
-        { key: 'F1', description: t('shortcuts.grey') },
-        { key: 'F2', description: t('shortcuts.green') },
-        { key: 'F3', description: t('shortcuts.black') },
-        { key: 'F4', description: t('shortcuts.red') },
-      ],
-    },
-    {
-      title: t('shortcuts.layers'),
-      items: [
-        { key: 'Q', description: t('shortcuts.problemLayer') },
-        { key: 'A', description: t('shortcuts.answerLayer') },
-        { key: 'Tab', description: t('shortcuts.toggleLayer') },
-        { key: 'P', description: t('shortcuts.toggleProblemVisibility') },
-      ],
-    },
-    {
-      title: t('shortcuts.edit'),
-      items: [
-        { key: 'Ctrl+Z', description: t('shortcuts.undo') },
-        { key: 'Ctrl+Shift+Z', description: t('shortcuts.redo') },
-        { key: 'Ctrl+S', description: t('shortcuts.save') },
-        { key: 'Ctrl+O', description: t('shortcuts.open') },
-        { key: 'Ctrl+N', description: t('shortcuts.new') },
       ],
     },
     {
@@ -96,6 +69,7 @@ export const ShortcutsModal: React.FC = () => {
         { key: 'Ctrl++', description: t('shortcuts.zoomIn') },
         { key: 'Ctrl+-', description: t('shortcuts.zoomOut') },
         { key: 'Ctrl+0', description: t('shortcuts.resetZoom') },
+        { key: 'H', description: t('shortcuts.panMode') },
         { key: t('shortcuts.mouseWheel'), description: t('shortcuts.pan') },
         { key: 'Ctrl+' + t('shortcuts.wheel'), description: t('shortcuts.zoom') },
       ],
@@ -104,39 +78,39 @@ export const ShortcutsModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-      <div className="bg-white border border-office-border shadow-lg max-w-2xl w-full mx-4 max-h-[85vh] flex flex-col">
+      <div className="bg-gray-100 border border-gray-400 shadow-lg max-w-2xl w-full mx-4 max-h-[85vh] flex flex-col">
         {/* Title bar */}
-        <div className="h-8 bg-office-ribbon border-b border-office-border flex items-center justify-between px-3 flex-shrink-0">
-          <span className="text-xs font-medium text-office-text">
+        <div className="h-8 bg-gray-200 border-b border-gray-400 flex items-center justify-between px-3 flex-shrink-0">
+          <span className="text-xs font-medium text-gray-800">
             {t('help.shortcuts')}
           </span>
           <button
             onClick={closeShortcuts}
-            className="w-5 h-5 flex items-center justify-center text-office-text-secondary hover:bg-red-500 hover:text-white transition-colors text-sm"
+            className="w-5 h-5 flex items-center justify-center text-gray-600 hover:bg-red-500 hover:text-white transition-colors text-sm"
           >
             ×
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-4 overflow-y-auto flex-1">
+        <div className="p-4 overflow-y-auto flex-1 bg-white">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {shortcutGroups.map((group, groupIndex) => (
-              <div key={groupIndex} className="border border-office-border">
+              <div key={groupIndex} className="border border-gray-300">
                 {/* Group header */}
-                <div className="bg-office-ribbon px-3 py-1.5 border-b border-office-border">
-                  <h3 className="text-xs font-medium text-office-text">
+                <div className="bg-gray-100 px-3 py-1.5 border-b border-gray-300">
+                  <h3 className="text-xs font-medium text-gray-800">
                     {group.title}
                   </h3>
                 </div>
                 {/* Group items */}
-                <div className="divide-y divide-office-border">
+                <div className="divide-y divide-gray-200">
                   {group.items.map((item, itemIndex) => (
                     <div
                       key={itemIndex}
-                      className="flex items-center justify-between px-3 py-1.5 hover:bg-office-ribbon/50"
+                      className="flex items-center justify-between px-3 py-1.5 hover:bg-gray-50"
                     >
-                      <span className="text-xs text-office-text">
+                      <span className="text-xs text-gray-800">
                         {item.description}
                       </span>
                       <kbd className="text-[10px] bg-gray-100 border border-gray-300 rounded px-1.5 py-0.5 font-mono text-gray-700 ml-2 flex-shrink-0">
@@ -151,10 +125,10 @@ export const ShortcutsModal: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-3 border-t border-office-border flex justify-end flex-shrink-0">
+        <div className="px-4 py-3 border-t border-gray-300 flex justify-end flex-shrink-0">
           <button
             onClick={closeShortcuts}
-            className="px-4 py-1.5 text-xs bg-office-ribbon border border-office-border hover:bg-office-ribbon-hover transition-colors"
+            className="h-7 px-3 text-xs bg-white border border-gray-400 rounded-sm hover:bg-gray-50 transition-colors min-w-[70px]"
           >
             {t('common.close')}
           </button>

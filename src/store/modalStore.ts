@@ -34,6 +34,11 @@ export interface ShortcutsModalState {
   isOpen: boolean;
 }
 
+export interface UrlImportModalState {
+  isOpen: boolean;
+  onSubmit: ((url: string) => void) | null;
+}
+
 export interface ModalStore {
   // Confirm modal
   confirmModal: ConfirmModalState;
@@ -65,6 +70,12 @@ export interface ModalStore {
   shortcutsModal: ShortcutsModalState;
   showShortcuts: () => void;
   closeShortcuts: () => void;
+
+  // URL Import modal
+  urlImportModal: UrlImportModalState;
+  showUrlImport: (onSubmit: (url: string) => void) => void;
+  closeUrlImport: () => void;
+  submitUrlImport: (url: string) => void;
 }
 
 // ========================================
@@ -93,6 +104,11 @@ const initialAlertModal: AlertModalState = {
 
 const initialShortcutsModal: ShortcutsModalState = {
   isOpen: false,
+};
+
+const initialUrlImportModal: UrlImportModalState = {
+  isOpen: false,
+  onSubmit: null,
 };
 
 // ========================================
@@ -171,5 +187,29 @@ export const useModalStore = create<ModalStore>((set, get) => ({
 
   closeShortcuts: () => {
     set({ shortcutsModal: initialShortcutsModal });
+  },
+
+  // URL Import modal state
+  urlImportModal: initialUrlImportModal,
+
+  showUrlImport: (onSubmit) => {
+    set({
+      urlImportModal: {
+        isOpen: true,
+        onSubmit,
+      },
+    });
+  },
+
+  closeUrlImport: () => {
+    set({ urlImportModal: initialUrlImportModal });
+  },
+
+  submitUrlImport: (url) => {
+    const { urlImportModal, closeUrlImport } = get();
+    if (urlImportModal.onSubmit && url.trim()) {
+      urlImportModal.onSubmit(url.trim());
+    }
+    closeUrlImport();
   },
 }));

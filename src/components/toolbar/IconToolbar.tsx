@@ -9,7 +9,7 @@ import {
   exportToPng,
   downloadAsPng,
 } from '../../utils/serialization';
-import { parsePenpaUrl, isPenpaUrl, parsePuzzlinkUrl, isPuzzlinkUrl } from '../../utils/penpaCompat';
+import { parsePenpaUrl, isPenpaUrl, parsePuzzlinkUrl, isPuzzlinkUrl, isPuzsqUrl, fetchPuzsqPuzzle } from '../../utils/penpaCompat';
 import { NewPuzzleDialog } from '../dialogs/NewPuzzleDialog';
 
 // SVG Icon components
@@ -214,41 +214,44 @@ export const IconToolbar: React.FC = () => {
   };
 
   const handleImportPenpaUrl = () => {
-    const url = prompt(t('file.importPenpaUrl') || 'Enter Penpa or puzz.link URL:');
-    if (!url) return;
+    const { showUrlImport } = useModalStore.getState();
+    showUrlImport(async (url) => {
+      let result = null;
 
-    let result = null;
+      // Try puzsq format first (needs async fetch)
+      if (isPuzsqUrl(url)) {
+        result = await fetchPuzsqPuzzle(url);
+      } else if (isPuzzlinkUrl(url)) {
+        result = parsePuzzlinkUrl(url);
+      } else if (isPenpaUrl(url)) {
+        result = parsePenpaUrl(url);
+      } else {
+        showAlert({
+          title: t('error.invalidPenpaUrl'),
+          message: t('error.invalidPenpaUrl'),
+          variant: 'error',
+        });
+        return;
+      }
 
-    if (isPuzzlinkUrl(url)) {
-      result = parsePuzzlinkUrl(url);
-    } else if (isPenpaUrl(url)) {
-      result = parsePenpaUrl(url);
-    } else {
-      showAlert({
-        title: t('error.invalidPenpaUrl'),
-        message: t('error.invalidPenpaUrl'),
-        variant: 'error',
-      });
-      return;
-    }
-
-    if (result) {
-      usePuzzleStore.setState({
-        grid: result.grid,
-        puzzle: result.state,
-      });
-      showAlert({
-        title: t('file.importSuccess'),
-        message: t('file.importSuccess'),
-        variant: 'success',
-      });
-    } else {
-      showAlert({
-        title: t('error.importFailed'),
-        message: t('error.importFailed'),
-        variant: 'error',
-      });
-    }
+      if (result) {
+        usePuzzleStore.setState({
+          grid: result.grid,
+          puzzle: result.state,
+        });
+        showAlert({
+          title: t('file.importSuccess'),
+          message: t('file.importSuccess'),
+          variant: 'success',
+        });
+      } else {
+        showAlert({
+          title: t('error.importFailed'),
+          message: t('error.importFailed'),
+          variant: 'error',
+        });
+      }
+    });
   };
 
   return (
