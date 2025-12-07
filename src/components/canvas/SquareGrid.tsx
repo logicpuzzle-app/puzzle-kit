@@ -117,7 +117,7 @@ export const SquareGrid: React.FC = () => {
   const outerFrame = useMemo(() => {
     if (frameStyle === 'none') return null;
 
-    const strokeWidth = frameStyle === 'thick' ? 4 : 2;
+    const strokeWidth = frameStyle === 'thick' ? 3 : 2;
 
     const disabledArray = Array.isArray(disabledCells) ? disabledCells :
       (disabledCells ? Array.from(disabledCells as unknown as Set<string>) : []);
@@ -424,7 +424,7 @@ export const SquareGridLines: React.FC = () => {
   const outerFrame = useMemo(() => {
     if (frameStyle === 'none') return null;
 
-    const strokeWidth = frameStyle === 'thick' ? 4 : 2;
+    const strokeWidth = frameStyle === 'thick' ? 3 : 2;
 
     const disabledArray = Array.isArray(disabledCells) ? disabledCells :
       (disabledCells ? Array.from(disabledCells as unknown as Set<string>) : []);

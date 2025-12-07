@@ -139,12 +139,25 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
   const findTopologyCellId = useCallback(
     (row: number, col: number): string | null => {
       if (!topology) return null;
+      const targetCellId = `cell-${row}-${col}`;
+
+      // First, check for direct match by row/col
       const candidates = Array.from(topology.cells.values()).filter(
         c => c.row === row && c.col === col
       );
-      if (candidates.length === 0) return null;
-      const hex = candidates.find(c => c.id.includes('hex'));
-      return (hex ?? candidates[0]).id;
+      if (candidates.length > 0) {
+        const hex = candidates.find(c => c.id.includes('hex'));
+        return (hex ?? candidates[0]).id;
+      }
+
+      // If not found, check for merged cells that contain this cell
+      for (const cell of topology.cells.values()) {
+        if (cell.originalCells && cell.originalCells.includes(targetCellId)) {
+          return cell.id;
+        }
+      }
+
+      return null;
     },
     [topology]
   );
@@ -671,7 +684,10 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       }
 
       // Handle normal number tools
-      const cellId = `cell-${target.row}-${target.col}`;
+      // Use topology-aware cell ID for merged cells
+      const cellId = useTopology
+        ? (findTopologyCellId(target.row, target.col) ?? `cell-${target.row}-${target.col}`)
+        : `cell-${target.row}-${target.col}`;
       const dataLayerForNumbers = toDataLayer(activeLayer);
       const numbers = puzzle[dataLayerForNumbers].numbers;
       const position = toolSettings.numberPosition;

@@ -13,11 +13,32 @@ import {
   getPenpaColor,
 } from '../../types/penpaElements';
 import type { GridPoints } from '../../types/point';
+import type { LineThickness } from '../../types';
 
 interface EdgeLayerProps {
   gridPoints?: GridPoints;
   layer?: 'problem' | 'answer';
 }
+
+/**
+ * Get stroke width from thickness (same as LineLayer)
+ */
+const getStrokeWidth = (thickness?: LineThickness): number => {
+  switch (thickness) {
+    case 'thinnest':
+      return 1;
+    case 'thin':
+      return 2;
+    case 'normal':
+      return 3;
+    case 'thick':
+      return 5;
+    case 'thickest':
+      return 8;
+    default:
+      return 3;
+  }
+};
 
 /**
  * Render a single edge line
@@ -26,10 +47,12 @@ const EdgeLine: React.FC<{
   from: { x: number; y: number };
   to: { x: number; y: number };
   style: PenpaLineStyle;
+  thickness?: LineThickness;
   color?: string | number;
-}> = ({ from, to, style, color }) => {
+}> = ({ from, to, style, thickness, color }) => {
   const styleProps = getLineStyleProps(style);
   const strokeColor = getPenpaColor(color ?? 3); // Default to black
+  const strokeWidth = thickness ? getStrokeWidth(thickness) : styleProps.strokeWidth;
 
   // Handle special styles
   if (style === PenpaLineStyle.X_MARK) {
@@ -105,7 +128,7 @@ const EdgeLine: React.FC<{
       x2={to.x}
       y2={to.y}
       stroke={strokeColor}
-      strokeWidth={styleProps.strokeWidth}
+      strokeWidth={strokeWidth}
       strokeDasharray={styleProps.strokeDasharray}
       strokeLinecap="round"
     />
@@ -183,11 +206,6 @@ export const EdgeLayer: React.FC<EdgeLayerProps> = ({
         case 'double':
           penpaStyle = PenpaLineStyle.DOUBLE;
           break;
-        default:
-          // Check thickness for bold styles
-          if (edge.thickness === 'thick') {
-            penpaStyle = PenpaLineStyle.BOLD;
-          }
       }
 
       return {
@@ -195,6 +213,7 @@ export const EdgeLayer: React.FC<EdgeLayerProps> = ({
         from: fromCoord,
         to: toCoord,
         style: penpaStyle,
+        thickness: edge.thickness,
         color: edge.color,
       };
     }).filter(Boolean);
@@ -209,6 +228,7 @@ export const EdgeLayer: React.FC<EdgeLayerProps> = ({
             from={edge.from}
             to={edge.to}
             style={edge.style}
+            thickness={edge.thickness}
             color={edge.color}
           />
         ) : null

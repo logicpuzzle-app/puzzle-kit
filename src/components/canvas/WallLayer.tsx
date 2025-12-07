@@ -58,6 +58,27 @@ function getWallPosition(
 }
 
 /**
+ * Line thickness to stroke width mapping
+ */
+function getWallStrokeWidth(thickness?: string): number {
+  switch (thickness) {
+    case 'thinnest':
+      return 1;
+    case 'thin':
+      return 2;
+    case 'normal':
+      return 3;
+    case 'thick':
+      return 4;
+    case 'thickest':
+      return 6;
+    default:
+      // Default to normal (3) for walls
+      return 3;
+  }
+}
+
+/**
  * Render a single wall line
  */
 const WallLine: React.FC<{
@@ -66,15 +87,16 @@ const WallLine: React.FC<{
   x2: number;
   y2: number;
   style: PenpaLineStyle;
+  thickness?: string;
   color?: string | number;
-}> = ({ x1, y1, x2, y2, style, color }) => {
+}> = ({ x1, y1, x2, y2, style, thickness, color }) => {
   const styleProps = getLineStyleProps(style);
   const strokeColor = getPenpaColor(color ?? 3);
 
-  // Walls are typically bold
-  const strokeWidth = style === PenpaLineStyle.NORMAL
-    ? 4
-    : styleProps.strokeWidth;
+  // Use thickness if provided, otherwise use style props
+  const strokeWidth = thickness
+    ? getWallStrokeWidth(thickness)
+    : (style === PenpaLineStyle.NORMAL ? 3 : styleProps.strokeWidth);
 
   if (style === PenpaLineStyle.DELETE) {
     return null;
@@ -144,6 +166,7 @@ export const WallLayer: React.FC<WallLayerProps> = ({
           id,
           ...pos,
           style: penpaStyle,
+          thickness: wall.thickness,
           color: wall.color,
         };
       } else if (positionParts.length === 1) {
@@ -178,6 +201,7 @@ export const WallLayer: React.FC<WallLayerProps> = ({
               x2: v2.x,
               y2: v2.y,
               style: penpaStyle,
+              thickness: wall.thickness,
               color: wall.color,
             };
           }
@@ -199,6 +223,7 @@ export const WallLayer: React.FC<WallLayerProps> = ({
             x2={wall.x2}
             y2={wall.y2}
             style={wall.style}
+            thickness={wall.thickness}
             color={wall.color}
           />
         ) : null
