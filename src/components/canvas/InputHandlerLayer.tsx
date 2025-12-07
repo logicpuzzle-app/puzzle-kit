@@ -12,8 +12,9 @@
 import React, { useCallback, useMemo, RefObject, useRef, useEffect } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
 import { useCanvasInteraction } from '../../hooks/useCanvasInteraction';
-import { screenToSvg, findNearestCell, getCellCenter, getCellCorners, parseCellId } from '../../utils/gridUtils';
-import { findNearestCellInTopology } from '../../utils/gridTopology';
+import { useCellFinder } from '../../hooks/useCellFinder';
+import { useSpecialPreview } from '../../hooks/useSpecialPreview';
+import { screenToSvg, getCellCorners } from '../../utils/gridUtils';
 import type { NumberPosition, SymbolElement, Point, DataLayerType } from '../../types';
 import { toDataLayer } from '../../types';
 import type { TopologyVertex } from '../../utils/gridTopology';
@@ -96,6 +97,9 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
   // Use preview topology if available (for grid shape preview)
   const topology = previewTopology ?? storeTopology;
 
+  // Unified cell finder hook
+  const { findCellAtPoint, findCellIdByRowCol } = useCellFinder();
+
   useEffect(() => {
     if (!toolSettings.currentTool.startsWith('number')) {
       setNumberSelection(null);
@@ -136,31 +140,6 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
   const cursorClass = getCssCursor();
   const overlayConfig = getOverlayConfig();
 
-  const findTopologyCellId = useCallback(
-    (row: number, col: number): string | null => {
-      if (!topology) return null;
-      const targetCellId = `cell-${row}-${col}`;
-
-      // First, check for direct match by row/col
-      const candidates = Array.from(topology.cells.values()).filter(
-        c => c.row === row && c.col === col
-      );
-      if (candidates.length > 0) {
-        const hex = candidates.find(c => c.id.includes('hex'));
-        return (hex ?? candidates[0]).id;
-      }
-
-      // If not found, check for merged cells that contain this cell
-      for (const cell of topology.cells.values()) {
-        if (cell.originalCells && cell.originalCells.includes(targetCellId)) {
-          return cell.id;
-        }
-      }
-
-      return null;
-    },
-    [topology]
-  );
 
   // Wrap mouse down to handle number/text tool clicks
   const handleMouseDown = useCallback(
@@ -196,42 +175,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         return;
       }
 
-      // Handle directional number tool (Yajilin-style) - same as normal number
-      if (tool === 'number-directional') {
-        const point = screenToSvg(
-          e.clientX,
-          e.clientY,
-          canvas.zoom,
-          canvas.panX,
-          canvas.panY,
-          svgRef.current
-        );
-        let targetCell: { row: number; col: number } | null = null;
-        if (useTopology && topology) {
-          const topoCell = findNearestCellInTopology(topology, point);
-          if (topoCell && topoCell.row !== undefined && topoCell.col !== undefined) {
-            targetCell = { row: topoCell.row, col: topoCell.col };
-          }
-        } else {
-          const cell = findNearestCell(point, grid);
-          if (cell) targetCell = { row: cell.row, col: cell.col };
-        }
-        if (!targetCell) return;
-        setNumberSelection(targetCell);
-        if (e.button === 2) {
-          const cellIndex = targetCell.row * grid.cols + targetCell.col;
-          const dataLayer = toDataLayer(activeLayer);
-          const existingId = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
-            ([, clue]) => clue.cell === cellIndex
-          )?.[0];
-          if (existingId) {
-            removeDirectionalClue(existingId);
-          }
-        }
-        return;
-      }
-
-      // Handle number tool clicks - select cell only (no popup)
+      // Handle number tools (including directional) - select cell only
       if (tool.startsWith('number')) {
         const point = screenToSvg(
           e.clientX,
@@ -241,20 +185,23 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           canvas.panY,
           svgRef.current
         );
-        let targetCell: { row: number; col: number } | null = null;
-        if (useTopology && topology) {
-          const topoCell = findNearestCellInTopology(topology, point);
-          if (topoCell && topoCell.row !== undefined && topoCell.col !== undefined) {
-            targetCell = { row: topoCell.row, col: topoCell.col };
+        const cellInfo = findCellAtPoint(point);
+        if (!cellInfo || cellInfo.row === undefined || cellInfo.col === undefined) return;
+
+        setNumberSelection({ row: cellInfo.row, col: cellInfo.col });
+
+        // Handle right-click delete for directional number tool
+        if (tool === 'number-directional' && e.button === 2) {
+          const cellIndex = cellInfo.row * grid.cols + cellInfo.col;
+          const dataLayer = toDataLayer(activeLayer);
+          const existingId = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
+            ([, clue]) => clue.cell === cellIndex
+          )?.[0];
+          if (existingId) {
+            removeDirectionalClue(existingId);
           }
-        } else {
-          const cell = findNearestCell(point, grid);
-          if (cell) targetCell = { row: cell.row, col: cell.col };
         }
-        if (targetCell) {
-          setNumberSelection(targetCell);
-        }
-        return; // Don't call base handler for number tool
+        return;
       }
 
       // Handle text tool clicks - open dialog instead of default handler
@@ -286,24 +233,18 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       canvas.panY,
       canvas.panMode,
       svgRef,
-      onNumberClick,
       onTextClick,
-      handleNumberTool,
       handleTextTool,
       handleSelectTool,
       baseHandleMouseDown,
-      useTopology,
-      topology,
       grid,
       setNumberSelection,
       puzzle,
       activeLayer,
       removeDirectionalClue,
-      addDirectionalClue,
-      toolSettings.arrowDirection,
       isGridMode,
       isConstraintMode,
-      gridEditMode,
+      findCellAtPoint,
     ]
   );
 
@@ -312,7 +253,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     (e: React.MouseEvent) => {
       baseHandleMouseMove(e);
 
-      // Update hover cell
+      // Update hover cell using unified cell finder
       const point = screenToSvg(
         e.clientX,
         e.clientY,
@@ -322,19 +263,8 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         svgRef.current
       );
 
-      // Find nearest cell - use topology if in topology mode
-      let cellId: string | null = null;
-      if (useTopology && topology) {
-        const topoCell = findNearestCellInTopology(topology, point);
-        if (topoCell) {
-          cellId = topoCell.id;
-        }
-      } else {
-        const cell = findNearestCell(point, grid);
-        if (cell) {
-          cellId = `cell-${cell.row}-${cell.col}`;
-        }
-      }
+      const cellInfo = findCellAtPoint(point);
+      const cellId = cellInfo?.cellId ?? null;
 
       if (cellId !== hoverCell) {
         setHoverCell(cellId);
@@ -356,7 +286,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         updateSculptHover(point);
       }
     },
-    [baseHandleMouseMove, canvas.zoom, canvas.panX, canvas.panY, svgRef, grid, hoverCell, setHoverCell, updateLineHoverPoint, updateSymbolHoverPoint, useTopology, topology, isGridMode, gridEditMode, updateSplitHoverVertex, updateSculptHover]
+    [baseHandleMouseMove, canvas.zoom, canvas.panX, canvas.panY, svgRef, hoverCell, setHoverCell, updateLineHoverPoint, updateSymbolHoverPoint, findCellAtPoint, isGridMode, gridEditMode, updateSplitHoverVertex, updateSculptHover]
   );
 
   // Handle mouse up for selection end
@@ -418,89 +348,12 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     return { x, y, size: grid.cellSize };
   }, [hoverCell, grid.outerPadding, grid.cellSize, overlayConfig.showCellCursor, useTopology, topology, previewTopology, isGridMode]);
 
-  // Get current special tool type
-  const specialToolType = useMemo(() => {
-    const tool = toolSettings.currentTool;
-    if (tool === 'special-thermo') return 'thermo';
-    if (tool === 'special-arrow') return 'arrow';
-    if (tool === 'special-cage') return 'cage';
-    if (tool === 'special-boxline') return 'boxline';
-    return null;
-  }, [toolSettings.currentTool]);
-
-  // Type for special preview cell data
-  type SpecialPreviewCell = {
-    center: Point;
-    polygon: Point[];
-    cellId: string;
-    row: number;
-    col: number;
-  };
-
-  // Calculate special preview path (for thermo/arrow/cage/boxline)
-  // Include current hover cell to show what would be drawn on mouse up
-  const specialPreviewCells = useMemo((): SpecialPreviewCell[] => {
-    // Build the path including current hover cell
-    const pathCells = [...specialPath];
-
-    // Add hover cell if it's a special tool and we have a hover cell
-    if (specialToolType && hoverCell) {
-      // hoverCell is now directly a cellId string
-      if (!pathCells.includes(hoverCell)) {
-        pathCells.push(hoverCell);
-      }
-    }
-
-    if (pathCells.length === 0) return [];
-
-    const cells: SpecialPreviewCell[] = [];
-    for (const cellId of pathCells) {
-      // In topology mode, use topology cell data
-      if (useTopology && topology) {
-        const cell = topology.cells.get(cellId);
-        if (cell) {
-          const polygon = cell.boundaryVertices
-            .map(vId => topology.vertices.get(vId))
-            .filter((v): v is TopologyVertex => v !== undefined)
-            .map(v => v.position);
-          const match = cellId.match(/^cell-(\d+)-(\d+)$/);
-          cells.push({
-            center: cell.center,
-            polygon,
-            cellId,
-            row: cell.row ?? (match ? parseInt(match[1]) : 0),
-            col: cell.col ?? (match ? parseInt(match[2]) : 0),
-          });
-        }
-      } else {
-        // Standard mode
-        const parsed = parseCellId(cellId, grid.gridType);
-        if (parsed) {
-          const center = getCellCenter(parsed.row, parsed.col, grid);
-          const half = grid.cellSize / 2;
-          cells.push({
-            center,
-            polygon: [
-              { x: center.x - half, y: center.y - half },
-              { x: center.x + half, y: center.y - half },
-              { x: center.x + half, y: center.y + half },
-              { x: center.x - half, y: center.y + half },
-            ],
-            cellId,
-            row: parsed.row,
-            col: parsed.col,
-          });
-        }
-      }
-    }
-    return cells;
-  }, [specialPath, grid, useTopology, topology, specialToolType, hoverCell]);
-
-  // For backward compatibility, extract just the center points
-  const specialPreviewPoints = useMemo(() =>
-    specialPreviewCells.map(c => c.center),
-    [specialPreviewCells]
-  );
+  // Use special preview hook for thermo/arrow/cage/boxline tools
+  const {
+    specialToolType,
+    specialPreviewCells,
+    specialPreviewPoints,
+  } = useSpecialPreview({ specialPath, hoverCell });
 
   // Calculate split mode preview (line between vertices)
   const splitPreview = useMemo(() => {
@@ -565,14 +418,10 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     const tool = toolSettings.currentTool;
     if (!tool.startsWith('number')) return null;
 
-    // Determine target cellId
+    // Determine target cellId using unified finder
     let targetCellId: string | null = null;
     if (numberSelection) {
-      if (useTopology) {
-        targetCellId = findTopologyCellId(numberSelection.row, numberSelection.col);
-      } else {
-        targetCellId = `cell-${numberSelection.row}-${numberSelection.col}`;
-      }
+      targetCellId = findCellIdByRowCol(numberSelection.row, numberSelection.col);
     } else if (hoverCell) {
       targetCellId = hoverCell;
     }
@@ -599,7 +448,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     const col = parseInt(match[2]);
     const corners = getCellCorners(row, col, grid);
     return `M ${corners[0].x} ${corners[0].y} L ${corners[1].x} ${corners[1].y} L ${corners[2].x} ${corners[2].y} L ${corners[3].x} ${corners[3].y} Z`;
-  }, [hoverCell, numberSelection, grid, toolSettings.currentTool, useTopology, topology, findTopologyCellId]);
+  }, [hoverCell, numberSelection, grid, toolSettings.currentTool, useTopology, topology, findCellIdByRowCol]);
 
   // Excel-like typing for number tools (including directional)
   useEffect(() => {
@@ -684,10 +533,8 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       }
 
       // Handle normal number tools
-      // Use topology-aware cell ID for merged cells
-      const cellId = useTopology
-        ? (findTopologyCellId(target.row, target.col) ?? `cell-${target.row}-${target.col}`)
-        : `cell-${target.row}-${target.col}`;
+      // Use unified cell finder for merged cells
+      const cellId = findCellIdByRowCol(target.row, target.col) ?? `cell-${target.row}-${target.col}`;
       const dataLayerForNumbers = toDataLayer(activeLayer);
       const numbers = puzzle[dataLayerForNumbers].numbers;
       const position = toolSettings.numberPosition;
@@ -779,6 +626,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     updateNumber,
     addDirectionalClue,
     removeDirectionalClue,
+    findCellIdByRowCol,
   ]);
 
   return (
