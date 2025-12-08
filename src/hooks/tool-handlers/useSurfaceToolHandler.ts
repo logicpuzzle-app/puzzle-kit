@@ -39,12 +39,8 @@ function cellHasDirectionalClue(
   const directionalClues = puzzle.problem.directionalClues;
   if (!directionalClues) return false;
 
-  // Get coordinates using topology index or fallback to ID parsing
-  const coords = getCellCoords(cellId, topology);
-  if (!coords) return false;
-  const cellIndex = coords.row * cols + coords.col;
-
-  return Object.values(directionalClues).some(clue => clue.cell === cellIndex);
+  // Use cellId directly for comparison
+  return Object.values(directionalClues).some(clue => clue.cellId === cellId);
 }
 
 /**

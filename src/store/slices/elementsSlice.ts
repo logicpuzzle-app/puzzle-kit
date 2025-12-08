@@ -545,9 +545,9 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
     set((state) => {
       const layer = fullElement.layer;
       const clues = { ...(state.puzzle[layer].directionalClues || {}) };
-      // enforce one clue per cell
+      // enforce one clue per cell (using cellId for lookup)
       const existingEntry = Object.entries(clues).find(
-        ([, clue]) => clue.cell === fullElement.cell
+        ([, clue]) => clue.cellId === fullElement.cellId
       );
       if (existingEntry) {
         delete clues[existingEntry[0]];

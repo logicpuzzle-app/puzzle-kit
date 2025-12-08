@@ -150,6 +150,7 @@ interface FlickState {
   startCell: { row: number; col: number } | null;
   startCellId: string | null; // Cell ID (may differ from cell-row-col for complex topologies)
   startCellCenter: Point | null; // Cell center coordinates (from topology or grid calculation)
+  startCellIndex: number | null; // Cell index for directionalClues (row * effectiveCols + col)
   startPoint: Point | null;
   inputted: boolean; // true if direction was set during drag (flick)
   rightButton: boolean; // true if right mouse button was used
@@ -231,7 +232,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
   } = usePuzzleStore();
 
   // Flick input state for directional number input (pzpr-puzzlink style)
-  const flickStateRef = useRef<FlickState>({ startCell: null, startCellId: null, startCellCenter: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false, pekeInputMode: null });
+  const flickStateRef = useRef<FlickState>({ startCell: null, startCellId: null, startCellCenter: null, startCellIndex: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false, pekeInputMode: null });
 
   // Excel-like keyboard input for number tools
   useNumberKeyboard();
@@ -245,6 +246,21 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
 
   // Use preview topology if available (for grid shape preview)
   const topology = previewTopology ?? storeTopology;
+
+  // Calculate effective column count for cell index calculation
+  // For complex topologies (Cairo, etc.), this may differ from grid.cols
+  const effectiveCols = useMemo(() => {
+    if (useTopology && topology) {
+      let maxCol = 0;
+      for (const cell of topology.cells.values()) {
+        if (cell.col !== undefined && cell.col > maxCol) {
+          maxCol = cell.col;
+        }
+      }
+      return maxCol + 1; // +1 because col is 0-indexed
+    }
+    return grid.cols;
+  }, [useTopology, topology, grid.cols]);
 
   // Unified cell finder hook
   const { findCellAtPoint, findCellIdByRowCol } = useCellFinder();
@@ -330,6 +346,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           flickStateRef.current = {
             startCell: { row: cellInfo.row, col: cellInfo.col },
             startCellId: cellInfo.cellId,
+            startCellIndex: cellInfo.row * grid.cols + cellInfo.col,
             startCellCenter: cellInfo.center ?? getCellCenter(cellInfo.row, cellInfo.col, grid),
             startPoint: point,
             inputted: false, // Will be set to true if flick direction is input
@@ -387,6 +404,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           flickStateRef.current = {
             startCell: cellInfo ? { row: cellInfo.row!, col: cellInfo.col! } : null,
             startCellId: cellInfo?.cellId ?? null,
+            startCellIndex: cellInfo ? cellInfo.row! * grid.cols + cellInfo.col! : null,
             startCellCenter: cellInfo?.center ?? (cellInfo ? getCellCenter(cellInfo.row!, cellInfo.col!, grid) : null),
             startPoint: point,
             inputted: false,
@@ -440,6 +458,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           flickStateRef.current = {
             startCell: null,
             startCellId: null,
+            startCellIndex: null,
             startCellCenter: null,
             startPoint: point,
             inputted: false,
@@ -541,6 +560,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           flickStateRef.current = {
             startCell: { row: cellInfo.row, col: cellInfo.col },
             startCellId: cellInfo.cellId,
+            startCellIndex: cellInfo.row * grid.cols + cellInfo.col,
             startCellCenter: cellInfo.center ?? getCellCenter(cellInfo.row, cellInfo.col, grid),
             startPoint: point,
             inputted: false,
@@ -551,10 +571,9 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
 
           // Handle right-click delete
           if (e.button === 2) {
-            const cellIndex = cellInfo.row * grid.cols + cellInfo.col;
             const dataLayer = toDataLayer(activeLayer);
             const existingId = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
-              ([, clue]) => clue.cell === cellIndex
+              ([, clue]) => clue.cellId === cellInfo.cellId
             )?.[0];
             if (existingId) {
               removeDirectionalClue(existingId);
@@ -660,18 +679,16 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
 
         // Process flick for constraint mode or number-directional tool
         if ((isConstraintEnabled && (isDirecInputMode || isAutoDirecMode)) || isNumberDirectionalTool) {
-          const { startCell, startPoint } = flickStateRef.current;
-          const { startCellId } = flickStateRef.current;
-          const cellIndex = startCell!.row * grid.cols + startCell!.col;
+          const { startPoint, startCellId } = flickStateRef.current;
+          if (!startCellId) return;
           const dataLayer = toDataLayer(activeLayer);
 
-          // Check if there's a directional clue at the start cell
+          // Check if there's a directional clue at the start cell (using cellId)
           const existingClueEntry = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
-            ([, clue]) => clue.cell === cellIndex
+            ([, clue]) => clue.cellId === startCellId
           );
 
           // Also check if there's a regular number at this cell (for conversion)
-          // Use startCellId from flick state (supports complex topologies like Cairo)
           const existingNumberEntry = Object.entries(puzzle[dataLayer].numbers || {}).find(
             ([, n]) => n.cellId === startCellId && n.position === 'center'
           );
@@ -687,7 +704,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
             dx,
             dy,
             threshold,
-            startCellId!,
+            startCellId,
             useTopology ? topology : null
           );
 
@@ -701,7 +718,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
               const angleChanged = angle !== null && (clue.angle !== angle);
               if (directionChanged || angleChanged) {
                 addDirectionalClue({
-                  cell: cellIndex,
+                  cellId: startCellId,
                   direction: angle !== null ? 0 : direction, // Use direction 0 when using angle
                   value: clue.value,
                   layer: dataLayer,
@@ -716,7 +733,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
               if (!isNaN(numValue)) {
                 // Add directional clue with the number value and direction/angle
                 addDirectionalClue({
-                  cell: cellIndex,
+                  cellId: startCellId,
                   direction: angle !== null ? 0 : direction,
                   value: numValue,
                   layer: dataLayer,
@@ -848,11 +865,9 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           // Only input if mouse is still on the same cell (or close enough)
           const isSameCell = cellInfo && cellInfo.row === row && cellInfo.col === col;
           if (isSameCell && flickState.startCellCenter && flickState.startCellId) {
-            // Pass cellId and cellIndex directly to avoid re-calculation issues in complex topologies
-            const cellIndex = row * grid.cols + col;
+            // Pass cellId directly to avoid re-calculation issues in complex topologies
             handleNumberTool(flickState.startCellCenter, flickState.rightButton, {
               cellId: flickState.startCellId,
-              cellIndex,
             });
           }
         }
@@ -875,10 +890,10 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
 
         if (isSameCell && flickState.startCellId) {
           // Increment/decrement the directional clue value (or create new one with value 1)
-          const cellIndex = row * grid.cols + col;
+          const startCellId = flickState.startCellId;
           const dataLayer = toDataLayer(activeLayer);
           const existingEntry = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
-            ([, clue]) => clue.cell === cellIndex
+            ([, clue]) => clue.cellId === startCellId
           );
 
           if (existingEntry) {
@@ -886,7 +901,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
             const [, clue] = existingEntry;
             const newValue = (clue.value ?? 0) + 1;
             addDirectionalClue({
-              cell: cellIndex,
+              cellId: startCellId,
               direction: clue.direction,
               value: newValue,
               layer: dataLayer,
@@ -894,9 +909,8 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
             });
           } else {
             // Check if there's a regular number to convert
-            // Use startCellId from flick state (supports complex topologies like Cairo)
             const existingNumber = Object.entries(puzzle[dataLayer].numbers).find(
-              ([, num]) => num.cellId === flickState.startCellId && num.position === 'center'
+              ([, num]) => num.cellId === startCellId && num.position === 'center'
             );
 
             if (existingNumber) {
@@ -905,7 +919,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
               const numValue = parseInt(num.value, 10);
               if (!isNaN(numValue)) {
                 addDirectionalClue({
-                  cell: cellIndex,
+                  cellId: startCellId,
                   direction: 0,
                   value: numValue + 1,
                   layer: dataLayer,
@@ -916,7 +930,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
             } else {
               // Create new directional clue with value 1 (no arrow)
               addDirectionalClue({
-                cell: cellIndex,
+                cellId: startCellId,
                 direction: 0,
                 value: 1,
                 layer: dataLayer,
@@ -1003,7 +1017,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       }
 
       // Reset flick state on mouse up
-      flickStateRef.current = { startCell: null, startCellId: null, startCellCenter: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false, pekeInputMode: null };
+      flickStateRef.current = { startCell: null, startCellId: null, startCellIndex: null, startCellCenter: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false, pekeInputMode: null };
       baseHandleMouseUp(e);
     },
     [baseHandleMouseUp, currentInputMode, currentSchemaId, activeLayer, isConstraintEnabled, canvas.zoom, canvas.panX, canvas.panY, svgRef, findCellAtPoint, handleNumberTool, handleSurfaceCycleTool, handleSymbolTool, resetFillModes, setToolSettings, toolSettings.currentTool, grid.cols, puzzle, addDirectionalClue, removeNumber]
@@ -1015,7 +1029,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       baseHandleMouseUp(e);
       setHoverCell(null);
       // Reset flick state on mouse leave
-      flickStateRef.current = { startCell: null, startCellId: null, startCellCenter: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false, pekeInputMode: null };
+      flickStateRef.current = { startCell: null, startCellId: null, startCellIndex: null, startCellCenter: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false, pekeInputMode: null };
     },
     [baseHandleMouseUp, setHoverCell]
   );

@@ -52,8 +52,17 @@ function solveSlitherlink(grid: GridConfig, problem: PuzzleState['problem']): So
     // Extract number clues from directionalClues (used by constraint mode)
     if (problem.directionalClues) {
       for (const clue of Object.values(problem.directionalClues)) {
-        const row = Math.floor(clue.cell / grid.cols);
-        const col = clue.cell % grid.cols;
+        // Use cell index if available, otherwise parse from cellId
+        let row: number, col: number;
+        if (clue.cell !== undefined) {
+          row = Math.floor(clue.cell / grid.cols);
+          col = clue.cell % grid.cols;
+        } else {
+          const match = clue.cellId.match(/^cell-(\d+)-(\d+)$/);
+          if (!match) continue;
+          row = parseInt(match[1], 10);
+          col = parseInt(match[2], 10);
+        }
         if (clue.value >= 0 && clue.value <= 3) {
           field.setNumber(row, col, clue.value);
         }
@@ -369,8 +378,17 @@ function solveYajilin(grid: GridConfig, problem: PuzzleState['problem']): SolveR
     // PenpaDirectionalClue direction: 0=None, 1=Up, 2=Down, 3=Left, 4=Right
     if (problem.directionalClues) {
       for (const clue of Object.values(problem.directionalClues)) {
-        const row = Math.floor(clue.cell / grid.cols);
-        const col = clue.cell % grid.cols;
+        // Use cell index if available, otherwise parse from cellId
+        let row: number, col: number;
+        if (clue.cell !== undefined) {
+          row = Math.floor(clue.cell / grid.cols);
+          col = clue.cell % grid.cols;
+        } else {
+          const match = clue.cellId.match(/^cell-(\d+)-(\d+)$/);
+          if (!match) continue;
+          row = parseInt(match[1], 10);
+          col = parseInt(match[2], 10);
+        }
 
         // Map Penpa direction number to Direction enum
         let direction: Direction;
@@ -802,8 +820,17 @@ function solveNurikabe(grid: GridConfig, problem: PuzzleState['problem']): Solve
   const clues: Array<{ row: number; col: number; value: number }> = [];
   if (problem.directionalClues) {
     for (const clue of Object.values(problem.directionalClues)) {
-      const row = Math.floor(clue.cell / grid.cols);
-      const col = clue.cell % grid.cols;
+      // Use cell index if available, otherwise parse from cellId
+      let row: number, col: number;
+      if (clue.cell !== undefined) {
+        row = Math.floor(clue.cell / grid.cols);
+        col = clue.cell % grid.cols;
+      } else {
+        const match = clue.cellId.match(/^cell-(\d+)-(\d+)$/);
+        if (!match) continue;
+        row = parseInt(match[1], 10);
+        col = parseInt(match[2], 10);
+      }
       const v = parseClueValue(clue.value);
       if (v && v > 0) clues.push({ row, col, value: v });
     }

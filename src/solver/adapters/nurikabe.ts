@@ -43,8 +43,17 @@ export const nurikabeSolverAdapter: SolverAdapter = {
       // directionalClues (direction is ignored for Nurikabe)
       if (problem.directionalClues) {
         for (const clue of Object.values(problem.directionalClues)) {
-          const row = Math.floor(clue.cell / grid.cols);
-          const col = clue.cell % grid.cols;
+          // Use cell index if available, otherwise parse from cellId
+          let row: number, col: number;
+          if (clue.cell !== undefined) {
+            row = Math.floor(clue.cell / grid.cols);
+            col = clue.cell % grid.cols;
+          } else {
+            const cellMatch = clue.cellId.match(/^cell-(\d+)-(\d+)$/);
+            if (!cellMatch) continue;
+            row = parseInt(cellMatch[1], 10);
+            col = parseInt(cellMatch[2], 10);
+          }
           const v = parseClueValue(clue.value);
           if (v && v > 0) {
             clues.push({ row, col, value: v });

@@ -41,9 +41,17 @@ export const yajilinSolverAdapter: SolverAdapter = {
           // Skip clues without direction (direction=0 means no arrow)
           if (clue.direction === 0) continue;
 
-          // Convert cell index to row/col
-          const row = Math.floor(clue.cell / grid.cols);
-          const col = clue.cell % grid.cols;
+          // Use cell index if available, otherwise parse from cellId
+          let row: number, col: number;
+          if (clue.cell !== undefined) {
+            row = Math.floor(clue.cell / grid.cols);
+            col = clue.cell % grid.cols;
+          } else {
+            const cellMatch = clue.cellId.match(/^cell-(\d+)-(\d+)$/);
+            if (!cellMatch) continue;
+            row = parseInt(cellMatch[1], 10);
+            col = parseInt(cellMatch[2], 10);
+          }
 
           // Handle hatena/unknown: puzzle-kit uses -2, solver-kit uses -1
           const count = clue.value === -2 ? -1 : clue.value;

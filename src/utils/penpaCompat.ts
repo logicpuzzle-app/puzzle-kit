@@ -369,6 +369,7 @@ function convertPenpaLayer(
           elements.directionalClues = elements.directionalClues || {};
           elements.directionalClues[id] = {
             id,
+            cellId: `cell-${y}-${x}`,
             cell: y * width + x,
             direction: dir as 1 | 2 | 3 | 4,
             value: num as number,
@@ -934,6 +935,7 @@ function parseYajilinData(data: string, width: number, height: number, state: Pu
         state.problem.directionalClues = state.problem.directionalClues || {};
         state.problem.directionalClues[id] = {
           id,
+          cellId: `cell-${row}-${col}`,
           cell: cellIndex,
           direction: dir as 1 | 2 | 3 | 4,
           value: num, // -2 means "?" (hatena)
@@ -954,6 +956,7 @@ function parseYajilinData(data: string, width: number, height: number, state: Pu
         state.problem.directionalClues = state.problem.directionalClues || {};
         state.problem.directionalClues[id] = {
           id,
+          cellId: `cell-${row}-${col}`,
           cell: cellIndex,
           direction: dir as 1 | 2 | 3 | 4,
           value: num,
@@ -974,6 +977,7 @@ function parseYajilinData(data: string, width: number, height: number, state: Pu
         state.problem.directionalClues = state.problem.directionalClues || {};
         state.problem.directionalClues[id] = {
           id,
+          cellId: `cell-${row}-${col}`,
           cell: cellIndex,
           direction: dir as 1 | 2 | 3 | 4,
           value: num,
@@ -1066,6 +1070,7 @@ function parseSlitherlinkData(data: string, width: number, height: number, state
         }
         state.problem.directionalClues[clueId] = {
           id: clueId,
+          cellId: `cell-${row}-${col}`,
           cell: cellIndex,
           direction: 0,
           value: value,
@@ -1086,6 +1091,7 @@ function parseSlitherlinkData(data: string, width: number, height: number, state
         }
         state.problem.directionalClues[clueId] = {
           id: clueId,
+          cellId: `cell-${row}-${col}`,
           cell: cellIndex,
           direction: 0,
           value: value,
@@ -1106,6 +1112,7 @@ function parseSlitherlinkData(data: string, width: number, height: number, state
         }
         state.problem.directionalClues[clueId] = {
           id: clueId,
+          cellId: `cell-${row}-${col}`,
           cell: cellIndex,
           direction: 0,
           value: value,
@@ -1165,6 +1172,7 @@ function parseNurikabeData(data: string, width: number, height: number, state: P
       }
       state.problem.directionalClues[clueId] = {
         id: clueId,
+        cellId: `cell-${row}-${col}`,
         cell: cellIndex,
         direction: 0,
         value: value,
@@ -1183,6 +1191,7 @@ function parseNurikabeData(data: string, width: number, height: number, state: P
       }
       state.problem.directionalClues[clueId] = {
         id: clueId,
+        cellId: `cell-${row}-${col}`,
         cell: cellIndex,
         direction: 0,
         value: value,
@@ -1204,6 +1213,7 @@ function parseNurikabeData(data: string, width: number, height: number, state: P
       }
       state.problem.directionalClues[clueId] = {
         id: clueId,
+        cellId: `cell-${row}-${col}`,
         cell: cellIndex,
         direction: 0,
         value: value,
@@ -1225,6 +1235,7 @@ function parseNurikabeData(data: string, width: number, height: number, state: P
       }
       state.problem.directionalClues[clueId] = {
         id: clueId,
+        cellId: `cell-${row}-${col}`,
         cell: cellIndex,
         direction: 0,
         value: value,
@@ -1816,16 +1827,38 @@ export function exportToPenpaFormat(
       // Convert directional clues (Yajilin qdir/qnum)
       if (elements.directionalClues && Object.keys(elements.directionalClues).length > 0) {
         const clues = Object.values(elements.directionalClues);
-        const maxCell = Math.max(...clues.map((c) => c.cell));
+        // Compute max cell index for sizing
+        let maxCellIdx = 0;
+        clues.forEach((clue) => {
+          if (clue.cell !== undefined) {
+            maxCellIdx = Math.max(maxCellIdx, clue.cell);
+          } else {
+            const match = clue.cellId.match(/^cell-(\d+)-(\d+)$/);
+            if (match) {
+              const row = parseInt(match[1], 10);
+              const col = parseInt(match[2], 10);
+              maxCellIdx = Math.max(maxCellIdx, row * cols + col);
+            }
+          }
+        });
         const widthGuess = cols; // grid.cols from outer scope
-        const width = widthGuess > 0 ? widthGuess : Math.floor(Math.sqrt(maxCell + 1));
-        const height = Math.ceil((maxCell + 1) / width);
+        const width = widthGuess > 0 ? widthGuess : Math.floor(Math.sqrt(maxCellIdx + 1));
+        const height = Math.ceil((maxCellIdx + 1) / width);
         const qdir: number[][] = Array.from({ length: height }, () => Array(width).fill(0));
         const qnum: number[][] = Array.from({ length: height }, () => Array(width).fill(-1));
 
         clues.forEach((clue) => {
-          const y = Math.floor(clue.cell / width);
-          const x = clue.cell % width;
+          // Use cell index if available, otherwise parse from cellId
+          let y: number, x: number;
+          if (clue.cell !== undefined) {
+            y = Math.floor(clue.cell / width);
+            x = clue.cell % width;
+          } else {
+            const match = clue.cellId.match(/^cell-(\d+)-(\d+)$/);
+            if (!match) return;
+            y = parseInt(match[1], 10);
+            x = parseInt(match[2], 10);
+          }
           if (y < height && x < width) {
             qdir[y][x] = clue.direction;
             qnum[y][x] = clue.value;

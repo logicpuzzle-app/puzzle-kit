@@ -62,7 +62,18 @@ export function generateNurikabePuzzlinkUrl(
   if (problem.directionalClues) {
     for (const clue of Object.values(problem.directionalClues)) {
       if (clue.value > 0) {
-        clues.set(clue.cell, clue.value);
+        // Use cell index if available, otherwise parse from cellId
+        let cellIndex: number;
+        if (clue.cell !== undefined) {
+          cellIndex = clue.cell;
+        } else {
+          const match = clue.cellId.match(/^cell-(\d+)-(\d+)$/);
+          if (!match) continue;
+          const row = parseInt(match[1], 10);
+          const col = parseInt(match[2], 10);
+          cellIndex = row * width + col;
+        }
+        clues.set(cellIndex, clue.value);
       }
     }
   }
@@ -125,7 +136,16 @@ function generateSlitherlinkUrl(grid: GridConfig, problem: PuzzleState['problem'
   if (problem.directionalClues) {
     for (const clue of Object.values(problem.directionalClues)) {
       if (clue.value >= 0 && clue.value <= 4) {
-        clues[clue.cell] = clue.value;
+        // Use cell index if available, otherwise parse from cellId
+        let cellIndex: number;
+        if (clue.cell !== undefined) {
+          cellIndex = clue.cell;
+        } else {
+          const m = clue.cellId.match(/^cell-(\d+)-(\d+)$/);
+          if (!m) continue;
+          cellIndex = parseInt(m[1], 10) * width + parseInt(m[2], 10);
+        }
+        clues[cellIndex] = clue.value;
       }
     }
   }
@@ -228,7 +248,16 @@ function generateYajilinUrl(grid: GridConfig, problem: PuzzleState['problem']): 
   if (problem.directionalClues) {
     for (const clue of Object.values(problem.directionalClues)) {
       if (clue.direction && clue.value !== undefined) {
-        clues.set(clue.cell, { dir: clue.direction, num: clue.value });
+        // Use cell index if available, otherwise parse from cellId
+        let cellIndex: number;
+        if (clue.cell !== undefined) {
+          cellIndex = clue.cell;
+        } else {
+          const m = clue.cellId.match(/^cell-(\d+)-(\d+)$/);
+          if (!m) continue;
+          cellIndex = parseInt(m[1], 10) * width + parseInt(m[2], 10);
+        }
+        clues.set(cellIndex, { dir: clue.direction, num: clue.value });
       }
     }
   }

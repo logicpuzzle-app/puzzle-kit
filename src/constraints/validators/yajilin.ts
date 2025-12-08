@@ -84,8 +84,8 @@ function getDirectionalClue(ctx: ValidationContext, row: number, col: number): {
   const cellId = `cell-${row}-${col}`;
 
   for (const clue of Object.values(clues)) {
-    // Check all formats
-    if (clue.cell === pzprCellIndex || clue.cell === penpaCellIndex || (clue as any).cellId === cellId) {
+    // Check by cellId (primary) or cell index (legacy)
+    if (clue.cellId === cellId || clue.cell === pzprCellIndex || clue.cell === penpaCellIndex) {
       return {
         direction: penpaDirectionToDirection(clue.direction),
         number: clue.value,

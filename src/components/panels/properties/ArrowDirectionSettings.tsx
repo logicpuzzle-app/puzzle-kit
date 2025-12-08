@@ -2,6 +2,7 @@ import React, { useMemo, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../../store/puzzleStore';
 import { toDataLayer } from '../../../types';
+import { useCellFinder } from '../../../hooks/useCellFinder';
 
 // Arrow direction settings for directional numbers (Yajilin-style)
 // Direction: -1=none, 0=up, 1=left, 2=right, 3=down
@@ -13,12 +14,12 @@ export const ArrowDirectionSettings: React.FC = () => {
     toolSettings,
     setToolSettings,
     numberSelection,
-    grid,
     puzzle,
     activeLayer,
     addDirectionalClue,
   } = usePuzzleStore();
 
+  const { findCellIdByRowCol } = useCellFinder();
   const dataLayer = toDataLayer(activeLayer);
 
   // Track previous selection to detect changes
@@ -52,12 +53,13 @@ export const ArrowDirectionSettings: React.FC = () => {
     3: 2, // down
   };
 
-  // Get current cell's directional clue info
+  // Get current cell's directional clue info (using cellId)
   const currentCellClue = useMemo(() => {
     if (!numberSelection) return null;
-    const cellIndex = numberSelection.row * grid.cols + numberSelection.col;
+    const cellId = findCellIdByRowCol(numberSelection.row, numberSelection.col);
+    if (!cellId) return null;
     const entry = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
-      ([, c]) => c.cell === cellIndex
+      ([, c]) => c.cellId === cellId
     );
     if (!entry) return null;
     const [id, clue] = entry;
@@ -65,11 +67,12 @@ export const ArrowDirectionSettings: React.FC = () => {
     const reverseDirMap: Record<number, number> = { 0: -1, 1: 0, 2: 3, 3: 1, 4: 2 };
     return {
       id,
+      cellId,
       value: clue.value,
       direction: reverseDirMap[clue.direction] ?? -1,
       angle: clue.angle,
     };
-  }, [numberSelection, grid.cols, puzzle, dataLayer]);
+  }, [numberSelection, findCellIdByRowCol, puzzle, dataLayer]);
 
   // The active direction to highlight: use cell's clue direction if available, otherwise tool setting
   const activeDirection = currentCellClue?.direction ?? toolSettings.arrowDirection;
@@ -82,9 +85,8 @@ export const ArrowDirectionSettings: React.FC = () => {
 
     // Update existing directional clue if cell is selected (update direction, keep value)
     if (numberSelection && currentCellClue) {
-      const cellIndex = numberSelection.row * grid.cols + numberSelection.col;
       addDirectionalClue({
-        cell: cellIndex,
+        cellId: currentCellClue.cellId,
         direction: directionMap[newDirection] ?? 0,
         value: currentCellClue.value,
         layer: dataLayer,
@@ -105,9 +107,8 @@ export const ArrowDirectionSettings: React.FC = () => {
 
     // Update existing directional clue if cell is selected
     if (numberSelection && currentCellClue) {
-      const cellIndex = numberSelection.row * grid.cols + numberSelection.col;
       addDirectionalClue({
-        cell: cellIndex,
+        cellId: currentCellClue.cellId,
         direction: 0, // No preset direction when using arbitrary angle
         value: currentCellClue.value,
         layer: dataLayer,

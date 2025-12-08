@@ -26,8 +26,17 @@ export const slitherlinkSolverAdapter: SolverAdapter = {
       // Numbers are stored as directionalClues with direction=0
       if (problem.directionalClues) {
         for (const clue of Object.values(problem.directionalClues)) {
-          const row = Math.floor(clue.cell / grid.cols);
-          const col = clue.cell % grid.cols;
+          // Use cell index if available, otherwise parse from cellId
+          let row: number, col: number;
+          if (clue.cell !== undefined) {
+            row = Math.floor(clue.cell / grid.cols);
+            col = clue.cell % grid.cols;
+          } else {
+            const cellMatch = clue.cellId.match(/^cell-(\d+)-(\d+)$/);
+            if (!cellMatch) continue;
+            row = parseInt(cellMatch[1], 10);
+            col = parseInt(cellMatch[2], 10);
+          }
           // Slitherlink only uses values 0-3
           if (clue.value >= 0 && clue.value <= 3) {
             field.setNumber(row, col, clue.value);

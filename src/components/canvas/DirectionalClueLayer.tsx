@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
-import { getCellCenter, getCellId } from '../../utils/gridUtils';
+import { getCellCenter } from '../../utils/gridUtils';
 import type { LayerType, PuzzleElements } from '../../types';
 
 // Direction constants (matches pzprjs/Penpa)
@@ -146,21 +146,41 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
 
     const nodes: React.ReactElement[] = [];
     Object.values(layerData.directionalClues).forEach((clue) => {
-      const row = Math.floor(clue.cell / grid.cols);
-      const col = clue.cell % grid.cols;
-      if (row < 0 || col < 0 || row >= grid.rows || col >= grid.cols) return;
+      // Use cellId directly (supports complex topologies like Cairo)
+      // Generate cellId from cell index if not provided
+      let cellId: string;
+      if (clue.cellId) {
+        cellId = clue.cellId;
+      } else if (clue.cell !== undefined) {
+        cellId = `cell-${Math.floor(clue.cell / grid.cols)}-${clue.cell % grid.cols}`;
+      } else {
+        return; // Skip if no cellId or cell
+      }
 
       // Get cell center position - use topology if available
       let center: { x: number; y: number };
       if (useTopology && topology) {
-        const cellId = getCellId(row, col);
         const topoCell = topology.cells.get(cellId);
         if (topoCell) {
           center = { x: topoCell.center.x, y: topoCell.center.y };
         } else {
-          center = getCellCenter(row, col, grid);
+          // Fallback: parse row/col from cellId for standard grid
+          const match = cellId.match(/^cell-(\d+)-(\d+)$/);
+          if (match) {
+            const row = parseInt(match[1], 10);
+            const col = parseInt(match[2], 10);
+            center = getCellCenter(row, col, grid);
+          } else {
+            return; // Invalid cellId format
+          }
         }
       } else {
+        // Standard grid: parse row/col from cellId
+        const match = cellId.match(/^cell-(\d+)-(\d+)$/);
+        if (!match) return;
+        const row = parseInt(match[1], 10);
+        const col = parseInt(match[2], 10);
+        if (row < 0 || col < 0 || row >= grid.rows || col >= grid.cols) return;
         center = getCellCenter(row, col, grid);
       }
       // Handle special values: -2 = "?" (hatena/unknown)
@@ -178,7 +198,7 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
         const numberOffset = getNumberOffsetForAngle(angle, grid.cellSize);
 
         nodes.push(
-          <g key={`dirclue-${row}-${col}`} transform={`translate(${center.x},${center.y})`}>
+          <g key={`dirclue-${cellId}`} transform={`translate(${center.x},${center.y})`}>
             {/* Number offset based on arrow position */}
             <text
               x={numberOffset.x}
@@ -203,7 +223,7 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
       } else {
         // No direction - display as normal centered number
         nodes.push(
-          <g key={`dirclue-${row}-${col}`} transform={`translate(${center.x},${center.y})`}>
+          <g key={`dirclue-${cellId}`} transform={`translate(${center.x},${center.y})`}>
             <text
               x={0}
               y={0}

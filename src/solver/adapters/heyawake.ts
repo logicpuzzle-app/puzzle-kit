@@ -119,10 +119,8 @@ function buildRoomsFromRoomMap(
 
   if (problem.directionalClues) {
     for (const clue of Object.values(problem.directionalClues)) {
-      const row = Math.floor(clue.cell / cols);
-      const col = clue.cell % cols;
-      const cellId = `cell-${row}-${col}`;
-      const roomId = roomMap[cellId];
+      // Use cellId directly (already in "cell-row-col" format)
+      const roomId = roomMap[clue.cellId];
       if (roomId !== undefined && clue.value >= 0) {
         roomNumbers.set(roomId, clue.value);
       }
