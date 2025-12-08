@@ -253,8 +253,11 @@ export function useSurfaceToolHandler() {
       }
       processedCellsRef.current.add(cellId);
 
-      const disabledCells = grid.disabledCells || [];
-      const isCurrentlyDisabled = disabledCells.includes(cellId);
+      // Check if cell is currently disabled (either void or outboard)
+      const voidCells = grid.voidCells || [];
+      const outboardCells = grid.outboardCells || [];
+      const legacyDisabled = grid.disabledCells || [];
+      const isCurrentlyDisabled = voidCells.includes(cellId) || outboardCells.includes(cellId) || legacyDisabled.includes(cellId);
 
       // Determine fill mode on first cell of drag
       if (gridFillModeRef.current === null) {

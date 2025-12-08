@@ -37,7 +37,14 @@ export const TestCasePanel: React.FC = () => {
     const currentLayer = store.activeLayer;
 
     if (result.grid) {
-      store.setGrid(result.grid);
+      // Reset exclude settings when loading test case for accurate reproduction
+      store.setGrid({
+        ...result.grid,
+        voidCells: undefined,
+        outboardCells: undefined,
+        disabledCells: undefined,
+        excludeMode: undefined,
+      });
     }
 
     if (result.puzzle) {
