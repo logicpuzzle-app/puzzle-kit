@@ -173,7 +173,7 @@ export const GridDisplayContent: React.FC = () => {
               <input
                 type="color"
                 className="w-6 h-6 cursor-pointer border border-office-border rounded"
-                value={grid.disabledCellColor || '#c0c0c0'}
+                value={grid.disabledCellColor || '#ffffff'}
                 onChange={(e) => setGrid({ disabledCellColor: e.target.value })}
                 title={t('grid.disabledCellColor')}
               />

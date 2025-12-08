@@ -275,26 +275,27 @@ export const PropertiesPanel: React.FC = () => {
         {isSpecificMode && !isSolving && !isSolverMode && (
           <div className="space-y-3">
             {/* Common/Preset tab: Preset tree list (for selecting puzzle type) */}
+            {/* When None is selected: blue accent; When preset is selected: purple */}
             {constraintSubCategory === 'common' && (
               <div>
                 <div className="text-xs font-medium text-office-text-secondary mb-2">
                   {t('constraint.preset')}
                 </div>
                 <div className="border border-office-border rounded-sm bg-white max-h-48 overflow-y-auto">
-                  {/* None option (default) */}
+                  {/* None option (default) - uses blue accent when selected */}
                   <button
                     className={`w-full text-left px-2 py-1.5 text-xs flex items-center gap-2 transition-colors border-b border-office-border ${
                       currentSchemaId === null
-                        ? 'bg-purple-100 text-purple-800'
+                        ? 'bg-office-accent/10 text-office-accent'
                         : 'hover:bg-gray-50'
                     }`}
                     onClick={() => setCurrentSchemaId(null)}
                   >
-                    <span className={`text-sm ${currentSchemaId === null ? 'text-purple-600' : 'text-gray-400'}`}>○</span>
+                    <span className={`text-sm ${currentSchemaId === null ? 'text-office-accent' : 'text-gray-400'}`}>○</span>
                     <span>{t('constraint.none')}</span>
                   </button>
 
-                  {/* Puzzle presets */}
+                  {/* Puzzle presets - uses purple when selected */}
                   {constraintCatalog.getPuzzleIds().map((pid) => {
                     const schema = constraintCatalog.getSchema(pid);
                     if (!schema) return null;
@@ -664,10 +665,10 @@ export const PropertiesPanel: React.FC = () => {
               <div className="flex gap-1">
                 <button
                   className="flex-1 px-2 py-1.5 text-xs border rounded-sm bg-white border-office-border hover:bg-office-ribbon-hover"
-                  onClick={() => rotateSymbol(-45)}
-                  title="Rotate -45°"
+                  onClick={() => rotateSymbol(-15)}
+                  title="Rotate -15°"
                 >
-                  -45°
+                  -15°
                 </button>
                 <button
                   className="flex-1 px-2 py-1.5 text-xs border rounded-sm bg-white border-office-border hover:bg-office-ribbon-hover"
@@ -678,10 +679,10 @@ export const PropertiesPanel: React.FC = () => {
                 </button>
                 <button
                   className="flex-1 px-2 py-1.5 text-xs border rounded-sm bg-white border-office-border hover:bg-office-ribbon-hover"
-                  onClick={() => rotateSymbol(45)}
-                  title="Rotate +45°"
+                  onClick={() => rotateSymbol(15)}
+                  title="Rotate +15°"
                 >
-                  +45°
+                  +15°
                 </button>
               </div>
             </div>

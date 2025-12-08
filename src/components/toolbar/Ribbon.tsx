@@ -173,11 +173,14 @@ export const Ribbon: React.FC = () => {
         {/* Layer switcher with visibility toggles */}
         <div className="flex items-center gap-2 px-2 border-r border-office-border mr-2">
           {/* Constraint layer - button with checkbox on right (placed first) */}
+          {/* When None is selected and in constraint mode: blue; When preset is selected: purple */}
           <div className="flex items-center">
             <button
               className={`h-7 px-2 text-xs rounded-l-sm border border-r-0 transition-colors ${
                 isSpecificMode
-                  ? 'bg-purple-600 text-white border-purple-600'
+                  ? currentSchemaId === null
+                    ? 'bg-office-accent text-white border-office-accent'
+                    : 'bg-purple-600 text-white border-purple-600'
                   : 'bg-white border-office-border hover:bg-office-ribbon-hover'
               }`}
               onClick={() => handleLayerClick('constraint')}
@@ -188,7 +191,9 @@ export const Ribbon: React.FC = () => {
             <button
               className={`h-7 w-7 flex items-center justify-center rounded-r-sm border-t border-b border-r transition-colors ${
                 currentSchemaId === null
-                  ? 'bg-gray-100 border-gray-200 text-gray-300 cursor-not-allowed'
+                  ? isSpecificMode
+                    ? 'bg-office-accent text-white border-office-accent'
+                    : 'bg-white border-office-border text-gray-400 hover:bg-office-ribbon-hover'
                   : isSpecificMode
                     ? showConstraintLayer
                       ? 'bg-purple-600 text-white border-purple-600'
@@ -198,7 +203,7 @@ export const Ribbon: React.FC = () => {
                       : 'bg-white border-office-border text-gray-400 hover:bg-office-ribbon-hover'
               }`}
               onClick={currentSchemaId !== null ? toggleConstraintLayer : undefined}
-              disabled={currentSchemaId === null}
+              disabled={currentSchemaId === null && !isSpecificMode}
               title={currentSchemaId === null ? t('constraint.selectPresetFirst') : t('constraint.toggle')}
             >
               {showConstraintLayer ? <CheckboxIcon size={14} /> : <CheckboxEmptyIcon size={14} />}
@@ -416,6 +421,7 @@ export const Ribbon: React.FC = () => {
         )}
 
         {/* Specific mode sub-categories (Edit/Play/Check) - shown when specific layer is selected */}
+        {/* When None is selected: blue accent; When preset is selected: purple */}
         {isSpecificMode && (
           <div className="flex items-center gap-1">
             {constraintSubCategories.map((subCat) => {
@@ -426,12 +432,16 @@ export const Ribbon: React.FC = () => {
                 'check': CONSTRAINT_ICONS['validation'],
               };
               const IconComponent = iconMap[subCat.id];
+              const isActive = constraintSubCategory === subCat.id;
+              const useBlue = currentSchemaId === null;
               return (
                 <button
                   key={subCat.id}
                   className={`flex items-center gap-1 h-7 px-2 text-xs rounded-sm border transition-colors ${
-                    constraintSubCategory === subCat.id
-                      ? 'bg-purple-600 text-white border-purple-600'
+                    isActive
+                      ? useBlue
+                        ? 'bg-office-accent text-white border-office-accent'
+                        : 'bg-purple-600 text-white border-purple-600'
                       : 'bg-white border-office-border hover:bg-office-ribbon-hover'
                   }`}
                   onClick={() => setConstraintSubCategory(subCat.id)}
