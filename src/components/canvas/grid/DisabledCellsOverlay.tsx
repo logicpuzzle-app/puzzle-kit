@@ -29,8 +29,13 @@ export const DisabledCellsOverlay: React.FC = () => {
 
   // useMemo must be called unconditionally (React Hooks rules)
   const { rects, borderLines } = useMemo(() => {
-    // Return empty if conditions not met (but check for disabledCells regardless of mode)
-    if (gridType !== 'square' || !disabledCells || disabledCells.length === 0) {
+    // Return empty if no disabled cells
+    if (!disabledCells || disabledCells.length === 0) {
+      return { rects: [], borderLines: [] };
+    }
+
+    // For non-square grids without topology, return empty
+    if (gridType !== 'square' && !useTopology) {
       return { rects: [], borderLines: [] };
     }
     const rectElements: React.ReactElement[] = [];
