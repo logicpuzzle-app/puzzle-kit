@@ -7,7 +7,6 @@ import {
   getEdgeVId,
   parseCellId,
   parseVertexId,
-  parseEdgeId,
   findNearestCell,
   findNearestVertex,
   getCellCenter,
@@ -15,6 +14,7 @@ import {
   getGridDimensions,
   isPointInGrid,
 } from '../utils/gridUtils';
+import { parseEdgeId } from '../utils/gridIds';
 import type { GridConfig } from '../types';
 
 const defaultGrid: GridConfig = {

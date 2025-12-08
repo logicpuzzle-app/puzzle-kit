@@ -11,8 +11,8 @@ import {
   getCellCenter,
   getVertexPosition,
   getEdgePosition,
-  parseEdgeId,
 } from '../../utils/gridUtils';
+import { parseEdgeId } from '../../utils/gridIds';
 import {
   findNearestCellInTopology,
   findNearestVertexInTopology,

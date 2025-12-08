@@ -159,28 +159,6 @@ export function parseVertexId(id: string): { row: number; col: number } | null {
   return null;
 }
 
-/**
- * Parse an edge ID string to extract type, row, and column.
- *
- * This is a string parsing utility - it extracts coordinates from ID strings like "edge-h-0-1".
- * For topology mode, prefer using `getEdgeIndex()` from topology/queries which reads
- * the pre-computed `index` property directly from TopologyEdge.
- *
- * @param id - Edge ID string (e.g., "edge-h-0-1", "edge-v-0-1")
- * @returns {type, row, col} or null if parsing fails
- */
-export function parseEdgeId(id: string): { type: 'h' | 'v'; row: number; col: number } | null {
-  const hMatch = id.match(/^edge-h-(\d+)-(\d+)$/);
-  if (hMatch) {
-    return { type: 'h', row: parseInt(hMatch[1]), col: parseInt(hMatch[2]) };
-  }
-  const vMatch = id.match(/^edge-v-(\d+)-(\d+)$/);
-  if (vMatch) {
-    return { type: 'v', row: parseInt(vMatch[1]), col: parseInt(vMatch[2]) };
-  }
-  return null;
-}
-
 export function screenToSvg(
   screenX: number,
   screenY: number,
