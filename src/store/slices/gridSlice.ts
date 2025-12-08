@@ -138,14 +138,29 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
     set((state) => {
       const currentDisabled = state.grid.disabledCells || [];
       const isDisabled = currentDisabled.includes(cellId);
+      let newDisabledCells: string[] | undefined;
+
       if (disabled && !isDisabled) {
-        return { grid: { ...state.grid, disabledCells: [...currentDisabled, cellId] } };
+        newDisabledCells = [...currentDisabled, cellId];
       } else if (!disabled && isDisabled) {
-        return {
-          grid: { ...state.grid, disabledCells: currentDisabled.filter((id) => id !== cellId) },
-        };
+        newDisabledCells = currentDisabled.filter((id) => id !== cellId);
+      } else {
+        return state;
       }
-      return state;
+
+      const newGrid = { ...state.grid, disabledCells: newDisabledCells };
+
+      // Regenerate topology if in topology mode
+      if (state.useTopology) {
+        const baseTopology = gridConfigToTopology(newGrid);
+        const newTopology = applyTopologyPreset(baseTopology, {
+          preset: state.topologyPreset,
+          intensity: state.topologyIntensity,
+        });
+        return { grid: newGrid, topology: newTopology };
+      }
+
+      return { grid: newGrid };
     }),
 
   // Sculpt mode type: 'rotate' (flip cells) or 'cut' (triangle cut)
