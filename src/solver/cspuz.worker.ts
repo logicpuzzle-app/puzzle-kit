@@ -168,58 +168,92 @@ function convertCspuzResultToAnswer(
     // Dot (white/island cell for nurikabe)
     // We don't need to show these as they're implied by non-black cells
 
-    // Edge lines - for slitherlink
-    if (item.item === 'line') {
-      // Check if this is a horizontal or vertical edge based on coordinates
-      const isHorizontal = item.y % 2 === 0; // Even y = horizontal edge
-      const isVertical = item.x % 2 === 0; // Even x = vertical edge
+    // Lines - handling differs by puzzle type
+    // cspuz uses 'line' for yajilin/masyu and 'wall' for slitherlink
+    if (item.item === 'line' || item.item === 'wall') {
+      // cspuz coordinates:
+      // - Cell center at (row, col) = (y=2*row+1, x=2*col+1)
+      // - Line on horizontal edge (y even): connects cells above and below = VERTICAL connection
+      // - Line on vertical edge (x even): connects cells left and right = HORIZONTAL connection
+      const isOnHorizontalEdge = item.y % 2 === 0; // y even = on horizontal edge = vertical line
+      const isOnVerticalEdge = item.x % 2 === 0; // x even = on vertical edge = horizontal line
 
-      if (isHorizontal && !isVertical) {
-        // Horizontal edge
-        const edgeRow = item.y / 2;
-        const edgeCol = (item.x - 1) / 2;
-        const fromVertex = `vertex-${edgeRow}-${edgeCol}`;
-        const toVertex = `vertex-${edgeRow}-${edgeCol + 1}`;
-        answer.edges[`edge-${edgeId++}`] = {
-          id: `edge-${edgeId - 1}`,
-          from: fromVertex,
-          to: toVertex,
-          color: '#22C55E',
-          style: 'solid',
-          thickness: 'normal',
-          layer: 'answer',
-        };
-      } else if (isVertical && !isHorizontal) {
-        // Vertical edge
-        const edgeRow = (item.y - 1) / 2;
-        const edgeCol = item.x / 2;
-        const fromVertex = `vertex-${edgeRow}-${edgeCol}`;
-        const toVertex = `vertex-${edgeRow + 1}-${edgeCol}`;
-        answer.edges[`edge-${edgeId++}`] = {
-          id: `edge-${edgeId - 1}`,
-          from: fromVertex,
-          to: toVertex,
-          color: '#22C55E',
-          style: 'solid',
-          thickness: 'normal',
-          layer: 'answer',
-        };
+      if (pid === 'yajilin' || pid === 'mashu') {
+        // For yajilin/masyu: lines connect cell centers
+        if (isOnVerticalEdge && !isOnHorizontalEdge) {
+          // Vertical edge at x=2k: connects cells (row, k-1) and (row, k) - HORIZONTAL line
+          // y is odd = 2*row+1, so row = (y-1)/2
+          const lineRow = (item.y - 1) / 2;
+          const rightCol = item.x / 2;
+          const leftCol = rightCol - 1;
+          if (leftCol >= 0) {
+            const fromCell = `cell-${lineRow}-${leftCol}`;
+            const toCell = `cell-${lineRow}-${rightCol}`;
+            answer.lines[`line-${lineId++}`] = {
+              id: `line-${lineId - 1}`,
+              from: fromCell,
+              to: toCell,
+              color: '#00A000', // Green (pzprjs style)
+              style: 'solid',
+              thickness: 'normal',
+              layer: 'answer',
+            };
+          }
+        } else if (isOnHorizontalEdge && !isOnVerticalEdge) {
+          // Horizontal edge at y=2k: connects cells (k-1, col) and (k, col) - VERTICAL line
+          // x is odd = 2*col+1, so col = (x-1)/2
+          const lineCol = (item.x - 1) / 2;
+          const bottomRow = item.y / 2;
+          const topRow = bottomRow - 1;
+          if (topRow >= 0) {
+            const fromCell = `cell-${topRow}-${lineCol}`;
+            const toCell = `cell-${bottomRow}-${lineCol}`;
+            answer.lines[`line-${lineId++}`] = {
+              id: `line-${lineId - 1}`,
+              from: fromCell,
+              to: toCell,
+              color: '#00A000', // Green (pzprjs style)
+              style: 'solid',
+              thickness: 'normal',
+              layer: 'answer',
+            };
+          }
+        }
+      } else {
+        // For slitherlink: lines connect vertices (edges)
+        if (isOnHorizontalEdge && !isOnVerticalEdge) {
+          // Horizontal edge at y=2k: connects vertices (k, col) and (k, col+1)
+          const edgeRow = item.y / 2;
+          const edgeCol = (item.x - 1) / 2;
+          const fromVertex = `vertex-${edgeRow}-${edgeCol}`;
+          const toVertex = `vertex-${edgeRow}-${edgeCol + 1}`;
+          answer.edges[`edge-${edgeId++}`] = {
+            id: `edge-${edgeId - 1}`,
+            from: fromVertex,
+            to: toVertex,
+            color: '#22C55E',
+            style: 'solid',
+            thickness: 'normal',
+            layer: 'answer',
+          };
+        } else if (isOnVerticalEdge && !isOnHorizontalEdge) {
+          // Vertical edge at x=2k: connects vertices (row, k) and (row+1, k)
+          const edgeRow = (item.y - 1) / 2;
+          const edgeCol = item.x / 2;
+          const fromVertex = `vertex-${edgeRow}-${edgeCol}`;
+          const toVertex = `vertex-${edgeRow + 1}-${edgeCol}`;
+          answer.edges[`edge-${edgeId++}`] = {
+            id: `edge-${edgeId - 1}`,
+            from: fromVertex,
+            to: toVertex,
+            color: '#22C55E',
+            style: 'solid',
+            thickness: 'normal',
+            layer: 'answer',
+          };
+        }
       }
     }
-  }
-
-  // For masyu and yajilin, we need to convert cell-to-cell connections to lines
-  if (pid === 'mashu' || pid === 'yajilin') {
-    // Parse line segments from the result
-    // cspuz returns lines as connected segments
-    // We need to identify cell-to-cell connections
-    const lineSegments = description.data.filter(
-      (d) => d.item === 'line' || (typeof d.item === 'object' && d.item.kind === 'line')
-    );
-
-    // Group line segments by position to form cell connections
-    // This is complex - for now we'll use the edge-based approach
-    // TODO: Improve line extraction for masyu/yajilin
   }
 
   return answer;

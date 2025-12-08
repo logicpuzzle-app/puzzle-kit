@@ -31,10 +31,14 @@ export function useGridPointUtils(grid: GridConfig) {
    */
   const findNearestGridPoint = useCallback(
     (point: Point, allowedTypes: LineGridPoint[]): { id: string; position: Point } | null => {
-      // Detection threshold: wider for cell-only mode (Yajilin-style lines)
-      // For cell-only, use 0.7 (almost full cell), otherwise 0.4 for mixed point types
-      const isCellOnly = allowedTypes.length === 1 && allowedTypes[0] === 'cell';
-      const threshold = grid.cellSize * (isCellOnly ? 0.7 : 0.4);
+      // Detection threshold: wider for single-type modes
+      // - cell-only: 0.7 (Yajilin-style lines - almost full cell)
+      // - vertex-only: 0.7 (vertices are at corners, need wider detection)
+      // - mixed types: 0.4 (need to distinguish between nearby point types)
+      const isSingleType = allowedTypes.length === 1;
+      const isCellOnly = isSingleType && allowedTypes[0] === 'cell';
+      const isVertexOnly = isSingleType && allowedTypes[0] === 'vertex';
+      const threshold = grid.cellSize * ((isCellOnly || isVertexOnly) ? 0.7 : 0.4);
       let bestId: string | null = null;
       let bestPosition: Point | null = null;
       let bestDistance = Infinity;
@@ -211,14 +215,29 @@ export function useGridPointUtils(grid: GridConfig) {
       const from = parsePointId(fromId);
       const to = parsePointId(toId);
 
-      // For topology mode with non-standard IDs, use direct connection
-      // (topology cells use IDs like cell-0-0-hex, vertices use vertex-0, etc.)
+      // For topology mode with non-standard IDs, try to get index from topology elements
       if (!from || !to) {
-        // In topology mode, allow direct connections between adjacent elements
+        // In topology mode, try to use index from topology elements
         if (useTopology && topology) {
-          // For cell-to-cell connections, check if cells are adjacent
+          // For cell-to-cell connections
           if (fromId.startsWith('cell-') && toId.startsWith('cell-')) {
             const fromCell = topology.cells.get(fromId);
+            const toCell = topology.cells.get(toId);
+            if (fromCell?.index && toCell?.index) {
+              // Use index for direction checking
+              const [fromRow, fromCol] = fromCell.index;
+              const [toRow, toCol] = toCell.index;
+              if (fromRow != null && fromCol != null && toRow != null && toCol != null) {
+                const dRow = Math.abs(toRow - fromRow);
+                const dCol = Math.abs(toCol - fromCol);
+                const isOrthogonal = (dRow === 1 && dCol === 0) || (dRow === 0 && dCol === 1);
+                const isDiagonal = dRow === 1 && dCol === 1;
+                if (isOrthogonal && allowedDirections.includes('orthogonal')) return [toId];
+                if (isDiagonal && allowedDirections.includes('diagonal')) return [toId];
+                return null;
+              }
+            }
+            // Fallback: check adjacency list
             if (fromCell && fromCell.adjacentCells.includes(toId)) {
               return [toId]; // Direct connection to adjacent cell
             }
@@ -226,13 +245,27 @@ export function useGridPointUtils(grid: GridConfig) {
           // For vertex-to-vertex connections
           if (fromId.startsWith('vertex-') && toId.startsWith('vertex-')) {
             const fromVertex = topology.vertices.get(fromId);
-            if (fromVertex && fromVertex.adjacentVertices.includes(toId)) {
-              return [toId]; // Direct connection to adjacent vertex
+            const toVertex = topology.vertices.get(toId);
+            if (fromVertex?.index && toVertex?.index) {
+              // Use index for direction checking
+              const [fromRow, fromCol] = fromVertex.index;
+              const [toRow, toCol] = toVertex.index;
+              if (fromRow != null && fromCol != null && toRow != null && toCol != null) {
+                const dRow = Math.abs(toRow - fromRow);
+                const dCol = Math.abs(toCol - fromCol);
+                const isOrthogonal = (dRow === 1 && dCol === 0) || (dRow === 0 && dCol === 1);
+                const isDiagonal = dRow === 1 && dCol === 1;
+                if (isOrthogonal && allowedDirections.includes('orthogonal')) return [toId];
+                if (isDiagonal && allowedDirections.includes('diagonal')) return [toId];
+                return null;
+              }
+            }
+            // Fallback: check adjacency list (for orthogonal only)
+            if (fromVertex && fromVertex.adjacentVertices.includes(toId) && allowedDirections.includes('orthogonal')) {
+              return [toId];
             }
           }
-          // For edge-to-edge or other connections in topology mode
-          // Just allow direct connection (no interpolation possible without row/col)
-          return [toId];
+          // Not adjacent in topology mode - no connection allowed
         }
         return null;
       }

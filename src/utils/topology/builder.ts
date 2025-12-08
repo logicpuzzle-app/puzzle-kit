@@ -153,13 +153,30 @@ export function buildTopologyFromCells(
   }
 
   // Create TopologyVertex objects
+  // For regular grids with sourceConfig, calculate vertex row/col from position
   for (const [id, pos] of vertexPositions) {
+    let index: [number, number] | null = null;
+
+    if (sourceConfig && sourceConfig.cellSize > 0) {
+      // Calculate vertex row/col from position
+      // Vertex at top-left of cell (row, col) has position:
+      //   x = outerPadding + col * cellSize
+      //   y = outerPadding + row * cellSize
+      const { cellSize, outerPadding } = sourceConfig;
+      const col = Math.round((pos.x - outerPadding) / cellSize);
+      const row = Math.round((pos.y - outerPadding) / cellSize);
+      index = [row, col];
+    }
+
     builder.addVertex({
       id,
       position: pos,
       adjacentCells: [],
       adjacentEdges: [],
       adjacentVertices: [],
+      index,
+      row: index?.[0],
+      col: index?.[1],
     });
   }
 

@@ -4,8 +4,7 @@
  * Bridges puzzle-kit's data model to solver-kit's YajilinSolver
  */
 
-import { YajilinSolver, Direction, CellState, SolveStatus } from '@logicpuzzle-app/solver-kit';
-import { LoopEdgeState } from '@logicpuzzle-app/solver-kit/solvers';
+import { YajilinSolver, Direction, CellState, SolveStatus, LoopEdgeState } from '@logicpuzzle-app/solver-kit';
 import type { SolverAdapter, SolveResult } from '../types';
 import type { PuzzleState, GridConfig } from '../../types';
 
