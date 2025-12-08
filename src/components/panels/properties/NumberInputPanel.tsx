@@ -202,6 +202,7 @@ export const NumberInputPanel: React.FC = () => {
         // Use 0 for no direction (will display as centered number without arrow)
         const direction = directionMap[toolSettings.arrowDirection] ?? 0;
         addDirectionalClue({
+          cellId: effectiveCellId || `cell-${numberSelection!.row}-${numberSelection!.col}`,
           cell: cellIndex,
           direction: direction as 0 | 1 | 2 | 3 | 4,
           value: parseInt(newValue, 10),

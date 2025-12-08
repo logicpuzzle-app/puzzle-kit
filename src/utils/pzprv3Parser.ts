@@ -485,6 +485,7 @@ function parseYajilin(puzzle: PuzzleState, rows: number, cols: number, parts: st
           puzzle.problem.directionalClues = puzzle.problem.directionalClues || {};
           puzzle.problem.directionalClues[clueId] = {
             id: clueId,
+            cellId,
             cell: cellIndex,
             direction: dirMap[cellData.direction] || 4,
             value: cellData.dirValue,

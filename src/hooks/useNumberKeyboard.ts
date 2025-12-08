@@ -213,6 +213,7 @@ export function useNumberKeyboard() {
         const newValue = currentValue.slice(0, -1);
         const direction = existingClue?.direction ?? 0;
         addDirectionalClue({
+          cellId: `cell-${target.row}-${target.col}`,
           cell: cellIndex,
           direction: direction as 0 | 1 | 2 | 3 | 4,
           value: parseInt(newValue, 10),
@@ -243,6 +244,7 @@ export function useNumberKeyboard() {
     const direction = existingClue?.direction ?? directionMap[toolSettings.arrowDirection] ?? 0;
 
     addDirectionalClue({
+      cellId: `cell-${target.row}-${target.col}`,
       cell: cellIndex,
       direction: direction as 0 | 1 | 2 | 3 | 4,
       value: parseInt(newValue, 10),
@@ -283,6 +285,7 @@ export function useNumberKeyboard() {
     const direction = directionMap[toolSettings.arrowDirection] ?? 0;
 
     addDirectionalClue({
+      cellId: `cell-${target.row}-${target.col}`,
       cell: cellIndex,
       direction,
       value: parseInt(value, 10),

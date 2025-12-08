@@ -6,3 +6,9 @@ export { NumberInputPanel } from './NumberInputPanel';
 export { GridPropertiesPanel } from './GridPropertiesPanel';
 export { FreehandLineList } from './FreehandLineList';
 export { TestCasePanel } from './TestCasePanel';
+
+// Panel sections
+export { SolverPanel } from './SolverPanel';
+export { ConstraintPropertiesPanel } from './ConstraintPropertiesPanel';
+export { ToolPropertiesPanel } from './ToolPropertiesPanel';
+export { AutoModePanel } from './AutoModePanel';

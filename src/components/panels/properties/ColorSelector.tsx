@@ -69,12 +69,14 @@ export const ColorSelector: React.FC = () => {
       if (toolSettings.currentTool === 'number-directional') {
         // Update directional clue color
         const cellIndex = numberSelection.row * grid.cols + numberSelection.col;
+        const cellId = `cell-${numberSelection.row}-${numberSelection.col}`;
         const existingEntry = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
-          ([, c]) => c.cell === cellIndex
+          ([, c]) => c.cellId === cellId || c.cell === cellIndex
         );
         if (existingEntry) {
           const [, existing] = existingEntry;
           addDirectionalClue({
+            cellId,
             cell: cellIndex,
             direction: existing.direction,
             value: existing.value,
