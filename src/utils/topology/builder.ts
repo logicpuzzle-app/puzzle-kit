@@ -197,6 +197,14 @@ export function buildTopologyFromCells(
     }
   }
 
+  // Build a set of outboard cell IDs for quick lookup
+  const outboardCellIds = new Set<string>();
+  for (const cellDef of cellDefs) {
+    if (cellDef.outboard) {
+      outboardCellIds.add(cellDef.id);
+    }
+  }
+
   // Create cells with proper adjacency
   for (const cellDef of cellDefs) {
     const vIds = cellVertexIds.get(cellDef.id)!;
@@ -205,6 +213,7 @@ export function buildTopologyFromCells(
     const originalCells = cellDef.originalCells ?? [cellDef.id];
 
     // Find adjacent cells (cells sharing an edge)
+    // Exclude outboard cells from adjacency lists
     const adjacentCells = new Set<string>();
     const boundaryEdges: string[] = [];
 
@@ -217,7 +226,12 @@ export function buildTopologyFromCells(
       const cellsOnEdge = edgeToCells.get(edgeId) || [];
       for (const otherId of cellsOnEdge) {
         if (otherId !== cellDef.id) {
-          adjacentCells.add(otherId);
+          // Exclude outboard cells from adjacency
+          // Normal cells don't see outboard cells as adjacent
+          // Outboard cells don't see any cells as adjacent
+          if (!outboardCellIds.has(otherId) && !cellDef.outboard) {
+            adjacentCells.add(otherId);
+          }
         }
       }
     }
@@ -233,6 +247,7 @@ export function buildTopologyFromCells(
       row: cellDef.row,
       col: cellDef.col,
       originalCells,
+      outboard: cellDef.outboard,
     });
 
     // Update vertex -> cell adjacency

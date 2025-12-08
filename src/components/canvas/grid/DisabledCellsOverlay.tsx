@@ -18,7 +18,10 @@ export const DisabledCellsOverlay: React.FC = () => {
     gridType = 'square',
     marginTop = 0,
     marginLeft = 0,
+    // Support both legacy disabledCells and new voidCells/outboardCells
     disabledCells,
+    voidCells,
+    outboardCells,
     rows,
     cols,
     frameColor,
@@ -29,8 +32,15 @@ export const DisabledCellsOverlay: React.FC = () => {
 
   // useMemo must be called unconditionally (React Hooks rules)
   const { rects, borderLines } = useMemo(() => {
+    // Combine all disabled cells (legacy + void + outboard)
+    const allDisabledCells = [
+      ...(disabledCells || []),
+      ...(voidCells || []),
+      ...(outboardCells || []),
+    ];
+
     // Return empty if no disabled cells
-    if (!disabledCells || disabledCells.length === 0) {
+    if (allDisabledCells.length === 0) {
       return { rects: [], borderLines: [] };
     }
 
@@ -41,8 +51,8 @@ export const DisabledCellsOverlay: React.FC = () => {
     const rectElements: React.ReactElement[] = [];
     const lineElements: React.ReactElement[] = [];
 
-    // Handle both array and Set (for backwards compatibility)
-    const disabledArray = Array.isArray(disabledCells) ? disabledCells : Array.from(disabledCells as unknown as Set<string>);
+    // Use combined disabled cells
+    const disabledArray = allDisabledCells;
     const disabledSet = new Set(disabledArray);
 
     // Use same stroke width as frame style
@@ -59,7 +69,7 @@ export const DisabledCellsOverlay: React.FC = () => {
 
     // Topology mode - use topology positions
     if (useTopology && topology) {
-      const fillColor = disabledCellColor || '#c0c0c0';
+      const fillColor = disabledCellColor || '#ffffff';
 
       disabledArray.forEach((cellId) => {
         const cell = topology.cells.get(cellId);
@@ -140,8 +150,8 @@ export const DisabledCellsOverlay: React.FC = () => {
       const y = outerPadding + actualRow * cellSize;
 
       // Add overlay for disabled cell
-      // Use disabledCellColor in all modes (default: light grey #c0c0c0)
-      const fillColor = disabledCellColor || '#c0c0c0';
+      // Use disabledCellColor in all modes (default: white #ffffff)
+      const fillColor = disabledCellColor || '#ffffff';
       rectElements.push(
         <rect
           key={cellId}
@@ -219,7 +229,7 @@ export const DisabledCellsOverlay: React.FC = () => {
     });
 
     return { rects: rectElements, borderLines: lineElements };
-  }, [isGridMode, gridType, disabledCells, cellSize, outerPadding, marginTop, marginLeft, rows, cols, frameColor, frameStyle, disabledCellColor, backgroundColor, useTopology, topology]);
+  }, [isGridMode, gridType, disabledCells, voidCells, outboardCells, cellSize, outerPadding, marginTop, marginLeft, rows, cols, frameColor, frameStyle, disabledCellColor, backgroundColor, useTopology, topology]);
 
   // Return null if no content to render
   if (rects.length === 0 && borderLines.length === 0) return null;

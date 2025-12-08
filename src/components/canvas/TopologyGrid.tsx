@@ -50,6 +50,9 @@ export const TopologyGrid: React.FC<TopologyGridProps> = (props) => {
     return hidden;
   }, [topology, mergedCells]);
 
+  // Outboard background color (white by default, can be customized via grid.outboardBackgroundColor)
+  const outboardBackgroundColor = (grid as GridConfig & { outboardBackgroundColor?: string }).outboardBackgroundColor ?? '#ffffff';
+
   // Render cells as polygons
   const cellPolygons = useMemo(() => {
     if (!topology) return null;
@@ -66,18 +69,42 @@ export const TopologyGrid: React.FC<TopologyGridProps> = (props) => {
 
       if (!points) continue;
 
+      // Use different background color for outboard cells
+      const fillColor = cell.outboard ? outboardBackgroundColor : backgroundColor;
+
       polygons.push(
         <polygon
           key={cellId}
           points={points}
-          fill={backgroundColor}
+          fill={fillColor}
           stroke="none"
         />
       );
     }
 
     return polygons;
-  }, [topology, backgroundColor]);
+  }, [topology, backgroundColor, outboardBackgroundColor]);
+
+  // Helper to check if an edge is between outboard cells only
+  const isOutboardOnlyEdge = (edge: TopologyEdge): boolean => {
+    if (!topology) return false;
+    const adjacentCells = edge.adjacentCells;
+    if (adjacentCells.length === 0) return true;
+    return adjacentCells.every(cellId => {
+      const cell = topology.cells.get(cellId);
+      return cell?.outboard === true;
+    });
+  };
+
+  // Helper to check if an edge is a boundary between outboard and normal cells
+  const isOutboardBoundaryEdge = (edge: TopologyEdge): boolean => {
+    if (!topology) return false;
+    const adjacentCells = edge.adjacentCells;
+    if (adjacentCells.length !== 2) return false;
+    const [cell1, cell2] = adjacentCells.map(id => topology.cells.get(id));
+    if (!cell1 || !cell2) return false;
+    return (cell1.outboard === true) !== (cell2.outboard === true);
+  };
 
   // Render grid lines (edges)
   const gridLines = useMemo(() => {
@@ -89,8 +116,15 @@ export const TopologyGrid: React.FC<TopologyGridProps> = (props) => {
     const dashArray = isDashed ? '4,4' : undefined;
 
     if (gridStyle === 'dots') {
-      // Render dots at vertices
+      // Render dots at vertices (only for non-outboard area)
       for (const [vertexId, vertex] of topology.vertices) {
+        // Skip vertices that only touch outboard cells
+        const touchesNormalCell = vertex.adjacentCells.some(cellId => {
+          const cell = topology.cells.get(cellId);
+          return cell && !cell.outboard;
+        });
+        if (!touchesNormalCell) continue;
+
         lines.push(
           <circle
             key={vertexId}
@@ -106,6 +140,12 @@ export const TopologyGrid: React.FC<TopologyGridProps> = (props) => {
       for (const [edgeId, edge] of topology.edges) {
         // Skip hidden edges (internal edges within merged groups)
         if (hiddenEdges.has(edgeId)) continue;
+
+        // Skip edges that are only between outboard cells
+        if (isOutboardOnlyEdge(edge)) continue;
+
+        // Skip outboard boundary edges (they will be drawn as frame)
+        if (isOutboardBoundaryEdge(edge)) continue;
 
         const startVertex = topology.vertices.get(edge.startVertex);
         const endVertex = topology.vertices.get(edge.endVertex);
@@ -133,7 +173,7 @@ export const TopologyGrid: React.FC<TopologyGridProps> = (props) => {
     return lines;
   }, [topology, showGrid, gridStyle, gridColor, hiddenEdges]);
 
-  // Render outer frame (boundary edges)
+  // Render outer frame (boundary edges + outboard boundary edges)
   const outerFrame = useMemo(() => {
     if (!topology || frameStyle === 'none') return null;
 
@@ -141,7 +181,13 @@ export const TopologyGrid: React.FC<TopologyGridProps> = (props) => {
     const strokeWidth = frameStyle === 'thick' ? 4 : 2;
 
     for (const [edgeId, edge] of topology.edges) {
-      if (edge.isBoundary) {
+      // Draw frame for:
+      // 1. True boundary edges (edge of the entire grid) that don't touch only outboard cells
+      // 2. Edges between outboard and normal cells (logical boundary)
+      const isTrueBoundary = edge.isBoundary && !isOutboardOnlyEdge(edge);
+      const isLogicalBoundary = isOutboardBoundaryEdge(edge);
+
+      if (isTrueBoundary || isLogicalBoundary) {
         const startVertex = topology.vertices.get(edge.startVertex);
         const endVertex = topology.vertices.get(edge.endVertex);
 
@@ -167,7 +213,10 @@ export const TopologyGrid: React.FC<TopologyGridProps> = (props) => {
       const offset = 3;
 
       for (const [edgeId, edge] of topology.edges) {
-        if (edge.isBoundary) {
+        const isTrueBoundary = edge.isBoundary && !isOutboardOnlyEdge(edge);
+        const isLogicalBoundary = isOutboardBoundaryEdge(edge);
+
+        if (isTrueBoundary || isLogicalBoundary) {
           const startVertex = topology.vertices.get(edge.startVertex);
           const endVertex = topology.vertices.get(edge.endVertex);
 
@@ -183,7 +232,11 @@ export const TopologyGrid: React.FC<TopologyGridProps> = (props) => {
             const ny = dx / len;
 
             // Determine which direction is "outward" by checking cell positions
-            const adjacentCell = edge.adjacentCells[0];
+            // For outboard boundary, find the normal cell
+            const adjacentCell = edge.adjacentCells.find(id => {
+              const cell = topology.cells.get(id);
+              return cell && !cell.outboard;
+            }) ?? edge.adjacentCells[0];
             const cell = adjacentCell ? topology.cells.get(adjacentCell) : null;
             let outwardX = nx;
             let outwardY = ny;

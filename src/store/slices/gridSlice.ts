@@ -124,15 +124,37 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
   setShowAdjacency: (show) => set({ showAdjacency: show }),
 
   // Grid cell enabled/disabled
+  // toggleCellDisabled: toggle based on current excludeMode
   toggleCellDisabled: (cellId) =>
     set((state) => {
-      const currentDisabled = state.grid.disabledCells || [];
-      const isDisabled = currentDisabled.includes(cellId);
-      const disabledCells = isDisabled
-        ? currentDisabled.filter((id) => id !== cellId)
-        : [...currentDisabled, cellId];
+      const excludeMode = state.grid.excludeMode ?? 'void';
+      const currentVoid = state.grid.voidCells || [];
+      const currentOutboard = state.grid.outboardCells || [];
 
-      const newGrid = { ...state.grid, disabledCells };
+      const isVoid = currentVoid.includes(cellId);
+      const isOutboard = currentOutboard.includes(cellId);
+
+      let newVoidCells = currentVoid;
+      let newOutboardCells = currentOutboard;
+
+      if (isVoid || isOutboard) {
+        // Cell is already excluded -> enable it (remove from both lists)
+        newVoidCells = currentVoid.filter((id) => id !== cellId);
+        newOutboardCells = currentOutboard.filter((id) => id !== cellId);
+      } else {
+        // Cell is enabled -> exclude it based on current mode
+        if (excludeMode === 'void') {
+          newVoidCells = [...currentVoid, cellId];
+        } else {
+          newOutboardCells = [...currentOutboard, cellId];
+        }
+      }
+
+      const newGrid = {
+        ...state.grid,
+        voidCells: newVoidCells.length > 0 ? newVoidCells : undefined,
+        outboardCells: newOutboardCells.length > 0 ? newOutboardCells : undefined,
+      };
 
       // Regenerate topology if in topology mode
       if (state.useTopology) {
@@ -149,19 +171,37 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
 
   setCellDisabled: (cellId, disabled, skipTopologyRegeneration = false) =>
     set((state) => {
-      const currentDisabled = state.grid.disabledCells || [];
-      const isDisabled = currentDisabled.includes(cellId);
-      let newDisabledCells: string[] | undefined;
+      const excludeMode = state.grid.excludeMode ?? 'void';
+      const currentVoid = state.grid.voidCells || [];
+      const currentOutboard = state.grid.outboardCells || [];
 
-      if (disabled && !isDisabled) {
-        newDisabledCells = [...currentDisabled, cellId];
-      } else if (!disabled && isDisabled) {
-        newDisabledCells = currentDisabled.filter((id) => id !== cellId);
+      const isVoid = currentVoid.includes(cellId);
+      const isOutboard = currentOutboard.includes(cellId);
+      const isCurrentlyDisabled = isVoid || isOutboard;
+
+      let newVoidCells = currentVoid;
+      let newOutboardCells = currentOutboard;
+
+      if (disabled && !isCurrentlyDisabled) {
+        // Enable -> Disable: add to appropriate list based on excludeMode
+        if (excludeMode === 'void') {
+          newVoidCells = [...currentVoid, cellId];
+        } else {
+          newOutboardCells = [...currentOutboard, cellId];
+        }
+      } else if (!disabled && isCurrentlyDisabled) {
+        // Disable -> Enable: remove from both lists
+        newVoidCells = currentVoid.filter((id) => id !== cellId);
+        newOutboardCells = currentOutboard.filter((id) => id !== cellId);
       } else {
         return state;
       }
 
-      const newGrid = { ...state.grid, disabledCells: newDisabledCells };
+      const newGrid = {
+        ...state.grid,
+        voidCells: newVoidCells.length > 0 ? newVoidCells : undefined,
+        outboardCells: newOutboardCells.length > 0 ? newOutboardCells : undefined,
+      };
 
       // Regenerate topology if in topology mode (unless skipped for batch operations)
       if (state.useTopology && !skipTopologyRegeneration) {
@@ -983,7 +1023,14 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
         multicolorSurfaces: filterElements(state.puzzle.multicolorSurfaces || {}),
       };
 
+      // Filter disabled cells (legacy, void, and outboard)
       const newDisabledCells = (oldConfig.disabledCells || []).filter(
+        (cellId) => !removedCellSet.has(cellId)
+      );
+      const newVoidCells = (oldConfig.voidCells || []).filter(
+        (cellId) => !removedCellSet.has(cellId)
+      );
+      const newOutboardCells = (oldConfig.outboardCells || []).filter(
         (cellId) => !removedCellSet.has(cellId)
       );
 
@@ -993,7 +1040,12 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       });
 
       set({
-        grid: { ...newConfig, disabledCells: newDisabledCells },
+        grid: {
+          ...newConfig,
+          disabledCells: newDisabledCells.length > 0 ? newDisabledCells : undefined,
+          voidCells: newVoidCells.length > 0 ? newVoidCells : undefined,
+          outboardCells: newOutboardCells.length > 0 ? newOutboardCells : undefined,
+        },
         puzzle: newPuzzle,
         topology: transformedTopology,
       });

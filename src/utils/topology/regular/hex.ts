@@ -28,12 +28,18 @@ export function hexagonalGridToTopology(config: GridConfig): GridTopology {
     marginBottom = 0,
     marginLeft = 0,
     marginRight = 0,
+    // Support both legacy disabledCells and new voidCells/outboardCells
     disabledCells = [],
+    voidCells = [],
+    outboardCells = [],
   } = config;
 
   const totalRows = rows + marginTop + marginBottom;
   const totalCols = cols + marginLeft + marginRight;
-  const disabledSet = new Set(disabledCells);
+
+  // Merge legacy disabledCells into voidCells for backwards compatibility
+  const voidSet = new Set([...voidCells, ...disabledCells]);
+  const outboardSet = new Set(outboardCells);
 
   // Hex geometry (pointy-top), interpret cellSize as diameter (2 * circumradius)
   const radius = cellSize / 2;
@@ -46,7 +52,9 @@ export function hexagonalGridToTopology(config: GridConfig): GridTopology {
   for (let row = 0; row < totalRows; row++) {
     for (let col = 0; col < totalCols; col++) {
       const cellId = `cell-${row}-${col}`;
-      if (disabledSet.has(cellId)) continue;
+
+      // Void cells are completely skipped (no topology)
+      if (voidSet.has(cellId)) continue;
 
       // Odd rows are offset by half width
       const isOddRow = row % 2 === 1;
@@ -65,7 +73,24 @@ export function hexagonalGridToTopology(config: GridConfig): GridTopology {
         });
       }
 
-      cellDefs.push({ id: cellId, vertices, row, col, index: [row, col] });
+      // Determine if this cell is outboard:
+      // 1. Margin area cells are always outboard
+      // 2. Cells in outboardCells array are outboard
+      const isInMargin =
+        row < marginTop ||
+        row >= marginTop + rows ||
+        col < marginLeft ||
+        col >= marginLeft + cols;
+      const isOutboard = isInMargin || outboardSet.has(cellId);
+
+      cellDefs.push({
+        id: cellId,
+        vertices,
+        row,
+        col,
+        index: [row, col],
+        outboard: isOutboard || undefined,
+      });
     }
   }
 

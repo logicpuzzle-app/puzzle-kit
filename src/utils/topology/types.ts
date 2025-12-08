@@ -43,7 +43,7 @@ export interface TopologyCell {
   center: Point;
   /** Ordered list of vertex IDs forming the cell boundary (clockwise) */
   boundaryVertices: string[];
-  /** IDs of adjacent cells (sharing an edge) */
+  /** IDs of adjacent cells (sharing an edge) - excludes outboard cells */
   adjacentCells: string[];
   /** IDs of edges on the boundary */
   boundaryEdges: string[];
@@ -59,6 +59,17 @@ export interface TopologyCell {
   col?: number;
   /** Optional list of original cells (for merged/split) */
   originalCells?: string[];
+  /**
+   * Whether this cell is an outboard (hint) cell.
+   * - true: Outside the main grid, used for hints (numbers, arrows) only
+   * - false/undefined: Normal playable cell
+   *
+   * Outboard cells are excluded from:
+   * - adjacentCells lists of other cells
+   * - Connectivity/region validation
+   * - Surface/line placement
+   */
+  outboard?: boolean;
 }
 
 /**
@@ -161,6 +172,11 @@ export interface CellDefinition {
   row?: number;
   /** @deprecated Use index instead. Optional column index */
   col?: number;
+  /**
+   * Whether this cell is an outboard (hint) cell.
+   * Outboard cells are excluded from adjacency calculations.
+   */
+  outboard?: boolean;
 }
 
 /**
