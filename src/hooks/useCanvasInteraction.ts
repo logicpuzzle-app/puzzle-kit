@@ -87,6 +87,7 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
   const {
     handleSurfaceTool,
     handleGridTool,
+    finishGridTool,
     handleLineTool,
     handleEdgeTool,
     handleWallTool,
@@ -348,10 +349,13 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
       const isShiftKey = isShiftKeyRef.current;
 
       // Handle grid mode completion
-      if (isGridMode && !isRightClick) {
-        if (gridEditMode === 'merge') {
+      if (isGridMode) {
+        if (gridEditMode === 'exclude') {
+          // Finish grid tool and regenerate topology
+          finishGridTool();
+        } else if (gridEditMode === 'merge' && !isRightClick) {
           handleMergeMode(point, false, true, isRightClick);
-        } else if (gridEditMode === 'split') {
+        } else if (gridEditMode === 'split' && !isRightClick) {
           handleSplitMode(point, false, true, isRightClick);
         }
       }
@@ -382,7 +386,7 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
       setDrawStartPosition(null);
       setCurrentStrokeId(null);
     },
-    [isPanning, setCanvasState, endHistoryGroup, getMousePosition, toolSettings.currentTool, toolSettings.lineDirections, drawStartPoint, handleSpecialTool, handleCageTool, handleBoxLineTool, handleStraightLineEnd, resetFillModes, isGridMode, gridEditMode, handleMergeMode, handleSplitMode]
+    [isPanning, setCanvasState, endHistoryGroup, getMousePosition, toolSettings.currentTool, toolSettings.lineDirections, drawStartPoint, handleSpecialTool, handleCageTool, handleBoxLineTool, handleStraightLineEnd, resetFillModes, isGridMode, gridEditMode, handleMergeMode, handleSplitMode, finishGridTool]
   );
 
   // Context menu handler

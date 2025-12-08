@@ -71,6 +71,7 @@ export function useSurfaceToolHandler() {
     removeMulticolorSurface,
     toggleSolutionAreaCell,
     setCellDisabled,
+    updateTopology,
     useTopology,
     topology,
   } = usePuzzleStore();
@@ -270,18 +271,27 @@ export function useSurfaceToolHandler() {
       }
 
       // Apply action based on current fill mode
+      // Skip topology regeneration during drag for better performance
+      // Topology will be regenerated on mouse up via finishGridTool
       if (gridFillModeRef.current === 'disable') {
         if (!isCurrentlyDisabled) {
-          setCellDisabled(cellId, true);
+          setCellDisabled(cellId, true, true);
         }
       } else {
         if (isCurrentlyDisabled) {
-          setCellDisabled(cellId, false);
+          setCellDisabled(cellId, false, true);
         }
       }
     },
     [grid, setCellDisabled, findCellId]
   );
+
+  // Finish grid tool operation and regenerate topology if needed
+  const finishGridTool = useCallback(() => {
+    if (useTopology && processedCellsRef.current.size > 0) {
+      updateTopology();
+    }
+  }, [useTopology, updateTopology]);
 
   // Handle multicolor surface tool
   const handleMulticolorSurfaceTool = useCallback(
@@ -418,6 +428,7 @@ export function useSurfaceToolHandler() {
   return {
     handleSurfaceTool,
     handleGridTool,
+    finishGridTool,
     handleMulticolorSurfaceTool,
     handleSolutionAreaTool,
     handleSurfaceCycleTool,

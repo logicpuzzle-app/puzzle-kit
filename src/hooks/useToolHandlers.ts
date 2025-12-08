@@ -33,6 +33,7 @@ export function useToolHandlers({
   const {
     handleSurfaceTool,
     handleGridTool,
+    finishGridTool,
     handleMulticolorSurfaceTool,
     handleSolutionAreaTool,
     handleSurfaceCycleTool,
@@ -77,6 +78,7 @@ export function useToolHandlers({
   return {
     handleSurfaceTool,
     handleGridTool,
+    finishGridTool,
     handleLineTool,
     handleEdgeTool,
     handleWallTool,

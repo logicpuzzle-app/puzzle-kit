@@ -131,10 +131,23 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       const disabledCells = isDisabled
         ? currentDisabled.filter((id) => id !== cellId)
         : [...currentDisabled, cellId];
-      return { grid: { ...state.grid, disabledCells } };
+
+      const newGrid = { ...state.grid, disabledCells };
+
+      // Regenerate topology if in topology mode
+      if (state.useTopology) {
+        const baseTopology = gridConfigToTopology(newGrid);
+        const newTopology = applyTopologyPreset(baseTopology, {
+          preset: state.topologyPreset,
+          intensity: state.topologyIntensity,
+        });
+        return { grid: newGrid, topology: newTopology };
+      }
+
+      return { grid: newGrid };
     }),
 
-  setCellDisabled: (cellId, disabled) =>
+  setCellDisabled: (cellId, disabled, skipTopologyRegeneration = false) =>
     set((state) => {
       const currentDisabled = state.grid.disabledCells || [];
       const isDisabled = currentDisabled.includes(cellId);
@@ -150,8 +163,8 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
 
       const newGrid = { ...state.grid, disabledCells: newDisabledCells };
 
-      // Regenerate topology if in topology mode
-      if (state.useTopology) {
+      // Regenerate topology if in topology mode (unless skipped for batch operations)
+      if (state.useTopology && !skipTopologyRegeneration) {
         const baseTopology = gridConfigToTopology(newGrid);
         const newTopology = applyTopologyPreset(baseTopology, {
           preset: state.topologyPreset,

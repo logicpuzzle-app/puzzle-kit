@@ -116,7 +116,7 @@ export interface GridSlice {
 
   // Grid cell enabled/disabled
   toggleCellDisabled: (cellId: string) => void;
-  setCellDisabled: (cellId: string, disabled: boolean) => void;
+  setCellDisabled: (cellId: string, disabled: boolean, skipTopologyRegeneration?: boolean) => void;
 
   // Sculpt mode
   sculptMode: 'rotate' | 'cut';
