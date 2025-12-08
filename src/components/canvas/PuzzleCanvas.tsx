@@ -193,6 +193,9 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
 
               {/* Adjacency overlay (dotted lines between adjacent cell centers) */}
               <AdjacencyOverlay />
+
+              {/* Disabled cells overlay (for hex and other non-square grids) */}
+              <DisabledCellsOverlay />
             </>
           )}
 
