@@ -23,6 +23,7 @@ import { DirectionalClueLayer, ArrowStyle } from './DirectionalClueLayer';
 import { SolutionAreaMaskLayer, SolutionAreaBorderLayer } from './SolutionAreaLayer';
 import { AdjacencyOverlay } from './AdjacencyOverlay';
 import { SolverLayer } from './SolverLayer';
+import { TrialStackLayer } from './TrialStackLayer';
 
 // Re-export types from InputHandlerLayer
 export type { NumberClickInfo, TextClickInfo } from './InputHandlerLayer';
@@ -50,9 +51,11 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
     trialStage,
   } = usePuzzleStore();
 
-  // Trial mode opacity: 0.9^n where n is trial depth
-  // n=0: 1.0, n=1: 0.9, n=2: 0.81, n=3: 0.729, etc.
-  const trialOpacity = trialStage > 0 ? Math.pow(0.9, trialStage) : 1;
+  // Trial mode opacity for current answer layer:
+  // - Not in trial: 100%
+  // - In trial: 50% (latest layer)
+  // TrialStackLayer handles base (100%) and intermediate (75%) layers
+  const currentLayerOpacity = trialStage > 0 ? 0.5 : 1;
 
   const effectiveTopology = previewTopology ?? topology;
   const effectiveGrid = previewGrid ?? grid;
@@ -146,8 +149,10 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
 
               {/* Surface layers (rendered after grid background, before grid lines) */}
               <SurfaceLayer layer="problem" />
-              {/* Answer surface with trial opacity */}
-              <g opacity={trialOpacity}>
+              {/* Trial stack layers (saved states with graduated opacity) */}
+              <TrialStackLayer />
+              {/* Answer surface with trial opacity (current/latest layer) */}
+              <g opacity={currentLayerOpacity}>
                 <SurfaceLayer layer="answer" />
               </g>
 
@@ -173,8 +178,10 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
 
               {/* Surface layers (rendered after grid for non-square) */}
               <SurfaceLayer layer="problem" />
-              {/* Answer surface with trial opacity */}
-              <g opacity={trialOpacity}>
+              {/* Trial stack layers (saved states with graduated opacity) */}
+              <TrialStackLayer />
+              {/* Answer surface with trial opacity (current/latest layer) */}
+              <g opacity={currentLayerOpacity}>
                 <SurfaceLayer layer="answer" />
               </g>
 
@@ -192,42 +199,42 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
           {/* BoxLine layers (snake/patrol style filled boxes with connections) */}
           <BoxLineLayer layer="problem" />
           {/* Answer BoxLine with trial opacity */}
-          <g opacity={trialOpacity}>
+          <g opacity={currentLayerOpacity}>
             <BoxLineLayer layer="answer" />
           </g>
 
           {/* Line layers (edges, walls, lines) */}
           <LineLayer layer="problem" />
           {/* Answer lines with trial opacity */}
-          <g opacity={trialOpacity}>
+          <g opacity={currentLayerOpacity}>
             <LineLayer layer="answer" />
           </g>
 
           {/* Special layers (cages, thermos, arrows) */}
           <SpecialLayer layer="problem" />
           {/* Answer specials with trial opacity */}
-          <g opacity={trialOpacity}>
+          <g opacity={currentLayerOpacity}>
             <SpecialLayer layer="answer" />
           </g>
 
           {/* Symbol layers */}
           <SymbolLayer layer="problem" />
           {/* Answer symbols with trial opacity */}
-          <g opacity={trialOpacity}>
+          <g opacity={currentLayerOpacity}>
             <SymbolLayer layer="answer" />
           </g>
 
           {/* Directional clue layer (Yajilin-style arrows with numbers) */}
           <DirectionalClueLayer layer="problem" arrowStyle={arrowStyle} />
           {/* Answer directional clues with trial opacity */}
-          <g opacity={trialOpacity}>
+          <g opacity={currentLayerOpacity}>
             <DirectionalClueLayer layer="answer" arrowStyle={arrowStyle} />
           </g>
 
           {/* Number layers (rendered last, on top) */}
           <NumberLayer layer="problem" />
           {/* Answer numbers with trial opacity */}
-          <g opacity={trialOpacity}>
+          <g opacity={currentLayerOpacity}>
             <NumberLayer layer="answer" />
           </g>
 
