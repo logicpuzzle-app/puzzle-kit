@@ -14,9 +14,12 @@ export const createConstraintSlice: SliceCreator<ConstraintSlice> = (set, get) =
   setCurrentSchemaId: (schemaId) => {
     set({ currentSchemaId: schemaId });
 
-    // When preset is set to "none" (null), turn off constraint check
+    // When preset is set to "none" (null), turn off constraint check and reset input constraint
     if (schemaId === null) {
+      const { setToolSettings } = get();
       set({ showConstraintLayer: false });
+      // Reset inputConstraint to 'none' so parity check is disabled
+      setToolSettings({ inputConstraint: 'none' });
       return;
     }
 
@@ -65,7 +68,7 @@ export const createConstraintSlice: SliceCreator<ConstraintSlice> = (set, get) =
   currentInputMode: 'auto' as InputModeType,
   savedInputModes: { edit: 'auto' as InputModeType, play: 'auto' as InputModeType },
   setInputMode: (mode) => {
-    const { activeLayer, savedInputModes, setToolSettings, toolSettings, currentSchemaId, constraintSubCategory } = get();
+    const { activeLayer, savedInputModes, setToolSettings, toolSettings, currentSchemaId, constraintSubCategory, showConstraintLayer } = get();
     // Determine edit/play mode based on activeLayer and constraintSubCategory
     // - constraint mode: use constraintSubCategory (edit/play)
     // - problem layer: edit mode
@@ -119,8 +122,9 @@ export const createConstraintSlice: SliceCreator<ConstraintSlice> = (set, get) =
         currentCategory: toolMapping.category,
         // Set override symbol type if specified (e.g., 'circle-filled' for black pearl)
         overrideSymbolType: toolMapping.symbolType,
-        // Set input constraint for shading modes
-        inputConstraint: toolMapping.inputConstraint || 'none',
+        // Set input constraint for shading modes - only when constraint layer is enabled
+        // When constraint layer is off, always use 'none' to disable parity check
+        inputConstraint: showConstraintLayer ? (toolMapping.inputConstraint || 'none') : 'none',
       };
 
       // Apply additional settings if defined

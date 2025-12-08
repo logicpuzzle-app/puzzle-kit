@@ -66,16 +66,22 @@ export const createLayerSlice: SliceCreator<LayerSlice> = (set, get) => ({
   toggleAnswerLayer: () =>
     set((state) => ({ showAnswerLayer: !state.showAnswerLayer })),
   toggleConstraintLayer: () => {
-    const { showConstraintLayer, currentInputMode, currentSchemaId, activeLayer } = get();
+    const { showConstraintLayer, currentInputMode, currentSchemaId, activeLayer, setToolSettings } = get();
     const newShowConstraintLayer = !showConstraintLayer;
     set({ showConstraintLayer: newShowConstraintLayer });
 
-    // When turning off constraint layer, apply current input mode's tool settings
-    // This keeps the tool behavior consistent with what was set in constraint mode
-    if (!newShowConstraintLayer && currentSchemaId && (activeLayer === 'problem' || activeLayer === 'answer')) {
-      const { setInputMode } = get();
-      // Re-apply current input mode to update tool settings
-      setInputMode(currentInputMode);
+    // When turning off constraint layer, reset inputConstraint and apply tool settings
+    if (!newShowConstraintLayer) {
+      // Reset inputConstraint to 'none' so parity check is disabled
+      setToolSettings({ inputConstraint: 'none' });
+
+      // Apply current input mode's tool settings if a schema is selected
+      // This keeps the tool behavior consistent with what was set in constraint mode
+      if (currentSchemaId && (activeLayer === 'problem' || activeLayer === 'answer')) {
+        const { setInputMode } = get();
+        // Re-apply current input mode to update tool settings
+        setInputMode(currentInputMode);
+      }
     }
   },
 });
