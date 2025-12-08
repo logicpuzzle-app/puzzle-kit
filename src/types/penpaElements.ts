@@ -238,14 +238,17 @@ export interface PenpaArrow {
 /**
  * Directional number clue (Yajilin-style)
  * Stores a direction (0=None,1=Up,2=Down,3=Left,4=Right) and clue value on a cell.
+ * For arbitrary angles, use the `angle` field (in degrees, 0=right, 90=down, etc.)
  */
 export interface PenpaDirectionalClue {
   id?: string;
   cell: number;
-  direction: 0 | 1 | 2 | 3 | 4; // 0 = no direction (number only)
+  direction: 0 | 1 | 2 | 3 | 4; // 0 = no direction (number only), legacy discrete directions
   value: number;
   color?: string;
   layer: 'problem' | 'answer';
+  /** Arbitrary angle in degrees (0=right, 90=down, 180=left, 270=up). Overrides direction if set and non-null. */
+  angle?: number | null;
 }
 
 /**

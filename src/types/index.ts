@@ -421,8 +421,19 @@ export interface GridConfig {
   exportPaddingLeft?: number;  // pixels
   exportPaddingRight?: number;  // pixels
   // Disabled cells (cells that are excluded from the puzzle grid)
-  disabledCells?: string[];  // Array of cell IDs (e.g., "cell-0-0")
+  // Legacy: disabledCells is still used for backwards compatibility (treated as voidCells)
+  disabledCells?: string[];  // Array of cell IDs (e.g., "cell-0-0") - DEPRECATED, use voidCells
+  /** Void cells: completely removed from the grid, no topology, no hints */
+  voidCells?: string[];
+  /** Outboard cells: hint areas outside the main grid, can contain hints but excluded from adjacency */
+  outboardCells?: string[];
   disabledCellColor?: string;  // Color for disabled cells (default: background color)
+  /**
+   * Exclude mode for NEW cells being clicked:
+   * - 'void': New clicks will add to voidCells (default)
+   * - 'outboard': New clicks will add to outboardCells
+   */
+  excludeMode?: 'void' | 'outboard';
   // Merged cells (groups of cells that are combined into one)
   // Each entry is an array of cell IDs that form a merged cell
   mergedCells?: string[][];
@@ -539,6 +550,7 @@ export interface ToolSettings {
   sideIndex: number;   // 0-3 for sides (T, R, B, L)
   selectedCandidates: number[]; // For candidates mode (1-9)
   arrowDirection: number; // 0=up, 1=left, 2=right, 3=down for directional numbers
+  arrowAngle: number | null; // Arbitrary angle in degrees (null = use arrowDirection)
   // Multicolor surface mode settings
   multicolorSlots: number[]; // 4 color slots for multicolor mode (Penpa color indices)
   multicolorPattern: 'cross' | 'x'; // Pattern layout: + or ×

@@ -23,6 +23,115 @@ import { CanvasCursors } from './CanvasCursors';
 import { SpecialToolPreview } from './SpecialToolPreview';
 import { constraintCatalog } from '../../constraints';
 import { getAutoModeConfig } from '../../constraints/inputModeMapping';
+import type { GridTopology, TopologyCell } from '../../utils/gridTopology';
+
+// ========================================
+// Helper: Calculate flick direction based on cell topology
+// ========================================
+
+/**
+ * For a deformed grid, calculate the arrow direction/angle based on the cell's edge normals.
+ * Returns { direction, angle } where:
+ * - direction: 0-4 (0=none, 1=up, 2=down, 3=left, 4=right) - only used for non-topology mode
+ * - angle: The angle in degrees (0=right, 90=down, 180=left, 270=up) - used for topology mode
+ *
+ * @param dx - Horizontal flick displacement
+ * @param dy - Vertical flick displacement
+ * @param threshold - Minimum displacement to register a flick
+ * @param cellId - Cell ID (e.g., "cell-0-0")
+ * @param topology - Grid topology (null if not using topology mode)
+ */
+function calculateFlickDirection(
+  dx: number,
+  dy: number,
+  threshold: number,
+  cellId: string,
+  topology: GridTopology | null
+): { direction: 0 | 1 | 2 | 3 | 4; angle: number | null } {
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  if (distance < threshold) {
+    return { direction: 0, angle: null };
+  }
+
+  // If topology mode is enabled and cell exists, use edge-perpendicular direction
+  if (topology) {
+    const cell = topology.cells.get(cellId);
+    if (cell && cell.boundaryVertices.length >= 3) {
+      // Get all vertices of the cell
+      const vertices: Point[] = [];
+      for (const vertexId of cell.boundaryVertices) {
+        const vertex = topology.vertices.get(vertexId);
+        if (vertex) {
+          vertices.push(vertex.position);
+        }
+      }
+
+      if (vertices.length >= 3) {
+        // Compute center of cell (or use provided center)
+        const center = cell.center;
+
+        // For each edge, compute the outward normal direction (perpendicular to edge, pointing away from center)
+        // Then find which edge's normal is closest to the flick vector
+        let bestAngle = 0;
+        let bestDotProduct = -Infinity;
+
+        const n = vertices.length;
+        for (let i = 0; i < n; i++) {
+          const v1 = vertices[i];
+          const v2 = vertices[(i + 1) % n];
+
+          // Edge midpoint
+          const midX = (v1.x + v2.x) / 2;
+          const midY = (v1.y + v2.y) / 2;
+
+          // Direction from center to edge midpoint (outward normal approximation)
+          const normalX = midX - center.x;
+          const normalY = midY - center.y;
+          const normalLen = Math.sqrt(normalX * normalX + normalY * normalY);
+
+          if (normalLen > 0) {
+            // Normalize
+            const unitNormalX = normalX / normalLen;
+            const unitNormalY = normalY / normalLen;
+
+            // Normalize flick vector
+            const unitFlickX = dx / distance;
+            const unitFlickY = dy / distance;
+
+            // Dot product (how well flick aligns with this edge's outward normal)
+            const dot = unitNormalX * unitFlickX + unitNormalY * unitFlickY;
+
+            if (dot > bestDotProduct) {
+              bestDotProduct = dot;
+              // Calculate angle: 0=right, 90=down, 180=left, 270=up
+              bestAngle = Math.atan2(unitNormalY, unitNormalX) * (180 / Math.PI);
+              // Normalize to 0-360
+              bestAngle = ((bestAngle % 360) + 360) % 360;
+            }
+          }
+        }
+
+        // If we found a good match (dot product > 0 means within 90 degrees)
+        // Always use angle for topology mode (supports arbitrary directions)
+        if (bestDotProduct > 0) {
+          return { direction: 0, angle: bestAngle };
+        }
+      }
+    }
+  }
+
+  // Fallback: standard 4-direction based on screen coordinates
+  let direction: 0 | 1 | 2 | 3 | 4 = 0;
+  if (Math.abs(dy) > threshold && Math.abs(dy) > Math.abs(dx)) {
+    // Vertical movement
+    direction = dy < 0 ? 1 : 2; // 1 = up, 2 = down
+  } else if (Math.abs(dx) > threshold && Math.abs(dx) > Math.abs(dy)) {
+    // Horizontal movement
+    direction = dx < 0 ? 3 : 4; // 3 = left, 4 = right
+  }
+
+  return { direction, angle: null };
+}
 
 // Flick input state for directional number input (pzpr-puzzlink style)
 // - mousedown: initialize flick state (record start position)
@@ -548,30 +657,36 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
             ([, n]) => n.cellId === cellId && n.position === 'center'
           );
 
-          // Calculate direction from start point to current point (pzprjs-style)
+          // Calculate direction from start point to current point
+          // For deformed grids (topology mode), use edge-perpendicular direction
           const dx = point.x - startPoint!.x;
           const dy = point.y - startPoint!.y;
           const threshold = grid.cellSize * 0.3; // 30% of cell size
 
-          let direction: 0 | 1 | 2 | 3 | 4 = 0; // 0 = no direction
-          if (Math.abs(dy) > threshold && Math.abs(dy) > Math.abs(dx)) {
-            // Vertical movement
-            direction = dy < 0 ? 1 : 2; // 1 = up, 2 = down
-          } else if (Math.abs(dx) > threshold && Math.abs(dx) > Math.abs(dy)) {
-            // Horizontal movement
-            direction = dx < 0 ? 3 : 4; // 3 = left, 4 = right
-          }
+          // Calculate direction using topology-aware helper
+          const { direction, angle } = calculateFlickDirection(
+            dx,
+            dy,
+            threshold,
+            cellId,
+            useTopology ? topology : null
+          );
 
-          if (direction !== 0) {
+          // If we got a valid direction or angle, update the clue
+          if (direction !== 0 || angle !== null) {
             if (existingClueEntry) {
-              // Update existing directional clue's direction
+              // Update existing directional clue's direction/angle
               const [, clue] = existingClueEntry;
-              if (direction !== clue.direction) {
+              // Check if direction or angle changed
+              const directionChanged = angle === null && direction !== clue.direction;
+              const angleChanged = angle !== null && (clue.angle !== angle);
+              if (directionChanged || angleChanged) {
                 addDirectionalClue({
                   cell: cellIndex,
-                  direction,
+                  direction: angle !== null ? 0 : direction, // Use direction 0 when using angle
                   value: clue.value,
                   layer: dataLayer,
+                  angle: angle,
                 });
                 flickStateRef.current.inputted = true;
               }
@@ -580,12 +695,13 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
               const [numberId, num] = existingNumberEntry;
               const numValue = parseInt(num.value, 10);
               if (!isNaN(numValue)) {
-                // Add directional clue with the number value and direction
+                // Add directional clue with the number value and direction/angle
                 addDirectionalClue({
                   cell: cellIndex,
-                  direction,
+                  direction: angle !== null ? 0 : direction,
                   value: numValue,
                   layer: dataLayer,
+                  angle: angle,
                 });
                 // Remove the original number
                 removeNumber(numberId);

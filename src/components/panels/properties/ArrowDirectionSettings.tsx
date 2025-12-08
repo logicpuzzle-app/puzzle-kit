@@ -1,12 +1,14 @@
-import React, { useMemo, useEffect, useRef } from 'react';
+import React, { useMemo, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../../store/puzzleStore';
 import { toDataLayer } from '../../../types';
 
 // Arrow direction settings for directional numbers (Yajilin-style)
 // Direction: -1=none, 0=up, 1=left, 2=right, 3=down
+// Supports arbitrary angles via arrowAngle
 export const ArrowDirectionSettings: React.FC = () => {
   const { t } = useTranslation();
+  const [angleInput, setAngleInput] = useState('');
   const {
     toolSettings,
     setToolSettings,
@@ -65,14 +67,18 @@ export const ArrowDirectionSettings: React.FC = () => {
       id,
       value: clue.value,
       direction: reverseDirMap[clue.direction] ?? -1,
+      angle: clue.angle,
     };
   }, [numberSelection, grid.cols, puzzle, dataLayer]);
 
   // The active direction to highlight: use cell's clue direction if available, otherwise tool setting
   const activeDirection = currentCellClue?.direction ?? toolSettings.arrowDirection;
+  // The active angle: use cell's clue angle if available, otherwise tool setting
+  const activeAngle = currentCellClue?.angle ?? toolSettings.arrowAngle;
 
   const handleDirectionChange = (newDirection: number) => {
-    setToolSettings({ arrowDirection: newDirection });
+    // Clear arbitrary angle when selecting a preset direction
+    setToolSettings({ arrowDirection: newDirection, arrowAngle: null });
 
     // Update existing directional clue if cell is selected (update direction, keep value)
     if (numberSelection && currentCellClue) {
@@ -82,8 +88,42 @@ export const ArrowDirectionSettings: React.FC = () => {
         direction: directionMap[newDirection] ?? 0,
         value: currentCellClue.value,
         layer: dataLayer,
+        angle: null, // Clear arbitrary angle
       });
     }
+  };
+
+  // Handle arbitrary angle input - always use angle field (no conversion to preset)
+  const handleAngleChange = (angleValue: number | null) => {
+    if (angleValue === null) {
+      setToolSettings({ arrowAngle: null, arrowDirection: -1 });
+      return;
+    }
+
+    // Always use arbitrary angle (allows continuous +15/-15 cycling)
+    setToolSettings({ arrowAngle: angleValue, arrowDirection: -1 });
+
+    // Update existing directional clue if cell is selected
+    if (numberSelection && currentCellClue) {
+      const cellIndex = numberSelection.row * grid.cols + numberSelection.col;
+      addDirectionalClue({
+        cell: cellIndex,
+        direction: 0, // No preset direction when using arbitrary angle
+        value: currentCellClue.value,
+        layer: dataLayer,
+        angle: angleValue,
+      });
+    }
+  };
+
+  const handleAngleInputSubmit = () => {
+    const parsed = parseFloat(angleInput);
+    if (!isNaN(parsed)) {
+      // Normalize to 0-360
+      const normalized = ((parsed % 360) + 360) % 360;
+      handleAngleChange(normalized);
+    }
+    setAngleInput('');
   };
 
   return (
@@ -154,6 +194,46 @@ export const ArrowDirectionSettings: React.FC = () => {
           ↓
         </button>
         <div />
+      </div>
+
+      {/* Arbitrary angle input */}
+      <div className="flex gap-0.5 items-center">
+        <button
+          className="h-6 px-1 text-xs font-medium border rounded-sm transition-colors bg-white border-office-border hover:bg-office-ribbon-hover"
+          onClick={() => handleAngleChange(activeAngle !== null ? ((activeAngle - 15 + 360) % 360) : 345)}
+          title="-15°"
+        >
+          -15
+        </button>
+        <input
+          type="number"
+          value={activeAngle !== null ? activeAngle : ''}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === '') {
+              handleAngleChange(null);
+            } else {
+              const parsed = parseFloat(val);
+              if (!isNaN(parsed)) {
+                handleAngleChange(((parsed % 360) + 360) % 360);
+              }
+            }
+          }}
+          placeholder="°"
+          className={`w-12 h-6 px-1 text-xs text-center border rounded-sm focus:outline-none focus:border-office-accent ${
+            activeAngle !== null
+              ? 'border-office-accent bg-blue-50'
+              : 'border-office-border'
+          }`}
+          title={t('direction.customAngle', 'Custom angle (degrees)')}
+        />
+        <button
+          className="h-6 px-1 text-xs font-medium border rounded-sm transition-colors bg-white border-office-border hover:bg-office-ribbon-hover"
+          onClick={() => handleAngleChange(activeAngle !== null ? ((activeAngle + 15) % 360) : 15)}
+          title="+15°"
+        >
+          +15
+        </button>
       </div>
     </div>
   );
