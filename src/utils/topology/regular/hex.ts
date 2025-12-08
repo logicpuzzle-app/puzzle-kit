@@ -65,7 +65,7 @@ export function hexagonalGridToTopology(config: GridConfig): GridTopology {
         });
       }
 
-      cellDefs.push({ id: cellId, vertices, row, col });
+      cellDefs.push({ id: cellId, vertices, row, col, index: [row, col] });
     }
   }
 

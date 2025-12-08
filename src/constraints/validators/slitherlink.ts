@@ -112,36 +112,70 @@ function checkCrossLine(ctx: ValidationContext): CheckResult {
 }
 
 /**
+ * Get the number of edge lines around a cell in square grid mode
+ */
+function getCellBorderLineCountSquare(
+  ctx: ValidationContext,
+  row: number,
+  col: number
+): number {
+  let count = 0;
+  const edges = ctx.puzzle.answer.edges;
+
+  // Cell at (row, col) has 4 border edges:
+  // Top: vertex-(row)-(col) to vertex-(row)-(col+1)
+  // Bottom: vertex-(row+1)-(col) to vertex-(row+1)-(col+1)
+  // Left: vertex-(row)-(col) to vertex-(row+1)-(col)
+  // Right: vertex-(row)-(col+1) to vertex-(row+1)-(col+1)
+
+  const topLeft = `vertex-${row}-${col}`;
+  const topRight = `vertex-${row}-${col + 1}`;
+  const bottomLeft = `vertex-${row + 1}-${col}`;
+  const bottomRight = `vertex-${row + 1}-${col + 1}`;
+
+  const cellEdges = [
+    [topLeft, topRight],       // top
+    [bottomLeft, bottomRight], // bottom
+    [topLeft, bottomLeft],     // left
+    [topRight, bottomRight],   // right
+  ];
+
+  for (const edge of Object.values(edges)) {
+    for (const [v1, v2] of cellEdges) {
+      if ((edge.from === v1 && edge.to === v2) || (edge.from === v2 && edge.to === v1)) {
+        count++;
+        break;
+      }
+    }
+  }
+
+  return count;
+}
+
+/**
  * checkdir4BorderLine - Check that clue numbers match adjacent line count
+ *
+ * This function handles both:
+ * - Topology mode with vertex-N style IDs
+ * - Square grid mode with vertex-row-col style IDs (from pzprv3 parser)
  */
 function checkdir4BorderLine(ctx: ValidationContext): CheckResult {
-  // In topology mode, iterate over topology cells
-  if (ctx.topology) {
-    for (const cell of ctx.topology.cells.values()) {
-      // Get number for this cell (may be stored with originalCells ID)
-      let numStr: string | null = null;
+  // Always use square grid mode logic for now, as pzprv3 parser uses vertex-row-col format
+  // The topology mode uses vertex-N format which doesn't match
+  const numbers = ctx.puzzle.problem.numbers;
+  for (const num of Object.values(numbers)) {
+    const match = num.cellId.match(/cell-(\d+)-(\d+)/);
+    if (!match) continue;
 
-      // Try the cell ID directly first
-      numStr = ctx.getNumberByCellId(cell.id);
+    const row = parseInt(match[1], 10);
+    const col = parseInt(match[2], 10);
+    const clue = parseInt(String(num.value), 10);
 
-      // If not found, try original cells
-      if (numStr === null && cell.originalCells) {
-        for (const origId of cell.originalCells) {
-          numStr = ctx.getNumberByCellId(origId);
-          if (numStr !== null) break;
-        }
-      }
+    if (isNaN(clue) || clue < 0 || clue > 4) continue;
 
-      if (numStr === null) continue;
-
-      const clue = parseInt(numStr);
-      if (isNaN(clue) || clue < 0 || clue > 4) continue;
-
-      // Count lines on this cell's boundary using topology
-      const lineCount = getCellBorderLineCountTopology(ctx, cell.id, cell.boundaryVertices);
-      if (lineCount !== clue) {
-        return { ok: false, elements: [cell.id] };
-      }
+    const lineCount = getCellBorderLineCountSquare(ctx, row, col);
+    if (lineCount !== clue) {
+      return { ok: false, elements: [num.cellId] };
     }
   }
 
@@ -214,9 +248,11 @@ function checkOneLoop(ctx: ValidationContext): CheckResult {
 // Register Check Functions
 // ========================================
 
-registerCheckFunction('checkLineExist', checkLineExist);
-registerCheckFunction('checkBranchLine', checkBranchLine);
-registerCheckFunction('checkCrossLine', checkCrossLine);
-registerCheckFunction('checkdir4BorderLine', checkdir4BorderLine);
-registerCheckFunction('checkDeadendLine', checkDeadendLine);
-registerCheckFunction('checkOneLoop', checkOneLoop);
+// Edge-based functions (vertex-to-vertex connections, e.g., Slitherlink)
+// These check edges stored in puzzle.answer.edges
+registerCheckFunction('checkEdgeExist', checkLineExist);
+registerCheckFunction('checkEdgeBranch', checkBranchLine);
+registerCheckFunction('checkEdgeCross', checkCrossLine);
+registerCheckFunction('checkdir4BorderEdge', checkdir4BorderLine);
+registerCheckFunction('checkEdgeDeadend', checkDeadendLine);
+registerCheckFunction('checkEdgeOneLoop', checkOneLoop);

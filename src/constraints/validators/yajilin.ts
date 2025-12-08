@@ -308,11 +308,13 @@ function checkEmptyCell_yajilin(ctx: ValidationContext): CheckResult {
 // Register Check Functions
 // ========================================
 
-registerCheckFunction('checkBranchLine', checkBranchLine);
-registerCheckFunction('checkCrossLine', checkCrossLine);
+// Note: Line-based functions (checkLineBranch, checkLineCross, etc.) are
+// registered in mashu.ts and shared by Yajilin since both use cell-to-cell lines
+//
+// Note: checkAdjacentShadeCell is registered in heyawake.ts and shared by
+// Yajilin since both use the same "no adjacent shaded cells" constraint
+
+// Yajilin-specific constraints
 registerCheckFunction('checkLineOnShadeCell', checkLineOnShadeCell);
-registerCheckFunction('checkAdjacentShadeCell', checkAdjacentShadeCell);
-registerCheckFunction('checkDeadendLine', checkDeadendLine);
 registerCheckFunction('checkArrowNumber', checkArrowNumber);
-registerCheckFunction('checkOneLoop', checkOneLoop);
 registerCheckFunction('checkEmptyCell_yajilin', checkEmptyCell_yajilin);

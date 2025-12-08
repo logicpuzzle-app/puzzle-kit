@@ -43,6 +43,7 @@ export type {
   CellDefinition,
   TopologyPreset,
   TopologyPresetParams,
+  Index,
 } from './types';
 
 // ========================================
@@ -148,6 +149,13 @@ export {
   getOrthogonallyAdjacentCells,
   getDiagonallyAdjacentCells,
   areCellsDiagonallyAdjacent,
+  // Index query functions
+  getCellIndex,
+  getVertexIndex,
+  getEdgeIndex,
+  isValidIndex,
+  findCellByIndex,
+  findVertexByIndex,
 } from './queries';
 export { applyMergedCells } from './mergeSplit';
 export { applySculptOperations } from './sculpt';

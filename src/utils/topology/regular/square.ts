@@ -51,7 +51,7 @@ export function squareGridToTopology(config: GridConfig): GridTopology {
         { x: centerX - cellSize / 2, y: centerY + cellSize / 2 },  // bottom-left
       ];
 
-      cellDefs.push({ id: cellId, vertices, row, col });
+      cellDefs.push({ id: cellId, vertices, row, col, index: [row, col] });
     }
   }
 

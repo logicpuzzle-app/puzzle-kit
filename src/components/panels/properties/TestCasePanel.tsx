@@ -63,10 +63,7 @@ export const TestCasePanel: React.FC = () => {
       }
       // Import room map if present (for Heyawake, etc.)
       if (problem.roomMap) {
-        console.log('[TestCasePanel] Setting roomMap with entries:', Object.keys(problem.roomMap).length);
         store.setRoomMap(problem.roomMap);
-      } else {
-        console.log('[TestCasePanel] No roomMap in parsed result');
       }
 
       // Import answer elements
@@ -84,6 +81,10 @@ export const TestCasePanel: React.FC = () => {
       for (const [, sym] of Object.entries(answer.symbols)) {
         store.addSymbol(sym);
       }
+
+      // Enable topology mode and update topology
+      store.setUseTopology(true);
+      store.updateTopology();
 
       // Restore original layer (stay in constraint mode)
       store.setActiveLayer(currentLayer);

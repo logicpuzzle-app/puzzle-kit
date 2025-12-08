@@ -176,6 +176,7 @@ function checkRowsColsSameQuesNumber_hitori(ctx: ValidationContext): CheckResult
 }
 
 // Register check functions
-registerCheckFunction('checkAdjacentShadeCell_hitori', checkAdjacentShadeCell_hitori);
+// Note: checkAdjacentShadeCell is registered in heyawake.ts and shared by Hitori
+// since both use the same "no adjacent shaded cells" constraint
 registerCheckFunction('checkConnectUnshadeRB_hitori', checkConnectUnshadeRB_hitori);
 registerCheckFunction('checkRowsColsSameQuesNumber_hitori', checkRowsColsSameQuesNumber_hitori);

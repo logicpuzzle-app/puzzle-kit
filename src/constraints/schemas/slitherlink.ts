@@ -65,7 +65,7 @@ export const slitherlinkSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'slither',
-        checklist: ['checkLineExist'],
+        checklist: ['checkEdgeExist'],
         failcodes: ['brNoLine'],
       },
     },
@@ -78,7 +78,7 @@ export const slitherlinkSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'slither',
-        checklist: ['checkBranchLine'],
+        checklist: ['checkEdgeBranch'],
         failcodes: ['lnBranch'],
       },
     },
@@ -91,7 +91,7 @@ export const slitherlinkSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'slither',
-        checklist: ['checkCrossLine'],
+        checklist: ['checkEdgeCross'],
         failcodes: ['lnCross'],
       },
     },
@@ -104,7 +104,7 @@ export const slitherlinkSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'slither',
-        checklist: ['checkdir4BorderLine'],
+        checklist: ['checkdir4BorderEdge'],
         failcodes: ['nmLineNe'],
       },
     },
@@ -117,7 +117,7 @@ export const slitherlinkSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'slither',
-        checklist: ['checkOneLoop'],
+        checklist: ['checkEdgeOneLoop'],
         failcodes: ['lnPlLoop'],
       },
     },
@@ -130,7 +130,7 @@ export const slitherlinkSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'slither',
-        checklist: ['checkDeadendLine'],
+        checklist: ['checkEdgeDeadend'],
         failcodes: ['lnDeadEnd'],
       },
     },

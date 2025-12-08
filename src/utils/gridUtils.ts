@@ -106,6 +106,17 @@ export function getEdgeVId(row: number, col: number): string {
   return `edge-v-${row}-${col}`;
 }
 
+/**
+ * Parse a cell ID string to extract row and column.
+ *
+ * This is a string parsing utility - it extracts coordinates from ID strings like "cell-0-1".
+ * For topology mode, prefer using `getCellIndex()` from topology/queries which reads
+ * the pre-computed `index` property directly from TopologyCell.
+ *
+ * @param id - Cell ID string (e.g., "cell-0-1", "hex-0-1", "tri-0-1")
+ * @param gridType - Grid type for format detection
+ * @returns {row, col} or null if parsing fails
+ */
 export function parseCellId(id: string, gridType: GridType = 'square'): { row: number; col: number } | null {
   // Auto-detect by prefix if present
   if (id.startsWith('hex-')) return parseHexCellId(id);
@@ -130,10 +141,42 @@ export function parseCellId(id: string, gridType: GridType = 'square'): { row: n
   }
 }
 
+/**
+ * Parse a vertex ID string to extract row and column.
+ *
+ * This is a string parsing utility - it extracts coordinates from ID strings like "vertex-0-1".
+ * For topology mode, prefer using `getVertexIndex()` from topology/queries which reads
+ * the pre-computed `index` property directly from TopologyVertex.
+ *
+ * @param id - Vertex ID string (e.g., "vertex-0-1")
+ * @returns {row, col} or null if parsing fails
+ */
 export function parseVertexId(id: string): { row: number; col: number } | null {
   const match = id.match(/^vertex-(\d+)-(\d+)$/);
   if (match) {
     return { row: parseInt(match[1]), col: parseInt(match[2]) };
+  }
+  return null;
+}
+
+/**
+ * Parse an edge ID string to extract type, row, and column.
+ *
+ * This is a string parsing utility - it extracts coordinates from ID strings like "edge-h-0-1".
+ * For topology mode, prefer using `getEdgeIndex()` from topology/queries which reads
+ * the pre-computed `index` property directly from TopologyEdge.
+ *
+ * @param id - Edge ID string (e.g., "edge-h-0-1", "edge-v-0-1")
+ * @returns {type, row, col} or null if parsing fails
+ */
+export function parseEdgeId(id: string): { type: 'h' | 'v'; row: number; col: number } | null {
+  const hMatch = id.match(/^edge-h-(\d+)-(\d+)$/);
+  if (hMatch) {
+    return { type: 'h', row: parseInt(hMatch[1]), col: parseInt(hMatch[2]) };
+  }
+  const vMatch = id.match(/^edge-v-(\d+)-(\d+)$/);
+  if (vMatch) {
+    return { type: 'v', row: parseInt(vMatch[1]), col: parseInt(vMatch[2]) };
   }
   return null;
 }

@@ -211,6 +211,8 @@ export function buildTopologyFromCells(
       boundaryVertices: vIds,
       adjacentCells: Array.from(adjacentCells),
       boundaryEdges,
+      // Include index from cellDef, or derive from row/col if available
+      index: cellDef.index ?? (cellDef.row !== undefined && cellDef.col !== undefined ? [cellDef.row, cellDef.col] : null),
       row: cellDef.row,
       col: cellDef.col,
       originalCells,

@@ -11,6 +11,7 @@ import {
   getCellCenter,
   getVertexPosition,
   getEdgePosition,
+  parseEdgeId,
 } from '../../utils/gridUtils';
 import {
   findNearestCellInTopology,
@@ -43,6 +44,7 @@ export function useElementToolHandler({
     updateNumber,
     addSymbol,
     removeSymbol,
+    removeLine,
     addCage,
     removeCage,
     addSpecial,
@@ -335,16 +337,34 @@ export function useElementToolHandler({
     [grid, puzzle, activeLayer, toolSettings, currentInputMode, isAutoDirecMode, isAutoNumberMode, isAutoBorderNumberMode, getNumberRange, addNumber, removeNumber, updateNumber, addDirectionalClue, removeDirectionalClue, findCellId]
   );
 
+  /**
+   * Handle symbol tool input
+   * @param point - The point where the symbol should be placed
+   * @param isRightClick - Whether this is a right click (delete mode)
+   * @param _isShiftKey - Whether shift key is held (unused)
+   * @param options - Optional overrides for symbol type and input mode
+   *   - symbolTypeOverride: Override the symbol type (e.g., 'cross' for peke)
+   *   - inputMode: 'add' = always add, 'remove' = always remove, 'toggle' = toggle (default)
+   *   - colorOverride: Override the color
+   *   - symbolGridPointsOverride: Override the grid points to check
+   */
   const handleSymbolTool = useCallback(
-    (point: Point, isRightClick: boolean, _isShiftKey: boolean = false) => {
+    (point: Point, isRightClick: boolean, _isShiftKey: boolean = false, options?: {
+      symbolTypeOverride?: string;
+      inputMode?: 'add' | 'remove' | 'toggle';
+      colorOverride?: string;
+      symbolGridPointsOverride?: ('cell' | 'vertex' | 'edge')[];
+    }) => {
       const dataLayer = toDataLayer(activeLayer);
       const layerData = puzzle[dataLayer];
 
-      // Get symbol type from current tool (or use override if set by constraint mode)
-      const symbolType = toolSettings.overrideSymbolType || toolSettings.currentTool.replace('symbol-', '');
+      // Get symbol type from options override, toolSettings override, or current tool
+      const symbolType = options?.symbolTypeOverride || toolSettings.overrideSymbolType || toolSettings.currentTool.replace('symbol-', '');
+      const color = options?.colorOverride || toolSettings.color;
 
       // Find the nearest grid point based on symbolGridPoints settings
-      const symbolGridPoints = toolSettings.symbolGridPoints || ['cell'];
+      const symbolGridPoints = options?.symbolGridPointsOverride || toolSettings.symbolGridPoints || ['cell'];
+      const inputMode = options?.inputMode || 'toggle';
       let targetId: string | null = null;
       let minDistance = Infinity;
 
@@ -424,51 +444,109 @@ export function useElementToolHandler({
 
       if (!targetId) return;
 
-      // Right-click: delete any symbol at this position
+      // Find existing symbol of the same type at this position
+      const existingSymbol = Object.values(layerData.symbols).find(
+        (s) => s.cellId === targetId && s.symbolType === symbolType
+      );
+
+      // Right-click: delete any symbol at this position (regardless of inputMode)
       if (isRightClick) {
-        const existingSymbol = Object.values(layerData.symbols).find(
-          (s) => s.cellId === targetId
-        );
         if (existingSymbol) {
           removeSymbol(existingSymbol.id);
         }
         return;
       }
 
-      // Left-click: add or toggle symbol
-      const existingSymbol = Object.values(layerData.symbols).find(
-        (s) => s.cellId === targetId && s.symbolType === symbolType
-      );
+      // Helper: remove line at the same edge when adding peke (cross symbol)
+      const removeLineAtEdgeIfPeke = () => {
+        if (symbolType === 'cross' && targetId) {
+          // Parse edge ID to get vertex pair
+          // edge-h-{row}-{col} connects vertex-{row}-{col} and vertex-{row}-{col+1}
+          // edge-v-{row}-{col} connects vertex-{row}-{col} and vertex-{row+1}-{col}
+          const edgeParsed = parseEdgeId(targetId);
+          if (!edgeParsed) return;
 
-      if (existingSymbol) {
-        if (existingSymbol.color === toolSettings.color) {
-          // Same color: toggle off
-          removeSymbol(existingSymbol.id);
-        } else {
-          // Different color: replace
-          removeSymbol(existingSymbol.id);
+          const { type, row, col } = edgeParsed;
+          const vertexFrom = type === 'h'
+            ? `vertex-${row}-${col}`
+            : `vertex-${row}-${col}`;
+          const vertexTo = type === 'h'
+            ? `vertex-${row}-${col + 1}`
+            : `vertex-${row + 1}-${col}`;
+
+          const dataLayer = toDataLayer(activeLayer);
+          // Find line connecting these two vertices (in either direction)
+          const existingLine = Object.values(puzzle[dataLayer].lines).find(
+            (line) =>
+              (line.from === vertexFrom && line.to === vertexTo) ||
+              (line.from === vertexTo && line.to === vertexFrom)
+          );
+          if (existingLine) {
+            removeLine(existingLine.id);
+          }
+        }
+      };
+
+      // Handle based on inputMode
+      if (inputMode === 'add') {
+        // Add mode: only add if not already present (for drag painting)
+        if (!existingSymbol) {
+          // When adding peke, remove any line at the same edge
+          removeLineAtEdgeIfPeke();
           addSymbol({
             cellId: targetId,
             symbolType,
             size: toolSettings.symbolSize,
             rotation: toolSettings.symbolRotation,
-            color: toolSettings.color,
+            color,
+            layer: toDataLayer(activeLayer),
+          });
+        }
+        return;
+      }
+
+      if (inputMode === 'remove') {
+        // Remove mode: only remove if present (for drag erasing)
+        if (existingSymbol) {
+          removeSymbol(existingSymbol.id);
+        }
+        return;
+      }
+
+      // Toggle mode (default): add or toggle symbol
+      if (existingSymbol) {
+        if (existingSymbol.color === color) {
+          // Same color: toggle off
+          removeSymbol(existingSymbol.id);
+        } else {
+          // Different color: replace
+          removeSymbol(existingSymbol.id);
+          // When adding peke, remove any line at the same edge
+          removeLineAtEdgeIfPeke();
+          addSymbol({
+            cellId: targetId,
+            symbolType,
+            size: toolSettings.symbolSize,
+            rotation: toolSettings.symbolRotation,
+            color,
             layer: toDataLayer(activeLayer),
           });
         }
       } else {
         // Add new symbol
+        // When adding peke, remove any line at the same edge
+        removeLineAtEdgeIfPeke();
         addSymbol({
           cellId: targetId,
           symbolType,
           size: toolSettings.symbolSize,
           rotation: toolSettings.symbolRotation,
-          color: toolSettings.color,
+          color,
           layer: toDataLayer(activeLayer),
         });
       }
     },
-    [grid, puzzle, activeLayer, toolSettings, addSymbol, removeSymbol, useTopology, topology]
+    [grid, puzzle, activeLayer, toolSettings, addSymbol, removeSymbol, removeLine, useTopology, topology]
   );
 
   // Handle special tools (thermo, arrow)

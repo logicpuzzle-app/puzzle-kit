@@ -153,12 +153,16 @@ export const inputModeToTool: Record<InputMode, ToolMapping | null> = {
   },
 
   // Background color modes (pzprjs qsubcolor)
+  // bgcolor: cycles through bgcolor1 -> bgcolor2 -> none (like pzprjs inputBGcolor)
+  // Left click: none -> color1 -> color2 -> none
+  // Right click: none -> color2 -> color1 -> none
   'bgcolor': {
-    tool: 'surface-fill',
+    tool: 'surface-cycle',
     category: 'surface',
     target: 'cell',
     settings: {
-      color: '#C0C0C0', // pzprjs qsubcolor3: rgb(192,192,192) gray
+      color: '#A0FFA0', // pzprjs qsubcolor1: rgb(160,255,160) light green
+      secondaryColor: '#FFFF7F', // pzprjs qsubcolor2: rgb(255,255,127) light yellow
     },
   },
   'bgcolor1': {
@@ -385,6 +389,7 @@ export function getAutoModeConfig(schema: ConstraintSchema | null | undefined, i
 
     case 'line-cell':
       // Loop + black cell puzzles: left=line, right=shade/unshade (Yajilin)
+      // pzprjs style: line=green (#00A000), shade=#444444
       return {
         type: 'line-cell',
         leftButton: {
@@ -392,7 +397,7 @@ export function getAutoModeConfig(schema: ConstraintSchema | null | undefined, i
           category: schema?.lineTarget === 'cell' ? 'line' : 'edge',
           target: 'edge',
           settings: {
-            color: '#00A000',
+            color: '#00A000', // pzprjs linecolor (green)
             lineStyle: 'solid',
             lineThickness: 'normal',
             lineGridPoints: schema?.lineTarget === 'cell' ? ['cell'] : ['vertex'],
@@ -404,7 +409,7 @@ export function getAutoModeConfig(schema: ConstraintSchema | null | undefined, i
           target: 'cell',
           inputConstraint: noAdjacentShade ? 'noAdjacent' : undefined,
           settings: {
-            color: '#444444',
+            color: '#444444', // shade color
             secondaryColor: '#A0FFA0',
           },
         },

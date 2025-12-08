@@ -105,15 +105,27 @@ export function generateNurikabePuzzlinkUrl(
   return `https://puzz.link/p?nurikabe/${width}/${height}/${data}`;
 }
 
+/**
+ * Generate slitherlink URL using encode4Cell format
+ *
+ * encode4Cell format (used by puzz.link for slitherlink):
+ * - '0'-'4': number 0-4, no skip
+ * - '5'-'9': number 0-4 (value - 5), skip next cell
+ * - 'a'-'e': number 0-4 (value - 10), skip next 2 cells
+ * - 'g'-'z': skip cells (g=1, h=2, ..., z=20)
+ */
 function generateSlitherlinkUrl(grid: GridConfig, problem: PuzzleState['problem']): string {
   const width = grid.cols;
   const height = grid.rows;
-  const clues = new Map<number, number>();
+  const total = width * height;
+
+  // Build clue array: -1 = empty, 0-4 = clue value
+  const clues: number[] = new Array(total).fill(-1);
 
   if (problem.directionalClues) {
     for (const clue of Object.values(problem.directionalClues)) {
-      if (clue.value >= 0 && clue.value <= 3) {
-        clues.set(clue.cell, clue.value);
+      if (clue.value >= 0 && clue.value <= 4) {
+        clues[clue.cell] = clue.value;
       }
     }
   }
@@ -124,29 +136,49 @@ function generateSlitherlinkUrl(grid: GridConfig, problem: PuzzleState['problem'
       const row = parseInt(m[1], 10);
       const col = parseInt(m[2], 10);
       const val = parseInt(String(num.value), 10);
-      if (!isNaN(val) && val >= 0 && val <= 3) {
-        clues.set(row * width + col, val);
+      if (!isNaN(val) && val >= 0 && val <= 4) {
+        clues[row * width + col] = val;
       }
     }
   }
 
+  // Encode using encode4Cell algorithm
   let data = '';
   let blankCount = 0;
-  for (let idx = 0; idx < width * height; idx++) {
-    const val = clues.get(idx);
-    if (val === undefined) {
+
+  for (let c = 0; c < total; c++) {
+    const qn = clues[c];
+
+    if (qn >= 0) {
+      // Flush accumulated blanks first
+      while (blankCount > 0) {
+        const chunk = Math.min(blankCount, 20);
+        data += String.fromCharCode('f'.charCodeAt(0) + chunk); // g=1, h=2, ..., z=20
+        blankCount -= chunk;
+      }
+
+      // Check ahead to determine encoding
+      const next1 = c + 1 < total ? clues[c + 1] : -1;
+      const next2 = c + 2 < total ? clues[c + 2] : -1;
+
+      if (next1 !== -1) {
+        // Next cell has a number, use 0-4 format (no skip)
+        data += qn.toString();
+      } else if (next2 !== -1) {
+        // Skip 1 cell, use 5-9 format
+        data += (5 + qn).toString();
+        c++; // Skip next cell
+      } else {
+        // Skip 2 cells, use a-e format
+        data += String.fromCharCode('a'.charCodeAt(0) + qn);
+        c += 2; // Skip next 2 cells
+      }
+    } else {
       blankCount++;
-      continue;
     }
-    // flush blanks
-    while (blankCount > 0) {
-      const chunk = Math.min(blankCount, 20);
-      data += String.fromCharCode('f'.charCodeAt(0) + chunk); // g..z
-      blankCount -= chunk;
-    }
-    // encode number directly (0-3) using 0-4
-    data += val.toString();
   }
+
+  // Flush remaining blanks
   while (blankCount > 0) {
     const chunk = Math.min(blankCount, 20);
     data += String.fromCharCode('f'.charCodeAt(0) + chunk);

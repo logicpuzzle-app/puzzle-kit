@@ -15,6 +15,7 @@ export {
   type TopologyPreset,
   type TopologyPresetParams,
   type CellDefinition,
+  type Index,
   // Builder
   GridTopologyBuilder,
   buildTopologyFromCells,

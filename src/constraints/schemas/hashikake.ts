@@ -60,7 +60,7 @@ export const hashikakeSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'hashikake',
-        checklist: ['checkCrossLine'],
+        checklist: ['checkCrossLine_hashikake'],
         failcodes: ['lnCross'],
       },
     },

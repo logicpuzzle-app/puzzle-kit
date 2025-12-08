@@ -78,7 +78,7 @@ export const yajilinSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'yajilin',
-        checklist: ['checkBranchLine'],
+        checklist: ['checkLineBranch'],
         failcodes: ['lnBranch'],
       },
     },
@@ -91,7 +91,7 @@ export const yajilinSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'yajilin',
-        checklist: ['checkCrossLine'],
+        checklist: ['checkLineCross'],
         failcodes: ['lnCross'],
       },
     },
@@ -130,7 +130,7 @@ export const yajilinSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'yajilin',
-        checklist: ['checkDeadendLine'],
+        checklist: ['checkLineDeadend'],
         failcodes: ['lnDeadEnd'],
       },
     },
@@ -156,7 +156,7 @@ export const yajilinSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'yajilin',
-        checklist: ['checkOneLoop'],
+        checklist: ['checkLineOneLoop'],
         failcodes: ['lnPlLoop'],
       },
     },

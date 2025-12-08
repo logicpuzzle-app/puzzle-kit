@@ -209,7 +209,9 @@ export const Ribbon: React.FC = () => {
             <button
               className={`h-7 px-2 text-xs rounded-l-sm border border-r-0 transition-colors ${
                 isGridMode
-                  ? 'bg-office-accent text-white border-office-accent'
+                  ? isConstraintEnabled
+                    ? 'bg-purple-600 text-white border-purple-600'
+                    : 'bg-office-accent text-white border-office-accent'
                   : 'bg-white border-office-border hover:bg-office-ribbon-hover'
               }`}
               onClick={() => handleLayerClick(isGridMode ? 'problem' : 'grid')}
@@ -221,8 +223,12 @@ export const Ribbon: React.FC = () => {
               className={`h-7 w-7 flex items-center justify-center rounded-r-sm border-t border-b border-r transition-colors text-xs ${
                 isGridMode
                   ? grid.showGrid
-                    ? 'bg-office-accent text-white border-office-accent'
-                    : 'bg-office-accent/60 text-white/70 border-office-accent'
+                    ? isConstraintEnabled
+                      ? 'bg-purple-600 text-white border-purple-600'
+                      : 'bg-office-accent text-white border-office-accent'
+                    : isConstraintEnabled
+                      ? 'bg-purple-600/60 text-white/70 border-purple-600'
+                      : 'bg-office-accent/60 text-white/70 border-office-accent'
                   : grid.showGrid
                     ? 'bg-white border-office-border text-office-text hover:bg-office-ribbon-hover'
                     : 'bg-white border-office-border text-gray-400 hover:bg-office-ribbon-hover'

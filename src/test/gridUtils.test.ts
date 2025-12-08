@@ -7,6 +7,7 @@ import {
   getEdgeVId,
   parseCellId,
   parseVertexId,
+  parseEdgeId,
   findNearestCell,
   findNearestVertex,
   getCellCenter,
@@ -70,6 +71,23 @@ describe('gridUtils', () => {
 
     it('returns null for invalid vertex ID', () => {
       expect(parseVertexId('cell-0-0')).toBeNull();
+    });
+
+    it('parses valid horizontal edge ID', () => {
+      expect(parseEdgeId('edge-h-3-5')).toEqual({ type: 'h', row: 3, col: 5 });
+      expect(parseEdgeId('edge-h-0-0')).toEqual({ type: 'h', row: 0, col: 0 });
+    });
+
+    it('parses valid vertical edge ID', () => {
+      expect(parseEdgeId('edge-v-3-5')).toEqual({ type: 'v', row: 3, col: 5 });
+      expect(parseEdgeId('edge-v-0-0')).toEqual({ type: 'v', row: 0, col: 0 });
+    });
+
+    it('returns null for invalid edge ID', () => {
+      expect(parseEdgeId('cell-0-0')).toBeNull();
+      expect(parseEdgeId('vertex-0-0')).toBeNull();
+      expect(parseEdgeId('edge-0-0')).toBeNull();
+      expect(parseEdgeId('')).toBeNull();
     });
   });
 

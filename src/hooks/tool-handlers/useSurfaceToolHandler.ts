@@ -1,30 +1,46 @@
 import { useCallback, useRef } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
-import { findNearestCell, getCellId } from '../../utils/gridUtils';
-import { findNearestCellInTopology } from '../../utils/gridTopology';
+import { findNearestCell, getCellId, parseCellId as parseCellIdFromGridUtils } from '../../utils/gridUtils';
+import { findNearestCellInTopology, type GridTopology } from '../../utils/gridTopology';
 import type { Point, PuzzleState } from '../../types';
 import { toDataLayer } from '../../types';
 
 /**
- * Parse cell ID to row/col
+ * Get cell coordinates from cellId, preferring topology index when available.
+ *
+ * @param cellId - Cell ID string
+ * @param topology - GridTopology (optional)
+ * @returns {row, col} or null
  */
-function parseCellIdHelper(cellId: string): { row: number; col: number } | null {
-  const match = cellId.match(/^cell-(\d+)-(\d+)$/);
-  if (match) {
-    return { row: parseInt(match[1]), col: parseInt(match[2]) };
+function getCellCoords(
+  cellId: string,
+  topology: GridTopology | null
+): { row: number; col: number } | null {
+  // Prefer topology index when available
+  if (topology) {
+    const cell = topology.cells.get(cellId);
+    if (cell?.index && cell.index[0] !== null && cell.index[1] !== null) {
+      return { row: cell.index[0], col: cell.index[1] };
+    }
   }
-  return null;
+  // Fallback to ID string parsing
+  return parseCellIdFromGridUtils(cellId);
 }
 
 /**
  * Check if a cell has a directional clue (Yajilin arrow+number)
  */
-function cellHasDirectionalClue(cellId: string, puzzle: PuzzleState, cols: number): boolean {
+function cellHasDirectionalClue(
+  cellId: string,
+  puzzle: PuzzleState,
+  cols: number,
+  topology: GridTopology | null
+): boolean {
   const directionalClues = puzzle.problem.directionalClues;
   if (!directionalClues) return false;
 
-  // Convert cellId to linear index
-  const coords = parseCellIdHelper(cellId);
+  // Get coordinates using topology index or fallback to ID parsing
+  const coords = getCellCoords(cellId, topology);
   if (!coords) return false;
   const cellIndex = coords.row * cols + coords.col;
 
@@ -82,29 +98,19 @@ export function useSurfaceToolHandler() {
   // For noAdjacent constraint: track first cell's checker parity
   const firstCellParityRef = useRef<boolean | null>(null);
 
-  // Helper to get cell row/col from cellId
-  const parseCellId = useCallback((cellId: string): { row: number; col: number } | null => {
-    // cellId format: "cell-{row}-{col}" (e.g., "cell-0-0", "cell-1-2")
-    const match = cellId.match(/^cell-(\d+)-(\d+)$/);
-    if (match) {
-      return { row: parseInt(match[1]), col: parseInt(match[2]) };
-    }
-    // Also try "r{row}c{col}" format (e.g., "r0c0", "r1c2")
-    const matchAlt = cellId.match(/^r(\d+)c(\d+)$/);
-    if (matchAlt) {
-      return { row: parseInt(matchAlt[1]), col: parseInt(matchAlt[2]) };
-    }
-    return null;
-  }, []);
+  // Helper to get cell row/col from cellId (topology index preferred, fallback to ID parsing)
+  const getCellCoordsFromId = useCallback((cellId: string): { row: number; col: number } | null => {
+    return getCellCoords(cellId, topology ?? null);
+  }, [topology]);
 
   // Helper to check if cell has same checker parity as first cell (for noAdjacent constraint)
   const hasSameParity = useCallback((cellId: string): boolean => {
     if (firstCellParityRef.current === null) return true;
-    const coords = parseCellId(cellId);
+    const coords = getCellCoordsFromId(cellId);
     if (!coords) return true;
     const parity = (coords.row + coords.col) % 2 === 0;
     return parity === firstCellParityRef.current;
-  }, [parseCellId]);
+  }, [getCellCoordsFromId]);
 
   // Reset all fill modes (call on mouse down/touch start)
   const resetSurfaceFillModes = useCallback(() => {
@@ -119,8 +125,12 @@ export function useSurfaceToolHandler() {
       const cellId = findCellId(point);
       if (!cellId) return;
 
+      // Determine display mode based on current tool
+      const isDotTool = toolSettings.currentTool === 'surface-dot';
+      const displayMode = isDotTool ? 'dot' : 'fill';
+
       // Debug: log inputConstraint at start
-      console.log('[handleSurfaceTool] Called with inputConstraint:', toolSettings.inputConstraint);
+      console.log('[handleSurfaceTool] Called with inputConstraint:', toolSettings.inputConstraint, 'displayMode:', displayMode);
 
       // Skip if this cell was already processed during this drag
       if (processedCellsRef.current.has(cellId)) {
@@ -155,7 +165,7 @@ export function useSurfaceToolHandler() {
 
         // For noAdjacent constraint: record first cell's checker parity
         if (toolSettings.inputConstraint === 'noAdjacent') {
-          const coords = parseCellId(cellId);
+          const coords = getCellCoordsFromId(cellId);
           if (coords) {
             firstCellParityRef.current = (coords.row + coords.col) % 2 === 0;
             console.log('[handleSurfaceTool] First cell parity set:', {
@@ -182,7 +192,7 @@ export function useSurfaceToolHandler() {
           return;
         }
         // Check 2: skip cells with directional clues (Yajilin arrow+number)
-        if (cellHasDirectionalClue(cellId, puzzle, grid.cols)) {
+        if (cellHasDirectionalClue(cellId, puzzle, grid.cols, topology ?? null)) {
           console.log('[handleSurfaceTool] Skipping cell with directional clue');
           return;
         }
@@ -206,27 +216,29 @@ export function useSurfaceToolHandler() {
       } else {
         // Fill mode: add or replace surfaces
         if (existingSurface) {
-          if (existingSurface.color !== colorToUse) {
-            // Different color: replace
+          if (existingSurface.color !== colorToUse || existingSurface.displayMode !== displayMode) {
+            // Different color or display mode: replace
             removeSurface(existingSurface.id);
             addSurface({
               cellId,
               color: colorToUse,
               layer: dataLayer,
+              displayMode,
             });
           }
-          // Same color: do nothing (already filled)
+          // Same color and display mode: do nothing (already filled)
         } else {
           // No existing surface: add new one
           addSurface({
             cellId,
             color: colorToUse,
             layer: dataLayer,
+            displayMode,
           });
         }
       }
     },
-    [grid, puzzle, activeLayer, toolSettings.color, toolSettings.secondaryColor, toolSettings.inputConstraint, addSurface, removeSurface, findCellId, parseCellId, hasSameParity]
+    [grid, puzzle, activeLayer, toolSettings.currentTool, toolSettings.color, toolSettings.secondaryColor, toolSettings.inputConstraint, addSurface, removeSurface, findCellId, getCellCoordsFromId, hasSameParity, topology]
   );
 
   const handleGridTool = useCallback(
@@ -309,13 +321,14 @@ export function useSurfaceToolHandler() {
   );
 
   // Handle surface cycle tool (auto mode: none -> shade -> unshade -> none)
+  // colorOverride allows direct color specification without relying on async state updates
   const handleSurfaceCycleTool = useCallback(
-    (point: Point, isRightClick: boolean) => {
+    (point: Point, isRightClick: boolean, colorOverride?: { color?: string; secondaryColor?: string }) => {
       const cellId = findCellId(point);
       if (!cellId) return;
 
       // Debug: log inputConstraint at start
-      console.log('[handleSurfaceCycleTool] Called with inputConstraint:', toolSettings.inputConstraint);
+      console.log('[handleSurfaceCycleTool] Called with inputConstraint:', toolSettings.inputConstraint, 'colorOverride:', colorOverride);
 
       // Skip if this cell was already processed during this drag
       if (processedCellsRef.current.has(cellId)) {
@@ -325,8 +338,9 @@ export function useSurfaceToolHandler() {
       const dataLayer = toDataLayer(activeLayer);
       const layerData = puzzle[dataLayer];
 
-      const shadeColor = toolSettings.color; // black/shade
-      const unshadeColor = toolSettings.secondaryColor; // green/unshade
+      // Use color override if provided, otherwise fall back to toolSettings
+      const shadeColor = colorOverride?.color ?? toolSettings.color; // black/shade
+      const unshadeColor = colorOverride?.secondaryColor ?? toolSettings.secondaryColor; // green/unshade
 
       // Find existing surface
       const existingSurface = Object.values(layerData.surfaces).find(
@@ -336,7 +350,7 @@ export function useSurfaceToolHandler() {
       // For noAdjacent constraint: record first cell's checker parity on first cell
       const isFirstCell = firstCellParityRef.current === null;
       if (isFirstCell && toolSettings.inputConstraint === 'noAdjacent') {
-        const coords = parseCellId(cellId);
+        const coords = getCellCoordsFromId(cellId);
         if (coords) {
           firstCellParityRef.current = (coords.row + coords.col) % 2 === 0;
         }
@@ -359,7 +373,7 @@ export function useSurfaceToolHandler() {
           return;
         }
         // Check 2: skip cells with directional clues (Yajilin arrow+number)
-        if (cellHasDirectionalClue(cellId, puzzle, grid.cols)) {
+        if (cellHasDirectionalClue(cellId, puzzle, grid.cols, topology ?? null)) {
           return;
         }
         // Check 3: skip cells with lines passing through (Yajilin loop)
@@ -373,12 +387,12 @@ export function useSurfaceToolHandler() {
       if (isRightClick) {
         // Right click: reverse cycle (none -> unshade -> shade -> none)
         if (!existingSurface) {
-          // none -> unshade
-          addSurface({ cellId, color: unshadeColor, layer: dataLayer });
-        } else if (existingSurface.color === unshadeColor) {
-          // unshade -> shade
+          // none -> unshade (displayed as dot)
+          addSurface({ cellId, color: unshadeColor, layer: dataLayer, displayMode: 'dot' });
+        } else if (existingSurface.displayMode === 'dot') {
+          // unshade (dot) -> shade
           removeSurface(existingSurface.id);
-          addSurface({ cellId, color: shadeColor, layer: dataLayer });
+          addSurface({ cellId, color: shadeColor, layer: dataLayer, displayMode: 'fill' });
         } else {
           // shade -> none
           removeSurface(existingSurface.id);
@@ -387,18 +401,18 @@ export function useSurfaceToolHandler() {
         // Left click: forward cycle (none -> shade -> unshade -> none)
         if (!existingSurface) {
           // none -> shade
-          addSurface({ cellId, color: shadeColor, layer: dataLayer });
-        } else if (existingSurface.color === shadeColor) {
-          // shade -> unshade
+          addSurface({ cellId, color: shadeColor, layer: dataLayer, displayMode: 'fill' });
+        } else if (existingSurface.displayMode !== 'dot') {
+          // shade -> unshade (displayed as dot)
           removeSurface(existingSurface.id);
-          addSurface({ cellId, color: unshadeColor, layer: dataLayer });
+          addSurface({ cellId, color: unshadeColor, layer: dataLayer, displayMode: 'dot' });
         } else {
-          // unshade -> none
+          // unshade (dot) -> none
           removeSurface(existingSurface.id);
         }
       }
     },
-    [grid, puzzle, activeLayer, toolSettings.color, toolSettings.secondaryColor, toolSettings.inputConstraint, addSurface, removeSurface, findCellId, parseCellId, hasSameParity]
+    [grid, puzzle, activeLayer, toolSettings.color, toolSettings.secondaryColor, toolSettings.inputConstraint, addSurface, removeSurface, findCellId, getCellCoordsFromId, hasSameParity, topology]
   );
 
   return {

@@ -41,7 +41,7 @@ const resources = {
       'edit.clearProblem': 'Clear Problem Layer',
       'edit.clearAnswer': 'Clear Answer Layer',
       'edit.clearAll': 'Clear All',
-      'edit.constraintMode': 'Constraint Mode',
+      'edit.constraintMode': 'Specific Mode',
 
       // View menu
       'view.zoomIn': 'Zoom In',
@@ -52,7 +52,7 @@ const resources = {
       'view.showGrid': 'Show Grid',
       'view.showProblem': 'Show Problem Layer',
       'view.showAnswer': 'Show Answer Layer',
-      'view.showConstraint': 'Show Constraint Layer',
+      'view.showConstraint': 'Show Specific Layer',
       'view.showAdjacency': 'Show Adjacent Cells',
 
       // Layers
@@ -62,8 +62,8 @@ const resources = {
       'layer.grid': 'Grid',
       'layer.active': 'Active Layer',
 
-      // Constraint layer sub-categories
-      'constraint.toggle': 'Toggle Constraint Check',
+      // Specific layer sub-categories
+      'constraint.toggle': 'Toggle Specific Check',
       'constraint.selectPresetFirst': 'Select a preset first',
       'constraint.common': 'Common',
       'constraint.edit': 'Edit',
@@ -78,14 +78,14 @@ const resources = {
       'constraint.checkDesc': 'Validate solution',
       'constraint.placeholder': 'Select a constraint type to configure',
       'constraint.preset': 'Preset',
-      'constraint.propertiesPlaceholder': 'Constraint properties will appear here',
+      'constraint.propertiesPlaceholder': 'Specific properties will appear here',
       'constraint.selectPreset': 'Select a puzzle preset',
       'constraint.noPreset': 'No preset selected',
       'constraint.none': 'None',
-      'constraint.noneDesc': 'No constraint rules applied',
+      'constraint.noneDesc': 'No specific rules applied (Universal mode)',
       'constraint.custom': 'Custom',
-      'constraint.customDesc': 'Create custom constraint rules',
-      'constraint.customDisabled': 'Custom constraints are not yet available',
+      'constraint.customDesc': 'Create custom specific rules',
+      'constraint.customDisabled': 'Custom specific rules are not yet available',
       'constraint.rules': 'Rules',
       'constraint.enabled': 'Enabled',
       'constraint.disabled': 'Disabled',
@@ -186,7 +186,7 @@ const resources = {
 
       // Puzzle preset
       'puzzle.preset': 'Puzzle Preset',
-      'puzzle.noConstraint': 'No Constraint',
+      'puzzle.noConstraint': 'Universal',
       'puzzle.noPresetsForGrid': 'No presets available for this grid type',
 
       // Puzzle names
@@ -503,8 +503,8 @@ const resources = {
       'grid.iso.view': 'View',
       'grid.iso.exterior': 'Exterior',
       'grid.iso.interior': 'Interior',
-      'grid.tab.shape': 'Shape',
-      'grid.tab.display': 'Display',
+      'grid.tab.shape': 'Type',
+      'grid.tab.display': 'Style',
       'grid.mode': 'Grid Mode',
       'grid.mode.standard': 'Standard',
       'grid.mode.topology': 'Deformed',
@@ -873,7 +873,7 @@ const resources = {
       'edit.clearProblem': '問題レイヤーをクリア',
       'edit.clearAnswer': '解答レイヤーをクリア',
       'edit.clearAll': 'すべてクリア',
-      'edit.constraintMode': '制約モード',
+      'edit.constraintMode': '固有モード',
 
       // View menu
       'view.zoomIn': '拡大',
@@ -884,7 +884,7 @@ const resources = {
       'view.showGrid': 'グリッドを表示',
       'view.showProblem': '問題レイヤーを表示',
       'view.showAnswer': '解答レイヤーを表示',
-      'view.showConstraint': '制約レイヤーを表示',
+      'view.showConstraint': '固有レイヤーを表示',
       'view.showAdjacency': '隣接セルを表示',
 
       // Layers
@@ -894,30 +894,30 @@ const resources = {
       'layer.grid': 'グリッド',
       'layer.active': 'アクティブレイヤー',
 
-      // Constraint layer sub-categories
-      'constraint.toggle': '制約チェックの切替',
+      // Specific layer sub-categories
+      'constraint.toggle': '固有チェックの切替',
       'constraint.selectPresetFirst': 'プリセットを選択してください',
       'constraint.common': '共通',
       'constraint.edit': '編集',
       'constraint.play': 'プレイ',
       'constraint.check': 'チェック',
       'constraint.editSettings': '編集設定',
-      'constraint.playSettings': 'プレイ設定',
+      'constraint.playSettings': '解答設定',
       'constraint.checkSettings': 'チェック設定',
       'constraint.commonDesc': '共通設定',
       'constraint.editDesc': '問題を作成する',
       'constraint.playDesc': '問題を解く',
       'constraint.checkDesc': '解答を検証する',
-      'constraint.placeholder': '制約タイプを選択して設定',
+      'constraint.placeholder': '固有タイプを選択して設定',
       'constraint.preset': 'プリセット',
-      'constraint.propertiesPlaceholder': '制約プロパティがここに表示されます',
+      'constraint.propertiesPlaceholder': '固有プロパティがここに表示されます',
       'constraint.selectPreset': 'パズルプリセットを選択',
       'constraint.noPreset': 'プリセット未選択',
       'constraint.none': 'なし',
-      'constraint.noneDesc': '制約ルールを適用しない',
+      'constraint.noneDesc': '固有ルールなし（汎用モード）',
       'constraint.custom': 'カスタム',
-      'constraint.customDesc': 'カスタム制約ルールを作成',
-      'constraint.customDisabled': 'カスタム制約は未実装です',
+      'constraint.customDesc': 'カスタム固有ルールを作成',
+      'constraint.customDisabled': 'カスタム固有ルールは未実装です',
       'constraint.rules': 'ルール',
       'constraint.enabled': '有効',
       'constraint.disabled': '無効',
@@ -1018,7 +1018,7 @@ const resources = {
 
       // Puzzle preset
       'puzzle.preset': 'パズルプリセット',
-      'puzzle.noConstraint': '制約なし',
+      'puzzle.noConstraint': '汎用',
       'puzzle.noPresetsForGrid': 'このグリッドタイプ用のプリセットはありません',
 
       // Puzzle names
@@ -1336,7 +1336,7 @@ const resources = {
       'grid.iso.exterior': '外部',
       'grid.iso.interior': '内部',
       'grid.tab.shape': '盤面形状',
-      'grid.tab.display': '盤面表示',
+      'grid.tab.display': '盤面スタイル',
       'grid.mode': 'グリッドモード',
       'grid.mode.standard': '標準',
       'grid.mode.topology': '変形盤面',

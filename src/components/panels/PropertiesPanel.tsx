@@ -51,7 +51,7 @@ export const PropertiesPanel: React.FC = () => {
 
   // Derived state
   const isGridMode = activeLayer === 'grid';
-  const isConstraintMode = activeLayer === 'constraint';
+  const isSpecificMode = activeLayer === 'constraint';
   const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
   // When constraint is enabled, hide tool settings (tool is auto-selected by inputMode)
   const isConstraintEnabled = showConstraintLayer && currentSchema !== null;
@@ -272,7 +272,7 @@ export const PropertiesPanel: React.FC = () => {
         )}
 
         {/* Constraint properties - show when in constraint mode */}
-        {isConstraintMode && !isSolving && !isSolverMode && (
+        {isSpecificMode && !isSolving && !isSolverMode && (
           <div className="space-y-3">
             {/* Common/Preset tab: Preset tree list (for selecting puzzle type) */}
             {constraintSubCategory === 'common' && (
@@ -495,7 +495,7 @@ export const PropertiesPanel: React.FC = () => {
         )}
 
         {/* Auto mode panels - show when constraint is enabled (not in constraint layer), and auto input mode is active */}
-        {!isSolving && !isSolverMode && !isConstraintMode && isConstraintEnabled && currentInputMode === 'auto' && (() => {
+        {!isSolving && !isSolverMode && !isSpecificMode && isConstraintEnabled && currentInputMode === 'auto' && (() => {
           // Determine if we're in edit or play mode based on activeLayer
           const isEditMode = activeLayer === 'problem';
           const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
@@ -553,7 +553,7 @@ export const PropertiesPanel: React.FC = () => {
         })()}
 
         {/* Number input panel - show when constraint is enabled (not in constraint layer) and number/direc input mode is active */}
-        {!isSolving && !isSolverMode && !isConstraintMode && isConstraintEnabled && (currentInputMode === 'number' || currentInputMode === 'number-' || currentInputMode === 'direc') && (
+        {!isSolving && !isSolverMode && !isSpecificMode && isConstraintEnabled && (currentInputMode === 'number' || currentInputMode === 'number-' || currentInputMode === 'direc') && (
           <div className="p-2 bg-gray-50 rounded-sm border border-gray-200">
             <div className="font-medium text-xs text-gray-700 mb-2">
               {t('tool.number.input', 'Number Input')}
@@ -564,7 +564,7 @@ export const PropertiesPanel: React.FC = () => {
 
         {/* Arrow direction panel - show when constraint is enabled (not in constraint layer) and number/direc input mode is active */}
         {/* Allows converting regular numbers to directional clues by selecting a direction */}
-        {!isSolving && !isSolverMode && !isConstraintMode && isConstraintEnabled && (currentInputMode === 'direc' || currentInputMode === 'number' || currentInputMode === 'number-') && (
+        {!isSolving && !isSolverMode && !isSpecificMode && isConstraintEnabled && (currentInputMode === 'direc' || currentInputMode === 'number' || currentInputMode === 'number-') && (
           <div className="p-2 bg-gray-50 rounded-sm border border-gray-200">
             <div className="font-medium text-xs text-gray-700 mb-2">
               {t('prop.direction', 'Direction')}
@@ -574,12 +574,12 @@ export const PropertiesPanel: React.FC = () => {
         )}
 
         {/* Color Selection - show for most tools except select, and not in grid/constraint/constraint-enabled/solver mode */}
-        {!isSolving && !isSolverMode && !isGridMode && !isConstraintMode && !isConstraintEnabled && toolSettings.currentCategory !== 'select' && (
+        {!isSolving && !isSolverMode && !isGridMode && !isSpecificMode && !isConstraintEnabled && toolSettings.currentCategory !== 'select' && (
           <ColorSelector />
         )}
 
         {/* Line/Edge properties - toggle buttons */}
-        {!isSolving && !isSolverMode && !isGridMode && !isConstraintMode && !isConstraintEnabled && (toolSettings.currentCategory === 'line' ||
+        {!isSolving && !isSolverMode && !isGridMode && !isSpecificMode && !isConstraintEnabled && (toolSettings.currentCategory === 'line' ||
           toolSettings.currentCategory === 'edge' ||
           toolSettings.currentCategory === 'wall') && (
           <>
@@ -636,7 +636,7 @@ export const PropertiesPanel: React.FC = () => {
         )}
 
         {/* Symbol size - toggle buttons */}
-        {!isSolving && !isSolverMode && !isGridMode && !isConstraintMode && !isConstraintEnabled && toolSettings.currentCategory === 'symbol' && (
+        {!isSolving && !isSolverMode && !isGridMode && !isSpecificMode && !isConstraintEnabled && toolSettings.currentCategory === 'symbol' && (
           <div>
             <label className="block text-xs text-office-text-secondary mb-1">
               {t('prop.size')}
@@ -689,7 +689,7 @@ export const PropertiesPanel: React.FC = () => {
         )}
 
         {/* Number settings - size and position */}
-        {!isSolving && !isSolverMode && !isGridMode && !isConstraintMode && !isConstraintEnabled && toolSettings.currentCategory === 'number' && toolSettings.currentTool !== 'number-directional' && (
+        {!isSolving && !isSolverMode && !isGridMode && !isSpecificMode && !isConstraintEnabled && toolSettings.currentCategory === 'number' && toolSettings.currentTool !== 'number-directional' && (
           <>
             <NumberPositionSettings />
             <NumberInputPanel />
@@ -697,7 +697,7 @@ export const PropertiesPanel: React.FC = () => {
         )}
 
         {/* Arrow direction settings and number input for directional numbers */}
-        {!isSolving && !isSolverMode && !isGridMode && !isConstraintMode && !isConstraintEnabled && toolSettings.currentTool === 'number-directional' && (
+        {!isSolving && !isSolverMode && !isGridMode && !isSpecificMode && !isConstraintEnabled && toolSettings.currentTool === 'number-directional' && (
           <>
             <ArrowDirectionSettings />
             <NumberInputPanel />
@@ -705,13 +705,13 @@ export const PropertiesPanel: React.FC = () => {
         )}
 
         {/* Multicolor surface settings */}
-        {!isSolving && !isSolverMode && !isGridMode && !isConstraintMode && !isConstraintEnabled && toolSettings.currentTool === 'multicolor-surface' && (
+        {!isSolving && !isSolverMode && !isGridMode && !isSpecificMode && !isConstraintEnabled && toolSettings.currentTool === 'multicolor-surface' && (
           <MulticolorSettings />
         )}
       </div>
 
       {/* Symbol Panel - show when symbol category selected */}
-      {!isSolving && !isSolverMode && !isGridMode && !isConstraintMode && !isConstraintEnabled && toolSettings.currentCategory === 'symbol' && <SymbolPanel />}
+      {!isSolving && !isSolverMode && !isGridMode && !isSpecificMode && !isConstraintEnabled && toolSettings.currentCategory === 'symbol' && <SymbolPanel />}
     </div>
   );
 };

@@ -6,7 +6,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../store/puzzleStore';
 
-// Grid Shape Tab Content - grid type, size, topology preset
+// Grid Type Tab Content - grid type, size, topology preset
 export const GridShapeContent: React.FC = () => {
   const { t } = useTranslation();
   const { showAdjacency, setShowAdjacency, gridEditMode, setGridEditMode, previewTopology, grid } = usePuzzleStore();
@@ -83,7 +83,7 @@ export const GridShapeContent: React.FC = () => {
   );
 };
 
-// Grid Display Tab Content - styles and colors
+// Grid Style Tab Content - styles and colors
 export const GridDisplayContent: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { grid, setGrid } = usePuzzleStore();

@@ -67,8 +67,8 @@ function inBounds(ctx: ValidationContext, row: number, col: number): boolean {
  * checkLineExist - Check if any lines exist
  */
 function checkLineExist(ctx: ValidationContext): CheckResult {
-  const hasLines = Object.keys(ctx.puzzle.answer.lines).length > 0;
-  if (!hasLines) {
+  const lineCount = Object.keys(ctx.puzzle.answer.lines).length;
+  if (lineCount === 0) {
     return { ok: false };
   }
   return { ok: true };
@@ -291,13 +291,17 @@ function checkOneLoop(ctx: ValidationContext): CheckResult {
 // Register Check Functions
 // ========================================
 
+// Line-based functions (cell-to-cell connections, e.g., Mashu, Yajilin)
+// These check lines stored in puzzle.answer.lines
 registerCheckFunction('checkLineExist', checkLineExist);
-registerCheckFunction('checkBranchLine', checkBranchLine);
-registerCheckFunction('checkCrossLine', checkCrossLine);
-registerCheckFunction('checkWhitePearl1', checkWhitePearl1);
-registerCheckFunction('checkBlackPearl1', checkBlackPearl1);
-registerCheckFunction('checkBlackPearl2', checkBlackPearl2);
-registerCheckFunction('checkWhitePearl2', checkWhitePearl2);
+registerCheckFunction('checkLineBranch', checkBranchLine);
+registerCheckFunction('checkLineCross', checkCrossLine);
+registerCheckFunction('checkLineDeadend', checkDeadendLine);
+registerCheckFunction('checkLineOneLoop', checkOneLoop);
+
+// Mashu-specific pearl constraints
+registerCheckFunction('checkWhitePearlStraight', checkWhitePearl1);
+registerCheckFunction('checkBlackPearlTurn', checkBlackPearl1);
+registerCheckFunction('checkBlackPearlExtend', checkBlackPearl2);
+registerCheckFunction('checkWhitePearlTurnNeighbor', checkWhitePearl2);
 registerCheckFunction('checkNoLinePearl', checkNoLinePearl);
-registerCheckFunction('checkDeadendLine', checkDeadendLine);
-registerCheckFunction('checkOneLoop', checkOneLoop);

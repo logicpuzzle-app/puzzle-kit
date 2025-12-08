@@ -93,15 +93,6 @@ export const createConstraintSlice: SliceCreator<ConstraintSlice> = (set, get) =
     if (mode === 'auto') {
       const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
 
-      // Debug: log auto mode configuration
-      console.log('[setInputMode] auto mode config:', {
-        isEditMode,
-        activeLayer,
-        constraintSubCategory,
-        autoConfigType: autoConfig.type,
-        leftButtonTool: autoConfig.leftButton.tool,
-      });
-
       // Use leftButton configuration (primary action)
       // For 2-button mode with 'cell' type, use surface-fill instead
       if (autoConfig.type === 'cell' && toolSettings.surfaceButtonMode === '2-button') {
@@ -122,14 +113,6 @@ export const createConstraintSlice: SliceCreator<ConstraintSlice> = (set, get) =
     }
 
     if (toolMapping) {
-      // Debug: log tool mapping with input constraint
-      console.log('[setInputMode] toolMapping:', {
-        mode,
-        tool: toolMapping.tool,
-        inputConstraint: toolMapping.inputConstraint,
-        schemaNoAdjacentShade: currentSchema?.noAdjacentShade,
-      });
-
       // Update tool and category
       const newSettings: Parameters<typeof setToolSettings>[0] = {
         currentTool: toolMapping.tool,

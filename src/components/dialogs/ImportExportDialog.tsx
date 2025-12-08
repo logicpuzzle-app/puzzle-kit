@@ -28,10 +28,11 @@ import { getGridDimensions } from '../../utils/gridUtils';
 import { usePuzzleStore } from '../../store/puzzleStore';
 import type { PuzzleState, GridConfig } from '../../types';
 import type { GridTopology } from '../../utils/gridTopology';
+import { generatePuzzlinkUrl, type PuzzlinkType } from '../../utils/puzzlinkExporter';
 
 export type DialogMode = 'import' | 'export';
 export type ImportFormat = 'penpa' | 'puzzlink' | 'json' | 'auto';
-export type ExportFormat = 'penpa' | 'png' | 'svg' | 'json';
+export type ExportFormat = 'penpa' | 'puzzlink' | 'png' | 'svg' | 'json';
 
 interface ImportExportDialogProps {
   isOpen: boolean;
@@ -77,7 +78,17 @@ export const ImportExportDialog: React.FC<ImportExportDialogProps> = ({
   onExport,
 }) => {
   // Get topology info from store
-  const { useTopology, topology } = usePuzzleStore();
+  const { useTopology, topology, currentSchemaId } = usePuzzleStore();
+
+  const schemaToPuzzlink: Partial<Record<string, PuzzlinkType>> = {
+    nurikabe: 'nurikabe',
+    slither: 'slither',
+    mashu: 'masyu',
+    yajilin: 'yajilin',
+    heyawake: 'heyawake',
+  };
+  const puzzlinkType = currentSchemaId ? schemaToPuzzlink[currentSchemaId] : undefined;
+  const puzzlinkSupported = Boolean(puzzlinkType);
 
   const [inputValue, setInputValue] = useState('');
   const [exportFormat, setExportFormat] = useState<ExportFormat>('penpa');
@@ -94,6 +105,13 @@ export const ImportExportDialog: React.FC<ImportExportDialogProps> = ({
     setInputValue('');
     setExportUrl('');
   }, [mode, isOpen]);
+
+  // If puzz.link export is not supported for the current preset, fall back to Penpa
+  React.useEffect(() => {
+    if (exportFormat === 'puzzlink' && !puzzlinkSupported) {
+      setExportFormat('penpa');
+    }
+  }, [exportFormat, puzzlinkSupported]);
 
   // Handle import
   const handleImport = useCallback(async () => {
@@ -208,6 +226,17 @@ export const ImportExportDialog: React.FC<ImportExportDialogProps> = ({
           break;
         }
 
+        case 'puzzlink': {
+          if (!puzzlinkType) {
+            throw new Error('puzz.link export is available only for supported constraint presets');
+          }
+          const url = generatePuzzlinkUrl(puzzlinkType, gridConfig, puzzleState.problem);
+          setExportUrl(url);
+          onExport?.('puzzlink', url);
+          setSuccess('puzz.link URL generated!');
+          break;
+        }
+
         case 'png': {
           if (!svgRef?.current) {
             setError('SVG element not available');
@@ -263,7 +292,7 @@ export const ImportExportDialog: React.FC<ImportExportDialogProps> = ({
     } finally {
       setIsProcessing(false);
     }
-  }, [exportFormat, gridConfig, puzzleState, svgRef, onExport]);
+  }, [exportFormat, gridConfig, puzzleState, svgRef, onExport, useTopology, topology, puzzlinkType]);
 
   // Copy URL to clipboard
   const handleCopyUrl = useCallback(async () => {
@@ -325,22 +354,35 @@ export const ImportExportDialog: React.FC<ImportExportDialogProps> = ({
               <div style={styles.section}>
                 <label style={styles.label}>Export format:</label>
                 <div style={styles.formatButtons}>
-                  {(['penpa', 'png', 'svg', 'json'] as ExportFormat[]).map((format) => (
-                    <button
-                      key={format}
-                      style={{
-                        ...styles.formatButton,
-                        ...(exportFormat === format ? styles.formatButtonActive : {}),
-                      }}
-                      onClick={() => setExportFormat(format)}
-                    >
-                      {format.toUpperCase()}
-                    </button>
-                  ))}
+                  {(['penpa', 'puzzlink', 'png', 'svg', 'json'] as ExportFormat[]).map((format) => {
+                    const isDisabled = format === 'puzzlink' && !puzzlinkSupported;
+                    return (
+                      <button
+                        key={format}
+                        style={{
+                          ...styles.formatButton,
+                          ...(exportFormat === format ? styles.formatButtonActive : {}),
+                          ...(isDisabled ? styles.formatButtonDisabled : {}),
+                        }}
+                        onClick={() => {
+                          if (isDisabled) return;
+                          setExportFormat(format);
+                        }}
+                        disabled={isDisabled}
+                        title={
+                          isDisabled
+                            ? 'puzz.link export is available when a supported constraint preset is active'
+                            : undefined
+                        }
+                      >
+                        {format.toUpperCase()}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {exportUrl && exportFormat === 'penpa' && (
+              {exportUrl && (exportFormat === 'penpa' || exportFormat === 'puzzlink') && (
                 <div style={styles.section}>
                   <label style={styles.label}>Generated URL:</label>
                   <div style={styles.urlContainer}>
@@ -535,6 +577,10 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: '#4a90d9',
     borderColor: '#4a90d9',
     color: '#fff',
+  },
+  formatButtonDisabled: {
+    opacity: 0.4,
+    cursor: 'not-allowed',
   },
   urlContainer: {
     display: 'flex',

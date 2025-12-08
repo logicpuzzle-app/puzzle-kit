@@ -336,7 +336,28 @@ export const createCursorSlice: SliceCreator<CursorSlice> = (_set, get) => ({
       }
 
       // Line input modes - show line cursor
-      if (isAutoLineMode) {
+      // This includes auto mode with line type, and explicit 'line' mode
+      const isExplicitLineMode = currentInputMode === 'line';
+      if (isAutoLineMode || isExplicitLineMode) {
+        return {
+          css: 'cursor-crosshair',
+          overlay: {
+            showCellCursor: false,
+            showLineCursor: true,
+            showSymbolCursor: false,
+            showNumberCursor: false,
+            showSelectionRect: false,
+            showMergePreview: false,
+            showSplitPreview: false,
+            showSculptPreview: false,
+            showSpecialPreview: false,
+          },
+        };
+      }
+
+      // Peke (X mark) mode - show line cursor (placed on edge centers)
+      const isPekeMode = currentInputMode === 'peke';
+      if (isPekeMode) {
         return {
           css: 'cursor-crosshair',
           overlay: {

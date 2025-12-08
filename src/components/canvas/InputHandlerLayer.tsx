@@ -15,7 +15,7 @@ import { useCanvasInteraction } from '../../hooks/useCanvasInteraction';
 import { useCellFinder } from '../../hooks/useCellFinder';
 import { useSpecialPreview } from '../../hooks/useSpecialPreview';
 import { useNumberKeyboard } from '../../hooks/useNumberKeyboard';
-import { screenToSvg, getCellCorners, getCellCenter } from '../../utils/gridUtils';
+import { screenToSvg, getCellCorners, getCellCenter, findNearestEdge } from '../../utils/gridUtils';
 import type { NumberPosition, SymbolElement, Point } from '../../types';
 import { toDataLayer } from '../../types';
 import type { TopologyVertex } from '../../utils/gridTopology';
@@ -35,6 +35,8 @@ interface FlickState {
   rightButton: boolean; // true if right mouse button was used
   // For line-cell auto mode (Yajilin): track if line was drawn during drag
   lineDrawn: boolean; // true if any line segment was drawn during drag
+  // For peke input mode (Slitherlink): 'add' or 'remove' determined on first click
+  pekeInputMode: 'add' | 'remove' | null;
 }
 
 // ========================================
@@ -96,6 +98,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     addDirectionalClue,
     removeDirectionalClue,
     removeNumber,
+    addSurface,
     numberSelection,
     setNumberSelection,
     useTopology,
@@ -108,16 +111,16 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
   } = usePuzzleStore();
 
   // Flick input state for directional number input (pzpr-puzzlink style)
-  const flickStateRef = useRef<FlickState>({ startCell: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false });
+  const flickStateRef = useRef<FlickState>({ startCell: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false, pekeInputMode: null });
 
   // Excel-like keyboard input for number tools
   useNumberKeyboard();
 
   // Derived state: grid mode is when activeLayer is 'grid'
   const isGridMode = activeLayer === 'grid';
-  // Constraint mode: activeLayer === 'constraint'
-  const isConstraintMode = activeLayer === 'constraint';
-  // Constraint enabled: showConstraintLayer + schema selected (for number input)
+  // Specific mode: activeLayer === 'constraint'
+  const isSpecificMode = activeLayer === 'constraint';
+  // Specific enabled: showConstraintLayer + schema selected (for number input)
   const isConstraintEnabled = showConstraintLayer && currentSchemaId !== null;
 
   // Use preview topology if available (for grid shape preview)
@@ -210,6 +213,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
             inputted: false, // Will be set to true if flick direction is input
             rightButton: e.button === 2,
             lineDrawn: false,
+            pekeInputMode: null,
           };
 
           // Don't do number input here - defer to mouseup (pzprjs style)
@@ -241,7 +245,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           return;
         }
 
-        // Check if auto mode is line-cell type (Yajilin: left=line, right=shade, click=shade)
+        // Check if auto mode is line-cell type (Yajilin: left=line, right=dot drag, click=shade cycle)
         // Reuse currentSchema and autoConfig from above (direc mode check)
         const isAutoLineCellMode = currentInputMode === 'auto' && autoConfig.type === 'line-cell';
 
@@ -264,13 +268,38 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
             inputted: false,
             rightButton: e.button === 2,
             lineDrawn: false,
+            pekeInputMode: null,
           };
 
-          // Let base handler handle the line drawing (left button) or we handle shade (right button) later
+          // Right click drag: start dot painting immediately
+          if (e.button === 2 && cellInfo) {
+            resetFillModes();
+            // Paint dot on first cell
+            const rightButtonSettings = autoConfig.rightButton.settings;
+            const colorOverride = {
+              color: rightButtonSettings?.color || '#444444',
+              secondaryColor: rightButtonSettings?.secondaryColor || '#A0FFA0',
+            };
+            // Use handleSurfaceTool with dot mode by temporarily setting tool
+            // Instead, directly add a dot surface
+            const cellId = `cell-${cellInfo.row}-${cellInfo.col}`;
+            const dataLayer = toDataLayer(activeLayer);
+            // Check if surface already exists
+            const existingSurface = Object.values(puzzle[dataLayer].surfaces).find(
+              (s) => s.cellId === cellId
+            );
+            if (!existingSurface) {
+              addSurface({ cellId, color: colorOverride.secondaryColor, layer: dataLayer, displayMode: 'dot' });
+            }
+            flickStateRef.current.inputted = true;
+            return; // Don't call base handler for right click
+          }
+
+          // Let base handler handle the line drawing (left button)
           // The base handler will draw lines; we track lineDrawn in mouse move
         }
 
-        // Check if auto mode is line type (Slitherlink: left drag=line, left click=peke, right=peke)
+        // Check if auto mode is line type (Slitherlink: left drag=line, left click=peke, right drag=peke)
         const isAutoLineMode = currentInputMode === 'auto' && autoConfig.type === 'line';
 
         if (isAutoLineMode) {
@@ -291,25 +320,45 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
             inputted: false,
             rightButton: e.button === 2,
             lineDrawn: false,
+            pekeInputMode: null,
           };
 
-          // Right click: immediately handle peke (don't wait for mouseup)
+          // Right click: start peke input mode (pzprjs style: drag to continue adding/removing peke)
           if (e.button === 2) {
-            // Apply peke (X mark) settings from autoConfig.rightButton
             const rightButtonSettings = autoConfig.rightButton.settings;
-            if (rightButtonSettings) {
-              setToolSettings({
-                currentTool: 'symbol-cross',
-                currentCategory: 'symbol',
-                color: rightButtonSettings.color || '#007F00',
-                symbolSize: rightButtonSettings.symbolSize || 'small',
-                symbolGridPoints: rightButtonSettings.symbolGridPoints || ['edge'],
-              });
+            const pekeColor = rightButtonSettings?.color || '#007F00';
+            const pekeGridPoints = (rightButtonSettings?.symbolGridPoints || ['edge']) as ('cell' | 'vertex' | 'edge')[];
+
+            // Determine input mode based on whether peke exists at the clicked edge
+            // pzprjs style: if peke exists, remove mode; otherwise, add mode
+            // This mode is maintained throughout the drag
+            const dataLayer = toDataLayer(activeLayer);
+            const layerData = puzzle[dataLayer];
+
+            // Find nearest edge to determine input mode
+            const edge = findNearestEdge(point, grid, grid.cellSize * 0.6);
+            let pekeExists = false;
+            if (edge) {
+              const edgeId = edge.type === 'h'
+                ? `edge-h-${edge.row}-${edge.col}`
+                : `edge-v-${edge.row}-${edge.col}`;
+              pekeExists = Object.values(layerData.symbols).some(
+                (s) => s.cellId === edgeId && s.symbolType === 'cross'
+              );
             }
-            // Input peke (X mark) on the nearest edge
-            handleSymbolTool(point, false, false); // Add peke symbol
+
+            const inputMode: 'add' | 'remove' = pekeExists ? 'remove' : 'add';
+            flickStateRef.current.pekeInputMode = inputMode;
+
+            // Input first peke (X mark) on the nearest edge with determined mode
+            handleSymbolTool(point, false, false, {
+              symbolTypeOverride: 'cross',
+              inputMode,
+              colorOverride: pekeColor,
+              symbolGridPointsOverride: pekeGridPoints,
+            });
             flickStateRef.current.inputted = true;
-            return; // Don't fall through to base handler
+            // Don't return - allow mouse move to continue peke input
           }
 
           // Left click: let base handler start line drawing, we'll check on mouseup
@@ -317,8 +366,8 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         // Fall through to handle other tools (auto mode delegates to surface/line/etc.)
       }
 
-      // In constraint mode (activeLayer === 'constraint'), disable editing
-      if (isConstraintMode) {
+      // In specific mode (activeLayer === 'constraint'), disable editing
+      if (isSpecificMode) {
         // Still allow wheel/pan interactions via base handler for pan mode
         if (canvas.panMode) {
           baseHandleMouseDown(e);
@@ -370,6 +419,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
             inputted: false,
             rightButton: e.button === 2,
             lineDrawn: false,
+            pekeInputMode: null,
           };
 
           // Handle right-click delete
@@ -437,10 +487,12 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       activeLayer,
       removeDirectionalClue,
       isGridMode,
-      isConstraintMode,
+      isSpecificMode,
       isConstraintEnabled,
       currentInputMode,
       findCellAtPoint,
+      resetFillModes,
+      addSurface,
     ]
   );
 
@@ -544,6 +596,34 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         }
       }
 
+      // For line-cell auto mode: handle right click drag as dot painting
+      if (isConstraintEnabled && flickStateRef.current.rightButton && flickStateRef.current.inputted) {
+        const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
+        const isPlayMode = activeLayer === 'answer';
+        const autoConfig = getAutoModeConfig(currentSchema, !isPlayMode);
+        const isAutoLineCellMode = currentInputMode === 'auto' && autoConfig.type === 'line-cell';
+
+        if (isAutoLineCellMode) {
+          const cellInfo = findCellAtPoint(point);
+          if (cellInfo) {
+            const cellId = `cell-${cellInfo.row}-${cellInfo.col}`;
+            const dataLayer = toDataLayer(activeLayer);
+            // Check if surface already exists
+            const existingSurface = Object.values(puzzle[dataLayer].surfaces).find(
+              (s) => s.cellId === cellId
+            );
+            if (!existingSurface) {
+              const rightButtonSettings = autoConfig.rightButton.settings;
+              const colorOverride = {
+                color: rightButtonSettings?.color || '#444444',
+                secondaryColor: rightButtonSettings?.secondaryColor || '#A0FFA0',
+              };
+              addSurface({ cellId, color: colorOverride.secondaryColor, layer: dataLayer, displayMode: 'dot' });
+            }
+          }
+        }
+      }
+
       // For line-cell/line auto mode: track if we've moved enough to consider it a line drag
       if (isConstraintEnabled && flickStateRef.current.startPoint && !flickStateRef.current.lineDrawn) {
         const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
@@ -563,6 +643,25 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
             flickStateRef.current.lineDrawn = true;
           }
         }
+
+        // For line auto mode (Slitherlink): handle right click drag as peke painting
+        // pzprjs style: drag continues to add/remove peke on edges, using determined mode
+        if (isAutoLineMode && flickStateRef.current.rightButton && flickStateRef.current.inputted && flickStateRef.current.pekeInputMode) {
+          const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
+          const isPlayMode = activeLayer === 'answer';
+          const autoConfigForPeke = getAutoModeConfig(currentSchema, !isPlayMode);
+          const rightButtonSettings = autoConfigForPeke.rightButton.settings;
+          const pekeColor = rightButtonSettings?.color || '#007F00';
+          const pekeGridPoints = (rightButtonSettings?.symbolGridPoints || ['edge']) as ('cell' | 'vertex' | 'edge')[];
+
+          // Continue peke input during right drag with determined mode
+          handleSymbolTool(point, false, false, {
+            symbolTypeOverride: 'cross',
+            inputMode: flickStateRef.current.pekeInputMode,
+            colorOverride: pekeColor,
+            symbolGridPointsOverride: pekeGridPoints,
+          });
+        }
       }
 
       // Update line hover point for line tool cursor
@@ -581,7 +680,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         updateSculptHover(point);
       }
     },
-    [baseHandleMouseMove, canvas.zoom, canvas.panX, canvas.panY, svgRef, hoverCell, setHoverCell, updateLineHoverPoint, updateSymbolHoverPoint, findCellAtPoint, isGridMode, gridEditMode, updateSplitHoverVertex, updateSculptHover, isConstraintEnabled, currentInputMode, currentSchemaId, grid.cols, grid.cellSize, puzzle, activeLayer, addDirectionalClue]
+    [baseHandleMouseMove, canvas.zoom, canvas.panX, canvas.panY, svgRef, hoverCell, setHoverCell, updateLineHoverPoint, updateSymbolHoverPoint, findCellAtPoint, isGridMode, gridEditMode, updateSplitHoverVertex, updateSculptHover, isConstraintEnabled, currentInputMode, currentSchemaId, grid.cols, grid.cellSize, puzzle, activeLayer, addDirectionalClue, addSurface, handleSymbolTool]
   );
 
   // Handle mouse up for selection end
@@ -690,7 +789,10 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       }
 
       // Handle line-cell auto mode (Yajilin): if no line was drawn, input shade
-      // pzprjs behavior: left click without drag OR right click = shade cycle
+      // pzprjs behavior:
+      // - Left drag: line
+      // - Left click (no drag): shade cycle (none -> shade -> dot -> none)
+      // - Right click: reverse shade cycle (none -> dot -> shade -> none)
       const isAutoLineCellMode = currentInputMode === 'auto' && autoConfig.type === 'line-cell';
       if (isAutoLineCellMode && isConstraintEnabled && flickState.startCell) {
         const point = screenToSvg(
@@ -706,37 +808,37 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         const isSameCell = cellInfo && cellInfo.row === row && cellInfo.col === col;
 
         // Determine shade input based on button mode
-        // 2-button mode: Right button = shade
+        // 2-button mode:
+        //   - Left click (no drag) = shade cycle (forward)
+        //   - Right click drag = dot painting (handled in mouseDown/mouseMove, skip here)
         // 1-button mode: Left click without drag = shade, Drag = line
-        const is2ButtonMode = toolSettings.surfaceButtonMode === '2-button';
-        const shouldInputShade = is2ButtonMode
-          ? flickState.rightButton // 2-button: only right click triggers shade
-          : (!flickState.lineDrawn && isSameCell); // 1-button: click without drag triggers shade
+        // Note: Right click drag already paints dots in mouseDown/mouseMove, so we skip shade cycle here
+        const shouldInputShade = !flickState.rightButton && !flickState.lineDrawn && isSameCell;
 
         if (shouldInputShade) {
           // Reset fill modes before surface cycle to start fresh
           resetFillModes();
 
-          // Apply color settings from autoConfig.rightButton before calling surface cycle
+          // Get color settings from autoConfig.rightButton
+          // Use colorOverride to avoid modifying toolSettings (which would affect line color)
           const rightButtonSettings = autoConfig.rightButton.settings;
-          if (rightButtonSettings) {
-            setToolSettings({
-              color: rightButtonSettings.color || '#444444',
-              secondaryColor: rightButtonSettings.secondaryColor || '#A0FFA0',
-              inputConstraint: autoConfig.rightButton.inputConstraint || 'none',
-            });
-          }
+          const colorOverride = {
+            color: rightButtonSettings?.color || '#444444',
+            secondaryColor: rightButtonSettings?.secondaryColor || '#A0FFA0',
+          };
 
-          // Apply noAdjacent constraint from schema
-          handleSurfaceCycleTool(point, false); // false = not right click (forward cycle)
+          // Apply noAdjacent constraint from schema - pass colors directly
+          // Right click = reverse cycle (isRightClick=true)
+          // Don't modify toolSettings here to preserve line color for next drag
+          handleSurfaceCycleTool(point, flickState.rightButton, colorOverride);
         }
       }
 
       // Handle line auto mode (Slitherlink): if left click without drag, input peke
-      // pzprjs behavior: left click without drag = peke, right click = peke (already handled in mouseDown)
+      // pzprjs behavior: left click without drag = peke (toggle), right click = peke (already handled in mouseDown)
       const isAutoLineMode = currentInputMode === 'auto' && autoConfig.type === 'line';
       if (isAutoLineMode && isConstraintEnabled && flickState.startPoint && !flickState.inputted) {
-        // Left click without drag: input peke (X mark)
+        // Left click without drag: input peke (X mark) with toggle mode
         if (!flickState.rightButton && !flickState.lineDrawn) {
           const point = screenToSvg(
             e.clientX,
@@ -748,25 +850,24 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           );
           // Apply peke (X mark) settings from autoConfig.rightButton
           const rightButtonSettings = autoConfig.rightButton.settings;
-          if (rightButtonSettings) {
-            setToolSettings({
-              currentTool: 'symbol-cross',
-              currentCategory: 'symbol',
-              color: rightButtonSettings.color || '#007F00',
-              symbolSize: rightButtonSettings.symbolSize || 'small',
-              symbolGridPoints: rightButtonSettings.symbolGridPoints || ['edge'],
-            });
-          }
-          // Input peke (X mark) on the nearest edge
-          handleSymbolTool(point, false, false);
+          const pekeColor = rightButtonSettings?.color || '#007F00';
+          const pekeGridPoints = (rightButtonSettings?.symbolGridPoints || ['edge']) as ('cell' | 'vertex' | 'edge')[];
+
+          // Input peke (X mark) on the nearest edge with toggle mode (for single click)
+          handleSymbolTool(point, false, false, {
+            symbolTypeOverride: 'cross',
+            inputMode: 'toggle',
+            colorOverride: pekeColor,
+            symbolGridPointsOverride: pekeGridPoints,
+          });
         }
       }
 
       // Reset flick state on mouse up
-      flickStateRef.current = { startCell: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false };
+      flickStateRef.current = { startCell: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false, pekeInputMode: null };
       baseHandleMouseUp(e);
     },
-    [baseHandleMouseUp, currentInputMode, currentSchemaId, activeLayer, isConstraintEnabled, canvas.zoom, canvas.panX, canvas.panY, svgRef, findCellAtPoint, handleNumberTool, handleSurfaceCycleTool, handleSymbolTool, resetFillModes, setToolSettings, toolSettings.surfaceButtonMode, toolSettings.currentTool, grid.cols, puzzle, addDirectionalClue, removeNumber]
+    [baseHandleMouseUp, currentInputMode, currentSchemaId, activeLayer, isConstraintEnabled, canvas.zoom, canvas.panX, canvas.panY, svgRef, findCellAtPoint, handleNumberTool, handleSurfaceCycleTool, handleSymbolTool, resetFillModes, setToolSettings, toolSettings.currentTool, grid.cols, puzzle, addDirectionalClue, removeNumber]
   );
 
   // Handle mouse leave - clear hover cell
@@ -775,7 +876,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       baseHandleMouseUp(e);
       setHoverCell(null);
       // Reset flick state on mouse leave
-      flickStateRef.current = { startCell: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false };
+      flickStateRef.current = { startCell: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false, pekeInputMode: null };
     },
     [baseHandleMouseUp, setHoverCell]
   );

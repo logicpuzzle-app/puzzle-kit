@@ -9,6 +9,7 @@ import { CheckAnswerModal, ConfirmModal, AlertModal, ShortcutsModal, UrlImportMo
 import { usePuzzleStore } from './store/puzzleStore';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useStorageErrorHandler } from './hooks/useStorageErrorHandler';
+import { useStoragePersistence } from './hooks/useStoragePersistence';
 import { toDataLayer } from './types';
 
 function App() {
@@ -17,6 +18,9 @@ function App() {
 
   // Global keyboard shortcuts
   useKeyboardShortcuts();
+
+  // Storage persistence (auto-save/load settings to localStorage)
+  useStoragePersistence();
 
   // Storage error handling
   const { error: storageError, clearError: clearStorageError, isErrorOpen: isStorageErrorOpen } = useStorageErrorHandler();

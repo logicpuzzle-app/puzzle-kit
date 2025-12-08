@@ -28,6 +28,12 @@ export interface TopologyNode {
 }
 
 /**
+ * Coordinate tuple: [row, col] or null if not applicable
+ * Use index && index[0] != null && index[1] != null to check validity
+ */
+export type Index = [number | null, number | null] | null;
+
+/**
  * A cell in the topology with its boundary vertices
  */
 export interface TopologyCell {
@@ -41,8 +47,15 @@ export interface TopologyCell {
   adjacentCells: string[];
   /** IDs of edges on the boundary */
   boundaryEdges: string[];
-  /** Original row/col for square grids */
+  /**
+   * Grid index [row, col] for stable reference without parsing cellId.
+   * - For regular grids: [row, col] is always set
+   * - For special topologies where index is not applicable: null
+   */
+  index?: Index;
+  /** @deprecated Use index instead. Original row for square grids */
   row?: number;
+  /** @deprecated Use index instead. Original col for square grids */
   col?: number;
   /** Optional list of original cells (for merged/split) */
   originalCells?: string[];
@@ -62,8 +75,15 @@ export interface TopologyVertex {
   adjacentEdges: string[];
   /** IDs of adjacent vertices (connected by an edge) */
   adjacentVertices: string[];
-  /** Original row/col for square grids */
+  /**
+   * Grid index [row, col] for stable reference without parsing vertexId.
+   * - For regular grids: [row, col] is always set
+   * - For special topologies where index is not applicable: null
+   */
+  index?: Index;
+  /** @deprecated Use index instead. Original row for square grids */
   row?: number;
+  /** @deprecated Use index instead. Original col for square grids */
   col?: number;
 }
 
@@ -85,8 +105,15 @@ export interface TopologyEdge {
   isBoundary: boolean;
   /** Direction: 'h' for horizontal, 'v' for vertical (for square grids) */
   direction?: 'h' | 'v';
-  /** Original row/col for square grids */
+  /**
+   * Grid index [row, col] for stable reference without parsing edgeId.
+   * - For regular grids: [row, col] is always set
+   * - For special topologies where index is not applicable: null
+   */
+  index?: Index;
+  /** @deprecated Use index instead. Original row for square grids */
   row?: number;
+  /** @deprecated Use index instead. Original col for square grids */
   col?: number;
 }
 
@@ -125,9 +152,14 @@ export interface CellDefinition {
   center?: Point;
   /** Optional list of original cell ids */
   originalCells?: string[];
-  /** Optional row index */
+  /**
+   * Grid index [row, col] for stable reference.
+   * If provided, will be copied to the resulting TopologyCell.
+   */
+  index?: Index;
+  /** @deprecated Use index instead. Optional row index */
   row?: number;
-  /** Optional column index */
+  /** @deprecated Use index instead. Optional column index */
   col?: number;
 }
 

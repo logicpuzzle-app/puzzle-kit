@@ -31,7 +31,10 @@ export function useGridPointUtils(grid: GridConfig) {
    */
   const findNearestGridPoint = useCallback(
     (point: Point, allowedTypes: LineGridPoint[]): { id: string; position: Point } | null => {
-      const threshold = grid.cellSize * 0.4; // Detection threshold
+      // Detection threshold: wider for cell-only mode (Yajilin-style lines)
+      // For cell-only, use 0.7 (almost full cell), otherwise 0.4 for mixed point types
+      const isCellOnly = allowedTypes.length === 1 && allowedTypes[0] === 'cell';
+      const threshold = grid.cellSize * (isCellOnly ? 0.7 : 0.4);
       let bestId: string | null = null;
       let bestPosition: Point | null = null;
       let bestDistance = Infinity;

@@ -123,7 +123,7 @@ export function useInputRouter({ svgRef }: UseInputRouterOptions) {
   const { canvas, toolSettings, activeLayer } = usePuzzleStore();
 
   const isGridMode = activeLayer === 'grid';
-  const isConstraintMode = activeLayer === 'constraint';
+  const isSpecificMode = activeLayer === 'constraint';
 
   /**
    * Convert screen coordinates to SVG coordinates
@@ -163,9 +163,9 @@ export function useInputRouter({ svgRef }: UseInputRouterOptions) {
    * Check if editing is allowed in current mode
    */
   const canEdit = useMemo(() => {
-    if (isConstraintMode) return false;
+    if (isSpecificMode) return false;
     return true;
-  }, [isConstraintMode]);
+  }, [isSpecificMode]);
 
   return {
     getPoint,
@@ -173,6 +173,6 @@ export function useInputRouter({ svgRef }: UseInputRouterOptions) {
     isCategory,
     canEdit,
     isGridMode,
-    isConstraintMode,
+    isSpecificMode,
   };
 }

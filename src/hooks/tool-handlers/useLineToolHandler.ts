@@ -272,6 +272,24 @@ export function useLineToolHandler({
       if (isStart) {
         setDrawStartPoint(vertexId);
       } else if (drawStartPoint && drawStartPoint !== vertexId) {
+        // Check if vertices are orthogonally adjacent (no diagonal edges)
+        const startMatch = drawStartPoint.match(/vertex-(\d+)-(\d+)/);
+        const endMatch = vertexId.match(/vertex-(\d+)-(\d+)/);
+        if (startMatch && endMatch) {
+          const startRow = parseInt(startMatch[1], 10);
+          const startCol = parseInt(startMatch[2], 10);
+          const endRow = parseInt(endMatch[1], 10);
+          const endCol = parseInt(endMatch[2], 10);
+          const rowDiff = Math.abs(endRow - startRow);
+          const colDiff = Math.abs(endCol - startCol);
+          // Only allow orthogonal adjacency: (1,0) or (0,1)
+          if (!((rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1))) {
+            // Not adjacent orthogonally - update start point and skip
+            setDrawStartPoint(vertexId);
+            return;
+          }
+        }
+
         // Check if edge already exists
         const dataLayer = toDataLayer(activeLayer);
         const layerData = puzzle[dataLayer];

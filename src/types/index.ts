@@ -246,12 +246,17 @@ export interface GridPoint {
   y: number;  // SVG coordinate
 }
 
+// Surface display modes
+export type SurfaceDisplayMode = 'fill' | 'dot';
+
 // Drawing elements
 export interface SurfaceElement {
   id: string;
   cellId: string;
   color: string;
   layer: DataLayerType;
+  /** Display mode: 'fill' for full cell fill, 'dot' for small dot (pzprjs qsub style) */
+  displayMode?: SurfaceDisplayMode;
 }
 
 export interface LineElement {

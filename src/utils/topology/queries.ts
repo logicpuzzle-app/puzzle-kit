@@ -10,6 +10,7 @@ import type {
   TopologyCell,
   TopologyVertex,
   TopologyEdge,
+  Index,
 } from './types';
 import { isPointInPolygon } from './helpers';
 
@@ -449,4 +450,118 @@ export function getCellPolygon(
   return cell.boundaryVertices
     .map(vId => topology.vertices.get(vId)?.position)
     .filter((p): p is Point => p !== undefined);
+}
+
+// ========================================
+// Index Query Functions
+// ========================================
+
+/**
+ * Get the index [row, col] of a cell.
+ * Returns the cell's index if set, otherwise null.
+ * Use this instead of parsing cellId for stable coordinate access.
+ *
+ * @param topology The topology
+ * @param cellId Cell ID
+ * @returns Index [row, col] or null if not available
+ */
+export function getCellIndex(
+  topology: GridTopology,
+  cellId: string
+): Index {
+  const cell = topology.cells.get(cellId);
+  if (!cell) return null;
+  return cell.index ?? null;
+}
+
+/**
+ * Get the index [row, col] of a vertex.
+ * Returns the vertex's index if set, otherwise null.
+ * Use this instead of parsing vertexId for stable coordinate access.
+ *
+ * @param topology The topology
+ * @param vertexId Vertex ID
+ * @returns Index [row, col] or null if not available
+ */
+export function getVertexIndex(
+  topology: GridTopology,
+  vertexId: string
+): Index {
+  const vertex = topology.vertices.get(vertexId);
+  if (!vertex) return null;
+  return vertex.index ?? null;
+}
+
+/**
+ * Get the index [row, col] of an edge.
+ * Returns the edge's index if set, otherwise null.
+ * Use this instead of parsing edgeId for stable coordinate access.
+ *
+ * @param topology The topology
+ * @param edgeId Edge ID
+ * @returns Index [row, col] or null if not available
+ */
+export function getEdgeIndex(
+  topology: GridTopology,
+  edgeId: string
+): Index {
+  const edge = topology.edges.get(edgeId);
+  if (!edge) return null;
+  return edge.index ?? null;
+}
+
+/**
+ * Check if an index is valid (non-null with both row and col set).
+ *
+ * @param index Index to check
+ * @returns true if index is valid
+ */
+export function isValidIndex(index: Index): index is [number, number] {
+  return index !== null && index[0] !== null && index[1] !== null;
+}
+
+/**
+ * Find a cell by its index [row, col].
+ * Returns the first cell with matching index, or null if not found.
+ *
+ * @param topology The topology
+ * @param row Row
+ * @param col Column
+ * @returns Cell or null
+ */
+export function findCellByIndex(
+  topology: GridTopology,
+  row: number,
+  col: number
+): TopologyCell | null {
+  for (const cell of topology.cells.values()) {
+    const idx = cell.index;
+    if (idx && idx[0] === row && idx[1] === col) {
+      return cell;
+    }
+  }
+  return null;
+}
+
+/**
+ * Find a vertex by its index [row, col].
+ * Returns the first vertex with matching index, or null if not found.
+ *
+ * @param topology The topology
+ * @param row Row
+ * @param col Column
+ * @returns Vertex or null
+ */
+export function findVertexByIndex(
+  topology: GridTopology,
+  row: number,
+  col: number
+): TopologyVertex | null {
+  for (const vertex of topology.vertices.values()) {
+    const idx = vertex.index;
+    if (idx && idx[0] === row && idx[1] === col) {
+      return vertex;
+    }
+  }
+  return null;
 }

@@ -173,7 +173,7 @@ const ArrowSymbol: React.FC<SymbolProps> = ({ x, y, size, color, rotation }) => 
 };
 
 const CrossSymbol: React.FC<SymbolProps> = ({ x, y, size, color, rotation }) => {
-  const h = size * 0.3;
+  const h = size * 0.2;
   return (
     <g transform={rotation ? `rotate(${rotation} ${x} ${y})` : undefined}>
       <line x1={x - h} y1={y - h} x2={x + h} y2={y + h} stroke={color} strokeWidth={2} />

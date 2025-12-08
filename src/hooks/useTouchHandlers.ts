@@ -20,7 +20,7 @@ interface UseTouchHandlersOptions {
   svgRef: React.RefObject<SVGSVGElement | null>;
   toolHandlers: {
     handleSurfaceTool: (point: Point, isRightClick: boolean, isShiftKey: boolean) => void;
-    handleSurfaceCycleTool: (point: Point, isRightClick: boolean) => void;
+    handleSurfaceCycleTool: (point: Point, isRightClick: boolean, colorOverride?: { color?: string; secondaryColor?: string }) => void;
     handleLineTool: (point: Point, isStart: boolean, isRightClick: boolean, isShiftKey: boolean) => void;
     handleEdgeTool: (point: Point, isStart: boolean, isRightClick: boolean, isShiftKey: boolean) => void;
     handleWallTool: (point: Point, isRightClick: boolean, isShiftKey: boolean) => void;

@@ -70,7 +70,7 @@ export const mashuSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'mashu',
-        checklist: ['checkBranchLine'],
+        checklist: ['checkLineBranch'],
         failcodes: ['lnBranch'],
       },
     },
@@ -83,7 +83,7 @@ export const mashuSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'mashu',
-        checklist: ['checkCrossLine'],
+        checklist: ['checkLineCross'],
         failcodes: ['lnCross'],
       },
     },
@@ -96,7 +96,7 @@ export const mashuSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'mashu',
-        checklist: ['checkWhitePearl1'],
+        checklist: ['checkWhitePearlStraight'],
         failcodes: ['mashuWCurve'],
       },
     },
@@ -109,7 +109,7 @@ export const mashuSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'mashu',
-        checklist: ['checkBlackPearl1'],
+        checklist: ['checkBlackPearlTurn'],
         failcodes: ['mashuBStrig'],
       },
     },
@@ -122,7 +122,7 @@ export const mashuSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'mashu',
-        checklist: ['checkBlackPearl2'],
+        checklist: ['checkBlackPearlExtend'],
         failcodes: ['mashuBCvNbr'],
       },
     },
@@ -135,7 +135,7 @@ export const mashuSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'mashu',
-        checklist: ['checkWhitePearl2'],
+        checklist: ['checkWhitePearlTurnNeighbor'],
         failcodes: ['mashuWStNbr'],
       },
     },
@@ -161,7 +161,7 @@ export const mashuSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'mashu',
-        checklist: ['checkDeadendLine'],
+        checklist: ['checkLineDeadend'],
         failcodes: ['lnDeadEnd'],
       },
     },
@@ -174,7 +174,7 @@ export const mashuSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'mashu',
-        checklist: ['checkOneLoop'],
+        checklist: ['checkLineOneLoop'],
         failcodes: ['lnPlLoop'],
       },
     },
