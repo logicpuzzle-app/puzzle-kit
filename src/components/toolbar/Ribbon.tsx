@@ -15,7 +15,7 @@ import { ToolCategory, toDataLayer } from '../../types';
 import { ConstraintSubCategory, InputModeType } from '../../store/slices/types';
 import { constraintCatalog } from '../../constraints';
 import type { ConstraintSchema, InputMode } from '../../constraints';
-import { solverWorkerManager, SolverCancelledError } from '../../solver';
+import { cspuzWorkerManager, CspuzSolverCancelledError } from '../../solver';
 
 // Import sub-components
 import {
@@ -85,7 +85,6 @@ export const Ribbon: React.FC = () => {
     // Solver mode state
     isSolverMode,
     isSolving,
-    solverError,
     enterSolverMode,
     setSolving,
     setSolverError,
@@ -99,7 +98,7 @@ export const Ribbon: React.FC = () => {
     if (!currentSchemaId || isSolving) return;
 
     // Check if solver is available for this puzzle type
-    if (!solverWorkerManager.hasSolver(currentSchemaId)) {
+    if (!cspuzWorkerManager.hasSolver(currentSchemaId)) {
       setSolverError(t('solver.notAvailable'));
       return;
     }
@@ -111,13 +110,13 @@ export const Ribbon: React.FC = () => {
     setSolverError(null);
 
     try {
-      const result = await solverWorkerManager.solve(currentSchemaId, grid, puzzle.problem);
+      const result = await cspuzWorkerManager.solve(currentSchemaId, grid, puzzle.problem);
 
       // Enter solver mode with the result
       enterSolverMode(result);
     } catch (e) {
       // Don't show error if cancelled
-      if (e instanceof SolverCancelledError) {
+      if (e instanceof CspuzSolverCancelledError) {
         return;
       }
       setSolverError(e instanceof Error ? e.message : t('solver.failed'));
@@ -127,16 +126,16 @@ export const Ribbon: React.FC = () => {
 
   // Handle cancel solver click
   const handleCancelSolver = useCallback(() => {
-    solverWorkerManager.cancelAll();
+    cspuzWorkerManager.cancelAll();
     cancelSolver();
   }, [cancelSolver]);
 
   // Check if solver is available for current puzzle
-  const hasSolver = currentSchemaId ? solverWorkerManager.hasSolver(currentSchemaId) : false;
+  const hasSolver = currentSchemaId ? cspuzWorkerManager.hasSolver(currentSchemaId) : false;
 
   // Derived state
   const isGridMode = activeLayer === 'grid';
-  const isConstraintMode = activeLayer === 'constraint';
+  const isSpecificMode = activeLayer === 'constraint';
   const isProblemMode = activeLayer === 'problem';
   const isAnswerMode = activeLayer === 'answer';
 
@@ -148,8 +147,8 @@ export const Ribbon: React.FC = () => {
   const isConstraintEnabled = showConstraintLayer && currentSchema !== null;
 
   const handleCategoryClick = (category: CategoryDef) => {
-    // Switch to problem layer if in grid or constraint mode
-    if (isGridMode || isConstraintMode) {
+    // Switch to problem layer if in grid or specific mode
+    if (isGridMode || isSpecificMode) {
       setActiveLayer('problem');
     }
     // If clicking the same category, keep current tool
@@ -177,7 +176,7 @@ export const Ribbon: React.FC = () => {
           <div className="flex items-center">
             <button
               className={`h-7 px-2 text-xs rounded-l-sm border border-r-0 transition-colors ${
-                isConstraintMode
+                isSpecificMode
                   ? 'bg-purple-600 text-white border-purple-600'
                   : 'bg-white border-office-border hover:bg-office-ribbon-hover'
               }`}
@@ -190,7 +189,7 @@ export const Ribbon: React.FC = () => {
               className={`h-7 w-7 flex items-center justify-center rounded-r-sm border-t border-b border-r transition-colors ${
                 currentSchemaId === null
                   ? 'bg-gray-100 border-gray-200 text-gray-300 cursor-not-allowed'
-                  : isConstraintMode
+                  : isSpecificMode
                     ? showConstraintLayer
                       ? 'bg-purple-600 text-white border-purple-600'
                       : 'bg-purple-600/60 text-white/70 border-purple-600'
@@ -361,7 +360,7 @@ export const Ribbon: React.FC = () => {
           </div>
         </div>
 
-        {/* Grid mode subtabs - 盤面形状 / 盤面表示 */}
+        {/* Grid mode subtabs - 盤面形状 / 盤面スタイル (Type / Style) */}
         {isGridMode && (
           <div className="flex items-center gap-1">
             <button
@@ -388,7 +387,7 @@ export const Ribbon: React.FC = () => {
         )}
 
         {/* Main category buttons - shown in problem/answer mode when constraint is disabled */}
-        {!isGridMode && !isConstraintMode && !isConstraintEnabled && (
+        {!isGridMode && !isSpecificMode && !isConstraintEnabled && (
           <div className="flex items-center gap-1">
             {mainCategories.map((category) => {
               const CategoryIcon = CATEGORY_ICONS[category.id];
@@ -410,8 +409,8 @@ export const Ribbon: React.FC = () => {
           </div>
         )}
 
-        {/* Constraint mode sub-categories (Edit/Play/Check) - shown when constraint layer is selected */}
-        {isConstraintMode && (
+        {/* Specific mode sub-categories (Edit/Play/Check) - shown when specific layer is selected */}
+        {isSpecificMode && (
           <div className="flex items-center gap-1">
             {constraintSubCategories.map((subCat) => {
               const iconMap: Record<string, React.FC<{ size?: number; className?: string }>> = {
@@ -439,8 +438,8 @@ export const Ribbon: React.FC = () => {
           </div>
         )}
 
-        {/* Constraint-aware mode indicator - shown in problem/answer when constraint is enabled */}
-        {!isGridMode && !isConstraintMode && isConstraintEnabled && (
+        {/* Specific-aware mode indicator - shown in problem/answer when specific is enabled */}
+        {!isGridMode && !isSpecificMode && isConstraintEnabled && (
           <div className="flex items-center gap-2">
             {/* Current mode indicator */}
             <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 border border-purple-300 rounded-sm">
@@ -467,9 +466,6 @@ export const Ribbon: React.FC = () => {
                   >
                     {t('solver.solve')}
                   </button>
-                )}
-                {solverError && solverError !== 'No solution exists' && (
-                  <span className="text-xs text-red-600 ml-1">{solverError}</span>
                 )}
               </div>
             )}
@@ -498,8 +494,8 @@ export const Ribbon: React.FC = () => {
           </div>
         )}
 
-        {/* Trial mode controls - shown when in trial mode (always available, not just in constraint mode) */}
-        {!isGridMode && !isConstraintMode && trialStage > 0 && (
+        {/* Trial mode controls - shown when in trial mode (always available, not just in specific mode) */}
+        {!isGridMode && !isSpecificMode && trialStage > 0 && (
           <>
             {/* Divider between tool area and trial controls */}
             <div className="w-px h-5 bg-office-border mx-2" />
@@ -542,8 +538,8 @@ export const Ribbon: React.FC = () => {
       <div className="flex items-center px-2 py-1 min-h-[50px]">
         {isGridMode ? (
           gridSubTab === 'shape' ? <GridShapeContent /> : <GridDisplayContent />
-        ) : isConstraintMode ? (
-          /* Constraint mode content - show preset name only */
+        ) : isSpecificMode ? (
+          /* Specific mode content - show preset name only */
           <div className="flex items-center gap-2 flex-wrap">
             {/* None selected */}
             {currentSchemaId === null && (
