@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
 import { getCellCenter } from '../../utils/gridUtils';
 import type { LayerType, PuzzleElements } from '../../types';
+import { getClueDisplayValue } from '../../types/penpaElements';
 
 // Direction constants (matches pzprjs/Penpa)
 // NDIR = 0 (not used - direction type is 1|2|3|4)
@@ -183,8 +184,8 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
         if (row < 0 || col < 0 || row >= grid.rows || col >= grid.cols) return;
         center = getCellCenter(row, col, grid);
       }
-      // Handle special values: -2 = "?" (hatena/unknown)
-      const displayValue = clue.value === -2 ? '?' : String(clue.value);
+      // Get display value using helper (handles char and -2 = "?")
+      const displayValue = getClueDisplayValue(clue);
       const digitCount = displayValue.length;
       const hasDirection = clue.direction >= UP && clue.direction <= RT;
       const hasArbitraryAngle = clue.angle !== null && clue.angle !== undefined;

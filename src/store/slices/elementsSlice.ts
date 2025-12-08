@@ -268,15 +268,27 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
     const fullElement: NumberElement = { ...element, id };
     set((state) => {
       const layer = fullElement.layer;
+      const newNumbers = { ...state.puzzle[layer].numbers, [id]: fullElement };
+
+      // If adding center number, remove any directionalClue at the same cell
+      let newClues = state.puzzle[layer].directionalClues || {};
+      if (fullElement.position === 'center') {
+        const existingClueEntry = Object.entries(newClues).find(
+          ([, clue]) => clue.cellId === fullElement.cellId
+        );
+        if (existingClueEntry) {
+          newClues = { ...newClues };
+          delete newClues[existingClueEntry[0]];
+        }
+      }
+
       return {
         puzzle: {
           ...state.puzzle,
           [layer]: {
             ...state.puzzle[layer],
-            numbers: {
-              ...state.puzzle[layer].numbers,
-              [id]: fullElement,
-            },
+            numbers: newNumbers,
+            directionalClues: newClues,
           },
         },
       };
@@ -553,12 +565,24 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
         delete clues[existingEntry[0]];
       }
       clues[id] = fullElement;
+
+      // Remove any center number at the same cell (mutual exclusivity)
+      let newNumbers = state.puzzle[layer].numbers;
+      const existingNumberEntry = Object.entries(newNumbers).find(
+        ([, num]) => num.cellId === fullElement.cellId && num.position === 'center'
+      );
+      if (existingNumberEntry) {
+        newNumbers = { ...newNumbers };
+        delete newNumbers[existingNumberEntry[0]];
+      }
+
       return {
         puzzle: {
           ...state.puzzle,
           [layer]: {
             ...state.puzzle[layer],
             directionalClues: clues,
+            numbers: newNumbers,
           },
         },
       };

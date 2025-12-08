@@ -17,6 +17,8 @@ export const ArrowDirectionSettings: React.FC = () => {
     puzzle,
     activeLayer,
     addDirectionalClue,
+    removeNumber,
+    grid,
   } = usePuzzleStore();
 
   const { findCellIdByRowCol } = useCellFinder();
@@ -69,9 +71,23 @@ export const ArrowDirectionSettings: React.FC = () => {
       id,
       cellId,
       value: clue.value,
+      char: clue.char,
       direction: reverseDirMap[clue.direction] ?? -1,
       angle: clue.angle,
     };
+  }, [numberSelection, findCellIdByRowCol, puzzle, dataLayer]);
+
+  // Get current cell's regular number (for conversion to directionalClue)
+  const currentCellNumber = useMemo(() => {
+    if (!numberSelection) return null;
+    const cellId = findCellIdByRowCol(numberSelection.row, numberSelection.col);
+    if (!cellId) return null;
+    const entry = Object.entries(puzzle[dataLayer].numbers || {}).find(
+      ([, n]) => n.cellId === cellId && n.position === 'center'
+    );
+    if (!entry) return null;
+    const [id, num] = entry;
+    return { id, cellId, value: num.value };
   }, [numberSelection, findCellIdByRowCol, puzzle, dataLayer]);
 
   // The active direction to highlight: use cell's clue direction if available, otherwise tool setting
@@ -83,15 +99,41 @@ export const ArrowDirectionSettings: React.FC = () => {
     // Clear arbitrary angle when selecting a preset direction
     setToolSettings({ arrowDirection: newDirection, arrowAngle: null });
 
-    // Update existing directional clue if cell is selected (update direction, keep value)
-    if (numberSelection && currentCellClue) {
+    if (!numberSelection) return;
+
+    const cellId = findCellIdByRowCol(numberSelection.row, numberSelection.col);
+    if (!cellId) return;
+    const cellIndex = numberSelection.row * grid.cols + numberSelection.col;
+
+    // Update existing directional clue if present (update direction, keep value/char)
+    if (currentCellClue) {
       addDirectionalClue({
         cellId: currentCellClue.cellId,
+        cell: cellIndex,
         direction: directionMap[newDirection] ?? 0,
         value: currentCellClue.value,
+        char: currentCellClue.char,
         layer: dataLayer,
         angle: null, // Clear arbitrary angle
       });
+    } else if (currentCellNumber) {
+      // Convert regular number to directionalClue with direction
+      // Single character values use char field, multi-digit numbers use value field
+      const val = currentCellNumber.value;
+      const numValue = parseInt(val, 10);
+      const isSingleChar = val.length === 1 && isNaN(numValue);
+
+      addDirectionalClue({
+        cellId,
+        cell: cellIndex,
+        direction: directionMap[newDirection] ?? 0,
+        value: isSingleChar ? 0 : (isNaN(numValue) ? 0 : numValue),
+        char: isSingleChar ? val : undefined,
+        layer: dataLayer,
+        angle: null,
+      });
+      // Remove the original number
+      removeNumber(currentCellNumber.id);
     }
   };
 
@@ -105,15 +147,41 @@ export const ArrowDirectionSettings: React.FC = () => {
     // Always use arbitrary angle (allows continuous +15/-15 cycling)
     setToolSettings({ arrowAngle: angleValue, arrowDirection: -1 });
 
-    // Update existing directional clue if cell is selected
-    if (numberSelection && currentCellClue) {
+    if (!numberSelection) return;
+
+    const cellId = findCellIdByRowCol(numberSelection.row, numberSelection.col);
+    if (!cellId) return;
+    const cellIndex = numberSelection.row * grid.cols + numberSelection.col;
+
+    // Update existing directional clue if present
+    if (currentCellClue) {
       addDirectionalClue({
         cellId: currentCellClue.cellId,
+        cell: cellIndex,
         direction: 0, // No preset direction when using arbitrary angle
         value: currentCellClue.value,
+        char: currentCellClue.char,
         layer: dataLayer,
         angle: angleValue,
       });
+    } else if (currentCellNumber) {
+      // Convert regular number to directionalClue with angle
+      // Single character values use char field, multi-digit numbers use value field
+      const val = currentCellNumber.value;
+      const numValue = parseInt(val, 10);
+      const isSingleChar = val.length === 1 && isNaN(numValue);
+
+      addDirectionalClue({
+        cellId,
+        cell: cellIndex,
+        direction: 0,
+        value: isSingleChar ? 0 : (isNaN(numValue) ? 0 : numValue),
+        char: isSingleChar ? val : undefined,
+        layer: dataLayer,
+        angle: angleValue,
+      });
+      // Remove the original number
+      removeNumber(currentCellNumber.id);
     }
   };
 

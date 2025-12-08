@@ -86,6 +86,8 @@ function getDirectionalClue(ctx: ValidationContext, row: number, col: number): {
   for (const clue of Object.values(clues)) {
     // Check by cellId (primary) or cell index (legacy)
     if (clue.cellId === cellId || clue.cell === pzprCellIndex || clue.cell === penpaCellIndex) {
+      // Skip non-numeric clues (e.g., "?" or letters)
+      if (typeof clue.value !== 'number') continue;
       return {
         direction: penpaDirectionToDirection(clue.direction),
         number: clue.value,

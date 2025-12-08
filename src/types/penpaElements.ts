@@ -249,11 +249,24 @@ export interface PenpaDirectionalClue {
   /** Cell index (row * cols + col). Optional, for penpa compatibility. */
   cell?: number;
   direction: 0 | 1 | 2 | 3 | 4; // 0 = no direction (number only), legacy discrete directions
+  /** Clue value as number. Use -2 for "?" (hatena/unknown). For alphabet display, use char field. */
   value: number;
+  /** Optional character to display instead of value (e.g., "A", "B"). When set, this takes precedence over value for display. */
+  char?: string;
   color?: string;
   layer: 'problem' | 'answer';
   /** Arbitrary angle in degrees (0=right, 90=down, 180=left, 270=up). Overrides direction if set and non-null. */
   angle?: number | null;
+}
+
+/**
+ * Helper function to get display string for clue
+ * Priority: char > value (-2 = "?")
+ */
+export function getClueDisplayValue(clue: { value: number; char?: string }): string {
+  if (clue.char) return clue.char;
+  if (clue.value === -2) return '?';
+  return String(clue.value);
 }
 
 /**

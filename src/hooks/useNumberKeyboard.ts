@@ -108,26 +108,27 @@ export function useNumberKeyboard() {
       const target = numberSelection;
       if (!target) return;
 
-      const value = e.key;
-      const isDigit = /^[0-9]$/.test(value);
+      const keyValue = e.key;
+      const isDigit = /^[0-9]$/.test(keyValue);
+      const isSingleChar = keyValue.length === 1 && !isDigit;
       const isDelete = e.key === 'Backspace' || e.key === 'Delete';
-      if (!isDigit && !isDelete) return;
+      if (!isDigit && !isSingleChar && !isDelete) return;
       e.preventDefault();
 
       // Handle constraint mode number input (uses directionalClues for unified storage)
       if (isConstraintNumberInput) {
-        handleConstraintNumber(target, value, isDelete);
+        handleConstraintNumber(target, keyValue, isDelete, isSingleChar);
         return;
       }
 
       // Handle directional number tool (non-constraint mode)
       if (tool === 'number-directional') {
-        handleDirectionalNumber(target, value, isDelete);
+        handleDirectionalNumber(target, keyValue, isDelete, isSingleChar);
         return;
       }
 
       // Handle normal number tools
-      handleNormalNumber(target, value, isDelete);
+      handleNormalNumber(target, keyValue, isDelete);
     };
 
     window.addEventListener('keydown', handler);
@@ -186,34 +187,62 @@ export function useNumberKeyboard() {
   /**
    * Handle constraint mode number input (multi-digit, uses directionalClues)
    * Used for: number, number-, direc, auto-number, auto-direc modes
+   * Supports both numeric and single character values (single char uses char field)
    */
   function handleConstraintNumber(
     target: { row: number; col: number },
-    value: string,
-    isDelete: boolean
+    keyValue: string,
+    isDelete: boolean,
+    isSingleChar: boolean
   ) {
+    // Use findCellIdByRowCol for topology support (Cairo grids, etc.)
+    const cellId = findCellIdByRowCol(target.row, target.col) ?? `cell-${target.row}-${target.col}`;
     const cellIndex = target.row * grid.cols + target.col;
     const dataLayer = toDataLayer(activeLayer);
+    // Find existing clue by cellId (not cell index)
     const existingEntry = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
-      ([, c]) => c.cell === cellIndex
+      ([, c]) => c.cellId === cellId
     );
     const existingClue = existingEntry?.[1];
     const existingId = existingEntry?.[0];
-    const currentValue = existingClue?.value !== undefined ? String(existingClue.value) : null;
+    // For display, char takes precedence over value
+    const hasChar = existingClue?.char !== undefined;
+    const currentValue = hasChar ? existingClue!.char! : (existingClue?.value !== undefined ? String(existingClue.value) : null);
 
     // Delete/Backspace handling
     if (isDelete) {
-      if (!currentValue || currentValue.length <= 1) {
+      if (hasChar) {
+        // If has char, remove char and keep value
+        if (existingClue) {
+          addDirectionalClue({
+            cellId,
+            cell: cellIndex,
+            direction: existingClue.direction,
+            value: existingClue.value,
+            layer: dataLayer,
+            angle: existingClue.angle,
+            // No char field - removes it
+          });
+        }
+      } else if (!currentValue || currentValue.length <= 1) {
         // Remove entirely
         if (existingId) {
           removeDirectionalClue(existingId);
+        } else {
+          // Also check for regular numbers (center position) and remove if found
+          const numberEntry = Object.entries(puzzle[dataLayer].numbers || {}).find(
+            ([, n]) => n.cellId === cellId && n.position === 'center'
+          );
+          if (numberEntry) {
+            removeNumber(numberEntry[0]);
+          }
         }
       } else {
         // Remove last digit
         const newValue = currentValue.slice(0, -1);
         const direction = existingClue?.direction ?? 0;
         addDirectionalClue({
-          cellId: `cell-${target.row}-${target.col}`,
+          cellId,
           cell: cellIndex,
           direction: direction as 0 | 1 | 2 | 3 | 4,
           value: parseInt(newValue, 10),
@@ -223,18 +252,39 @@ export function useNumberKeyboard() {
       return;
     }
 
-    // Digit input - append to existing value
+    // For single character input, set char field (keep value for puzz.link compatibility)
+    if (isSingleChar) {
+      const charValue = keyValue;
+      const directionMap: Record<number, 0 | 1 | 2 | 3 | 4> = {
+        [-1]: 0, 0: 1, 1: 3, 2: 4, 3: 2,
+      };
+      const direction = existingClue?.direction ?? directionMap[toolSettings.arrowDirection] ?? 0;
+
+      addDirectionalClue({
+        cellId,
+        cell: cellIndex,
+        direction: direction as 0 | 1 | 2 | 3 | 4,
+        value: existingClue?.value ?? 0, // Keep existing value or default to 0
+        char: charValue,
+        layer: dataLayer,
+        angle: existingClue?.angle,
+      });
+      return;
+    }
+
+    // Digit input - append to existing numeric value
     const maxDigits = getMaxDigits();
     let newValue: string;
 
-    if (!currentValue) {
-      newValue = value;
+    // If has char, replace with digit (clear char)
+    if (hasChar || !currentValue) {
+      newValue = keyValue;
     } else if (currentValue.length >= maxDigits) {
       // At max digits: replace with new digit
-      newValue = value;
+      newValue = keyValue;
     } else {
       // Append digit
-      newValue = currentValue + value;
+      newValue = currentValue + keyValue;
     }
 
     // Preserve existing direction, or use current arrowDirection setting
@@ -244,28 +294,36 @@ export function useNumberKeyboard() {
     const direction = existingClue?.direction ?? directionMap[toolSettings.arrowDirection] ?? 0;
 
     addDirectionalClue({
-      cellId: `cell-${target.row}-${target.col}`,
+      cellId,
       cell: cellIndex,
       direction: direction as 0 | 1 | 2 | 3 | 4,
       value: parseInt(newValue, 10),
       layer: dataLayer,
+      angle: existingClue?.angle,
+      // No char field - digit input clears it
     });
   }
 
   /**
    * Handle directional number input (Yajilin-style) - non-constraint mode
+   * Supports both numeric and single character values (single char uses char field)
    */
   function handleDirectionalNumber(
     target: { row: number; col: number },
-    value: string,
-    isDelete: boolean
+    keyValue: string,
+    isDelete: boolean,
+    isSingleChar: boolean
   ) {
+    // Use findCellIdByRowCol for topology support (Cairo grids, etc.)
+    const cellId = findCellIdByRowCol(target.row, target.col) ?? `cell-${target.row}-${target.col}`;
     const cellIndex = target.row * grid.cols + target.col;
     const dataLayer = toDataLayer(activeLayer);
+    // Find existing clue by cellId (not cell index)
     const existingEntry = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
-      ([, c]) => c.cell === cellIndex
+      ([, c]) => c.cellId === cellId
     );
     const existingId = existingEntry?.[0];
+    const existingClue = existingEntry?.[1];
 
     if (isDelete) {
       if (existingId) {
@@ -284,13 +342,26 @@ export function useNumberKeyboard() {
     };
     const direction = directionMap[toolSettings.arrowDirection] ?? 0;
 
-    addDirectionalClue({
-      cellId: `cell-${target.row}-${target.col}`,
-      cell: cellIndex,
-      direction,
-      value: parseInt(value, 10),
-      layer: toDataLayer(activeLayer),
-    });
+    if (isSingleChar) {
+      // Single character input: set char field
+      addDirectionalClue({
+        cellId,
+        cell: cellIndex,
+        direction,
+        value: existingClue?.value ?? 0,
+        char: keyValue,
+        layer: dataLayer,
+      });
+    } else {
+      // Numeric input
+      addDirectionalClue({
+        cellId,
+        cell: cellIndex,
+        direction,
+        value: parseInt(keyValue, 10),
+        layer: dataLayer,
+      });
+    }
   }
 
   /**

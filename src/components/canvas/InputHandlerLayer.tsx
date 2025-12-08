@@ -730,19 +730,21 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
               // Convert regular number to directional clue with arrow
               const [numberId, num] = existingNumberEntry;
               const numValue = parseInt(num.value, 10);
-              if (!isNaN(numValue)) {
-                // Add directional clue with the number value and direction/angle
-                addDirectionalClue({
-                  cellId: startCellId,
-                  direction: angle !== null ? 0 : direction,
-                  value: numValue,
-                  layer: dataLayer,
-                  angle: angle,
-                });
-                // Remove the original number
-                removeNumber(numberId);
-                flickStateRef.current.inputted = true;
-              }
+              const isSingleChar = num.value.length === 1 && isNaN(numValue);
+
+              // Add directional clue with the number value and direction/angle
+              // For single char, use char field; for number, use value field
+              addDirectionalClue({
+                cellId: startCellId,
+                direction: angle !== null ? 0 : direction,
+                value: isSingleChar ? 0 : (isNaN(numValue) ? 0 : numValue),
+                char: isSingleChar ? num.value : undefined,
+                layer: dataLayer,
+                angle: angle,
+              });
+              // Remove the original number
+              removeNumber(numberId);
+              flickStateRef.current.inputted = true;
             }
           }
         }
@@ -897,16 +899,20 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           );
 
           if (existingEntry) {
-            // Increment existing value (preserve direction and angle)
+            // Increment existing value (preserve direction, angle, and char)
             const [, clue] = existingEntry;
-            const newValue = (clue.value ?? 0) + 1;
-            addDirectionalClue({
-              cellId: startCellId,
-              direction: clue.direction,
-              value: newValue,
-              layer: dataLayer,
-              angle: clue.angle, // Preserve existing angle
-            });
+            // Only increment if no char field (char takes precedence for display)
+            if (!clue.char) {
+              const newValue = (clue.value ?? 0) + 1;
+              addDirectionalClue({
+                cellId: startCellId,
+                direction: clue.direction,
+                value: newValue,
+                layer: dataLayer,
+                angle: clue.angle, // Preserve existing angle
+              });
+            }
+            // If has char, clicking doesn't change value - leave as is
           } else {
             // Check if there's a regular number to convert
             const existingNumber = Object.entries(puzzle[dataLayer].numbers).find(

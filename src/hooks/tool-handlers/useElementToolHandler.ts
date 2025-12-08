@@ -188,9 +188,12 @@ export function useElementToolHandler({
         const existingClueId = existingClueEntry ? existingClueEntry[0] : null;
 
         // Get current value from directionalClue or fallback to numbers
-        const currentNum = existingClue ? existingClue.value :
-          (existingNumber ? parseInt(existingNumber.value, 10) : -1);
-        const isValidNum = !isNaN(currentNum) && currentNum >= min;
+        // If clue has char, treat as -1 (will be replaced by new number)
+        const hasChar = existingClue?.char !== undefined;
+        const currentNum = hasChar ? -1 :
+          (existingClue ? existingClue.value :
+            (existingNumber ? parseInt(existingNumber.value, 10) : -1));
+        const isValidNum = currentNum >= min;
 
         let newValue: number | null = null;
 
