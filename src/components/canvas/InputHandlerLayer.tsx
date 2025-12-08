@@ -67,10 +67,10 @@ function calculateFlickDirection(
       }
 
       if (vertices.length >= 3) {
-        // Compute center of cell (or use provided center)
+        // Compute center of cell (for determining outward direction)
         const center = cell.center;
 
-        // For each edge, compute the outward normal direction (perpendicular to edge, pointing away from center)
+        // For each edge, compute the true edge normal (perpendicular to edge)
         // Then find which edge's normal is closest to the flick vector
         let bestAngle = 0;
         let bestDotProduct = -Infinity;
@@ -80,31 +80,40 @@ function calculateFlickDirection(
           const v1 = vertices[i];
           const v2 = vertices[(i + 1) % n];
 
-          // Edge midpoint
-          const midX = (v1.x + v2.x) / 2;
-          const midY = (v1.y + v2.y) / 2;
+          // Edge vector
+          const edgeX = v2.x - v1.x;
+          const edgeY = v2.y - v1.y;
+          const edgeLen = Math.sqrt(edgeX * edgeX + edgeY * edgeY);
 
-          // Direction from center to edge midpoint (outward normal approximation)
-          const normalX = midX - center.x;
-          const normalY = midY - center.y;
-          const normalLen = Math.sqrt(normalX * normalX + normalY * normalY);
+          if (edgeLen > 0) {
+            // Perpendicular to edge (rotate 90 degrees)
+            // Two possible normals: (edgeY, -edgeX) or (-edgeY, edgeX)
+            let normalX = edgeY / edgeLen;
+            let normalY = -edgeX / edgeLen;
 
-          if (normalLen > 0) {
-            // Normalize
-            const unitNormalX = normalX / normalLen;
-            const unitNormalY = normalY / normalLen;
+            // Determine which direction is outward using edge midpoint
+            const midX = (v1.x + v2.x) / 2;
+            const midY = (v1.y + v2.y) / 2;
+            const toCenterX = center.x - midX;
+            const toCenterY = center.y - midY;
+
+            // If normal points toward center, flip it
+            if (normalX * toCenterX + normalY * toCenterY > 0) {
+              normalX = -normalX;
+              normalY = -normalY;
+            }
 
             // Normalize flick vector
             const unitFlickX = dx / distance;
             const unitFlickY = dy / distance;
 
             // Dot product (how well flick aligns with this edge's outward normal)
-            const dot = unitNormalX * unitFlickX + unitNormalY * unitFlickY;
+            const dot = normalX * unitFlickX + normalY * unitFlickY;
 
             if (dot > bestDotProduct) {
               bestDotProduct = dot;
               // Calculate angle: 0=right, 90=down, 180=left, 270=up
-              bestAngle = Math.atan2(unitNormalY, unitNormalX) * (180 / Math.PI);
+              bestAngle = Math.atan2(normalY, normalX) * (180 / Math.PI);
               // Normalize to 0-360
               bestAngle = ((bestAngle % 360) + 360) % 360;
             }
