@@ -12,6 +12,7 @@ import { usePuzzleStore } from '../../store/puzzleStore';
 import { getGridDimensions } from '../../utils/gridUtils';
 import { InputHandlerLayer } from './InputHandlerLayer';
 import { Grid, GridBackground, GridLines, DisabledCellsOverlay } from './Grid';
+import { BackgroundImageLayer } from './grid/BackgroundImageLayer';
 import { SurfaceLayer } from './SurfaceLayer';
 import { MulticolorSurfaceLayer } from './MulticolorSurfaceLayer';
 import { BoxLineLayer } from './BoxLineLayer';
@@ -79,6 +80,27 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
   const exportPaddingLeft = effectiveGrid.exportPaddingLeft ?? 0;
   const exportPaddingTop = effectiveGrid.exportPaddingTop ?? 0;
 
+  // Calculate grid area for background image
+  const gridArea = useMemo(() => {
+    if (useTopology && effectiveTopology) {
+      return {
+        x: effectiveTopology.bounds.minX,
+        y: effectiveTopology.bounds.minY,
+        width: effectiveTopology.bounds.width,
+        height: effectiveTopology.bounds.height,
+      };
+    }
+    const { outerPadding, cellSize, rows, cols, marginTop = 0, marginLeft = 0 } = effectiveGrid;
+    const totalRows = rows + marginTop + (effectiveGrid.marginBottom ?? 0);
+    const totalCols = cols + marginLeft + (effectiveGrid.marginRight ?? 0);
+    return {
+      x: outerPadding,
+      y: outerPadding,
+      width: totalCols * cellSize,
+      height: totalRows * cellSize,
+    };
+  }, [useTopology, effectiveTopology, effectiveGrid]);
+
   const transform = `translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom})`;
 
   return (
@@ -144,6 +166,15 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
           {/* For non-square grids: use combined Grid component */}
           {effectiveGrid.gridType === 'square' || !effectiveGrid.gridType ? (
             <>
+              {/* Background image layer (rendered before grid) */}
+              <BackgroundImageLayer
+                gridConfig={effectiveGrid}
+                gridX={gridArea.x}
+                gridY={gridArea.y}
+                gridWidth={gridArea.width}
+                gridHeight={gridArea.height}
+              />
+
               {/* Grid background (cell fills) */}
               <GridBackground />
 
@@ -173,6 +204,15 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
             </>
           ) : (
             <>
+              {/* Background image layer (rendered before grid) */}
+              <BackgroundImageLayer
+                gridConfig={effectiveGrid}
+                gridX={gridArea.x}
+                gridY={gridArea.y}
+                gridWidth={gridArea.width}
+                gridHeight={gridArea.height}
+              />
+
               {/* Non-square grids: Grid renders everything together */}
               <Grid />
 
