@@ -125,8 +125,9 @@ export function useElementToolHandler({
   }, [grid.rows, grid.cols, currentInputMode, isAutoDirecMode]);
 
   const handleNumberTool = useCallback(
-    (point: Point, isRightClick: boolean) => {
-      const cellId = findCellId(point);
+    (point: Point, isRightClick: boolean, options?: { cellId?: string; cellIndex?: number }) => {
+      // Use provided cellId if available, otherwise find from point
+      const cellId = options?.cellId ?? findCellId(point);
       if (!cellId) return null;
       const dataLayer = toDataLayer(activeLayer);
       const layerData = puzzle[dataLayer];
@@ -180,8 +181,12 @@ export function useElementToolHandler({
         const { min, max } = getNumberRange();
 
         // Convert cellId to cell index for directionalClues
-        const cellMatch = cellId.match(/cell-(\d+)-(\d+)/);
-        const cellIndex = cellMatch ? parseInt(cellMatch[1], 10) * grid.cols + parseInt(cellMatch[2], 10) : -1;
+        // Use provided cellIndex if available, otherwise parse from cellId
+        let cellIndex = options?.cellIndex ?? -1;
+        if (cellIndex === -1) {
+          const cellMatch = cellId.match(/cell-(\d+)-(\d+)/);
+          cellIndex = cellMatch ? parseInt(cellMatch[1], 10) * grid.cols + parseInt(cellMatch[2], 10) : -1;
+        }
         if (cellIndex === -1) return null;
 
         // Check existing directionalClue for this cell

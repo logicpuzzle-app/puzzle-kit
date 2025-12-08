@@ -148,6 +148,8 @@ function calculateFlickDirection(
 // - mouseup: if no flick occurred (notInputted), do number input (click)
 interface FlickState {
   startCell: { row: number; col: number } | null;
+  startCellId: string | null; // Cell ID (may differ from cell-row-col for complex topologies)
+  startCellCenter: Point | null; // Cell center coordinates (from topology or grid calculation)
   startPoint: Point | null;
   inputted: boolean; // true if direction was set during drag (flick)
   rightButton: boolean; // true if right mouse button was used
@@ -229,7 +231,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
   } = usePuzzleStore();
 
   // Flick input state for directional number input (pzpr-puzzlink style)
-  const flickStateRef = useRef<FlickState>({ startCell: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false, pekeInputMode: null });
+  const flickStateRef = useRef<FlickState>({ startCell: null, startCellId: null, startCellCenter: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false, pekeInputMode: null });
 
   // Excel-like keyboard input for number tools
   useNumberKeyboard();
@@ -327,6 +329,8 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           // Number input is deferred to mouseup (if no flick occurred)
           flickStateRef.current = {
             startCell: { row: cellInfo.row, col: cellInfo.col },
+            startCellId: cellInfo.cellId,
+            startCellCenter: cellInfo.center ?? getCellCenter(cellInfo.row, cellInfo.col, grid),
             startPoint: point,
             inputted: false, // Will be set to true if flick direction is input
             rightButton: e.button === 2,
@@ -382,6 +386,8 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           // If no line is drawn by mouseup, we'll input shade instead
           flickStateRef.current = {
             startCell: cellInfo ? { row: cellInfo.row!, col: cellInfo.col! } : null,
+            startCellId: cellInfo?.cellId ?? null,
+            startCellCenter: cellInfo?.center ?? (cellInfo ? getCellCenter(cellInfo.row!, cellInfo.col!, grid) : null),
             startPoint: point,
             inputted: false,
             rightButton: e.button === 2,
@@ -400,14 +406,13 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
             };
             // Use handleSurfaceTool with dot mode by temporarily setting tool
             // Instead, directly add a dot surface
-            const cellId = `cell-${cellInfo.row}-${cellInfo.col}`;
             const dataLayer = toDataLayer(activeLayer);
-            // Check if surface already exists
+            // Check if surface already exists (use cellInfo.cellId for topology support)
             const existingSurface = Object.values(puzzle[dataLayer].surfaces).find(
-              (s) => s.cellId === cellId
+              (s) => s.cellId === cellInfo.cellId
             );
             if (!existingSurface) {
-              addSurface({ cellId, color: colorOverride.secondaryColor, layer: dataLayer, displayMode: 'dot' });
+              addSurface({ cellId: cellInfo.cellId, color: colorOverride.secondaryColor, layer: dataLayer, displayMode: 'dot' });
             }
             flickStateRef.current.inputted = true;
             return; // Don't call base handler for right click
@@ -434,6 +439,8 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           // If no line is drawn by mouseup (click only), we'll input peke instead
           flickStateRef.current = {
             startCell: null,
+            startCellId: null,
+            startCellCenter: null,
             startPoint: point,
             inputted: false,
             rightButton: e.button === 2,
@@ -533,6 +540,8 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           // Initialize flick state for direction detection
           flickStateRef.current = {
             startCell: { row: cellInfo.row, col: cellInfo.col },
+            startCellId: cellInfo.cellId,
+            startCellCenter: cellInfo.center ?? getCellCenter(cellInfo.row, cellInfo.col, grid),
             startPoint: point,
             inputted: false,
             rightButton: e.button === 2,
@@ -652,6 +661,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         // Process flick for constraint mode or number-directional tool
         if ((isConstraintEnabled && (isDirecInputMode || isAutoDirecMode)) || isNumberDirectionalTool) {
           const { startCell, startPoint } = flickStateRef.current;
+          const { startCellId } = flickStateRef.current;
           const cellIndex = startCell!.row * grid.cols + startCell!.col;
           const dataLayer = toDataLayer(activeLayer);
 
@@ -661,9 +671,9 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           );
 
           // Also check if there's a regular number at this cell (for conversion)
-          const cellId = `cell-${startCell!.row}-${startCell!.col}`;
+          // Use startCellId from flick state (supports complex topologies like Cairo)
           const existingNumberEntry = Object.entries(puzzle[dataLayer].numbers || {}).find(
-            ([, n]) => n.cellId === cellId && n.position === 'center'
+            ([, n]) => n.cellId === startCellId && n.position === 'center'
           );
 
           // Calculate direction from start point to current point
@@ -677,7 +687,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
             dx,
             dy,
             threshold,
-            cellId,
+            startCellId!,
             useTopology ? topology : null
           );
 
@@ -731,11 +741,10 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         if (isAutoLineCellMode) {
           const cellInfo = findCellAtPoint(point);
           if (cellInfo) {
-            const cellId = `cell-${cellInfo.row}-${cellInfo.col}`;
             const dataLayer = toDataLayer(activeLayer);
-            // Check if surface already exists
+            // Check if surface already exists (use cellInfo.cellId for topology support)
             const existingSurface = Object.values(puzzle[dataLayer].surfaces).find(
-              (s) => s.cellId === cellId
+              (s) => s.cellId === cellInfo.cellId
             );
             if (!existingSurface) {
               const rightButtonSettings = autoConfig.rightButton.settings;
@@ -743,7 +752,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
                 color: rightButtonSettings?.color || '#444444',
                 secondaryColor: rightButtonSettings?.secondaryColor || '#A0FFA0',
               };
-              addSurface({ cellId, color: colorOverride.secondaryColor, layer: dataLayer, displayMode: 'dot' });
+              addSurface({ cellId: cellInfo.cellId, color: colorOverride.secondaryColor, layer: dataLayer, displayMode: 'dot' });
             }
           }
         }
@@ -825,7 +834,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
 
         if ((isDirecInputMode || isAutoDirecMode) && isConstraintEnabled) {
           // Do number input at the start cell position
-          const point = screenToSvg(
+          const currentPoint = screenToSvg(
             e.clientX,
             e.clientY,
             canvas.zoom,
@@ -835,11 +844,16 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           );
           // Use start cell for number input (not current mouse position)
           const { row, col } = flickState.startCell;
-          const cellInfo = findCellAtPoint(point);
+          const cellInfo = findCellAtPoint(currentPoint);
           // Only input if mouse is still on the same cell (or close enough)
           const isSameCell = cellInfo && cellInfo.row === row && cellInfo.col === col;
-          if (isSameCell) {
-            handleNumberTool(point, flickState.rightButton);
+          if (isSameCell && flickState.startCellCenter && flickState.startCellId) {
+            // Pass cellId and cellIndex directly to avoid re-calculation issues in complex topologies
+            const cellIndex = row * grid.cols + col;
+            handleNumberTool(flickState.startCellCenter, flickState.rightButton, {
+              cellId: flickState.startCellId,
+              cellIndex,
+            });
           }
         }
       }
@@ -859,7 +873,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         const { row, col } = flickState.startCell;
         const isSameCell = cellInfo && cellInfo.row === row && cellInfo.col === col;
 
-        if (isSameCell) {
+        if (isSameCell && flickState.startCellId) {
           // Increment/decrement the directional clue value (or create new one with value 1)
           const cellIndex = row * grid.cols + col;
           const dataLayer = toDataLayer(activeLayer);
@@ -868,7 +882,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           );
 
           if (existingEntry) {
-            // Increment existing value
+            // Increment existing value (preserve direction and angle)
             const [, clue] = existingEntry;
             const newValue = (clue.value ?? 0) + 1;
             addDirectionalClue({
@@ -876,15 +890,13 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
               direction: clue.direction,
               value: newValue,
               layer: dataLayer,
+              angle: clue.angle, // Preserve existing angle
             });
           } else {
             // Check if there's a regular number to convert
+            // Use startCellId from flick state (supports complex topologies like Cairo)
             const existingNumber = Object.entries(puzzle[dataLayer].numbers).find(
-              ([, num]) => {
-                const numRow = Math.floor(parseInt(num.cellId.split('-')[1], 10));
-                const numCol = parseInt(num.cellId.split('-')[2], 10);
-                return numRow === row && numCol === col && num.position === 'center';
-              }
+              ([, num]) => num.cellId === flickState.startCellId && num.position === 'center'
             );
 
             if (existingNumber) {
@@ -897,6 +909,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
                   direction: 0,
                   value: numValue + 1,
                   layer: dataLayer,
+                  angle: null, // No angle for newly converted number
                 });
                 removeNumber(numberId);
               }
@@ -907,6 +920,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
                 direction: 0,
                 value: 1,
                 layer: dataLayer,
+                angle: null, // No angle for new clue
               });
             }
           }
@@ -989,7 +1003,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       }
 
       // Reset flick state on mouse up
-      flickStateRef.current = { startCell: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false, pekeInputMode: null };
+      flickStateRef.current = { startCell: null, startCellId: null, startCellCenter: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false, pekeInputMode: null };
       baseHandleMouseUp(e);
     },
     [baseHandleMouseUp, currentInputMode, currentSchemaId, activeLayer, isConstraintEnabled, canvas.zoom, canvas.panX, canvas.panY, svgRef, findCellAtPoint, handleNumberTool, handleSurfaceCycleTool, handleSymbolTool, resetFillModes, setToolSettings, toolSettings.currentTool, grid.cols, puzzle, addDirectionalClue, removeNumber]
@@ -1001,7 +1015,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       baseHandleMouseUp(e);
       setHoverCell(null);
       // Reset flick state on mouse leave
-      flickStateRef.current = { startCell: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false, pekeInputMode: null };
+      flickStateRef.current = { startCell: null, startCellId: null, startCellCenter: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false, pekeInputMode: null };
     },
     [baseHandleMouseUp, setHoverCell]
   );
