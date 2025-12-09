@@ -14,6 +14,8 @@ interface TouchState {
   lastTouchPoint: Point | null;
   touchStartTime: number;
   initialTouchCount: number;
+  /** Whether a drag occurred during this touch sequence */
+  isDragging: boolean;
 }
 
 interface UseTouchHandlersOptions {
@@ -37,9 +39,6 @@ interface UseTouchHandlersOptions {
   setDrawStartPoint: (point: string | null) => void;
   setDrawStartPosition: (point: Point | null) => void;
   setCurrentStrokeId: (id: string | null) => void;
-  isDraggingRef: React.MutableRefObject<boolean>;
-  isRightClickRef: React.MutableRefObject<boolean>;
-  isShiftKeyRef: React.MutableRefObject<boolean>;
 }
 
 // Helper functions
@@ -67,9 +66,6 @@ export function useTouchHandlers({
   setDrawStartPoint,
   setDrawStartPosition,
   setCurrentStrokeId,
-  isDraggingRef,
-  isRightClickRef,
-  isShiftKeyRef,
 }: UseTouchHandlersOptions) {
   const {
     canvas,
@@ -88,6 +84,7 @@ export function useTouchHandlers({
     lastTouchPoint: null,
     touchStartTime: 0,
     initialTouchCount: 0,
+    isDragging: false,
   });
 
   const getTouchPosition = useCallback(
@@ -145,9 +142,7 @@ export function useTouchHandlers({
         resetFillModes();
         startHistoryGroup();
         setCanvasState({ isDrawing: true });
-        isDraggingRef.current = false;
-        isRightClickRef.current = false;
-        isShiftKeyRef.current = false;
+        touchState.isDragging = false;
 
         if (tool === 'surface-cycle') {
           handleSurfaceCycleTool(point, false);
@@ -192,9 +187,6 @@ export function useTouchHandlers({
       handleSolutionAreaTool,
       startHistoryGroup,
       resetFillModes,
-      isDraggingRef,
-      isRightClickRef,
-      isShiftKeyRef,
     ]
   );
 
@@ -226,11 +218,12 @@ export function useTouchHandlers({
           setPan(canvas.panX + dx, canvas.panY + dy);
           touchState.lastTouchPoint = { x: touches[0].clientX, y: touches[0].clientY };
         } else {
-          isDraggingRef.current = true;
+          touchState.isDragging = true;
           const point = getTouchPosition(touches[0]);
           const tool = toolSettings.currentTool;
-          const isRightClick = isRightClickRef.current;
-          const isShiftKey = isShiftKeyRef.current;
+          // Touch events always use isRightClick=false, isShiftKey=false
+          const isRightClick = false;
+          const isShiftKey = false;
 
           if (tool === 'surface-cycle') {
             handleSurfaceCycleTool(point, isRightClick);
@@ -276,9 +269,6 @@ export function useTouchHandlers({
       handleBoxLineTool,
       handleMulticolorSurfaceTool,
       handleSolutionAreaTool,
-      isDraggingRef,
-      isRightClickRef,
-      isShiftKeyRef,
     ]
   );
 
@@ -291,7 +281,7 @@ export function useTouchHandlers({
       const initialTouches = touchState.initialTouchCount;
 
       // Multi-finger tap gestures
-      if (touchDuration < 300 && !isDraggingRef.current && initialTouches >= 2) {
+      if (touchDuration < 300 && !touchState.isDragging && initialTouches >= 2) {
         const point = e.changedTouches.length > 0
           ? getTouchPosition(e.changedTouches[0])
           : touchState.lastTouchPoint
@@ -332,7 +322,7 @@ export function useTouchHandlers({
         }
       }
       // Long press for deletion
-      else if (touchDuration > 500 && !isDraggingRef.current && initialTouches === 1 && e.changedTouches.length === 1) {
+      else if (touchDuration > 500 && !touchState.isDragging && initialTouches === 1 && e.changedTouches.length === 1) {
         const point = getTouchPosition(e.changedTouches[0]);
         const tool = toolSettings.currentTool;
 
@@ -374,6 +364,7 @@ export function useTouchHandlers({
       touchState.isPinching = false;
       touchState.lastTouchPoint = null;
       touchState.initialTouchCount = 0;
+      touchState.isDragging = false;
       setCanvasState({ isDrawing: false });
       setDrawStartPoint(null);
       setDrawStartPosition(null);
@@ -404,7 +395,6 @@ export function useTouchHandlers({
       setDrawStartPoint,
       setDrawStartPosition,
       setCurrentStrokeId,
-      isDraggingRef,
     ]
   );
 

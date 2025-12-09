@@ -82,7 +82,7 @@ export const FreehandLineList: React.FC = () => {
       <label className="block text-xs text-office-text-secondary mb-2">
         {t('tool.line.freehand.list')} ({strokes.length})
       </label>
-      <div className="max-h-40 overflow-y-auto space-y-1">
+      <div className="max-h-80 overflow-y-auto space-y-1">
         {strokes.map((stroke, index) => {
           // Calculate SVG viewBox to show the stroke
           const padding = 2;

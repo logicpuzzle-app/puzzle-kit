@@ -82,7 +82,7 @@ const findSharedEdgeMidpoint = (
 };
 
 export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
-  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology } = usePuzzleStore();
+  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology, highlightedLineIds } = usePuzzleStore();
 
   const isVisible =
     (layer === 'problem' && showProblemLayer) ||
@@ -125,40 +125,69 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
         }
       }
 
+      const isHighlighted = highlightedLineIds.includes(line.id);
+
       if (midpoint) {
         // Draw path through midpoint
         elements.push(
-          <path
-            key={line.id}
-            d={`M ${fromX} ${fromY} L ${midpoint.x} ${midpoint.y} L ${toX} ${toY}`}
-            fill="none"
-            stroke={line.color}
-            strokeWidth={getStrokeWidth(line.thickness)}
-            strokeDasharray={getStrokeDasharray(line.style)}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+          <React.Fragment key={line.id}>
+            {/* Highlight glow effect */}
+            {isHighlighted && (
+              <path
+                d={`M ${fromX} ${fromY} L ${midpoint.x} ${midpoint.y} L ${toX} ${toY}`}
+                fill="none"
+                stroke="#ff9800"
+                strokeWidth={getStrokeWidth(line.thickness) + 8}
+                strokeOpacity={0.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            )}
+            <path
+              d={`M ${fromX} ${fromY} L ${midpoint.x} ${midpoint.y} L ${toX} ${toY}`}
+              fill="none"
+              stroke={line.color}
+              strokeWidth={getStrokeWidth(line.thickness)}
+              strokeDasharray={getStrokeDasharray(line.style)}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </React.Fragment>
         );
       } else {
         // Draw direct line
         elements.push(
-          <line
-            key={line.id}
-            x1={fromX}
-            y1={fromY}
-            x2={toX}
-            y2={toY}
-            stroke={line.color}
-            strokeWidth={getStrokeWidth(line.thickness)}
-            strokeDasharray={getStrokeDasharray(line.style)}
-            strokeLinecap="round"
-          />
+          <React.Fragment key={line.id}>
+            {/* Highlight glow effect */}
+            {isHighlighted && (
+              <line
+                x1={fromX}
+                y1={fromY}
+                x2={toX}
+                y2={toY}
+                stroke="#ff9800"
+                strokeWidth={getStrokeWidth(line.thickness) + 8}
+                strokeOpacity={0.5}
+                strokeLinecap="round"
+              />
+            )}
+            <line
+              x1={fromX}
+              y1={fromY}
+              x2={toX}
+              y2={toY}
+              stroke={line.color}
+              strokeWidth={getStrokeWidth(line.thickness)}
+              strokeDasharray={getStrokeDasharray(line.style)}
+              strokeLinecap="round"
+            />
+          </React.Fragment>
         );
       }
     });
 
     return elements;
-  }, [puzzle, layer, grid, isVisible, activeTopology, isIsometric]);
+  }, [puzzle, layer, grid, isVisible, activeTopology, isIsometric, highlightedLineIds]);
 
   // Build vertex lookup map for efficient grid-mode to topology-mode conversion
   const vertexMap = useMemo(() => {

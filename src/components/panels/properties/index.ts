@@ -5,6 +5,7 @@ export { ArrowDirectionSettings } from './ArrowDirectionSettings';
 export { NumberInputPanel } from './NumberInputPanel';
 export { GridPropertiesPanel } from './GridPropertiesPanel';
 export { FreehandLineList } from './FreehandLineList';
+export { FreeLineList } from './FreeLineList';
 export { TestCasePanel } from './TestCasePanel';
 
 // Panel sections

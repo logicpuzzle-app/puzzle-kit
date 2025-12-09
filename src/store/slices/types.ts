@@ -58,7 +58,7 @@ export const DEFAULT_TOOL_SETTINGS: ToolSettings = {
   lineThickness: 'normal',
   symbolSize: 'medium',
   numberSize: 'medium',
-  symbolRotation: 0,
+  symbolRotation: 0,  // Default to up (0° = up)
   numberPosition: 'center',
   cornerIndex: 0,
   sideIndex: 0,
@@ -73,8 +73,11 @@ export const DEFAULT_TOOL_SETTINGS: ToolSettings = {
   lineDirections: ['orthogonal'],
   lineHalfMode: false,
   symbolGridPoints: ['cell'],
+  symbolSubMode: 'icon',  // Default to icon mode (symbol palette)
   surfaceButtonMode: '2-button',  // Default to 2-button (left=shade, right=unshade)
   inputConstraint: 'none',  // Default to no input constraint
+  multiDirections: [true, true, true, true, true, true, true, true],  // All directions enabled by default
+  multiDirectionAngles: [0, 45, 90, 135, 180, 225, 270, 315],  // Default 8-way angles (0=up, clockwise)
 };
 
 // ========================================
@@ -144,6 +147,7 @@ export interface ElementsSlice {
   removeSurface: (id: string) => void;
   addLine: (element: Omit<LineElement, 'id'>) => string;
   removeLine: (id: string) => void;
+  updateLine: (id: string, updates: Partial<Pick<LineElement, 'color' | 'style' | 'thickness'>>) => void;
   addEdge: (element: Omit<EdgeElement, 'id'>) => string;
   removeEdge: (id: string) => void;
   addWall: (element: Omit<WallElement, 'id'>) => string;
@@ -188,9 +192,17 @@ export interface CanvasSlice {
   hoverCell: string | null;
   setHoverCell: (cellId: string | null) => void;
 
+  // Cursor cell (last tapped cell for direction/multicolor panels)
+  cursorCell: string | null;
+  setCursorCell: (cellId: string | null) => void;
+
   // Number tool selection
   numberSelection: { row: number; col: number } | null;
   setNumberSelection: (cell: { row: number; col: number } | null) => void;
+
+  // Highlighted lines (for preview in line list)
+  highlightedLineIds: string[];
+  setHighlightedLineIds: (ids: string[]) => void;
 }
 
 export interface ToolSlice {

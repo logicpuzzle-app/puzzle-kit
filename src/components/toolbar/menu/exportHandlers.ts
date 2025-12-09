@@ -10,7 +10,7 @@ import {
   downloadAsPng,
 } from '../../../utils/serialization';
 import { optimizePuzzleStateForExport } from '../../../utils/puzzleExport';
-import { getStorageAdapter } from '../../../modules/storage';
+import { getDefaultStorageAdapter } from '../../../modules/storage';
 import type { GridConfig, PuzzleState } from '../../../types';
 import type { GridTopology } from '../../../utils/topology/types';
 
@@ -220,7 +220,7 @@ export const createExportHandlers = (options: ExportHandlersOptions) => {
     setShareUrl: (url: string) => void,
     setShareUrlDialogOpen: (open: boolean) => void
   ) => {
-    const adapter = getStorageAdapter();
+    const adapter = getDefaultStorageAdapter();
 
     if (!adapter || !adapter.isAvailable()) {
       showAlert({

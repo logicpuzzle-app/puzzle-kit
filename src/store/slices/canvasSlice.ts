@@ -44,7 +44,15 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set) => ({
   hoverCell: null,
   setHoverCell: (cell) => set({ hoverCell: cell }),
 
+  // Cursor cell (last tapped cell for direction/multicolor panels)
+  cursorCell: null,
+  setCursorCell: (cell) => set({ cursorCell: cell }),
+
   // Number tool selection
   numberSelection: null,
   setNumberSelection: (cell) => set({ numberSelection: cell }),
+
+  // Highlighted lines (for preview in line list)
+  highlightedLineIds: [],
+  setHighlightedLineIds: (ids) => set({ highlightedLineIds: ids }),
 });

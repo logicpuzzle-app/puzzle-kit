@@ -56,39 +56,36 @@ export function useSelectionTool({ getMousePosition }: UseSelectionToolOptions) 
   /**
    * Find element at a given point
    */
+  const collectElementsAtCell = useCallback(
+    (cellId: string): string[] => {
+      const dataLayer = toDataLayer(activeLayer);
+      const layer = puzzle[dataLayer];
+      const ids: string[] = [];
+
+      for (const surface of Object.values(layer.surfaces)) {
+        if (surface.cellId === cellId) ids.push(surface.id);
+      }
+      for (const num of Object.values(layer.numbers)) {
+        if (num.cellId === cellId) ids.push(num.id);
+      }
+      for (const sym of Object.values(layer.symbols)) {
+        if (sym.cellId === cellId) ids.push(sym.id);
+      }
+
+      return ids;
+    },
+    [activeLayer, puzzle]
+  );
+
   const findElementAtPoint = useCallback(
     (point: Point): string | null => {
       const cell = findCell(point);
       if (!cell) return null;
-
       const cellId = getCellId(cell.row, cell.col);
-      const dataLayer = toDataLayer(activeLayer);
-      const layer = puzzle[dataLayer];
-
-      // Check surfaces
-      for (const surface of Object.values(layer.surfaces)) {
-        if (surface.cellId === cellId) {
-          return surface.id;
-        }
-      }
-
-      // Check numbers
-      for (const num of Object.values(layer.numbers)) {
-        if (num.cellId === cellId) {
-          return num.id;
-        }
-      }
-
-      // Check symbols
-      for (const sym of Object.values(layer.symbols)) {
-        if (sym.cellId === cellId) {
-          return sym.id;
-        }
-      }
-
-      return null;
+      const elements = collectElementsAtCell(cellId);
+      return elements[0] ?? null;
     },
-    [puzzle, activeLayer, findCell]
+    [collectElementsAtCell, findCell]
   );
 
   /**
@@ -96,62 +93,62 @@ export function useSelectionTool({ getMousePosition }: UseSelectionToolOptions) 
    */
   const findElementsInRect = useCallback(
     (rect: SelectionRect): string[] => {
-      const elements: string[] = [];
-      const dataLayer = toDataLayer(activeLayer);
-      const layer = puzzle[dataLayer];
-
       const minX = Math.min(rect.startX, rect.endX);
       const maxX = Math.max(rect.startX, rect.endX);
       const minY = Math.min(rect.startY, rect.endY);
       const maxY = Math.max(rect.startY, rect.endY);
+      const ids: string[] = [];
 
-      // Check all cells within the rectangle
-      for (let row = 0; row < grid.rows; row++) {
-        for (let col = 0; col < grid.cols; col++) {
-          let cellX: number;
-          let cellY: number;
-
-          if (useTopology && topology) {
-            // Get cell center from topology
-            const cellId = getCellId(row, col);
-            const topoCell = topology.cells.get(cellId);
-            if (!topoCell) continue;
-            cellX = topoCell.center.x;
-            cellY = topoCell.center.y;
-          } else {
-            // Standard grid calculation
-            cellX = grid.outerPadding + col * grid.cellSize + grid.cellSize / 2;
-            cellY = grid.outerPadding + row * grid.cellSize + grid.cellSize / 2;
+      const addElementsForCell = (cellId: string) => {
+        for (const id of collectElementsAtCell(cellId)) {
+          if (!ids.includes(id)) {
+            ids.push(id);
           }
+        }
+      };
 
+      if (useTopology && topology) {
+        topology.cells.forEach((cell, cellId) => {
+          if (cell.outboard) return;
+          const { x, y } = cell.center;
+          if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
+            addElementsForCell(cellId);
+          }
+        });
+        return ids;
+      }
+
+      // Compute row/col bounds to avoid scanning full grid
+      const startCol = Math.max(
+        0,
+        Math.floor((minX - grid.outerPadding) / grid.cellSize)
+      );
+      const endCol = Math.min(
+        grid.cols - 1,
+        Math.floor((maxX - grid.outerPadding) / grid.cellSize)
+      );
+      const startRow = Math.max(
+        0,
+        Math.floor((minY - grid.outerPadding) / grid.cellSize)
+      );
+      const endRow = Math.min(
+        grid.rows - 1,
+        Math.floor((maxY - grid.outerPadding) / grid.cellSize)
+      );
+
+      for (let row = startRow; row <= endRow; row++) {
+        for (let col = startCol; col <= endCol; col++) {
+          const cellX = grid.outerPadding + col * grid.cellSize + grid.cellSize / 2;
+          const cellY = grid.outerPadding + row * grid.cellSize + grid.cellSize / 2;
           if (cellX >= minX && cellX <= maxX && cellY >= minY && cellY <= maxY) {
-            const cellId = getCellId(row, col);
-
-            // Find elements at this cell
-            for (const surface of Object.values(layer.surfaces)) {
-              if (surface.cellId === cellId && !elements.includes(surface.id)) {
-                elements.push(surface.id);
-              }
-            }
-
-            for (const num of Object.values(layer.numbers)) {
-              if (num.cellId === cellId && !elements.includes(num.id)) {
-                elements.push(num.id);
-              }
-            }
-
-            for (const sym of Object.values(layer.symbols)) {
-              if (sym.cellId === cellId && !elements.includes(sym.id)) {
-                elements.push(sym.id);
-              }
-            }
+            addElementsForCell(getCellId(row, col));
           }
         }
       }
 
-      return elements;
+      return ids;
     },
-    [grid, puzzle, activeLayer, useTopology, topology]
+    [collectElementsAtCell, grid.cellSize, grid.cols, grid.outerPadding, grid.rows, useTopology, topology]
   );
 
   /**

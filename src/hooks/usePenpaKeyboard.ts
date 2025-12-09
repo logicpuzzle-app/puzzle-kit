@@ -4,10 +4,14 @@
  * Implements keyboard shortcuts matching Penpa-edit behavior
  */
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useMemo } from 'react';
 import { usePuzzleStore } from '../store/puzzleStore';
 import type { PenpaEditMode, PenpaLayerMode } from '../types/penpaModes';
-import { getModeShortcut } from '../types/penpaModes';
+import {
+  shouldIgnoreKeyEvent,
+  type KeyboardShortcut,
+  executeMatchingShortcut,
+} from './keyboardUtils';
 
 // Mode shortcuts (matches Penpa-edit)
 const MODE_SHORTCUTS: Record<string, PenpaEditMode> = {
@@ -41,7 +45,7 @@ const SUBMODE_CYCLES: Record<PenpaEditMode, string[]> = {
   move: [],
 };
 
-// Color shortcuts (1-9, 0)
+// Color shortcuts (1-9, 0) - applies to surface mode
 const COLOR_SHORTCUTS: Record<string, number> = {
   '1': 1,  // Light grey
   '2': 2,  // Grey
@@ -55,7 +59,7 @@ const COLOR_SHORTCUTS: Record<string, number> = {
   '0': 0,  // Transparent (delete)
 };
 
-// Style shortcuts for line modes
+// Style shortcuts for line modes (line, lineE, wall)
 const STYLE_SHORTCUTS: Record<string, number> = {
   '1': 1, // Normal
   '2': 2, // Dotted
@@ -67,12 +71,19 @@ const STYLE_SHORTCUTS: Record<string, number> = {
   '8': 8, // Delete
 };
 
+// Modes where color shortcuts apply
+const COLOR_MODES: Set<PenpaEditMode> = new Set(['surface']);
+
+// Modes where style shortcuts apply
+const STYLE_MODES: Set<PenpaEditMode> = new Set(['line', 'lineE', 'wall']);
+
 export interface PenpaKeyboardState {
   editMode: PenpaEditMode;
   layerMode: PenpaLayerMode;
   submode: string;
   styleIndex: number;
   colorIndex: number;
+  secondaryColorIndex: number; // For color swap
   sizeIndex: number; // 0=L, 1=M, 2=S, 3=SS
 }
 
@@ -82,12 +93,112 @@ const DEFAULT_STATE: PenpaKeyboardState = {
   submode: 'surface',
   styleIndex: 1,
   colorIndex: 1,
+  secondaryColorIndex: 0, // Transparent/delete by default
   sizeIndex: 0,
 };
 
+// ============================================================================
+// Pure Helper Functions
+// ============================================================================
+
+/**
+ * Cycle through submodes for a given edit mode
+ */
+export function cycleSubmodeValue(
+  editMode: PenpaEditMode,
+  currentSubmode: string,
+  direction: 1 | -1
+): string {
+  const submodes = SUBMODE_CYCLES[editMode];
+  if (submodes.length === 0) return currentSubmode;
+
+  const currentIndex = submodes.indexOf(currentSubmode);
+  const nextIndex = (currentIndex + direction + submodes.length) % submodes.length;
+  return submodes[nextIndex];
+}
+
+/**
+ * Get default submode for an edit mode
+ */
+export function getDefaultSubmode(mode: PenpaEditMode): string {
+  const submodes = SUBMODE_CYCLES[mode];
+  return submodes[0] || mode;
+}
+
+/**
+ * Parse size from key (1-4)
+ */
+export function parseSizeKey(key: string): number | null {
+  const num = parseInt(key, 10);
+  if (num >= 1 && num <= 4) {
+    return num - 1;
+  }
+  return null;
+}
+
+/**
+ * Parse size from letter (l, m, s)
+ */
+export function parseSizeLetter(key: string): number | null {
+  const map: Record<string, number> = { l: 0, m: 1, s: 2 };
+  return map[key] ?? null;
+}
+
+/**
+ * Swap primary and secondary color indices
+ */
+export function swapColors(
+  colorIndex: number,
+  secondaryColorIndex: number
+): { colorIndex: number; secondaryColorIndex: number } {
+  return {
+    colorIndex: secondaryColorIndex,
+    secondaryColorIndex: colorIndex,
+  };
+}
+
+// ============================================================================
+// Hook Context Type
+// ============================================================================
+
+interface PenpaKeyboardContext {
+  stateRef: React.MutableRefObject<PenpaKeyboardState>;
+  setState: (updates: Partial<PenpaKeyboardState>) => void;
+  cycleSubmode: (direction: 1 | -1) => void;
+  swapColorIndices: () => void;
+  undo: () => void;
+  redo: () => void;
+  setZoom: (zoom: number) => void;
+  setPan: (x: number, y: number) => void;
+  setActiveLayer: (layer: 'problem' | 'answer') => void;
+  clearSelection: () => void;
+  cancelOperation: () => void;
+  canvas: { zoom: number; panX: number; panY: number };
+  ctrl: boolean;
+  shift: boolean;
+  alt: boolean;
+}
+
+// ============================================================================
+// Hook
+// ============================================================================
+
+export interface UsePenpaKeyboardOptions {
+  onModeChange?: (state: PenpaKeyboardState) => void;
+  onClearSelection?: () => void;
+  onCancelOperation?: () => void;
+}
+
 export function usePenpaKeyboard(
-  onModeChange?: (state: PenpaKeyboardState) => void
+  optionsOrCallback?: UsePenpaKeyboardOptions | ((state: PenpaKeyboardState) => void)
 ) {
+  // Support both old callback-only API and new options API
+  const options: UsePenpaKeyboardOptions = typeof optionsOrCallback === 'function'
+    ? { onModeChange: optionsOrCallback }
+    : optionsOrCallback ?? {};
+
+  const { onModeChange, onClearSelection, onCancelOperation } = options;
+
   const stateRef = useRef<PenpaKeyboardState>(DEFAULT_STATE);
   const {
     undo,
@@ -96,7 +207,6 @@ export function usePenpaKeyboard(
     setPan,
     canvas,
     setActiveLayer,
-    activeLayer,
   } = usePuzzleStore();
 
   const setState = useCallback((updates: Partial<PenpaKeyboardState>) => {
@@ -106,212 +216,271 @@ export function usePenpaKeyboard(
 
   const cycleSubmode = useCallback((direction: 1 | -1 = 1) => {
     const { editMode, submode } = stateRef.current;
-    const submodes = SUBMODE_CYCLES[editMode];
-    if (submodes.length === 0) return;
-
-    const currentIndex = submodes.indexOf(submode);
-    const nextIndex = (currentIndex + direction + submodes.length) % submodes.length;
-    setState({ submode: submodes[nextIndex] });
+    const newSubmode = cycleSubmodeValue(editMode, submode, direction);
+    if (newSubmode !== submode) {
+      setState({ submode: newSubmode });
+    }
   }, [setState]);
 
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    // Ignore if in input element
-    if (
-      e.target instanceof HTMLInputElement ||
-      e.target instanceof HTMLTextAreaElement ||
-      e.target instanceof HTMLSelectElement
-    ) {
-      return;
-    }
+  const swapColorIndices = useCallback(() => {
+    const { colorIndex, secondaryColorIndex } = stateRef.current;
+    const swapped = swapColors(colorIndex, secondaryColorIndex);
+    setState(swapped);
+  }, [setState]);
 
-    const ctrl = e.ctrlKey || e.metaKey;
-    const shift = e.shiftKey;
-    const alt = e.altKey;
-    const key = e.key.toLowerCase();
+  const clearSelection = useCallback(() => {
+    onClearSelection?.();
+  }, [onClearSelection]);
 
-    // ===============================
-    // Undo/Redo (Ctrl+Z, Ctrl+Y)
-    // ===============================
-    if (ctrl && key === 'z') {
-      e.preventDefault();
-      if (shift) {
-        redo();
-      } else {
-        undo();
-      }
-      return;
-    }
+  const cancelOperation = useCallback(() => {
+    onCancelOperation?.();
+  }, [onCancelOperation]);
 
-    if (ctrl && key === 'y') {
-      e.preventDefault();
-      redo();
-      return;
-    }
+  // ============================================================================
+  // Shortcut Definitions
+  // ============================================================================
 
-    // ===============================
-    // Zoom (Ctrl+/-/0)
-    // ===============================
-    if (ctrl && (key === '=' || key === '+')) {
-      e.preventDefault();
-      setZoom(Math.min(canvas.zoom * 1.2, 5));
-      return;
-    }
+  const shortcuts = useMemo((): KeyboardShortcut<PenpaKeyboardContext>[] => [
+    // Undo/Redo
+    {
+      keys: ['z'],
+      ctrl: true,
+      preventDefault: true,
+      run: (ctx) => ctx.shift ? ctx.redo() : ctx.undo(),
+    },
+    {
+      keys: ['y'],
+      ctrl: true,
+      preventDefault: true,
+      run: (ctx) => ctx.redo(),
+    },
 
-    if (ctrl && key === '-') {
-      e.preventDefault();
-      setZoom(Math.max(canvas.zoom / 1.2, 0.2));
-      return;
-    }
+    // Zoom
+    {
+      keys: ['=', '+'],
+      ctrl: true,
+      preventDefault: true,
+      run: (ctx) => ctx.setZoom(Math.min(ctx.canvas.zoom * 1.2, 5)),
+    },
+    {
+      keys: ['-'],
+      ctrl: true,
+      preventDefault: true,
+      run: (ctx) => ctx.setZoom(Math.max(ctx.canvas.zoom / 1.2, 0.2)),
+    },
+    {
+      keys: ['0'],
+      ctrl: true,
+      preventDefault: true,
+      run: (ctx) => {
+        ctx.setZoom(1);
+        ctx.setPan(0, 0);
+      },
+    },
 
-    if (ctrl && key === '0') {
-      e.preventDefault();
-      setZoom(1);
-      setPan(0, 0);
-      return;
-    }
+    // Layer switching
+    {
+      keys: ['q'],
+      ctrl: false,
+      shift: false,
+      preventDefault: true,
+      run: (ctx) => {
+        ctx.setState({ layerMode: 'question' });
+        ctx.setActiveLayer('problem');
+      },
+    },
+    {
+      keys: ['a'],
+      ctrl: false,
+      shift: true,
+      preventDefault: true,
+      run: (ctx) => {
+        ctx.setState({ layerMode: 'answer' });
+        ctx.setActiveLayer('answer');
+      },
+    },
+    {
+      keys: ['tab'],
+      preventDefault: true,
+      run: (ctx) => {
+        const newLayer = ctx.stateRef.current.layerMode === 'question' ? 'answer' : 'question';
+        ctx.setState({ layerMode: newLayer });
+        ctx.setActiveLayer(newLayer === 'question' ? 'problem' : 'answer');
+      },
+    },
 
-    // ===============================
-    // Layer mode (Q/A/Tab)
-    // ===============================
-    if (!ctrl && !shift && key === 'q') {
-      e.preventDefault();
-      setState({ layerMode: 'question' });
-      setActiveLayer('problem');
-      return;
-    }
+    // Mode shortcuts
+    ...Object.entries(MODE_SHORTCUTS).map(([k, mode]) => ({
+      keys: [k],
+      ctrl: false,
+      alt: false,
+      preventDefault: true,
+      run: (ctx: PenpaKeyboardContext) => {
+        if (mode === ctx.stateRef.current.editMode) {
+          ctx.cycleSubmode(ctx.shift ? -1 : 1);
+        } else {
+          ctx.setState({
+            editMode: mode,
+            submode: getDefaultSubmode(mode),
+          });
+        }
+      },
+    })),
 
-    // 'A' without modifiers conflicts with mode shortcut in some setups
-    // Use shift+A for answer layer to avoid conflicts
-    if (!ctrl && shift && key === 'a') {
-      e.preventDefault();
-      setState({ layerMode: 'answer' });
-      setActiveLayer('answer');
-      return;
-    }
+    // Space key behavior depends on mode:
+    // - In surface mode: swap primary/secondary colors
+    // - In other modes: cycle submode
+    {
+      keys: [' '],
+      ctrl: false,
+      alt: false,
+      preventDefault: true,
+      when: (ctx) => COLOR_MODES.has(ctx.stateRef.current.editMode),
+      run: (ctx) => ctx.swapColorIndices(),
+    },
+    {
+      keys: [' '],
+      ctrl: false,
+      alt: false,
+      shift: true,
+      preventDefault: true,
+      when: (ctx) => !COLOR_MODES.has(ctx.stateRef.current.editMode),
+      run: (ctx) => ctx.cycleSubmode(1),
+    },
+    {
+      keys: [' '],
+      ctrl: false,
+      alt: false,
+      shift: false,
+      preventDefault: true,
+      when: (ctx) => !COLOR_MODES.has(ctx.stateRef.current.editMode),
+      run: (ctx) => ctx.cycleSubmode(-1),
+    },
 
-    if (!ctrl && key === 'tab') {
-      e.preventDefault();
-      const newLayer = stateRef.current.layerMode === 'question' ? 'answer' : 'question';
-      setState({ layerMode: newLayer });
-      setActiveLayer(newLayer === 'question' ? 'problem' : 'answer');
-      return;
-    }
+    // Escape: cancel current operation
+    {
+      keys: ['escape'],
+      preventDefault: true,
+      run: (ctx) => ctx.cancelOperation(),
+    },
 
-    // ===============================
-    // Mode switching (single letter)
-    // ===============================
-    if (!ctrl && !alt && MODE_SHORTCUTS[key]) {
-      e.preventDefault();
-      const newMode = MODE_SHORTCUTS[key];
+    // Delete/Backspace: clear selection
+    {
+      keys: ['delete', 'backspace'],
+      ctrl: false,
+      preventDefault: true,
+      run: (ctx) => ctx.clearSelection(),
+    },
 
-      // If same mode, cycle submode
-      if (newMode === stateRef.current.editMode) {
-        cycleSubmode(shift ? -1 : 1);
-      } else {
-        // Switch to new mode with first submode
-        const submodes = SUBMODE_CYCLES[newMode];
-        setState({
-          editMode: newMode,
-          submode: submodes[0] || newMode,
-        });
-      }
-      return;
-    }
+    // Color shortcuts (number keys in surface mode)
+    ...Object.keys(COLOR_SHORTCUTS).map((k) => ({
+      keys: [k],
+      ctrl: false,
+      alt: false,
+      shift: false,
+      preventDefault: true,
+      when: (ctx: PenpaKeyboardContext) => COLOR_MODES.has(ctx.stateRef.current.editMode),
+      run: (ctx: PenpaKeyboardContext) => ctx.setState({ colorIndex: COLOR_SHORTCUTS[k] }),
+    })),
 
-    // ===============================
-    // Color selection (number keys without modifiers)
-    // ===============================
-    if (!ctrl && !shift && !alt && COLOR_SHORTCUTS[key] !== undefined) {
-      // Only apply to surface mode
-      if (stateRef.current.editMode === 'surface') {
-        e.preventDefault();
-        setState({ colorIndex: COLOR_SHORTCUTS[key] });
+    // Style shortcuts (number keys in line/lineE/wall modes)
+    ...Object.keys(STYLE_SHORTCUTS).map((k) => ({
+      keys: [k],
+      ctrl: false,
+      alt: false,
+      shift: false,
+      preventDefault: true,
+      when: (ctx: PenpaKeyboardContext) => STYLE_MODES.has(ctx.stateRef.current.editMode),
+      run: (ctx: PenpaKeyboardContext) => ctx.setState({ styleIndex: STYLE_SHORTCUTS[k] }),
+    })),
+
+    // Size shortcuts (Shift + 1-4)
+    {
+      keys: ['1', '2', '3', '4'],
+      ctrl: false,
+      shift: true,
+      preventDefault: true,
+      run: (ctx: PenpaKeyboardContext, key: string) => {
+        const sizeIndex = parseSizeKey(key);
+        if (sizeIndex !== null) {
+          ctx.setState({ sizeIndex });
+        }
+      },
+    },
+
+    // Size shortcuts for symbol mode (l, m, s)
+    {
+      keys: ['l', 'm', 's'],
+      ctrl: false,
+      shift: false,
+      alt: false,
+      preventDefault: true,
+      when: (ctx) => ctx.stateRef.current.editMode === 'symbol',
+      run: (ctx: PenpaKeyboardContext, key: string) => {
+        const sizeIndex = parseSizeLetter(key);
+        if (sizeIndex !== null) {
+          ctx.setState({ sizeIndex });
+        }
+      },
+    },
+
+    // Arrow key pan
+    {
+      keys: ['arrowup', 'arrowdown', 'arrowleft', 'arrowright'],
+      ctrl: false,
+      preventDefault: true,
+      run: (ctx: PenpaKeyboardContext, key: string) => {
+        const panStep = ctx.shift ? 50 : 20;
+        switch (key) {
+          case 'arrowup':
+            ctx.setPan(ctx.canvas.panX, ctx.canvas.panY + panStep);
+            break;
+          case 'arrowdown':
+            ctx.setPan(ctx.canvas.panX, ctx.canvas.panY - panStep);
+            break;
+          case 'arrowleft':
+            ctx.setPan(ctx.canvas.panX + panStep, ctx.canvas.panY);
+            break;
+          case 'arrowright':
+            ctx.setPan(ctx.canvas.panX - panStep, ctx.canvas.panY);
+            break;
+        }
+      },
+    },
+  ], []);
+
+  // ============================================================================
+  // Event Handler
+  // ============================================================================
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (shouldIgnoreKeyEvent(e)) {
         return;
       }
-    }
 
-    // ===============================
-    // Style selection (number keys in line modes)
-    // ===============================
-    if (!ctrl && !shift && !alt && STYLE_SHORTCUTS[key] !== undefined) {
-      const { editMode } = stateRef.current;
-      if (editMode === 'line' || editMode === 'lineE' || editMode === 'wall') {
-        e.preventDefault();
-        setState({ styleIndex: STYLE_SHORTCUTS[key] });
-        return;
-      }
-    }
+      const context: PenpaKeyboardContext = {
+        stateRef,
+        setState,
+        cycleSubmode,
+        swapColorIndices,
+        undo,
+        redo,
+        setZoom,
+        setPan,
+        setActiveLayer,
+        clearSelection,
+        cancelOperation,
+        canvas,
+        ctrl: e.ctrlKey || e.metaKey,
+        shift: e.shiftKey,
+        alt: e.altKey,
+      };
 
-    // ===============================
-    // Size selection (L/M/S keys in symbol mode)
-    // ===============================
-    if (!ctrl && !shift && !alt && stateRef.current.editMode === 'symbol') {
-      if (key === 'l') {
-        e.preventDefault();
-        setState({ sizeIndex: 0 }); // L
-        return;
-      }
-      if (key === 'm') {
-        e.preventDefault();
-        setState({ sizeIndex: 1 }); // M
-        return;
-      }
-      if (key === 's') {
-        e.preventDefault();
-        setState({ sizeIndex: 2 }); // S
-        return;
-      }
-    }
-
-    // ===============================
-    // Space - color swap / right-click behavior toggle
-    // ===============================
-    if (key === ' ' && !ctrl) {
-      e.preventDefault();
-      // Toggle between primary and secondary color
-      return;
-    }
-
-    // ===============================
-    // Escape - cancel current operation
-    // ===============================
-    if (key === 'escape') {
-      e.preventDefault();
-      return;
-    }
-
-    // ===============================
-    // Arrow keys - pan view
-    // ===============================
-    if (!ctrl && (key === 'arrowup' || key === 'arrowdown' || key === 'arrowleft' || key === 'arrowright')) {
-      const panStep = shift ? 50 : 20;
-      e.preventDefault();
-      switch (key) {
-        case 'arrowup':
-          setPan(canvas.panX, canvas.panY + panStep);
-          break;
-        case 'arrowdown':
-          setPan(canvas.panX, canvas.panY - panStep);
-          break;
-        case 'arrowleft':
-          setPan(canvas.panX + panStep, canvas.panY);
-          break;
-        case 'arrowright':
-          setPan(canvas.panX - panStep, canvas.panY);
-          break;
-      }
-      return;
-    }
-
-    // ===============================
-    // Delete/Backspace - clear
-    // ===============================
-    if (key === 'delete' || key === 'backspace') {
-      e.preventDefault();
-      // Would clear selection or current element
-      return;
-    }
-  }, [undo, redo, setZoom, setPan, canvas, setActiveLayer, cycleSubmode, setState]);
+      executeMatchingShortcut(shortcuts, e, context);
+    },
+    [undo, redo, setZoom, setPan, canvas, setActiveLayer, cycleSubmode, setState, swapColorIndices, clearSelection, cancelOperation, shortcuts]
+  );
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -322,6 +491,7 @@ export function usePenpaKeyboard(
     state: stateRef.current,
     setState,
     cycleSubmode,
+    swapColorIndices,
   };
 }
 

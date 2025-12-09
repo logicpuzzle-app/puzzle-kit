@@ -1,15 +1,15 @@
-import React, { useMemo, useEffect, useRef, useState } from 'react';
+import React, { useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../../store/puzzleStore';
 import { toDataLayer } from '../../../types';
 import { useCellFinder } from '../../../hooks/useCellFinder';
+import { NumericInput } from '../../common';
 
 // Arrow direction settings for directional numbers (Yajilin-style)
 // Direction: -1=none, 0=up, 1=left, 2=right, 3=down
 // Supports arbitrary angles via arrowAngle
 export const ArrowDirectionSettings: React.FC = () => {
   const { t } = useTranslation();
-  const [angleInput, setAngleInput] = useState('');
   const {
     toolSettings,
     setToolSettings,
@@ -74,6 +74,7 @@ export const ArrowDirectionSettings: React.FC = () => {
       char: clue.char,
       direction: reverseDirMap[clue.direction] ?? -1,
       angle: clue.angle,
+      color: clue.color,
     };
   }, [numberSelection, findCellIdByRowCol, puzzle, dataLayer]);
 
@@ -105,7 +106,7 @@ export const ArrowDirectionSettings: React.FC = () => {
     if (!cellId) return;
     const cellIndex = numberSelection.row * grid.cols + numberSelection.col;
 
-    // Update existing directional clue if present (update direction, keep value/char)
+    // Update existing directional clue if present (update direction, keep value/char/color)
     if (currentCellClue) {
       addDirectionalClue({
         cellId: currentCellClue.cellId,
@@ -115,6 +116,7 @@ export const ArrowDirectionSettings: React.FC = () => {
         char: currentCellClue.char,
         layer: dataLayer,
         angle: null, // Clear arbitrary angle
+        color: currentCellClue.color || toolSettings.color,
       });
     } else if (currentCellNumber) {
       // Convert regular number to directionalClue with direction
@@ -131,6 +133,7 @@ export const ArrowDirectionSettings: React.FC = () => {
         char: isSingleChar ? val : undefined,
         layer: dataLayer,
         angle: null,
+        color: toolSettings.color,
       });
       // Remove the original number
       removeNumber(currentCellNumber.id);
@@ -153,7 +156,7 @@ export const ArrowDirectionSettings: React.FC = () => {
     if (!cellId) return;
     const cellIndex = numberSelection.row * grid.cols + numberSelection.col;
 
-    // Update existing directional clue if present
+    // Update existing directional clue if present (keep color)
     if (currentCellClue) {
       addDirectionalClue({
         cellId: currentCellClue.cellId,
@@ -163,6 +166,7 @@ export const ArrowDirectionSettings: React.FC = () => {
         char: currentCellClue.char,
         layer: dataLayer,
         angle: angleValue,
+        color: currentCellClue.color || toolSettings.color,
       });
     } else if (currentCellNumber) {
       // Convert regular number to directionalClue with angle
@@ -179,20 +183,11 @@ export const ArrowDirectionSettings: React.FC = () => {
         char: isSingleChar ? val : undefined,
         layer: dataLayer,
         angle: angleValue,
+        color: toolSettings.color,
       });
       // Remove the original number
       removeNumber(currentCellNumber.id);
     }
-  };
-
-  const handleAngleInputSubmit = () => {
-    const parsed = parseFloat(angleInput);
-    if (!isNaN(parsed)) {
-      // Normalize to 0-360
-      const normalized = ((parsed % 360) + 360) % 360;
-      handleAngleChange(normalized);
-    }
-    setAngleInput('');
   };
 
   return (
@@ -274,26 +269,13 @@ export const ArrowDirectionSettings: React.FC = () => {
         >
           -15
         </button>
-        <input
-          type="number"
-          value={activeAngle !== null ? activeAngle : ''}
-          onChange={(e) => {
-            const val = e.target.value;
-            if (val === '') {
-              handleAngleChange(null);
-            } else {
-              const parsed = parseFloat(val);
-              if (!isNaN(parsed)) {
-                handleAngleChange(((parsed % 360) + 360) % 360);
-              }
-            }
-          }}
+        <NumericInput
+          value={activeAngle}
+          onChange={(val) => handleAngleChange(val)}
+          normalize={(v) => ((v % 360) + 360) % 360}
+          allowNull
           placeholder="°"
-          className={`w-12 h-6 px-1 text-xs text-center border rounded-sm focus:outline-none focus:border-office-accent ${
-            activeAngle !== null
-              ? 'border-office-accent bg-blue-50'
-              : 'border-office-border'
-          }`}
+          className={`w-10 h-6 ${activeAngle !== null ? 'border-office-accent bg-blue-50' : ''}`}
           title={t('direction.customAngle', 'Custom angle (degrees)')}
         />
         <button

@@ -126,9 +126,6 @@ export function useSurfaceToolHandler() {
       const isDotTool = toolSettings.currentTool === 'surface-dot';
       const displayMode = isDotTool ? 'dot' : 'fill';
 
-      // Debug: log inputConstraint at start
-      console.log('[handleSurfaceTool] Called with inputConstraint:', toolSettings.inputConstraint, 'displayMode:', displayMode);
-
       // Skip if this cell was already processed during this drag
       if (processedCellsRef.current.has(cellId)) {
         return;
@@ -165,37 +162,22 @@ export function useSurfaceToolHandler() {
           const coords = getCellCoordsFromId(cellId);
           if (coords) {
             firstCellParityRef.current = (coords.row + coords.col) % 2 === 0;
-            console.log('[handleSurfaceTool] First cell parity set:', {
-              cellId,
-              coords,
-              parity: firstCellParityRef.current,
-              inputConstraint: toolSettings.inputConstraint,
-            });
           }
         }
       }
 
       // noAdjacent constraint: skip cells that cannot be shaded when filling
       if (toolSettings.inputConstraint === 'noAdjacent' && surfaceFillModeRef.current === 'fill') {
-        console.log('[handleSurfaceTool] noAdjacent check:', {
-          cellId,
-          inputConstraint: toolSettings.inputConstraint,
-          firstCellParity: firstCellParityRef.current,
-          hasSameParity: hasSameParity(cellId),
-        });
         // Check 1: skip cells with different checker parity (adjacent to potential shaded cell)
         if (!hasSameParity(cellId)) {
-          console.log('[handleSurfaceTool] Skipping cell due to noAdjacent constraint');
           return;
         }
         // Check 2: skip cells with directional clues (Yajilin arrow+number)
         if (cellHasDirectionalClue(cellId, puzzle, grid.cols, topology ?? null)) {
-          console.log('[handleSurfaceTool] Skipping cell with directional clue');
           return;
         }
         // Check 3: skip cells with lines passing through (Yajilin loop)
         if (cellHasLine(cellId, puzzle)) {
-          console.log('[handleSurfaceTool] Skipping cell with line');
           return;
         }
       }
@@ -335,9 +317,6 @@ export function useSurfaceToolHandler() {
     (point: Point, isRightClick: boolean, colorOverride?: { color?: string; secondaryColor?: string }) => {
       const cellId = findCellId(point);
       if (!cellId) return;
-
-      // Debug: log inputConstraint at start
-      console.log('[handleSurfaceCycleTool] Called with inputConstraint:', toolSettings.inputConstraint, 'colorOverride:', colorOverride);
 
       // Skip if this cell was already processed during this drag
       if (processedCellsRef.current.has(cellId)) {

@@ -187,6 +187,16 @@ export type ToolType =
   | 'symbol-diamond'
   | 'symbol-star'
   | 'symbol-arrow'
+  | 'symbol-arrow_B'
+  | 'symbol-arrow_N'
+  | 'symbol-arrow_S'
+  | 'symbol-arrow_Short'
+  | 'symbol-arrow_GP'
+  | 'symbol-arrow_double'
+  | 'symbol-arrow_cross'
+  | 'symbol-arrow_eight'
+  | 'symbol-arrow_fourtip'
+  | 'symbol-arrow_fouredge'
   | 'symbol-cross'
   | 'symbol-line'
   | 'symbol-cat'
@@ -255,6 +265,8 @@ export interface SurfaceElement {
   cellId: string;
   color: string;
   layer: DataLayerType;
+  /** Logical uniqueness key per cell (same key cannot be placed twice on one cell) */
+  objectKey?: string;
   /** Display mode: 'fill' for full cell fill, 'dot' for small dot (pzprjs qsub style) */
   displayMode?: SurfaceDisplayMode;
 }
@@ -306,6 +318,8 @@ export interface NumberElement {
   candidates?: number[]; // For candidates mode (1-9 for Sudoku)
   color: string;
   layer: DataLayerType;
+  /** Logical uniqueness key per cell (same key cannot be placed twice on one cell) */
+  objectKey?: string;
 }
 
 export interface SymbolElement {
@@ -317,6 +331,10 @@ export interface SymbolElement {
   color: string;
   fillColor?: string;
   layer: DataLayerType;
+  directions?: boolean[];  // For multi-direction arrows (8 values for 8-way, etc.)
+  directionAngles?: number[];  // Custom angles for each direction (degrees, 0=up)
+  /** Logical uniqueness key per cell (same key cannot be placed twice on one cell) */
+  objectKey?: string;
 }
 
 export interface CageElement {
@@ -563,10 +581,14 @@ export interface ToolSettings {
   // Symbol tool settings
   symbolGridPoints: LineGridPoint[]; // Which grid points symbols can be placed on
   overrideSymbolType?: string; // Override the default symbol type (e.g., 'circle-filled' for constraint modes)
+  symbolSubMode: 'direction' | 'icon' | 'multicolor'; // Symbol category sub-mode: direction (arrows), icon (symbols), or multicolor surface
   // Surface button mode (for shading puzzles like Heyawake)
   surfaceButtonMode: '2-button' | '1-button'; // 2-button: left=shade, right=unshade; 1-button: left cycles
   // Input constraint for shading (e.g., 'noAdjacent' prevents shading adjacent cells)
   inputConstraint?: 'none' | 'noAdjacent';
+  // Multi-direction arrow settings (for arrow_cross, arrow_eight, etc.)
+  multiDirections: boolean[]; // Direction toggles: [N, NE, E, SE, S, SW, W, NW] for 8-way, [N, E, S, W] for 4-way
+  multiDirectionAngles: number[]; // Custom angles for each direction (degrees, 0=up, clockwise)
 }
 
 // Canvas state

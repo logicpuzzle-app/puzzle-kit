@@ -135,6 +135,8 @@ const MulticolorCell: React.FC<{
 /**
  * Render a multicolor cell in topology mode
  * Uses polygon vertices and center to create sections
+ * - 'x' pattern: divide by lines from center to vertices (triangles)
+ * - 'cross' pattern: divide by lines from center to edge midpoints (quadrilaterals)
  */
 const MulticolorCellTopology: React.FC<{
   element: MulticolorSurfaceElement;
@@ -157,14 +159,51 @@ const MulticolorCellTopology: React.FC<{
     );
   }
 
-  // Multiple colors - divide polygon into sections
-  // For topology mode, we'll create triangles from center to each edge
   const numVertices = vertices.length;
   if (numVertices < 3) return null;
 
-  // Map 4 color slots to triangle sections
-  // We divide vertices into 4 groups for quadrant-like effect
+  // Map 4 color slots to sections
   const sectionsPerColor = Math.ceil(numVertices / 4);
+
+  if (pattern === 'x') {
+    // X pattern: divide by lines from center to vertices
+    // Each slot gets triangles from center to vertex to next vertex
+    return (
+      <g className="multicolor-surface">
+        {colors.map((colorIndex, colorSlot) => {
+          if (colorIndex === 0) return null; // Skip transparent
+
+          const color = getColorForIndex(colorIndex, customColors);
+          const paths: React.ReactNode[] = [];
+
+          const startIdx = colorSlot * sectionsPerColor;
+          const endIdx = Math.min(startIdx + sectionsPerColor, numVertices);
+
+          for (let i = startIdx; i < endIdx; i++) {
+            const v1 = vertices[i];
+            const v2 = vertices[(i + 1) % numVertices];
+
+            paths.push(
+              <polygon
+                key={`${colorSlot}-${i}`}
+                points={`${center.x},${center.y} ${v1.x},${v1.y} ${v2.x},${v2.y}`}
+                fill={color}
+              />
+            );
+          }
+
+          return <g key={`section-${colorSlot}`}>{paths}</g>;
+        })}
+      </g>
+    );
+  }
+
+  // Cross (+) pattern: divide by lines from center to edge midpoints
+  // Calculate edge midpoints
+  const edgeMidpoints = vertices.map((v, i) => {
+    const next = vertices[(i + 1) % numVertices];
+    return { x: (v.x + next.x) / 2, y: (v.y + next.y) / 2 };
+  });
 
   return (
     <g className="multicolor-surface">
@@ -174,18 +213,19 @@ const MulticolorCellTopology: React.FC<{
         const color = getColorForIndex(colorIndex, customColors);
         const paths: React.ReactNode[] = [];
 
-        // Calculate which vertices belong to this color slot
         const startIdx = colorSlot * sectionsPerColor;
         const endIdx = Math.min(startIdx + sectionsPerColor, numVertices);
 
         for (let i = startIdx; i < endIdx; i++) {
-          const v1 = vertices[i];
-          const v2 = vertices[(i + 1) % numVertices];
+          const prevMid = edgeMidpoints[(i - 1 + numVertices) % numVertices];
+          const vertex = vertices[i];
+          const nextMid = edgeMidpoints[i];
 
+          // Quadrilateral: center -> prevMid -> vertex -> nextMid
           paths.push(
             <polygon
               key={`${colorSlot}-${i}`}
-              points={`${center.x},${center.y} ${v1.x},${v1.y} ${v2.x},${v2.y}`}
+              points={`${center.x},${center.y} ${prevMid.x},${prevMid.y} ${vertex.x},${vertex.y} ${nextMid.x},${nextMid.y}`}
               fill={color}
             />
           );

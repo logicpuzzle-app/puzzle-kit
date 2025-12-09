@@ -37,6 +37,20 @@ import {
   ArrowSymbol,
 } from './LineSymbols';
 
+// Arrow symbols (penpa-edit style)
+import {
+  ArrowBSymbol,
+  ArrowNSymbol,
+  ArrowSSymbol,
+  ArrowShortSymbol,
+  ArrowGPSymbol,
+  ArrowCrossSymbol,
+  ArrowEightSymbol,
+  ArrowFourTipSymbol,
+  ArrowFourEdgeSymbol,
+  ArrowDoubleSymbol,
+} from './ArrowSymbols';
+
 // Special symbols
 import { MineSymbol, BulbSymbol } from './SpecialSymbols';
 
@@ -187,6 +201,30 @@ export const renderSymbol = (type: string, props: SymbolProps): React.ReactEleme
     // Arrow (old style - keep for compatibility)
     case 'arrow':
       return <ArrowSymbol {...props} />;
+
+    // Penpa-edit style arrows
+    // Single direction arrows
+    case 'arrow_B':
+      return <ArrowBSymbol {...props} />;
+    case 'arrow_N':
+      return <ArrowNSymbol {...props} />;
+    case 'arrow_S':
+      return <ArrowSSymbol {...props} />;
+    case 'arrow_Short':
+      return <ArrowShortSymbol {...props} />;
+    case 'arrow_GP':
+      return <ArrowGPSymbol {...props} />;
+    case 'arrow_double':
+      return <ArrowDoubleSymbol {...props} />;
+    // Multi-direction arrows
+    case 'arrow_cross':
+      return <ArrowCrossSymbol {...props} directions={props.directions} directionAngles={props.directionAngles} />;
+    case 'arrow_eight':
+      return <ArrowEightSymbol {...props} directions={props.directions} directionAngles={props.directionAngles} />;
+    case 'arrow_fourtip':
+      return <ArrowFourTipSymbol {...props} directions={props.directions} directionAngles={props.directionAngles} />;
+    case 'arrow_fouredge':
+      return <ArrowFourEdgeSymbol {...props} directions={props.directions} directionAngles={props.directionAngles} />;
 
     // Special symbols
     case 'mine':

@@ -240,7 +240,7 @@ export function loadLanguage(): string {
 // Clear All Storage
 // ===========================
 
-export function clearAllStorage(): void {
+export function clearLocalAppStorage(): void {
   Object.values(STORAGE_KEYS).forEach((key) => {
     removeItem(key);
   });
@@ -250,7 +250,7 @@ export function clearAllStorage(): void {
 // Storage Availability Check
 // ===========================
 
-export function isStorageAvailable(): boolean {
+export function isLocalStorageAvailable(): boolean {
   try {
     const test = '__storage_test__';
     localStorage.setItem(test, test);

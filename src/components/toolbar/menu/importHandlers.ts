@@ -16,7 +16,7 @@ import {
 import { syncCountersFromPuzzleState } from '../../../utils/idGenerator';
 import { gridConfigToTopology, applyTopologyPreset } from '../../../utils/gridTopology';
 import { loadAutoSave } from '../../../utils/serialization';
-import { getStorageAdapter } from '../../../modules/storage';
+import { getDefaultStorageAdapter } from '../../../modules/storage';
 import type { GridConfig, PuzzleState } from '../../../types';
 
 interface ImportHandlersOptions {
@@ -77,7 +77,7 @@ export const loadFromUrlOrAutoSave = async () => {
   // Check for puzzle ID (new format)
   const puzzleId = urlParams.get('id');
   if (puzzleId) {
-    const adapter = getStorageAdapter();
+    const adapter = getDefaultStorageAdapter();
     if (adapter && adapter.isAvailable()) {
       try {
         const result = await adapter.load(puzzleId);

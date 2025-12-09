@@ -16,6 +16,8 @@ import { useCellFinder } from '../../hooks/useCellFinder';
 import { useSpecialPreview } from '../../hooks/useSpecialPreview';
 import { useNumberKeyboard } from '../../hooks/useNumberKeyboard';
 import { screenToSvg, getCellCorners, getCellCenter, findNearestEdge } from '../../utils/gridUtils';
+import { resolveGridIdToPosition } from '../../utils/gridIds';
+import { pointToLineSegmentDistance } from '../../utils/lineUtils';
 import type { NumberPosition, SymbolElement, Point } from '../../types';
 import { toDataLayer } from '../../types';
 import type { TopologyVertex } from '../../utils/gridTopology';
@@ -24,22 +26,38 @@ import { SpecialToolPreview } from './SpecialToolPreview';
 import { constraintCatalog } from '../../constraints';
 import { getAutoModeConfig } from '../../constraints/inputModeMapping';
 import type { GridTopology, TopologyCell } from '../../utils/gridTopology';
+import {
+  type FlickState,
+  INITIAL_FLICK_STATE,
+  calculateSimpleFlickDirection,
+  calculateTopologyFlickDirection,
+  type TopologyCellInfo,
+} from '../../hooks/inputStrategies';
+import {
+  isDirecInputMode,
+  isNumberInputMode,
+  isLineCellMode,
+  isLineMode,
+  handleDirecMouseDown,
+  handleNumberInputMouseDown,
+  handleLineCellMouseDown,
+  handleLineMouseDown,
+  handleSelectMouseDown,
+  handleNumberToolMouseDown,
+  handleTextMouseDown,
+  type MouseDownContext,
+  type CellInfo as StrategyCellInfo,
+  type MouseDownAction,
+  type AutoModeConfig,
+} from '../../hooks/tool-handlers/mouseDownStrategies';
 
 // ========================================
-// Helper: Calculate flick direction based on cell topology
+// Helper: Calculate flick direction (delegates to inputStrategies)
 // ========================================
 
 /**
- * For a deformed grid, calculate the arrow direction/angle based on the cell's edge normals.
- * Returns { direction, angle } where:
- * - direction: 0-4 (0=none, 1=up, 2=down, 3=left, 4=right) - only used for non-topology mode
- * - angle: The angle in degrees (0=right, 90=down, 180=left, 270=up) - used for topology mode
- *
- * @param dx - Horizontal flick displacement
- * @param dy - Vertical flick displacement
- * @param threshold - Minimum displacement to register a flick
- * @param cellId - Cell ID (e.g., "cell-0-0")
- * @param topology - Grid topology (null if not using topology mode)
+ * Calculate flick direction with topology support
+ * Wrapper that builds TopologyCellInfo from GridTopology
  */
 function calculateFlickDirection(
   dx: number,
@@ -48,16 +66,10 @@ function calculateFlickDirection(
   cellId: string,
   topology: GridTopology | null
 ): { direction: 0 | 1 | 2 | 3 | 4; angle: number | null } {
-  const distance = Math.sqrt(dx * dx + dy * dy);
-  if (distance < threshold) {
-    return { direction: 0, angle: null };
-  }
-
-  // If topology mode is enabled and cell exists, use edge-perpendicular direction
+  // If topology mode, build cell info and use topology-aware calculation
   if (topology) {
     const cell = topology.cells.get(cellId);
     if (cell && cell.boundaryVertices.length >= 3) {
-      // Get all vertices of the cell
       const vertices: Point[] = [];
       for (const vertexId of cell.boundaryVertices) {
         const vertex = topology.vertices.get(vertexId);
@@ -67,97 +79,18 @@ function calculateFlickDirection(
       }
 
       if (vertices.length >= 3) {
-        // Compute center of cell (for determining outward direction)
-        const center = cell.center;
-
-        // For each edge, compute the true edge normal (perpendicular to edge)
-        // Then find which edge's normal is closest to the flick vector
-        let bestAngle = 0;
-        let bestDotProduct = -Infinity;
-
-        const n = vertices.length;
-        for (let i = 0; i < n; i++) {
-          const v1 = vertices[i];
-          const v2 = vertices[(i + 1) % n];
-
-          // Edge vector
-          const edgeX = v2.x - v1.x;
-          const edgeY = v2.y - v1.y;
-          const edgeLen = Math.sqrt(edgeX * edgeX + edgeY * edgeY);
-
-          if (edgeLen > 0) {
-            // Perpendicular to edge (rotate 90 degrees)
-            // Two possible normals: (edgeY, -edgeX) or (-edgeY, edgeX)
-            let normalX = edgeY / edgeLen;
-            let normalY = -edgeX / edgeLen;
-
-            // Determine which direction is outward using edge midpoint
-            const midX = (v1.x + v2.x) / 2;
-            const midY = (v1.y + v2.y) / 2;
-            const toCenterX = center.x - midX;
-            const toCenterY = center.y - midY;
-
-            // If normal points toward center, flip it
-            if (normalX * toCenterX + normalY * toCenterY > 0) {
-              normalX = -normalX;
-              normalY = -normalY;
-            }
-
-            // Normalize flick vector
-            const unitFlickX = dx / distance;
-            const unitFlickY = dy / distance;
-
-            // Dot product (how well flick aligns with this edge's outward normal)
-            const dot = normalX * unitFlickX + normalY * unitFlickY;
-
-            if (dot > bestDotProduct) {
-              bestDotProduct = dot;
-              // Calculate angle: 0=right, 90=down, 180=left, 270=up
-              bestAngle = Math.atan2(normalY, normalX) * (180 / Math.PI);
-              // Normalize to 0-360
-              bestAngle = ((bestAngle % 360) + 360) % 360;
-            }
-          }
-        }
-
-        // If we found a good match (dot product > 0 means within 90 degrees)
-        // Always use angle for topology mode (supports arbitrary directions)
-        if (bestDotProduct > 0) {
-          return { direction: 0, angle: bestAngle };
-        }
+        const cellInfo: TopologyCellInfo = {
+          center: cell.center,
+          vertices,
+        };
+        return calculateTopologyFlickDirection(dx, dy, threshold, cellInfo);
       }
     }
   }
 
-  // Fallback: standard 4-direction based on screen coordinates
-  let direction: 0 | 1 | 2 | 3 | 4 = 0;
-  if (Math.abs(dy) > threshold && Math.abs(dy) > Math.abs(dx)) {
-    // Vertical movement
-    direction = dy < 0 ? 1 : 2; // 1 = up, 2 = down
-  } else if (Math.abs(dx) > threshold && Math.abs(dx) > Math.abs(dy)) {
-    // Horizontal movement
-    direction = dx < 0 ? 3 : 4; // 3 = left, 4 = right
-  }
-
-  return { direction, angle: null };
-}
-
-// Flick input state for directional number input (pzpr-puzzlink style)
-// - mousedown: initialize flick state (record start position)
-// - mousemove: if moved far enough, set direction (flick)
-// - mouseup: if no flick occurred (notInputted), do number input (click)
-interface FlickState {
-  startCell: { row: number; col: number } | null;
-  startCellId: string | null; // Cell ID (may differ from cell-row-col for complex topologies)
-  startCellCenter: Point | null; // Cell center coordinates (from topology or grid calculation)
-  startCellIndex: number | null; // Cell index for directionalClues (row * effectiveCols + col)
-  startPoint: Point | null;
-  inputted: boolean; // true if direction was set during drag (flick)
-  rightButton: boolean; // true if right mouse button was used
-  // For line-cell auto mode (Yajilin): track if line was drawn during drag
-  lineDrawn: boolean; // true if any line segment was drawn during drag
-  // For peke input mode (Slitherlink): 'add' or 'remove' determined on first click
-  pekeInputMode: 'add' | 'remove' | null;
+  // Fallback to simple 4-direction
+  const simple = calculateSimpleFlickDirection(dx, dy, threshold);
+  return { direction: simple.direction, angle: null };
 }
 
 // ========================================
@@ -214,6 +147,8 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     grid,
     hoverCell,
     setHoverCell,
+    cursorCell,
+    setCursorCell,
     puzzle,
     activeLayer,
     addDirectionalClue,
@@ -229,10 +164,15 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     currentInputMode,
     showConstraintLayer,
     currentSchemaId,
+    highlightedLineIds,
+    setHighlightedLineIds,
   } = usePuzzleStore();
 
   // Flick input state for directional number input (pzpr-puzzlink style)
-  const flickStateRef = useRef<FlickState>({ startCell: null, startCellId: null, startCellCenter: null, startCellIndex: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false, pekeInputMode: null });
+  const flickStateRef = useRef<FlickState>({ ...INITIAL_FLICK_STATE });
+
+  // Track mouse down position for detecting clicks vs drags (for line selection)
+  const mouseDownPointRef = useRef<Point | null>(null);
 
   // Excel-like keyboard input for number tools
   useNumberKeyboard();
@@ -308,180 +248,217 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
   const cursorClass = getCssCursor();
   const overlayConfig = getOverlayConfig();
 
+  // Helper: Build context for strategy functions
+  const buildMouseDownContext = useCallback((point: Point, isRightButton: boolean): MouseDownContext => {
+    const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
+    const isEditMode = activeLayer === 'problem';
+    const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
+
+    return {
+      point,
+      isRightButton,
+      grid: { cols: grid.cols, cellSize: grid.cellSize },
+      activeLayer,
+      currentTool: toolSettings.currentTool,
+      currentInputMode,
+      currentSchemaId,
+      isConstraintEnabled,
+      autoConfig: autoConfig as AutoModeConfig | null,
+    };
+  }, [currentSchemaId, activeLayer, grid.cols, grid.cellSize, toolSettings.currentTool, currentInputMode, isConstraintEnabled]);
+
+  // Helper: Convert CellInfo from cell finder to strategy CellInfo
+  const toStrategyCellInfo = (cellInfo: { cellId: string; row?: number; col?: number; center?: Point } | null): StrategyCellInfo | null => {
+    if (!cellInfo) return null;
+    return {
+      cellId: cellInfo.cellId,
+      row: cellInfo.row,
+      col: cellInfo.col,
+      center: cellInfo.center,
+    };
+  };
+
+  // Helper: Execute action from strategy result
+  const executeMouseDownAction = useCallback((
+    action: MouseDownAction,
+    e: React.MouseEvent,
+    callbacks: {
+      onNumberClick?: (info: NumberClickInfo) => void;
+      onTextClick?: (info: TextClickInfo) => void;
+    }
+  ): void => {
+    switch (action.type) {
+      case 'setNumberSelection':
+        setNumberSelection({ row: action.row, col: action.col });
+        break;
+      case 'handleNumberTool': {
+        const result = handleNumberTool(action.point, action.isRightButton, action.options);
+        if (result && callbacks.onNumberClick) {
+          callbacks.onNumberClick(result as NumberClickInfo);
+        }
+        break;
+      }
+      case 'handleSelectTool':
+        handleSelectTool(action.point, action.shiftKey);
+        break;
+      case 'handleTextTool': {
+        const result = handleTextTool(action.point, action.isRightButton);
+        if (result && callbacks.onTextClick) {
+          callbacks.onTextClick(result as TextClickInfo);
+        }
+        break;
+      }
+      case 'handleSymbolTool':
+        handleSymbolTool(action.point, false, false, action.options);
+        break;
+      case 'addSurface': {
+        const dataLayer = action.layer;
+        const existingSurface = Object.values(puzzle[dataLayer].surfaces).find(
+          (s) => s.cellId === action.cellId
+        );
+        if (!existingSurface) {
+          addSurface({ cellId: action.cellId, color: action.color, layer: dataLayer, displayMode: action.displayMode });
+        }
+        break;
+      }
+      case 'removeDirectionalClue':
+        removeDirectionalClue(action.id);
+        break;
+      case 'setCursorCell':
+        setCursorCell(action.cellId);
+        break;
+      case 'resetFillModes':
+        resetFillModes();
+        break;
+      case 'baseMouseDown':
+        baseHandleMouseDown(e);
+        break;
+    }
+  }, [setNumberSelection, handleNumberTool, handleSelectTool, handleTextTool, handleSymbolTool, puzzle, addSurface, removeDirectionalClue, setCursorCell, resetFillModes, baseHandleMouseDown]);
+
+  // Find nearest line to a point within threshold
+  const findNearestLineAtPoint = useCallback((point: Point, threshold: number): string | null => {
+    const dataLayer = toDataLayer(activeLayer);
+    const layerData = puzzle[dataLayer];
+    const lines = Object.values(layerData.lines);
+    const activeTopology = useTopology ? topology : null;
+
+    let nearestId: string | null = null;
+    let nearestDistance = threshold;
+
+    for (const line of lines) {
+      // Skip freehand lines for now (they have different coordinate system)
+      if (line.isFree) {
+        // For freehand lines, use raw coordinates
+        if (line.fromX !== undefined && line.fromY !== undefined &&
+            line.toX !== undefined && line.toY !== undefined) {
+          const dist = pointToLineSegmentDistance(
+            point,
+            { x: line.fromX, y: line.fromY },
+            { x: line.toX, y: line.toY }
+          );
+          if (dist < nearestDistance) {
+            nearestDistance = dist;
+            nearestId = line.id;
+          }
+        }
+        continue;
+      }
+
+      // Grid-snapped line - resolve positions
+      const fromPos = resolveGridIdToPosition(line.from, grid, activeTopology);
+      const toPos = resolveGridIdToPosition(line.to, grid, activeTopology);
+      if (!fromPos || !toPos) continue;
+
+      const dist = pointToLineSegmentDistance(point, fromPos, toPos);
+      if (dist < nearestDistance) {
+        nearestDistance = dist;
+        nearestId = line.id;
+      }
+    }
+
+    return nearestId;
+  }, [puzzle, activeLayer, grid, useTopology, topology]);
 
   // Wrap mouse down to handle number/text tool clicks
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       const tool = toolSettings.currentTool;
+      const point = screenToSvg(
+        e.clientX,
+        e.clientY,
+        canvas.zoom,
+        canvas.panX,
+        canvas.panY,
+        svgRef.current
+      );
+      const isRightButton = e.button === 2;
+
+      // Save mouse down position for click detection in mouseUp (for line selection)
+      mouseDownPointRef.current = point;
 
       // Handle constraint input based on currentInputMode (when constraint is enabled)
       if (isConstraintEnabled) {
-        const isNumberInputMode = currentInputMode === 'number' || currentInputMode === 'number-';
-        const isDirecInputMode = currentInputMode === 'direc';
-
-        // Check if auto mode is direc type (for flick input support)
-        const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
-        const isEditMode = activeLayer === 'problem';
-        const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
-        const isAutoDirecMode = currentInputMode === 'auto' && autoConfig.type === 'direc';
+        const ctx = buildMouseDownContext(point, isRightButton);
+        const cellInfo = findCellAtPoint(point);
+        const strategyCellInfo = toStrategyCellInfo(cellInfo);
+        // Ensure center is populated for flick state
+        if (strategyCellInfo && !strategyCellInfo.center && cellInfo?.row !== undefined && cellInfo?.col !== undefined) {
+          strategyCellInfo.center = getCellCenter(cellInfo.row, cellInfo.col, grid);
+        }
 
         // Handle direc input mode or auto mode with direc type (flick gesture for arrow direction)
         // pzprjs style: mousedown starts flick, mouseup does number input if no flick occurred
-        if (isDirecInputMode || isAutoDirecMode) {
-          const point = screenToSvg(
-            e.clientX,
-            e.clientY,
-            canvas.zoom,
-            canvas.panX,
-            canvas.panY,
-            svgRef.current
-          );
-          const cellInfo = findCellAtPoint(point);
-          if (!cellInfo || cellInfo.row === undefined || cellInfo.col === undefined) return;
-
-          setNumberSelection({ row: cellInfo.row, col: cellInfo.col });
-
-          // Initialize flick state - record start position for direction detection on mouse move
-          // Number input is deferred to mouseup (if no flick occurred)
-          flickStateRef.current = {
-            startCell: { row: cellInfo.row, col: cellInfo.col },
-            startCellId: cellInfo.cellId,
-            startCellIndex: cellInfo.row * grid.cols + cellInfo.col,
-            startCellCenter: cellInfo.center ?? getCellCenter(cellInfo.row, cellInfo.col, grid),
-            startPoint: point,
-            inputted: false, // Will be set to true if flick direction is input
-            rightButton: e.button === 2,
-            lineDrawn: false,
-            pekeInputMode: null,
-          };
-
-          // Don't do number input here - defer to mouseup (pzprjs style)
-          return;
+        if (isDirecInputMode(ctx.currentInputMode, ctx.autoConfig)) {
+          const result = handleDirecMouseDown(ctx, strategyCellInfo);
+          if (result.flickState) {
+            flickStateRef.current = result.flickState;
+          }
+          if (result.action) {
+            executeMouseDownAction(result.action, e, { onNumberClick, onTextClick });
+          }
+          if (result.handled) return;
         }
 
-        // Check if auto mode is number type (Nurikabe: click increment/decrement)
-        const isAutoNumberMode = currentInputMode === 'auto' && autoConfig.type === 'number';
-        // Check if auto mode is border-number type (Heyawake: click for number)
-        const isAutoBorderNumberMode = currentInputMode === 'auto' && autoConfig.type === 'border-number';
-
         // Handle number/number- input modes or auto number/border-number mode in constraint mode
-        if (isNumberInputMode || isAutoNumberMode || isAutoBorderNumberMode) {
-          const point = screenToSvg(
-            e.clientX,
-            e.clientY,
-            canvas.zoom,
-            canvas.panX,
-            canvas.panY,
-            svgRef.current
-          );
-          const cellInfo = findCellAtPoint(point);
+        if (isNumberInputMode(ctx.currentInputMode, ctx.autoConfig)) {
           if (!cellInfo || cellInfo.row === undefined || cellInfo.col === undefined) return;
-
           setNumberSelection({ row: cellInfo.row, col: cellInfo.col });
-
-          // Call handleNumberTool for click increment/decrement
-          handleNumberTool(point, e.button === 2);
-          return;
+          const result = handleNumberInputMouseDown(ctx, strategyCellInfo);
+          if (result.action) {
+            executeMouseDownAction(result.action, e, { onNumberClick, onTextClick });
+          }
+          if (result.handled) return;
         }
 
         // Check if auto mode is line-cell type (Yajilin: left=line, right=dot drag, click=shade cycle)
-        // Reuse currentSchema and autoConfig from above (direc mode check)
-        const isAutoLineCellMode = currentInputMode === 'auto' && autoConfig.type === 'line-cell';
-
-        if (isAutoLineCellMode) {
-          const point = screenToSvg(
-            e.clientX,
-            e.clientY,
-            canvas.zoom,
-            canvas.panX,
-            canvas.panY,
-            svgRef.current
-          );
-          const cellInfo = findCellAtPoint(point);
-
-          // Initialize flick state to track if line was drawn
-          // If no line is drawn by mouseup, we'll input shade instead
-          flickStateRef.current = {
-            startCell: cellInfo ? { row: cellInfo.row!, col: cellInfo.col! } : null,
-            startCellId: cellInfo?.cellId ?? null,
-            startCellIndex: cellInfo ? cellInfo.row! * grid.cols + cellInfo.col! : null,
-            startCellCenter: cellInfo?.center ?? (cellInfo ? getCellCenter(cellInfo.row!, cellInfo.col!, grid) : null),
-            startPoint: point,
-            inputted: false,
-            rightButton: e.button === 2,
-            lineDrawn: false,
-            pekeInputMode: null,
-          };
-
-          // Right click drag: start dot painting immediately
-          if (e.button === 2 && cellInfo) {
-            resetFillModes();
-            // Paint dot on first cell
-            const rightButtonSettings = autoConfig.rightButton.settings;
-            const colorOverride = {
-              color: rightButtonSettings?.color || '#444444',
-              secondaryColor: rightButtonSettings?.secondaryColor || '#A0FFA0',
-            };
-            // Use handleSurfaceTool with dot mode by temporarily setting tool
-            // Instead, directly add a dot surface
-            const dataLayer = toDataLayer(activeLayer);
-            // Check if surface already exists (use cellInfo.cellId for topology support)
-            const existingSurface = Object.values(puzzle[dataLayer].surfaces).find(
-              (s) => s.cellId === cellInfo.cellId
-            );
-            if (!existingSurface) {
-              addSurface({ cellId: cellInfo.cellId, color: colorOverride.secondaryColor, layer: dataLayer, displayMode: 'dot' });
+        if (isLineCellMode(ctx.autoConfig)) {
+          const result = handleLineCellMouseDown(ctx, strategyCellInfo);
+          if (result.flickState) {
+            // Ensure center is populated for flick state
+            if (result.flickState.startCell && !result.flickState.startCellCenter && cellInfo?.row !== undefined && cellInfo?.col !== undefined) {
+              result.flickState.startCellCenter = getCellCenter(cellInfo.row, cellInfo.col, grid);
             }
-            flickStateRef.current.inputted = true;
-            return; // Don't call base handler for right click
+            flickStateRef.current = result.flickState;
           }
-
-          // Let base handler handle the line drawing (left button)
-          // The base handler will draw lines; we track lineDrawn in mouse move
+          if (result.action) {
+            if (result.action.type === 'addSurface') {
+              resetFillModes();
+            }
+            executeMouseDownAction(result.action, e, { onNumberClick, onTextClick });
+          }
+          if (result.handled) return;
+          // Left button: fall through to let base handler draw lines
         }
 
         // Check if auto mode is line type (Slitherlink: left drag=line, left click=peke, right drag=peke)
-        const isAutoLineMode = currentInputMode === 'auto' && autoConfig.type === 'line';
-
-        if (isAutoLineMode) {
-          const point = screenToSvg(
-            e.clientX,
-            e.clientY,
-            canvas.zoom,
-            canvas.panX,
-            canvas.panY,
-            svgRef.current
-          );
-
-          // Initialize flick state to track if line was drawn during drag
-          // If no line is drawn by mouseup (click only), we'll input peke instead
-          flickStateRef.current = {
-            startCell: null,
-            startCellId: null,
-            startCellIndex: null,
-            startCellCenter: null,
-            startPoint: point,
-            inputted: false,
-            rightButton: e.button === 2,
-            lineDrawn: false,
-            pekeInputMode: null,
-          };
-
-          // Right click: start peke input mode (pzprjs style: drag to continue adding/removing peke)
-          if (e.button === 2) {
-            const rightButtonSettings = autoConfig.rightButton.settings;
-            const pekeColor = rightButtonSettings?.color || '#007F00';
-            const pekeGridPoints = (rightButtonSettings?.symbolGridPoints || ['edge']) as ('cell' | 'vertex' | 'edge')[];
-
-            // Determine input mode based on whether peke exists at the clicked edge
-            // pzprjs style: if peke exists, remove mode; otherwise, add mode
-            // This mode is maintained throughout the drag
+        if (isLineMode(ctx.autoConfig)) {
+          // Determine if peke exists at the clicked edge (for right-click input mode)
+          let pekeExists = false;
+          if (isRightButton) {
             const dataLayer = toDataLayer(activeLayer);
             const layerData = puzzle[dataLayer];
-
-            // Find nearest edge to determine input mode
             const edge = findNearestEdge(point, grid, grid.cellSize * 0.6);
-            let pekeExists = false;
             if (edge) {
               const edgeId = edge.type === 'h'
                 ? `edge-h-${edge.row}-${edge.col}`
@@ -490,22 +467,17 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
                 (s) => s.cellId === edgeId && s.symbolType === 'cross'
               );
             }
-
-            const inputMode: 'add' | 'remove' = pekeExists ? 'remove' : 'add';
-            flickStateRef.current.pekeInputMode = inputMode;
-
-            // Input first peke (X mark) on the nearest edge with determined mode
-            handleSymbolTool(point, false, false, {
-              symbolTypeOverride: 'cross',
-              inputMode,
-              colorOverride: pekeColor,
-              symbolGridPointsOverride: pekeGridPoints,
-            });
-            flickStateRef.current.inputted = true;
-            // Don't return - allow mouse move to continue peke input
           }
 
-          // Left click: let base handler start line drawing, we'll check on mouseup
+          const result = handleLineMouseDown(ctx, pekeExists);
+          if (result.flickState) {
+            flickStateRef.current = result.flickState;
+          }
+          if (result.action) {
+            executeMouseDownAction(result.action, e, { onNumberClick, onTextClick });
+          }
+          if (result.handled) return;
+          // Left button: fall through to let base handler draw lines
         }
         // Fall through to handle other tools (auto mode delegates to surface/line/etc.)
       }
@@ -527,88 +499,60 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
 
       // Handle select tool
       if (tool === 'select') {
-        const point = screenToSvg(
-          e.clientX,
-          e.clientY,
-          canvas.zoom,
-          canvas.panX,
-          canvas.panY,
-          svgRef.current
-        );
-        handleSelectTool(point, e.shiftKey);
-        return;
+        const ctx = buildMouseDownContext(point, isRightButton);
+        const result = handleSelectMouseDown(ctx, e.shiftKey);
+        if (result.action) {
+          executeMouseDownAction(result.action, e, { onNumberClick, onTextClick });
+        }
+        if (result.handled) return;
       }
 
       // Handle number tools (including directional)
       if (tool.startsWith('number')) {
-        const point = screenToSvg(
-          e.clientX,
-          e.clientY,
-          canvas.zoom,
-          canvas.panX,
-          canvas.panY,
-          svgRef.current
-        );
         const cellInfo = findCellAtPoint(point);
         if (!cellInfo || cellInfo.row === undefined || cellInfo.col === undefined) return;
 
         setNumberSelection({ row: cellInfo.row, col: cellInfo.col });
-
-        // For directional number tool: use flick input (like constraint direc mode)
-        if (tool === 'number-directional') {
-          // Initialize flick state for direction detection
-          flickStateRef.current = {
-            startCell: { row: cellInfo.row, col: cellInfo.col },
-            startCellId: cellInfo.cellId,
-            startCellIndex: cellInfo.row * grid.cols + cellInfo.col,
-            startCellCenter: cellInfo.center ?? getCellCenter(cellInfo.row, cellInfo.col, grid),
-            startPoint: point,
-            inputted: false,
-            rightButton: e.button === 2,
-            lineDrawn: false,
-            pekeInputMode: null,
-          };
-
-          // Handle right-click delete
-          if (e.button === 2) {
-            const dataLayer = toDataLayer(activeLayer);
-            const existingId = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
-              ([, clue]) => clue.cellId === cellInfo.cellId
-            )?.[0];
-            if (existingId) {
-              removeDirectionalClue(existingId);
-            }
-          }
-          // Don't call handleNumberTool here - defer to mouseup (pzprjs style)
-          return;
+        const strategyCellInfo = toStrategyCellInfo(cellInfo);
+        // Ensure center is populated
+        if (strategyCellInfo && !strategyCellInfo.center) {
+          strategyCellInfo.center = getCellCenter(cellInfo.row, cellInfo.col, grid);
         }
 
-        // For other number tools: always call handleNumberTool for click increment/decrement
-        const result = handleNumberTool(point, e.button === 2);
-        // If result is returned (candidates mode), call onNumberClick callback for dialog handling
-        if (result && onNumberClick) {
-          onNumberClick(result as NumberClickInfo);
+        // For directional number tool: find existing clue ID for right-click delete
+        let existingDirectionalClueId: string | null = null;
+        if (tool === 'number-directional' && isRightButton) {
+          const dataLayer = toDataLayer(activeLayer);
+          existingDirectionalClueId = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
+            ([, clue]) => clue.cellId === cellInfo.cellId
+          )?.[0] ?? null;
         }
-        return;
+
+        const ctx = buildMouseDownContext(point, isRightButton);
+        const result = handleNumberToolMouseDown(ctx, strategyCellInfo, existingDirectionalClueId);
+        if (result.flickState) {
+          flickStateRef.current = result.flickState;
+        }
+        if (result.action) {
+          executeMouseDownAction(result.action, e, { onNumberClick, onTextClick });
+        }
+        if (result.handled) return;
       }
 
       // Handle text tool clicks - open dialog instead of default handler
       if (tool.startsWith('text')) {
-        if (onTextClick) {
-          const point = screenToSvg(
-            e.clientX,
-            e.clientY,
-            canvas.zoom,
-            canvas.panX,
-            canvas.panY,
-            svgRef.current
-          );
-          const result = handleTextTool(point, e.button === 2);
-          if (result) {
-            onTextClick(result as TextClickInfo);
-          }
+        const ctx = buildMouseDownContext(point, isRightButton);
+        const result = handleTextMouseDown(ctx);
+        if (result.action) {
+          executeMouseDownAction(result.action, e, { onNumberClick, onTextClick });
         }
-        return; // Don't call base handler for text tool
+        if (result.handled) return;
+      }
+
+      // Update cursor cell for any mouse down (for DirectionPanel/MulticolorSettings)
+      const cursorCellInfo = findCellAtPoint(point);
+      if (cursorCellInfo?.cellId) {
+        setCursorCell(cursorCellInfo.cellId);
       }
 
       // Default handler for other tools (surface, line, edge, wall, symbol, etc.)
@@ -623,22 +567,18 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       svgRef,
       onNumberClick,
       onTextClick,
-      handleNumberTool,
-      handleTextTool,
-      handleSelectTool,
+      setCursorCell,
+      findCellAtPoint,
       baseHandleMouseDown,
       grid,
       setNumberSelection,
       puzzle,
       activeLayer,
-      removeDirectionalClue,
       isGridMode,
       isSpecificMode,
       isConstraintEnabled,
-      currentInputMode,
-      findCellAtPoint,
-      resetFillModes,
-      addSurface,
+      buildMouseDownContext,
+      executeMouseDownAction,
     ]
   );
 
@@ -723,6 +663,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
                   value: clue.value,
                   layer: dataLayer,
                   angle: angle,
+                  color: clue.color || toolSettings.color,
                 });
                 flickStateRef.current.inputted = true;
               }
@@ -741,6 +682,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
                 char: isSingleChar ? num.value : undefined,
                 layer: dataLayer,
                 angle: angle,
+                color: toolSettings.color,
               });
               // Remove the original number
               removeNumber(numberId);
@@ -1022,11 +964,64 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         }
       }
 
+      // Handle line selection on click (for line/edge/wall tools)
+      // Only trigger if no significant drag occurred and no line was drawn
+      const isLineCategory = toolSettings.currentCategory === 'line' ||
+        toolSettings.currentCategory === 'edge' ||
+        toolSettings.currentCategory === 'wall';
+
+      if (isLineCategory && mouseDownPointRef.current) {
+        const currentPoint = screenToSvg(
+          e.clientX,
+          e.clientY,
+          canvas.zoom,
+          canvas.panX,
+          canvas.panY,
+          svgRef.current
+        );
+        const downPoint = mouseDownPointRef.current;
+        const dragDistance = Math.sqrt(
+          Math.pow(currentPoint.x - downPoint.x, 2) +
+          Math.pow(currentPoint.y - downPoint.y, 2)
+        );
+
+        // Only treat as click if drag distance is small (less than 10% of cell size)
+        const clickThreshold = grid.cellSize * 0.1;
+        const wasClick = dragDistance < clickThreshold;
+
+        // Check if a line was drawn during this interaction (using flickState.lineDrawn)
+        const lineWasDrawn = flickState.lineDrawn;
+
+        if (wasClick && !lineWasDrawn && !flickState.rightButton) {
+          // Try to find a line near the click point
+          const lineThreshold = grid.cellSize * 0.3; // 30% of cell size
+          const nearestLineId = findNearestLineAtPoint(currentPoint, lineThreshold);
+
+          if (nearestLineId) {
+            // Toggle selection: if already selected, deselect; otherwise select
+            if (highlightedLineIds.includes(nearestLineId)) {
+              setHighlightedLineIds(highlightedLineIds.filter(id => id !== nearestLineId));
+            } else {
+              // Replace selection (could use shift for additive selection)
+              setHighlightedLineIds([nearestLineId]);
+            }
+          } else {
+            // Clicked on empty area - clear selection
+            if (highlightedLineIds.length > 0) {
+              setHighlightedLineIds([]);
+            }
+          }
+        }
+      }
+
+      // Reset mouse down point
+      mouseDownPointRef.current = null;
+
       // Reset flick state on mouse up
-      flickStateRef.current = { startCell: null, startCellId: null, startCellIndex: null, startCellCenter: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false, pekeInputMode: null };
+      flickStateRef.current = { ...INITIAL_FLICK_STATE };
       baseHandleMouseUp(e);
     },
-    [baseHandleMouseUp, currentInputMode, currentSchemaId, activeLayer, isConstraintEnabled, canvas.zoom, canvas.panX, canvas.panY, svgRef, findCellAtPoint, handleNumberTool, handleSurfaceCycleTool, handleSymbolTool, resetFillModes, setToolSettings, toolSettings.currentTool, grid.cols, puzzle, addDirectionalClue, removeNumber]
+    [baseHandleMouseUp, currentInputMode, currentSchemaId, activeLayer, isConstraintEnabled, canvas.zoom, canvas.panX, canvas.panY, svgRef, findCellAtPoint, handleNumberTool, handleSurfaceCycleTool, handleSymbolTool, resetFillModes, setToolSettings, toolSettings.currentTool, toolSettings.currentCategory, grid.cellSize, grid.cols, puzzle, addDirectionalClue, removeNumber, findNearestLineAtPoint, highlightedLineIds, setHighlightedLineIds]
   );
 
   // Handle mouse leave - clear hover cell
@@ -1035,7 +1030,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       baseHandleMouseUp(e);
       setHoverCell(null);
       // Reset flick state on mouse leave
-      flickStateRef.current = { startCell: null, startCellId: null, startCellIndex: null, startCellCenter: null, startPoint: null, inputted: false, rightButton: false, lineDrawn: false, pekeInputMode: null };
+      flickStateRef.current = { ...INITIAL_FLICK_STATE };
     },
     [baseHandleMouseUp, setHoverCell]
   );
@@ -1081,6 +1076,40 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     const y = grid.outerPadding + row * grid.cellSize;
     return { x, y, size: grid.cellSize };
   }, [hoverCell, grid.outerPadding, grid.cellSize, overlayConfig.showCellCursor, useTopology, topology, previewTopology, isGridMode]);
+
+  // Cursor cell (last tapped) - for direction panel
+  const cursorCellPolygon = useMemo(() => {
+    // Use overlay config to determine if cursor cell highlight should be shown
+    if (!overlayConfig.showCursorCellHighlight) return null;
+    if (!cursorCell) return null;
+    if (!useTopology || !topology) return null;
+
+    const cell = topology.cells.get(cursorCell);
+    if (!cell) return null;
+
+    const points = cell.boundaryVertices
+      .map(vId => topology.vertices.get(vId))
+      .filter((v): v is TopologyVertex => v !== undefined)
+      .map(v => `${v.position.x},${v.position.y}`)
+      .join(' ');
+
+    return points;
+  }, [cursorCell, overlayConfig.showCursorCellHighlight, useTopology, topology]);
+
+  const cursorCellRect = useMemo(() => {
+    // Use overlay config to determine if cursor cell highlight should be shown
+    if (!overlayConfig.showCursorCellHighlight) return null;
+    if (!cursorCell) return null;
+    if (useTopology && topology) return null; // Use polygon instead
+    // Parse row/col from cellId for non-topology mode
+    const match = cursorCell.match(/^cell-(\d+)-(\d+)$/);
+    if (!match) return null;
+    const row = parseInt(match[1]);
+    const col = parseInt(match[2]);
+    const x = grid.outerPadding + col * grid.cellSize;
+    const y = grid.outerPadding + row * grid.cellSize;
+    return { x, y, size: grid.cellSize };
+  }, [cursorCell, overlayConfig.showCursorCellHighlight, grid.outerPadding, grid.cellSize, useTopology, topology]);
 
   // Use special preview hook for thermo/arrow/cage/boxline tools
   const {
@@ -1214,10 +1243,13 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         canvas={canvas}
         hoverCellPolygon={hoverCellPolygon}
         hoverCellRect={hoverCellRect}
+        cursorCellPolygon={cursorCellPolygon}
+        cursorCellRect={cursorCellRect}
         lineStartPoint={lineStartPoint}
         lineHoverPoint={lineHoverPoint}
         isLineTool={isLineTool}
         lineColor={toolSettings.color}
+        isStraightMode={toolSettings.lineDirections?.includes('straight') ?? false}
         symbolHoverPoint={symbolHoverPoint}
         isSymbolTool={isSymbolTool}
         cellCursorPath={cellCursorPath}

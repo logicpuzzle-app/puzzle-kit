@@ -101,7 +101,7 @@ export function getStorageRegistry(): StorageRegistry {
 /**
  * Get the default storage adapter
  */
-export function getStorageAdapter(): StorageAdapter | null {
+export function getDefaultStorageAdapter(): StorageAdapter | null {
   return registry.getDefault();
 }
 
@@ -122,7 +122,7 @@ export function registerStorageAdapter(name: string, adapter: StorageAdapter): v
 /**
  * Check if storage is available
  */
-export function isStorageAvailable(): boolean {
+export function isDefaultStorageAdapterAvailable(): boolean {
   const adapter = registry.getDefault();
   return adapter !== null && adapter.isAvailable();
 }

@@ -15,8 +15,8 @@ import {
   clearRecentPuzzles,
   saveLanguage,
   loadLanguage,
-  clearAllStorage,
-  isStorageAvailable,
+  clearLocalAppStorage,
+  isLocalStorageAvailable,
 } from '../utils/storage';
 import type { ToolSettings, GridConfig } from '../types';
 
@@ -40,15 +40,15 @@ Object.defineProperty(globalThis, 'localStorage', {
   writable: true,
 });
 
-describe('Storage Utilities', () => {
+describe('Storage Utilities (localStorage)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     Object.keys(mockStorage).forEach((key) => delete mockStorage[key]);
   });
 
-  describe('isStorageAvailable', () => {
+  describe('isLocalStorageAvailable', () => {
     it('returns true when localStorage works', () => {
-      expect(isStorageAvailable()).toBe(true);
+      expect(isLocalStorageAvailable()).toBe(true);
     });
   });
 
@@ -207,7 +207,7 @@ describe('Storage Utilities', () => {
     });
   });
 
-  describe('clearAllStorage', () => {
+  describe('clearLocalAppStorage', () => {
     it('clears all stored data', () => {
       saveToolSettings({
         currentTool: 'surface-fill',
@@ -216,7 +216,7 @@ describe('Storage Utilities', () => {
       } as ToolSettings);
       saveLanguage('en');
 
-      clearAllStorage();
+      clearLocalAppStorage();
 
       expect(loadToolSettings().color).toBe('#808080');
       expect(loadLanguage()).toBe('ja');

@@ -4,7 +4,7 @@
  * Automatically saves and loads settings from localStorage
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { usePuzzleStore } from '../store/puzzleStore';
 import {
   saveToolSettings,
@@ -19,7 +19,7 @@ import {
   loadTopologyState,
   saveConstraintState,
   loadConstraintState,
-  isStorageAvailable,
+  isLocalStorageAvailable,
 } from '../utils/storage';
 
 // Debounce time in milliseconds
@@ -62,9 +62,24 @@ export function useStoragePersistence() {
   const topologySaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const constraintSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const scheduleSave = useCallback(
+    (ref: React.MutableRefObject<ReturnType<typeof setTimeout> | null>, fn: () => void, delay: number) => {
+      if (ref.current) {
+        clearTimeout(ref.current);
+      }
+      ref.current = setTimeout(fn, delay);
+      return () => {
+        if (ref.current) {
+          clearTimeout(ref.current);
+        }
+      };
+    },
+    []
+  );
+
   // Initialize from localStorage on mount
   useEffect(() => {
-    if (hasInitialized.current || !isStorageAvailable()) return;
+    if (hasInitialized.current || !isLocalStorageAvailable()) return;
 
     // Load persisted settings
     const persistedToolSettings = loadToolSettings();
@@ -124,83 +139,35 @@ export function useStoragePersistence() {
 
   // Save tool settings when they change (debounced)
   useEffect(() => {
-    if (!hasInitialized.current || !isStorageAvailable()) return;
-
-    if (toolSettingsSaveTimeoutRef.current) {
-      clearTimeout(toolSettingsSaveTimeoutRef.current);
-    }
-
-    toolSettingsSaveTimeoutRef.current = setTimeout(() => {
-      saveToolSettings(toolSettings);
-    }, SAVE_DEBOUNCE_MS);
-
-    return () => {
-      if (toolSettingsSaveTimeoutRef.current) {
-        clearTimeout(toolSettingsSaveTimeoutRef.current);
-      }
-    };
+    if (!hasInitialized.current || !isLocalStorageAvailable()) return;
+    return scheduleSave(toolSettingsSaveTimeoutRef, () => saveToolSettings(toolSettings), SAVE_DEBOUNCE_MS);
   }, [toolSettings]);
 
   // Save grid config when it changes (debounced)
   useEffect(() => {
-    if (!hasInitialized.current || !isStorageAvailable()) return;
-
-    if (gridSaveTimeoutRef.current) {
-      clearTimeout(gridSaveTimeoutRef.current);
-    }
-
-    gridSaveTimeoutRef.current = setTimeout(() => {
-      saveGridConfig(grid);
-    }, SAVE_DEBOUNCE_MS);
-
-    return () => {
-      if (gridSaveTimeoutRef.current) {
-        clearTimeout(gridSaveTimeoutRef.current);
-      }
-    };
+    if (!hasInitialized.current || !isLocalStorageAvailable()) return;
+    return scheduleSave(gridSaveTimeoutRef, () => saveGridConfig(grid), SAVE_DEBOUNCE_MS);
   }, [grid]);
 
   // Save canvas state when it changes (debounced)
   useEffect(() => {
-    if (!hasInitialized.current || !isStorageAvailable()) return;
-
-    if (canvasSaveTimeoutRef.current) {
-      clearTimeout(canvasSaveTimeoutRef.current);
-    }
-
-    canvasSaveTimeoutRef.current = setTimeout(() => {
-      saveCanvasState(canvas);
-    }, SAVE_DEBOUNCE_MS);
-
-    return () => {
-      if (canvasSaveTimeoutRef.current) {
-        clearTimeout(canvasSaveTimeoutRef.current);
-      }
-    };
+    if (!hasInitialized.current || !isLocalStorageAvailable()) return;
+    return scheduleSave(canvasSaveTimeoutRef, () => saveCanvasState(canvas), SAVE_DEBOUNCE_MS);
   }, [canvas.zoom]); // Only save on zoom change, not pan
 
   // Save topology state when it changes (debounced with longer interval)
   useEffect(() => {
-    if (!hasInitialized.current || !isStorageAvailable()) return;
-
-    if (topologySaveTimeoutRef.current) {
-      clearTimeout(topologySaveTimeoutRef.current);
-    }
-
-    topologySaveTimeoutRef.current = setTimeout(() => {
-      saveTopologyState(topology, useTopology, topologyPreset, topologyIntensity);
-    }, TOPOLOGY_SAVE_DEBOUNCE_MS);
-
-    return () => {
-      if (topologySaveTimeoutRef.current) {
-        clearTimeout(topologySaveTimeoutRef.current);
-      }
-    };
+    if (!hasInitialized.current || !isLocalStorageAvailable()) return;
+    return scheduleSave(
+      topologySaveTimeoutRef,
+      () => saveTopologyState(topology, useTopology, topologyPreset, topologyIntensity),
+      TOPOLOGY_SAVE_DEBOUNCE_MS
+    );
   }, [topology, useTopology, topologyPreset, topologyIntensity]);
 
   // Save UI preferences when they change
   useEffect(() => {
-    if (!hasInitialized.current || !isStorageAvailable()) return;
+    if (!hasInitialized.current || !isLocalStorageAvailable()) return;
 
     saveUIPreferences({
       showProblemLayer,
@@ -210,26 +177,17 @@ export function useStoragePersistence() {
 
   // Save constraint state when it changes (debounced)
   useEffect(() => {
-    if (!hasInitialized.current || !isStorageAvailable()) return;
-
-    if (constraintSaveTimeoutRef.current) {
-      clearTimeout(constraintSaveTimeoutRef.current);
-    }
-
-    constraintSaveTimeoutRef.current = setTimeout(() => {
-      saveConstraintState(currentSchemaId, currentInputMode, validationOverrides);
-    }, SAVE_DEBOUNCE_MS);
-
-    return () => {
-      if (constraintSaveTimeoutRef.current) {
-        clearTimeout(constraintSaveTimeoutRef.current);
-      }
-    };
+    if (!hasInitialized.current || !isLocalStorageAvailable()) return;
+    return scheduleSave(
+      constraintSaveTimeoutRef,
+      () => saveConstraintState(currentSchemaId, currentInputMode, validationOverrides),
+      SAVE_DEBOUNCE_MS
+    );
   }, [currentSchemaId, currentInputMode, validationOverrides]);
 
   return {
     isInitialized: hasInitialized.current,
-    isStorageAvailable: isStorageAvailable(),
+    isLocalStorageAvailable: isLocalStorageAvailable(),
   };
 }
 

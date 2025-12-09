@@ -597,7 +597,59 @@ export const Ribbon: React.FC = () => {
           <>
             {/* Tool options for current category */}
             <div className="flex items-center gap-1">
-              {toolGroups[toolSettings.currentCategory]?.map((tool) => {
+              {/* Symbol category: show Direction/Icon/Multicolor toggle */}
+              {toolSettings.currentCategory === 'symbol' && (
+                <>
+                  <button
+                    className={`flex items-center gap-1 px-2 py-1 text-xs rounded-sm border transition-colors ${
+                      toolSettings.symbolSubMode === 'direction'
+                        ? 'bg-office-accent text-white border-office-accent'
+                        : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+                    }`}
+                    onClick={() => {
+                      usePuzzleStore.getState().setToolSettings({ symbolSubMode: 'direction' });
+                      setTool('symbol-arrow_N', 'symbol');
+                    }}
+                    title={t('symbols.arrows', 'Arrows')}
+                  >
+                    <span className="text-base">→</span>
+                    <span>{t('tools.direction', 'Direction')}</span>
+                  </button>
+                  <button
+                    className={`flex items-center gap-1 px-2 py-1 text-xs rounded-sm border transition-colors ${
+                      toolSettings.symbolSubMode === 'icon'
+                        ? 'bg-office-accent text-white border-office-accent'
+                        : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+                    }`}
+                    onClick={() => {
+                      usePuzzleStore.getState().setToolSettings({ symbolSubMode: 'icon' });
+                      setTool('symbol-circle', 'symbol');
+                    }}
+                    title={t('panel.symbols', 'Symbols')}
+                  >
+                    <span className="text-base">○</span>
+                    <span>{t('tools.icon', 'Icon')}</span>
+                  </button>
+                  <button
+                    className={`flex items-center gap-1 px-2 py-1 text-xs rounded-sm border transition-colors ${
+                      toolSettings.symbolSubMode === 'multicolor'
+                        ? 'bg-office-accent text-white border-office-accent'
+                        : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+                    }`}
+                    onClick={() => {
+                      usePuzzleStore.getState().setToolSettings({ symbolSubMode: 'multicolor' });
+                      setTool('multicolor-surface', 'symbol');
+                    }}
+                    title={t('tool.multicolor.surface', 'Multicolor Surface')}
+                  >
+                    <span className="text-base">◧</span>
+                    <span>{t('tool.multicolor', 'Multicolor')}</span>
+                  </button>
+                </>
+              )}
+
+              {/* Other categories: show tool options from toolGroups */}
+              {toolSettings.currentCategory !== 'symbol' && toolGroups[toolSettings.currentCategory]?.map((tool) => {
                 const SvgIcon = SPECIAL_TOOL_ICONS[tool.id];
                 return (
                   <button
@@ -626,7 +678,7 @@ export const Ribbon: React.FC = () => {
               <LineSettingsPicker />
             )}
 
-            {toolSettings.currentCategory === 'symbol' && (
+            {toolSettings.currentCategory === 'symbol' && (toolSettings.symbolSubMode === 'icon' || toolSettings.symbolSubMode === 'direction') && (
               <SymbolSettingsPicker />
             )}
 

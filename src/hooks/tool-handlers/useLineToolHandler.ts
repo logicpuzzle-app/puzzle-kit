@@ -12,6 +12,16 @@ import {
   findNearestEdgeInTopology,
 } from '../../utils/gridTopology';
 import { generateLineId } from '../../utils/lineNormalization';
+import {
+  determineFillMode,
+  determineSegmentAction,
+  determineLineAction,
+  getClickColor,
+  areVerticesOrthogonallyAdjacent,
+  pointDistance,
+  executeLineAction,
+  FREEHAND_MIN_DISTANCE,
+} from '../../utils/lineUtils';
 import { useGridPointUtils } from '../useGridPointUtils';
 import type { Point } from '../../types';
 import { toDataLayer } from '../../types';
@@ -111,11 +121,8 @@ export function useLineToolHandler({
           setDrawStartPoint('freehand-start');
           setDrawStartPosition(point);
         } else if (drawStartPosition && currentStrokeId) {
-          // Don't draw if start and end are too close (less than 5 pixels)
-          const dx = point.x - drawStartPosition.x;
-          const dy = point.y - drawStartPosition.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          if (distance < 5) return;
+          // Don't draw if start and end are too close
+          if (pointDistance(point, drawStartPosition) < FREEHAND_MIN_DISTANCE) return;
 
           if (!isShiftKey) {
             // Add freehand line segment with stroke ID
@@ -143,7 +150,7 @@ export function useLineToolHandler({
 
       // Straight mode - single straight line from mouse down to mouse up
       if (isStraightMode) {
-        const gridPoint = findNearestGridPoint(point, allowedGridPoints);
+        const gridPoint = findNearestGridPoint(point, allowedGridPoints, halfMode);
         if (!gridPoint) return;
 
         const pointId = gridPoint.id;
@@ -157,7 +164,7 @@ export function useLineToolHandler({
       }
 
       // Grid-snapped line mode (orthogonal/diagonal with interpolation)
-      const gridPoint = findNearestGridPoint(point, allowedGridPoints);
+      const gridPoint = findNearestGridPoint(point, allowedGridPoints, halfMode);
       if (!gridPoint) return;
 
       const pointId = gridPoint.id;
@@ -183,59 +190,35 @@ export function useLineToolHandler({
           // Check if line already exists using normalized ID
           const lineId = generateLineId(currentFrom, toPoint);
           const existingLine = layerData.lines[lineId];
-
-          const hasSameColorLine = existingLine && existingLine.color === colorToUse;
+          const existingColor = existingLine?.color ?? null;
 
           // Determine fill mode on first line segment of drag
           if (lineFillModeRef.current === null) {
-            if (isShiftKey) {
-              // Shift always means erase
-              lineFillModeRef.current = 'erase';
-            } else if (hasSameColorLine) {
-              // First segment has same color line -> erase mode
-              lineFillModeRef.current = 'erase';
-            } else {
-              // First segment is empty or has different color -> draw mode
-              lineFillModeRef.current = 'draw';
-            }
+            lineFillModeRef.current = determineFillMode(isShiftKey, existingColor, colorToUse);
           }
 
-          // Apply action based on current fill mode
-          if (lineFillModeRef.current === 'erase') {
-            // Erase mode: only remove lines
-            if (existingLine) {
-              if (isShiftKey || existingLine.color === colorToUse) {
-                removeLine(existingLine.id);
-              }
+          // Determine and apply action based on fill mode
+          const action = determineSegmentAction(
+            lineFillModeRef.current,
+            isShiftKey,
+            existingColor,
+            colorToUse
+          );
+
+          executeLineAction(
+            action,
+            addLine,
+            removeLine,
+            existingLine?.id,
+            {
+              from: currentFrom,
+              to: toPoint,
+              style: toolSettings.lineStyle,
+              thickness: toolSettings.lineThickness,
+              color: colorToUse,
+              layer: toDataLayer(activeLayer),
             }
-          } else {
-            // Draw mode: add or replace lines
-            if (existingLine) {
-              if (existingLine.color !== colorToUse) {
-                // Different color: replace
-                removeLine(existingLine.id);
-                addLine({
-                  from: currentFrom,
-                  to: toPoint,
-                  style: toolSettings.lineStyle,
-                  thickness: toolSettings.lineThickness,
-                  color: colorToUse,
-                  layer: toDataLayer(activeLayer),
-                });
-              }
-              // Same color: do nothing (already drawn)
-            } else {
-              // No existing line: add new one
-              addLine({
-                from: currentFrom,
-                to: toPoint,
-                style: toolSettings.lineStyle,
-                thickness: toolSettings.lineThickness,
-                color: colorToUse,
-                layer: toDataLayer(activeLayer),
-              });
-            }
-          }
+          );
 
           currentFrom = toPoint;
         }
@@ -273,21 +256,10 @@ export function useLineToolHandler({
         setDrawStartPoint(vertexId);
       } else if (drawStartPoint && drawStartPoint !== vertexId) {
         // Check if vertices are orthogonally adjacent (no diagonal edges)
-        const startMatch = drawStartPoint.match(/vertex-(\d+)-(\d+)/);
-        const endMatch = vertexId.match(/vertex-(\d+)-(\d+)/);
-        if (startMatch && endMatch) {
-          const startRow = parseInt(startMatch[1], 10);
-          const startCol = parseInt(startMatch[2], 10);
-          const endRow = parseInt(endMatch[1], 10);
-          const endCol = parseInt(endMatch[2], 10);
-          const rowDiff = Math.abs(endRow - startRow);
-          const colDiff = Math.abs(endCol - startCol);
-          // Only allow orthogonal adjacency: (1,0) or (0,1)
-          if (!((rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1))) {
-            // Not adjacent orthogonally - update start point and skip
-            setDrawStartPoint(vertexId);
-            return;
-          }
+        if (!areVerticesOrthogonallyAdjacent(drawStartPoint, vertexId)) {
+          // Not adjacent orthogonally - update start point and skip
+          setDrawStartPoint(vertexId);
+          return;
         }
 
         // Check if edge already exists
@@ -299,35 +271,23 @@ export function useLineToolHandler({
             (e.from === vertexId && e.to === drawStartPoint)
         );
 
-        if (existingEdge) {
-          if (isShiftKey) {
-            // Shift+click removes edge regardless of color
-            removeEdge(existingEdge.id);
-          } else if (existingEdge.color === colorToUse) {
-            removeEdge(existingEdge.id);
-          } else {
-            // Replace with new color
-            removeEdge(existingEdge.id);
-            addEdge({
-              from: drawStartPoint,
-              to: vertexId,
-              style: toolSettings.lineStyle,
-              thickness: toolSettings.lineThickness,
-              color: colorToUse,
-              layer: toDataLayer(activeLayer),
-            });
-          }
-        } else if (!isShiftKey) {
-          // Add new edge (shift doesn't add, only removes)
-          addEdge({
+        const existingColor = existingEdge?.color ?? null;
+        const action = determineLineAction(isShiftKey, existingColor, colorToUse);
+
+        executeLineAction(
+          action,
+          addEdge,
+          removeEdge,
+          existingEdge?.id,
+          {
             from: drawStartPoint,
             to: vertexId,
             style: toolSettings.lineStyle,
             thickness: toolSettings.lineThickness,
             color: colorToUse,
             layer: toDataLayer(activeLayer),
-          });
-        }
+          }
+        );
 
         setDrawStartPoint(vertexId);
       }
@@ -357,34 +317,22 @@ export function useLineToolHandler({
         (w) => w.position === edgeId
       );
 
-      if (existingWall) {
-        if (isShiftKey) {
-          // Shift+click removes wall regardless of color
-          removeWall(existingWall.id);
-        } else if (existingWall.color === colorToUse) {
-          // Same color: toggle off
-          removeWall(existingWall.id);
-        } else {
-          // Different color: replace
-          removeWall(existingWall.id);
-          addWall({
-            position: edgeId,
-            style: toolSettings.lineStyle,
-            thickness: toolSettings.lineThickness,
-            color: colorToUse,
-            layer: toDataLayer(activeLayer),
-          });
-        }
-      } else if (!isShiftKey) {
-        // Add new wall (shift doesn't add, only removes)
-        addWall({
+      const existingColor = existingWall?.color ?? null;
+      const action = determineLineAction(isShiftKey, existingColor, colorToUse);
+
+      executeLineAction(
+        action,
+        addWall,
+        removeWall,
+        existingWall?.id,
+        {
           position: edgeId,
           style: toolSettings.lineStyle,
           thickness: toolSettings.lineThickness,
           color: colorToUse,
           layer: toDataLayer(activeLayer),
-        });
-      }
+        }
+      );
     },
     [grid, puzzle, activeLayer, toolSettings, addWall, removeWall, findEdgeId]
   );
@@ -393,9 +341,10 @@ export function useLineToolHandler({
   const handleStraightLineEnd = useCallback(
     (point: Point, isRightClick: boolean, isShiftKey: boolean) => {
       const allowedGridPoints = toolSettings.lineGridPoints || ['cell'];
+      const halfMode = toolSettings.lineHalfMode || false;
       const colorToUse = isRightClick ? toolSettings.secondaryColor : toolSettings.color;
 
-      const gridPoint = findNearestGridPoint(point, allowedGridPoints);
+      const gridPoint = findNearestGridPoint(point, allowedGridPoints, halfMode);
       if (!gridPoint || !drawStartPoint) return;
 
       const pointId = gridPoint.id;
@@ -410,33 +359,23 @@ export function useLineToolHandler({
       const lineId = generateLineId(drawStartPoint, pointId);
       const existingLine = layerData.lines[lineId];
 
-      if (existingLine) {
-        if (isShiftKey) {
-          removeLine(existingLine.id);
-        } else if (existingLine.color === colorToUse) {
-          removeLine(existingLine.id);
-        } else {
-          removeLine(existingLine.id);
-          addLine({
-            from: drawStartPoint,
-            to: pointId,
-            style: toolSettings.lineStyle,
-            thickness: toolSettings.lineThickness,
-            color: colorToUse,
-            layer: toDataLayer(activeLayer),
-          });
-        }
-      } else if (!isShiftKey) {
-        // Add single straight line
-        addLine({
+      const existingColor = existingLine?.color ?? null;
+      const action = determineLineAction(isShiftKey, existingColor, colorToUse);
+
+      executeLineAction(
+        action,
+        addLine,
+        removeLine,
+        existingLine?.id,
+        {
           from: drawStartPoint,
           to: pointId,
           style: toolSettings.lineStyle,
           thickness: toolSettings.lineThickness,
           color: colorToUse,
           layer: toDataLayer(activeLayer),
-        });
-      }
+        }
+      );
     },
     [drawStartPoint, puzzle, activeLayer, toolSettings, addLine, removeLine, findNearestGridPoint]
   );

@@ -94,6 +94,8 @@ export const SymbolLayer: React.FC<SymbolLayerProps> = ({ layer }) => {
             color: symbol.color,
             fillColor: symbol.fillColor,
             rotation: symbol.rotation,
+            directions: symbol.directions,
+            directionAngles: symbol.directionAngles,
           })}
         </g>
       );

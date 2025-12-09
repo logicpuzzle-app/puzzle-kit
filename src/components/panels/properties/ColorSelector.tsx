@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pipette } from 'lucide-react';
 import { usePuzzleStore } from '../../../store/puzzleStore';
-import { toDataLayer } from '../../../types';
+import { toDataLayer, LineElement } from '../../../types';
 
 // General color palette for tools
 export const COLOR_PALETTE = [
@@ -21,7 +21,11 @@ export const COLOR_PALETTE = [
   '#000080', // dark blue
 ];
 
-export const ColorSelector: React.FC = () => {
+interface ColorSelectorProps {
+  compact?: boolean;
+}
+
+export const ColorSelector: React.FC<ColorSelectorProps> = ({ compact = false }) => {
   const { t } = useTranslation();
   const {
     toolSettings,
@@ -32,11 +36,31 @@ export const ColorSelector: React.FC = () => {
     activeLayer,
     addNumber,
     addDirectionalClue,
+    highlightedLineIds,
+    updateLine,
   } = usePuzzleStore();
 
   const dataLayer = toDataLayer(activeLayer);
   const [customColor, setCustomColor] = useState(toolSettings.color);
   const colorInputRef = useRef<HTMLInputElement>(null);
+
+  // Check if there are selected lines (for line category tools)
+  const selectedLines = React.useMemo(() => {
+    if (toolSettings.currentCategory !== 'line' &&
+        toolSettings.currentCategory !== 'edge' &&
+        toolSettings.currentCategory !== 'wall') {
+      return [];
+    }
+    const layerData = puzzle[dataLayer];
+    return highlightedLineIds
+      .map(id => layerData.lines[id])
+      .filter((line): line is LineElement => line !== undefined && !line.isFree);
+  }, [puzzle, dataLayer, highlightedLineIds, toolSettings.currentCategory]);
+
+  const hasSelectedLines = selectedLines.length > 0;
+  const selectedLinesColor = hasSelectedLines && selectedLines.every(l => l.color === selectedLines[0].color)
+    ? selectedLines[0].color
+    : null;
 
   // Find existing number at current position (for position-specific updates)
   const findExistingNumberAtPosition = () => {
@@ -62,12 +86,22 @@ export const ColorSelector: React.FC = () => {
     setToolSettings({ color: newColor });
     setCustomColor(newColor);
 
+    // Update selected lines if any
+    if (hasSelectedLines) {
+      highlightedLineIds.forEach(id => {
+        const line = puzzle[dataLayer].lines[id];
+        if (line && !line.isFree) {
+          updateLine(id, { color: newColor });
+        }
+      });
+    }
+
     // Update existing number/directional clue if cell is selected
     if (numberSelection && toolSettings.currentTool.startsWith('number')) {
       const cellId = `cell-${numberSelection.row}-${numberSelection.col}`;
 
       if (toolSettings.currentTool === 'number-directional') {
-        // Update directional clue color
+        // Update directional clue color (preserve all existing properties)
         const cellIndex = numberSelection.row * grid.cols + numberSelection.col;
         const cellId = `cell-${numberSelection.row}-${numberSelection.col}`;
         const existingEntry = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
@@ -80,6 +114,8 @@ export const ColorSelector: React.FC = () => {
             cell: cellIndex,
             direction: existing.direction,
             value: existing.value,
+            char: existing.char,
+            angle: existing.angle,
             color: newColor,
             layer: dataLayer,
           });
@@ -124,7 +160,7 @@ export const ColorSelector: React.FC = () => {
         }
       }
     }
-  }, [numberSelection, toolSettings, grid, puzzle, dataLayer, addNumber, addDirectionalClue, setToolSettings]);
+  }, [numberSelection, toolSettings, grid, puzzle, dataLayer, addNumber, addDirectionalClue, setToolSettings, hasSelectedLines, highlightedLineIds, updateLine]);
 
   const handleCustomColorInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newColor = e.target.value;
@@ -155,6 +191,41 @@ export const ColorSelector: React.FC = () => {
     }
   }, [handleColorChange, openColorPicker]);
 
+  // Compact mode: color picker + full palette in one row
+  if (compact) {
+    const currentColor = hasSelectedLines && selectedLinesColor ? selectedLinesColor : toolSettings.color;
+    return (
+      <div className="flex items-center gap-1 flex-1">
+        <input
+          ref={colorInputRef}
+          type="color"
+          value={currentColor}
+          onChange={handleCustomColorInputChange}
+          className="w-5 h-5 p-0 border border-office-border rounded cursor-pointer flex-shrink-0"
+          title={t('prop.customColor') || 'Custom color'}
+        />
+        <div className="flex gap-0.5 flex-wrap flex-1">
+          {COLOR_PALETTE.map((color) => {
+            const isActive = currentColor === color;
+            return (
+              <button
+                key={color}
+                className={`w-4 h-4 border rounded-sm transition-all ${
+                  isActive
+                    ? 'border-office-accent border-2 scale-110'
+                    : 'border-office-border hover:border-office-accent'
+                }`}
+                style={{ backgroundColor: color }}
+                onClick={() => handleColorChange(color)}
+                title={color}
+              />
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <label className="block text-xs text-office-text-secondary mb-1">
@@ -163,19 +234,25 @@ export const ColorSelector: React.FC = () => {
       <div className="flex flex-col gap-2">
         {/* Color palette */}
         <div className="flex gap-0.5 flex-wrap">
-          {COLOR_PALETTE.map((color) => (
-            <button
-              key={color}
-              className={`w-5 h-5 border rounded-sm transition-all ${
-                toolSettings.color === color
-                  ? 'border-office-accent border-2 scale-110'
-                  : 'border-office-border hover:border-office-accent'
-              }`}
-              style={{ backgroundColor: color }}
-              onClick={() => handleColorChange(color)}
-              title={color}
-            />
-          ))}
+          {COLOR_PALETTE.map((color) => {
+            // Use selected lines' color if available, otherwise toolSettings
+            const isActive = hasSelectedLines
+              ? selectedLinesColor === color
+              : toolSettings.color === color;
+            return (
+              <button
+                key={color}
+                className={`w-5 h-5 border rounded-sm transition-all ${
+                  isActive
+                    ? 'border-office-accent border-2 scale-110'
+                    : 'border-office-border hover:border-office-accent'
+                }`}
+                style={{ backgroundColor: color }}
+                onClick={() => handleColorChange(color)}
+                title={color}
+              />
+            );
+          })}
         </div>
 
         {/* Custom color row */}
@@ -184,7 +261,7 @@ export const ColorSelector: React.FC = () => {
           <input
             ref={colorInputRef}
             type="color"
-            value={customColor}
+            value={hasSelectedLines && selectedLinesColor ? selectedLinesColor : customColor}
             onChange={handleCustomColorInputChange}
             className="w-6 h-6 p-0 border border-office-border rounded cursor-pointer"
             title={t('prop.customColor') || 'Custom color'}
@@ -192,8 +269,8 @@ export const ColorSelector: React.FC = () => {
           {/* Current color preview */}
           <div
             className="w-8 h-6 border border-office-border rounded"
-            style={{ backgroundColor: toolSettings.color }}
-            title={toolSettings.color}
+            style={{ backgroundColor: hasSelectedLines && selectedLinesColor ? selectedLinesColor : toolSettings.color }}
+            title={hasSelectedLines && selectedLinesColor ? selectedLinesColor : toolSettings.color}
           />
           {/* Eyedropper button */}
           <button

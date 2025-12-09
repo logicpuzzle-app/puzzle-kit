@@ -93,6 +93,319 @@ const CubeIcon: React.FC<{ size: number; color: string }> = ({ size, color }) =>
   );
 };
 
+// Arrow icon parameters (based on penpa-edit)
+interface ArrowParams {
+  len1: number;  // Distance from center to arrow base (ratio of size)
+  len2: number;  // Distance from center to arrow tip (ratio of size)
+  w1: number;    // Width of arrow shaft (ratio of size)
+  w2: number;    // Width of arrow head (ratio of size)
+  ri: number;    // Indent of arrow head (negative = indent)
+}
+
+// Generate arrow path for icon
+const generateArrowPath = (size: number, params: ArrowParams): string => {
+  const { len1, len2, w1, w2, ri } = params;
+  const s = size;
+  const cx = s / 2;
+  const cy = s / 2;
+  const points: [number, number][] = [];
+
+  // Arrow points from left (base) to right (tip), centered
+  points.push([cx - len1 * s, cy]);
+  points.push([cx - len1 * s, cy - w1 * s]);
+  points.push([cx + (len2 + ri) * s, cy - w1 * s]);
+  points.push([cx + (len2 + ri) * s, cy - w2 * s]);
+  points.push([cx + len2 * s, cy]);
+  points.push([cx + (len2 + ri) * s, cy + w2 * s]);
+  points.push([cx + (len2 + ri) * s, cy + w1 * s]);
+  points.push([cx - len1 * s, cy + w1 * s]);
+
+  return points.map(([x, y]) => `${x},${y}`).join(' ');
+};
+
+// Arrow B (Bold) icon - default pointing up
+const ArrowBIcon: React.FC<{ size: number; color: string }> = ({ size, color }) => {
+  const params: ArrowParams = { len1: 0.38, len2: 0.4, w1: 0.2, w2: 0.4, ri: -0.4 };
+  const cx = size / 2;
+  const cy = size / 2;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <polygon points={generateArrowPath(size, params)} fill={color} transform={`rotate(-90 ${cx} ${cy})`} />
+    </svg>
+  );
+};
+
+// Arrow N (Narrow) icon - default pointing up
+const ArrowNIcon: React.FC<{ size: number; color: string }> = ({ size, color }) => {
+  const params: ArrowParams = { len1: 0.38, len2: 0.4, w1: 0.03, w2: 0.13, ri: -0.25 };
+  const cx = size / 2;
+  const cy = size / 2;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <polygon points={generateArrowPath(size, params)} fill={color} transform={`rotate(-90 ${cx} ${cy})`} />
+    </svg>
+  );
+};
+
+// Arrow S (Simple) icon - default pointing up
+const ArrowSIcon: React.FC<{ size: number; color: string }> = ({ size, color }) => {
+  const params: ArrowParams = { len1: 0.3, len2: 0.32, w1: 0.02, w2: 0.12, ri: -0.2 };
+  const cx = size / 2;
+  const cy = size / 2;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <polygon points={generateArrowPath(size, params)} fill={color} transform={`rotate(-90 ${cx} ${cy})`} />
+    </svg>
+  );
+};
+
+// Arrow Short icon - default pointing up
+const ArrowShortIcon: React.FC<{ size: number; color: string }> = ({ size, color }) => {
+  const params: ArrowParams = { len1: 0.3, len2: 0.3, w1: 0.15, w2: 0.31, ri: -0.33 };
+  const cx = size / 2;
+  const cy = size / 2;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <polygon points={generateArrowPath(size, params)} fill={color} transform={`rotate(-90 ${cx} ${cy})`} />
+    </svg>
+  );
+};
+
+// Triangle icon (isosceles triangle pointing up)
+const TriangleIcon: React.FC<{ size: number; color: string; filled?: boolean }> = ({ size, color, filled = false }) => {
+  const cx = size / 2;
+  const cy = size / 2;
+  const h = size * 0.4;   // height from center
+  const w = size * 0.30;  // half width at base
+  // Isosceles triangle pointing up
+  const points = [
+    `${cx},${cy - h}`,           // top
+    `${cx - w},${cy + h * 0.8}`, // bottom left
+    `${cx + w},${cy + h * 0.8}`  // bottom right
+  ].join(' ');
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <polygon
+        points={points}
+        fill={filled ? color : 'none'}
+        stroke={color}
+        strokeWidth={size * 0.08}
+      />
+    </svg>
+  );
+};
+
+// Arrow GP icon - default pointing up
+const ArrowGPIcon: React.FC<{ size: number; color: string }> = ({ size, color }) => {
+  const s = size;
+  const cx = s / 2;
+  const cy = s / 2;
+  const d = `M ${cx - 0.35*s} ${cy}
+             L ${cx - 0.33*s} ${cy - 0.12*s}
+             L ${cx - 0.12*s} ${cy - 0.12*s}
+             L ${cx - 0.12*s} ${cy - 0.23*s}
+             L ${cx + 0.35*s} ${cy}
+             L ${cx - 0.12*s} ${cy + 0.23*s}
+             L ${cx - 0.12*s} ${cy + 0.12*s}
+             L ${cx - 0.33*s} ${cy + 0.12*s} Z`;
+  return (
+    <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`}>
+      <path d={d} fill={color} transform={`rotate(-90 ${cx} ${cy})`} />
+    </svg>
+  );
+};
+
+// Arrow Cross icon - displays all provided directions (topology-aware)
+// Despite the name "Cross" (traditionally 4-way), this icon displays ALL directions
+// passed via directionAngles to support arbitrary topology shapes (triangles, hexagons, etc.)
+// Note: arrows are drawn pointing right, so we subtract 90° to make angle=0 point up
+const ArrowCrossIcon: React.FC<{ size: number; color: string; directions?: boolean[]; directionAngles?: number[] }> = ({ size, color, directions, directionAngles }) => {
+  const params: ArrowParams = { len1: 0.01, len2: 0.45, w1: 0.025, w2: 0.12, ri: -0.18 };
+  const cx = size / 2;
+  const cy = size / 2;
+  const getPoints = () => generateArrowPath(size, params).split(' ').map(p => {
+    const [x, y] = p.split(',').map(Number);
+    return `${x - cx},${y - cy}`;
+  }).join(' ');
+
+  // Use provided angles (supports any number of directions for topology)
+  if (directionAngles && directionAngles.length > 0) {
+    const dirs = directions ?? directionAngles.map(() => true);
+    return (
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <g transform={`translate(${cx}, ${cy})`}>
+          {directionAngles.map((angle, i) =>
+            dirs[i] && <polygon key={i} points={getPoints()} fill={color} transform={`rotate(${angle - 90})`} />
+          )}
+        </g>
+      </svg>
+    );
+  }
+
+  // Default fallback: 4-way (up, right, down, left) when no angles provided
+  const dirs = directions ?? [true, true, true, true];
+  const defaultAngles = [0, 90, 180, 270];
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <g transform={`translate(${cx}, ${cy})`}>
+        {defaultAngles.map((angle, i) =>
+          (dirs[i] ?? true) && <polygon key={i} points={getPoints()} fill={color} transform={`rotate(${angle - 90})`} />
+        )}
+      </g>
+    </svg>
+  );
+};
+
+// Arrow Eight (8-way) icon - supports custom angles
+// Note: arrows are drawn pointing right, so we subtract 90° to make angle=0 point up
+const ArrowEightIcon: React.FC<{ size: number; color: string; directions?: boolean[]; directionAngles?: number[] }> = ({ size, color, directions, directionAngles }) => {
+  const params: ArrowParams = { len1: -0.2, len2: 0.45, w1: 0.025, w2: 0.1, ri: -0.15 };
+  const cx = size / 2;
+  const cy = size / 2;
+  const getPoints = () => generateArrowPath(size, params).split(' ').map(pt => {
+    const [x, y] = pt.split(',').map(Number);
+    return `${x - cx},${y - cy}`;
+  }).join(' ');
+
+  // Use provided angles - arrows are drawn pointing right, so we subtract 90° to make angle=0 point up
+  if (directionAngles && directionAngles.length > 0) {
+    const dirs = directions ?? directionAngles.map(() => true);
+    return (
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <g transform={`translate(${cx}, ${cy})`}>
+          {directionAngles.map((angle, i) =>
+            dirs[i] && <polygon key={i} points={getPoints()} fill={color} transform={`rotate(${angle - 90})`} />
+          )}
+        </g>
+      </svg>
+    );
+  }
+
+  // Default 8-way with fixed angles (0=up, clockwise)
+  const dirs = directions ?? [true, true, true, true, true, true, true, true];
+  const defaultAngles = [0, 45, 90, 135, 180, 225, 270, 315];
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <g transform={`translate(${cx}, ${cy})`}>
+        {defaultAngles.map((angle, i) =>
+          dirs[i] && <polygon key={i} points={getPoints()} fill={color} transform={`rotate(${angle - 90})`} />
+        )}
+      </g>
+    </svg>
+  );
+};
+
+// Arrow Four Tip icon - displays all provided directions (topology-aware)
+// Despite the name "Four Tip" (traditionally 4-way), this icon displays ALL directions
+// passed via directionAngles to support arbitrary topology shapes (triangles, hexagons, etc.)
+// Note: triangles point up by default, rotation=0 means pointing up
+const ArrowFourTipIcon: React.FC<{ size: number; color: string; directions?: boolean[]; directionAngles?: number[] }> = ({ size, color, directions, directionAngles }) => {
+  const s = size;
+  const cx = s / 2;
+  const cy = s / 2;
+  const offset = s * 0.35;
+  const tipSize = s * 0.15;
+
+  // Triangle pointing up at origin
+  const trianglePoints = `0,${-tipSize} ${-tipSize * 0.8},${tipSize * 0.5} ${tipSize * 0.8},${tipSize * 0.5}`;
+
+  // Use provided angles (supports any number of directions for topology)
+  if (directionAngles && directionAngles.length > 0) {
+    const dirs = directions ?? directionAngles.map(() => true);
+    return (
+      <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`}>
+        {directionAngles.map((angle, i) => {
+          if (!dirs[i]) return null;
+          const rad = (angle - 90) * Math.PI / 180;
+          const ox = cx + Math.cos(rad) * offset;
+          const oy = cy + Math.sin(rad) * offset;
+          return <polygon key={i} points={trianglePoints} fill={color} transform={`translate(${ox},${oy}) rotate(${angle})`} />;
+        })}
+      </svg>
+    );
+  }
+
+  // Default fallback: 4-way (up, right, down, left) when no angles provided
+  const dirs = directions ?? [true, true, true, true];
+  const defaultAngles = [0, 90, 180, 270];
+  return (
+    <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`}>
+      {defaultAngles.map((angle, i) => {
+        if (!(dirs[i] ?? true)) return null;
+        const rad = (angle - 90) * Math.PI / 180;
+        const ox = cx + Math.cos(rad) * offset;
+        const oy = cy + Math.sin(rad) * offset;
+        return <polygon key={i} points={trianglePoints} fill={color} transform={`translate(${ox},${oy}) rotate(${angle})`} />;
+      })}
+    </svg>
+  );
+};
+
+// Arrow Four Edge icon - displays all provided directions (topology-aware)
+// Despite the name "Four Edge" (traditionally 4-way), this icon displays ALL directions
+// passed via directionAngles to support arbitrary topology shapes (triangles, hexagons, etc.)
+// Note: triangles point up by default, rotation=0 means pointing up
+const ArrowFourEdgeIcon: React.FC<{ size: number; color: string; directions?: boolean[]; directionAngles?: number[] }> = ({ size, color, directions, directionAngles }) => {
+  const s = size;
+  const cx = s / 2;
+  const cy = s / 2;
+  const offset = s * 0.35;
+  const triSize = s * 0.12;
+
+  // Triangle pointing up at origin
+  const trianglePoints = `0,${-triSize} ${-triSize},${triSize * 0.8} ${triSize},${triSize * 0.8}`;
+
+  // Use provided angles (supports any number of directions for topology)
+  if (directionAngles && directionAngles.length > 0) {
+    const dirs = directions ?? directionAngles.map(() => true);
+    return (
+      <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`}>
+        {directionAngles.map((angle, i) => {
+          if (!dirs[i]) return null;
+          const rad = (angle - 90) * Math.PI / 180;
+          const ox = cx + Math.cos(rad) * offset;
+          const oy = cy + Math.sin(rad) * offset;
+          return <polygon key={i} points={trianglePoints} fill={color} transform={`translate(${ox},${oy}) rotate(${angle})`} />;
+        })}
+      </svg>
+    );
+  }
+
+  // Default fallback: 4-way (up, right, down, left) when no angles provided
+  const dirs = directions ?? [true, true, true, true];
+  const defaultAngles = [0, 90, 180, 270];
+  return (
+    <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`}>
+      {defaultAngles.map((angle, i) => {
+        if (!(dirs[i] ?? true)) return null;
+        const rad = (angle - 90) * Math.PI / 180;
+        const ox = cx + Math.cos(rad) * offset;
+        const oy = cy + Math.sin(rad) * offset;
+        return <polygon key={i} points={trianglePoints} fill={color} transform={`translate(${ox},${oy}) rotate(${angle})`} />;
+      })}
+    </svg>
+  );
+};
+
+// Arrow Double icon - default vertical (up/down)
+const ArrowDoubleIcon: React.FC<{ size: number; color: string }> = ({ size, color }) => {
+  const params: ArrowParams = { len1: 0, len2: 0.4, w1: 0.03, w2: 0.13, ri: -0.25 };
+  const cx = size / 2;
+  const cy = size / 2;
+  const getPoints = () => generateArrowPath(size, params).split(' ').map(pt => {
+    const [x, y] = pt.split(',').map(Number);
+    return `${x - cx},${y - cy}`;
+  }).join(' ');
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <g transform={`translate(${cx}, ${cy})`}>
+        <polygon points={getPoints()} fill={color} transform="rotate(-90)" />
+        <polygon points={getPoints()} fill={color} transform="rotate(90)" />
+      </g>
+    </svg>
+  );
+};
+
 // Symbol definition with tags for search
 interface SymbolDef {
   id: string;
@@ -159,20 +472,21 @@ const SYMBOL_CATEGORIES: { id: string; labelKey: string; symbols: SymbolDef[] }[
     id: 'arrows',
     labelKey: 'symbols.arrows',
     symbols: [
-      { id: 'arrow-up', icon: '↑', filled: false, rotation: 0, tagsJa: ['矢印', '上'], tagsEn: ['arrow', 'up'] },
-      { id: 'arrow-right', icon: '→', filled: false, rotation: 90, tagsJa: ['矢印', '右'], tagsEn: ['arrow', 'right'] },
-      { id: 'arrow-down', icon: '↓', filled: false, rotation: 180, tagsJa: ['矢印', '下'], tagsEn: ['arrow', 'down'] },
-      { id: 'arrow-left', icon: '←', filled: false, rotation: 270, tagsJa: ['矢印', '左'], tagsEn: ['arrow', 'left'] },
-      { id: 'arrow-ne', icon: '↗', filled: false, rotation: 45, tagsJa: ['矢印', '右上', '斜め'], tagsEn: ['arrow', 'northeast', 'diagonal'] },
-      { id: 'arrow-se', icon: '↘', filled: false, rotation: 135, tagsJa: ['矢印', '右下', '斜め'], tagsEn: ['arrow', 'southeast', 'diagonal'] },
-      { id: 'arrow-sw', icon: '↙', filled: false, rotation: 225, tagsJa: ['矢印', '左下', '斜め'], tagsEn: ['arrow', 'southwest', 'diagonal'] },
-      { id: 'arrow-nw', icon: '↖', filled: false, rotation: 315, tagsJa: ['矢印', '左上', '斜め'], tagsEn: ['arrow', 'northwest', 'diagonal'] },
-      { id: 'arrow-double-h', icon: '↔', filled: false, tagsJa: ['矢印', '両方', '横', '双方向'], tagsEn: ['arrow', 'double', 'horizontal', 'both'] },
-      { id: 'arrow-double-v', icon: '↕', filled: false, tagsJa: ['矢印', '両方', '縦', '双方向'], tagsEn: ['arrow', 'double', 'vertical', 'both'] },
-      { id: 'arrow-thick-up', icon: '⬆', filled: false, tagsJa: ['矢印', '上', '太'], tagsEn: ['arrow', 'up', 'thick', 'bold'] },
-      { id: 'arrow-thick-down', icon: '⬇', filled: false, tagsJa: ['矢印', '下', '太'], tagsEn: ['arrow', 'down', 'thick', 'bold'] },
-      { id: 'arrow-thick-left', icon: '⬅', filled: false, tagsJa: ['矢印', '左', '太'], tagsEn: ['arrow', 'left', 'thick', 'bold'] },
-      { id: 'arrow-thick-right', icon: '➡', filled: false, tagsJa: ['矢印', '右', '太'], tagsEn: ['arrow', 'right', 'thick', 'bold'] },
+      // Single direction arrows
+      { id: 'arrow_B', icon: '➤', filled: true, tagsJa: ['矢印', '太'], tagsEn: ['arrow', 'bold', 'fat'] },
+      { id: 'arrow_N', icon: '→', filled: true, tagsJa: ['矢印', '細'], tagsEn: ['arrow', 'narrow', 'thin'] },
+      { id: 'arrow_S', icon: '›', filled: true, tagsJa: ['矢印', '小', 'シンプル'], tagsEn: ['arrow', 'simple', 'small'] },
+      { id: 'arrow_Short', icon: '▸', filled: true, tagsJa: ['矢印', '短い'], tagsEn: ['arrow', 'short'] },
+      { id: 'arrow_GP', icon: '⇨', filled: true, tagsJa: ['矢印', 'GP'], tagsEn: ['arrow', 'GP'] },
+      { id: 'arrow_double', icon: '↔', filled: false, tagsJa: ['矢印', '双方向', '両方'], tagsEn: ['arrow', 'double', 'both'] },
+      // Triangles (single direction)
+      { id: 'triangle', icon: '△', filled: false, tagsJa: ['三角', '白'], tagsEn: ['triangle', 'white'] },
+      { id: 'triangle-filled', icon: '▲', filled: true, tagsJa: ['三角', '黒'], tagsEn: ['triangle', 'filled', 'black'] },
+      // Multi-direction arrows (all directions at once)
+      { id: 'arrow_cross', icon: '✚', filled: true, tagsJa: ['矢印', '十字', '4方向'], tagsEn: ['arrow', 'cross', '4-way'] },
+      { id: 'arrow_eight', icon: '✳', filled: true, tagsJa: ['矢印', '8方向'], tagsEn: ['arrow', '8-way', 'eight'] },
+      { id: 'arrow_fourtip', icon: '✤', filled: true, tagsJa: ['矢印', '4先端'], tagsEn: ['arrow', 'four-tip'] },
+      { id: 'arrow_fouredge', icon: '⬔', filled: true, tagsJa: ['矢印', '4辺'], tagsEn: ['arrow', 'four-edge'] },
     ],
   },
   {
@@ -247,7 +561,18 @@ const SYMBOL_CATEGORIES: { id: string; labelKey: string; symbols: SymbolDef[] }[
   },
 ];
 
-export const SymbolPanel: React.FC = () => {
+interface SymbolPanelProps {
+  /** Filter to show only a specific category (e.g., 'arrows') */
+  filterCategory?: string;
+  /** Filter arrows by mode: 'single' for single-direction, 'multi' for multi-direction */
+  filterArrowMode?: 'single' | 'multi';
+}
+
+// Define which arrow symbols are single-direction vs multi-direction
+const SINGLE_DIRECTION_ARROWS = ['arrow_N', 'arrow_B', 'arrow_S', 'arrow_Short', 'arrow_GP', 'arrow_double', 'triangle', 'triangle-filled'];
+const MULTI_DIRECTION_ARROWS = ['arrow_cross', 'arrow_eight', 'arrow_fourtip', 'arrow_fouredge'];
+
+export const SymbolPanel: React.FC<SymbolPanelProps> = ({ filterCategory, filterArrowMode }) => {
   const { t, i18n } = useTranslation();
   const { toolSettings, setTool } = usePuzzleStore();
   const [searchQuery, setSearchQuery] = useState('');
@@ -276,15 +601,30 @@ export const SymbolPanel: React.FC = () => {
   const currentColor = toolSettings.color;
   const isJapanese = i18n.language === 'ja';
 
-  // Filter symbols based on search query
+  // Filter symbols based on search query, filterCategory, and filterArrowMode
   const filteredCategories = useMemo(() => {
+    // Start with all categories or filter to specific category
+    let categories = SYMBOL_CATEGORIES;
+    if (filterCategory) {
+      categories = SYMBOL_CATEGORIES.filter(cat => cat.id === filterCategory);
+    }
+
+    // Apply arrow mode filtering for arrows category
+    if (filterArrowMode && filterCategory === 'arrows') {
+      const allowedSymbols = filterArrowMode === 'single' ? SINGLE_DIRECTION_ARROWS : MULTI_DIRECTION_ARROWS;
+      categories = categories.map(category => ({
+        ...category,
+        symbols: category.symbols.filter(symbol => allowedSymbols.includes(symbol.id))
+      }));
+    }
+
     if (!searchQuery.trim()) {
-      return SYMBOL_CATEGORIES;
+      return categories;
     }
 
     const query = searchQuery.toLowerCase().trim();
 
-    return SYMBOL_CATEGORIES.map(category => ({
+    return categories.map(category => ({
       ...category,
       symbols: category.symbols.filter(symbol => {
         // Search in both Japanese and English tags
@@ -296,7 +636,7 @@ export const SymbolPanel: React.FC = () => {
         return matchJa || matchEn || matchId || matchIcon;
       })
     })).filter(category => category.symbols.length > 0);
-  }, [searchQuery]);
+  }, [searchQuery, filterCategory, filterArrowMode]);
 
   // Get tooltip text with tags
   const getTooltip = (symbol: SymbolDef) => {
@@ -333,8 +673,9 @@ export const SymbolPanel: React.FC = () => {
               <div className="grid grid-cols-4 gap-1">
                 {category.symbols.map((symbol) => {
                   const isSelected = currentSymbol === symbol.id;
-                  // Render SVG icons for mine, bulb, and animals
+                  // Render SVG icons for mine, bulb, arrows, and animals
                   const renderIcon = () => {
+                    // Special symbols
                     if (symbol.id === 'mine') {
                       return <MineIcon size={fontSize} color={currentColor} />;
                     }
@@ -349,6 +690,48 @@ export const SymbolPanel: React.FC = () => {
                     }
                     if (symbol.id === 'ghostBlack') {
                       return <GhostBlackIcon size={fontSize} color={currentColor} />;
+                    }
+                    // Arrow symbols (penpa-edit style)
+                    // Single direction arrows
+                    if (symbol.id === 'arrow_B') {
+                      return <ArrowBIcon size={fontSize} color={currentColor} />;
+                    }
+                    if (symbol.id === 'arrow_N') {
+                      return <ArrowNIcon size={fontSize} color={currentColor} />;
+                    }
+                    if (symbol.id === 'arrow_S') {
+                      return <ArrowSIcon size={fontSize} color={currentColor} />;
+                    }
+                    if (symbol.id === 'arrow_Short') {
+                      return <ArrowShortIcon size={fontSize} color={currentColor} />;
+                    }
+                    if (symbol.id === 'arrow_GP') {
+                      return <ArrowGPIcon size={fontSize} color={currentColor} />;
+                    }
+                    if (symbol.id === 'arrow_double') {
+                      return <ArrowDoubleIcon size={fontSize} color={currentColor} />;
+                    }
+                    // Multi-direction arrows - pass multiDirections and angles when in multi mode
+                    const multiDirs = filterArrowMode === 'multi' ? toolSettings.multiDirections : undefined;
+                    const multiAngles = filterArrowMode === 'multi' ? toolSettings.multiDirectionAngles : undefined;
+                    if (symbol.id === 'arrow_cross') {
+                      return <ArrowCrossIcon size={fontSize} color={currentColor} directions={multiDirs} directionAngles={multiAngles} />;
+                    }
+                    if (symbol.id === 'arrow_eight') {
+                      return <ArrowEightIcon size={fontSize} color={currentColor} directions={multiDirs} directionAngles={multiAngles} />;
+                    }
+                    if (symbol.id === 'arrow_fourtip') {
+                      return <ArrowFourTipIcon size={fontSize} color={currentColor} directions={multiDirs} directionAngles={multiAngles} />;
+                    }
+                    if (symbol.id === 'arrow_fouredge') {
+                      return <ArrowFourEdgeIcon size={fontSize} color={currentColor} directions={multiDirs} directionAngles={multiAngles} />;
+                    }
+                    // Triangles
+                    if (symbol.id === 'triangle') {
+                      return <TriangleIcon size={fontSize} color={currentColor} filled={false} />;
+                    }
+                    if (symbol.id === 'triangle-filled') {
+                      return <TriangleIcon size={fontSize} color={currentColor} filled={true} />;
                     }
                     // Check if this is an animal with SVG icon
                     const AnimalIcon = ANIMAL_ICON_MAP[symbol.id];
@@ -377,7 +760,7 @@ export const SymbolPanel: React.FC = () => {
                       <span
                         style={{
                           display: 'inline-flex',
-                          transform: rotation ? `rotate(${rotation}deg)` : undefined,
+                          transform: `rotate(${rotation}deg)`,
                           transition: 'transform 0.15s ease'
                         }}
                       >

@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RotateCcw, RotateCw } from 'lucide-react';
 import { usePuzzleStore } from '../../../store/puzzleStore';
 import { MulticolorSwatch } from '../../../types';
+import type { TopologyVertex } from '../../../utils/gridTopology';
 
 // Multicolor palette - standard colors (idx 0-8)
 export const MULTICOLOR_PALETTE = [
@@ -151,14 +152,133 @@ const SwatchPreview: React.FC<{
 
 export const MulticolorSettings: React.FC = () => {
   const { t } = useTranslation();
-  const { toolSettings, setToolSettings } = usePuzzleStore();
+  const { toolSettings, setToolSettings, useTopology, topology, cursorCell } = usePuzzleStore();
   const [selectedSlot, setSelectedSlot] = React.useState<number | null>(null);
   const [pickerColor, setPickerColor] = React.useState('#ff00ff');
+  const [selectedShapeIndex, setSelectedShapeIndex] = React.useState(0);
 
   const slots = toolSettings.multicolorSlots || [1, 0, 0, 0];
   const pattern = toolSettings.multicolorPattern || 'cross';
   const customColors = toolSettings.multicolorCustomColors || [];
   const swatches = toolSettings.multicolorSwatches || [];
+
+  // Get unique cell shapes for topology mode (grouped by vertex count and rough shape)
+  const uniqueShapes = useMemo(() => {
+    if (!useTopology || !topology) return [];
+
+    // Group cells by vertex count (as a simple shape discriminator)
+    const shapeGroups = new Map<number, string[]>();
+    for (const [cellId, cell] of topology.cells) {
+      const vertexCount = cell.boundaryVertices.length;
+      if (!shapeGroups.has(vertexCount)) {
+        shapeGroups.set(vertexCount, []);
+      }
+      shapeGroups.get(vertexCount)!.push(cellId);
+    }
+
+    // For each vertex count group, take the first cell as representative
+    const shapes: Array<{
+      cellId: string;
+      vertexCount: number;
+      vertices: { x: number; y: number }[];
+      center: { x: number; y: number };
+    }> = [];
+
+    for (const [vertexCount, cellIds] of shapeGroups) {
+      const cellId = cellIds[0];
+      const cell = topology.cells.get(cellId);
+      if (!cell) continue;
+
+      const vertices = cell.boundaryVertices
+        .map(vId => topology.vertices.get(vId))
+        .filter((v): v is TopologyVertex => v !== undefined)
+        .map(v => v.position);
+
+      if (vertices.length < 3) continue;
+
+      // Normalize to fit in preview size (80x80)
+      const minX = Math.min(...vertices.map(v => v.x));
+      const maxX = Math.max(...vertices.map(v => v.x));
+      const minY = Math.min(...vertices.map(v => v.y));
+      const maxY = Math.max(...vertices.map(v => v.y));
+      const width = maxX - minX;
+      const height = maxY - minY;
+      const scale = 70 / Math.max(width, height);
+      const offsetX = (80 - width * scale) / 2;
+      const offsetY = (80 - height * scale) / 2;
+
+      const normalizedVertices = vertices.map(v => ({
+        x: (v.x - minX) * scale + offsetX,
+        y: (v.y - minY) * scale + offsetY,
+      }));
+
+      const centerX = normalizedVertices.reduce((sum, v) => sum + v.x, 0) / normalizedVertices.length;
+      const centerY = normalizedVertices.reduce((sum, v) => sum + v.y, 0) / normalizedVertices.length;
+
+      shapes.push({
+        cellId,
+        vertexCount,
+        vertices: normalizedVertices,
+        center: { x: centerX, y: centerY },
+      });
+    }
+
+    // Sort by vertex count
+    return shapes.sort((a, b) => a.vertexCount - b.vertexCount);
+  }, [useTopology, topology]);
+
+  // Get currently selected shape (or cursor cell shape)
+  const cellShape = useMemo(() => {
+    if (!useTopology || !topology) return null;
+
+    // If cursor cell is available (last tapped cell), use its shape
+    if (cursorCell) {
+      const cell = topology.cells.get(cursorCell);
+      if (cell) {
+        const vertices = cell.boundaryVertices
+          .map(vId => topology.vertices.get(vId))
+          .filter((v): v is TopologyVertex => v !== undefined)
+          .map(v => v.position);
+
+        if (vertices.length >= 3) {
+          const minX = Math.min(...vertices.map(v => v.x));
+          const maxX = Math.max(...vertices.map(v => v.x));
+          const minY = Math.min(...vertices.map(v => v.y));
+          const maxY = Math.max(...vertices.map(v => v.y));
+          const width = maxX - minX;
+          const height = maxY - minY;
+          const scale = 70 / Math.max(width, height);
+          const offsetX = (80 - width * scale) / 2;
+          const offsetY = (80 - height * scale) / 2;
+
+          const normalizedVertices = vertices.map(v => ({
+            x: (v.x - minX) * scale + offsetX,
+            y: (v.y - minY) * scale + offsetY,
+          }));
+
+          const centerX = normalizedVertices.reduce((sum, v) => sum + v.x, 0) / normalizedVertices.length;
+          const centerY = normalizedVertices.reduce((sum, v) => sum + v.y, 0) / normalizedVertices.length;
+
+          return {
+            vertices: normalizedVertices,
+            center: { x: centerX, y: centerY },
+          };
+        }
+      }
+    }
+
+    // Otherwise use selected shape from uniqueShapes
+    if (uniqueShapes.length > 0) {
+      const idx = Math.min(selectedShapeIndex, uniqueShapes.length - 1);
+      const shape = uniqueShapes[idx];
+      return {
+        vertices: shape.vertices,
+        center: shape.center,
+      };
+    }
+
+    return null;
+  }, [useTopology, topology, cursorCell, uniqueShapes, selectedShapeIndex]);
 
   const saveSwatch = () => {
     const newSwatch: MulticolorSwatch = {
@@ -296,6 +416,33 @@ export const MulticolorSettings: React.FC = () => {
         {t('tool.multicolor')}
       </label>
 
+      {/* Shape selector for topology mode with multiple shapes */}
+      {uniqueShapes.length > 1 && (
+        <div className="flex justify-center gap-1 mb-2">
+          {uniqueShapes.map((shape, idx) => (
+            <button
+              key={shape.cellId}
+              className={`w-8 h-8 border rounded transition-colors flex items-center justify-center ${
+                selectedShapeIndex === idx
+                  ? 'bg-office-accent text-white border-office-accent'
+                  : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+              }`}
+              onClick={() => setSelectedShapeIndex(idx)}
+              title={`${shape.vertexCount}-gon`}
+            >
+              <svg width="20" height="20" viewBox="0 0 80 80">
+                <polygon
+                  points={shape.vertices.map(v => `${v.x},${v.y}`).join(' ')}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                />
+              </svg>
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Interactive Preview */}
       <div className="flex justify-center mb-3">
         <svg
@@ -313,31 +460,115 @@ export const MulticolorSettings: React.FC = () => {
           </defs>
           <rect width={size} height={size} fill="url(#checkered)" />
 
-          {[0, 1, 2, 3].map((section) => {
-            const color = getColorForIdx(slots[section]);
-            const isSelected = selectedSlot === section;
-            return (
-              <path
-                key={section}
-                d={getSectionPath(section)}
-                fill={color === 'transparent' ? 'transparent' : color}
-                stroke={isSelected ? '#0078d7' : '#999'}
-                strokeWidth={isSelected ? 2 : 0.5}
-                onClick={() => setSelectedSlot(section)}
-                className="cursor-pointer hover:opacity-80"
-              />
-            );
-          })}
-
-          {pattern === 'cross' ? (
+          {cellShape ? (
+            // Topology mode: render polygon sections based on pattern
             <>
-              <line x1={cx} y1="0" x2={cx} y2={size} stroke="#666" strokeWidth="0.5" />
-              <line x1="0" y1={cy} x2={size} y2={cy} stroke="#666" strokeWidth="0.5" />
+              {(() => {
+                const numVertices = cellShape.vertices.length;
+                const center = cellShape.center;
+                const vertices = cellShape.vertices;
+
+                // Build all paths for all sections
+                const allPaths: React.ReactElement[] = [];
+                const sectionsPerSlot = Math.ceil(numVertices / 4);
+
+                if (pattern === 'x') {
+                  // X pattern: divide by lines from center to vertices
+                  for (let section = 0; section < 4; section++) {
+                    const color = getColorForIdx(slots[section]);
+                    const isSelected = selectedSlot === section;
+                    const startIdx = section * sectionsPerSlot;
+                    const endIdx = Math.min(startIdx + sectionsPerSlot, numVertices);
+
+                    for (let i = startIdx; i < endIdx; i++) {
+                      const v1 = vertices[i];
+                      const v2 = vertices[(i + 1) % numVertices];
+                      const d = `M ${center.x} ${center.y} L ${v1.x} ${v1.y} L ${v2.x} ${v2.y} Z`;
+                      allPaths.push(
+                        <path
+                          key={`x-${section}-${i}`}
+                          d={d}
+                          fill={color === 'transparent' ? 'transparent' : color}
+                          stroke={isSelected ? '#0078d7' : '#999'}
+                          strokeWidth={isSelected ? 2 : 0.5}
+                          onClick={() => setSelectedSlot(section)}
+                          className="cursor-pointer hover:opacity-80"
+                        />
+                      );
+                    }
+                  }
+                } else {
+                  // Cross (+) pattern: divide by lines from center to edge midpoints
+                  const edgeMidpoints = vertices.map((v, i) => {
+                    const next = vertices[(i + 1) % numVertices];
+                    return { x: (v.x + next.x) / 2, y: (v.y + next.y) / 2 };
+                  });
+
+                  for (let section = 0; section < 4; section++) {
+                    const color = getColorForIdx(slots[section]);
+                    const isSelected = selectedSlot === section;
+                    const startIdx = section * sectionsPerSlot;
+                    const endIdx = Math.min(startIdx + sectionsPerSlot, numVertices);
+
+                    for (let i = startIdx; i < endIdx; i++) {
+                      const prevMid = edgeMidpoints[(i - 1 + numVertices) % numVertices];
+                      const vertex = vertices[i];
+                      const nextMid = edgeMidpoints[i];
+                      const d = `M ${center.x} ${center.y} L ${prevMid.x} ${prevMid.y} L ${vertex.x} ${vertex.y} L ${nextMid.x} ${nextMid.y} Z`;
+                      allPaths.push(
+                        <path
+                          key={`cross-${section}-${i}`}
+                          d={d}
+                          fill={color === 'transparent' ? 'transparent' : color}
+                          stroke={isSelected ? '#0078d7' : '#999'}
+                          strokeWidth={isSelected ? 2 : 0.5}
+                          onClick={() => setSelectedSlot(section)}
+                          className="cursor-pointer hover:opacity-80"
+                        />
+                      );
+                    }
+                  }
+                }
+                return allPaths;
+              })()}
+              {/* Draw polygon outline */}
+              <polygon
+                points={cellShape.vertices.map(v => `${v.x},${v.y}`).join(' ')}
+                fill="none"
+                stroke="#666"
+                strokeWidth="0.5"
+              />
             </>
           ) : (
+            // Standard mode: render square sections
             <>
-              <line x1="0" y1="0" x2={size} y2={size} stroke="#666" strokeWidth="0.5" />
-              <line x1={size} y1="0" x2="0" y2={size} stroke="#666" strokeWidth="0.5" />
+              {[0, 1, 2, 3].map((section) => {
+                const color = getColorForIdx(slots[section]);
+                const isSelected = selectedSlot === section;
+                return (
+                  <path
+                    key={section}
+                    d={getSectionPath(section)}
+                    fill={color === 'transparent' ? 'transparent' : color}
+                    stroke={isSelected ? '#0078d7' : '#999'}
+                    strokeWidth={isSelected ? 2 : 0.5}
+                    onClick={() => setSelectedSlot(section)}
+                    className="cursor-pointer hover:opacity-80"
+                  />
+                );
+              })}
+
+              {pattern === 'cross' ? (
+                <>
+                  <line x1={cx} y1="0" x2={cx} y2={size} stroke="#666" strokeWidth="0.5" />
+                  <line x1="0" y1={cy} x2={size} y2={cy} stroke="#666" strokeWidth="0.5" />
+                </>
+              ) : (
+                <>
+                  <line x1="0" y1="0" x2={size} y2={size} stroke="#666" strokeWidth="0.5" />
+                  <line x1={size} y1="0" x2="0" y2={size} stroke="#666" strokeWidth="0.5" />
+                </>
+              )}
             </>
           )}
         </svg>
@@ -360,12 +591,25 @@ export const MulticolorSettings: React.FC = () => {
               : 'bg-white border-office-border hover:bg-office-ribbon-hover'
           }`}
           onClick={() => setToolSettings({ multicolorPattern: 'cross' })}
-          title="+ pattern"
+          title={cellShape ? t('tool.multicolor.edgeMidpoint', 'Edge midpoint') : '+ pattern'}
         >
-          <svg width="16" height="16" viewBox="0 0 16 16">
-            <line x1="8" y1="2" x2="8" y2="14" stroke="currentColor" strokeWidth="2" />
-            <line x1="2" y1="8" x2="14" y2="8" stroke="currentColor" strokeWidth="2" />
-          </svg>
+          {cellShape ? (
+            // Topology mode: show edge midpoint icon (pentagon with dots on edges)
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <polygon points="8,1 15,6 12,15 4,15 1,6" fill="none" stroke="currentColor" strokeWidth="1" />
+              <circle cx="11.5" cy="3.5" r="1.5" fill="currentColor" />
+              <circle cx="13.5" cy="10.5" r="1.5" fill="currentColor" />
+              <circle cx="8" cy="15" r="1.5" fill="currentColor" />
+              <circle cx="2.5" cy="10.5" r="1.5" fill="currentColor" />
+              <circle cx="4.5" cy="3.5" r="1.5" fill="currentColor" />
+            </svg>
+          ) : (
+            // Standard mode: + pattern
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <line x1="8" y1="2" x2="8" y2="14" stroke="currentColor" strokeWidth="2" />
+              <line x1="2" y1="8" x2="14" y2="8" stroke="currentColor" strokeWidth="2" />
+            </svg>
+          )}
         </button>
         <button
           className={`w-8 h-8 border rounded transition-colors flex items-center justify-center ${
@@ -374,12 +618,25 @@ export const MulticolorSettings: React.FC = () => {
               : 'bg-white border-office-border hover:bg-office-ribbon-hover'
           }`}
           onClick={() => setToolSettings({ multicolorPattern: 'x' })}
-          title="× pattern"
+          title={cellShape ? t('tool.multicolor.vertex', 'Vertex') : '× pattern'}
         >
-          <svg width="16" height="16" viewBox="0 0 16 16">
-            <line x1="3" y1="3" x2="13" y2="13" stroke="currentColor" strokeWidth="2" />
-            <line x1="13" y1="3" x2="3" y2="13" stroke="currentColor" strokeWidth="2" />
-          </svg>
+          {cellShape ? (
+            // Topology mode: show vertex icon (pentagon with dots on vertices)
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <polygon points="8,1 15,6 12,15 4,15 1,6" fill="none" stroke="currentColor" strokeWidth="1" />
+              <circle cx="8" cy="1" r="1.5" fill="currentColor" />
+              <circle cx="15" cy="6" r="1.5" fill="currentColor" />
+              <circle cx="12" cy="15" r="1.5" fill="currentColor" />
+              <circle cx="4" cy="15" r="1.5" fill="currentColor" />
+              <circle cx="1" cy="6" r="1.5" fill="currentColor" />
+            </svg>
+          ) : (
+            // Standard mode: × pattern
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <line x1="3" y1="3" x2="13" y2="13" stroke="currentColor" strokeWidth="2" />
+              <line x1="13" y1="3" x2="3" y2="13" stroke="currentColor" strokeWidth="2" />
+            </svg>
+          )}
         </button>
 
         <button

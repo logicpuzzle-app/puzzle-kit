@@ -22,8 +22,8 @@ export const toolGroups: Record<ToolCategory, ToolDef[]> = {
   surface: [
     { id: 'surface-fill', icon: '■', labelKey: 'tool.surface.fill' },
     { id: 'surface-dot', icon: '·', labelKey: 'tool.surface.dot' },
-    { id: 'multicolor-surface', icon: '◧', labelKey: 'tool.multicolor.surface' },
-    { id: 'solution-area', icon: '▣', labelKey: 'tool.solutionArea' },
+    // TODO: Re-enable when topology support is implemented
+    // { id: 'solution-area', icon: '▣', labelKey: 'tool.solutionArea' },
   ],
   line: [],
   edge: [],

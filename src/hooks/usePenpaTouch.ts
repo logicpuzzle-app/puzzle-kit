@@ -11,13 +11,24 @@
  */
 
 import { useRef, useCallback, useEffect } from 'react';
+import {
+  TouchPoint,
+  GestureThresholds,
+  DEFAULT_THRESHOLDS,
+  touchListToPoints,
+  touchToPoint,
+  getDistance,
+  getMidpoint,
+  getDelta,
+  isDoubleTap,
+  isDragStarted,
+  calculatePinchScale,
+  isPinchGesture,
+  shouldTriggerLongPress,
+  type TapRecord,
+} from './gestureUtils';
 
-export interface TouchPoint {
-  x: number;
-  y: number;
-  id: number;
-  timestamp: number;
-}
+export type { TouchPoint } from './gestureUtils';
 
 export interface TouchGesture {
   type: 'tap' | 'double-tap' | 'long-press' | 'drag' | 'pinch' | 'pan';
@@ -43,75 +54,84 @@ export interface UsePenpaTouchOptions {
   onTouchEnd?: (points: TouchPoint[]) => void;
 }
 
-const DEFAULT_OPTIONS: Required<Omit<UsePenpaTouchOptions, 'onGesture' | 'onTouchStart' | 'onTouchMove' | 'onTouchEnd'>> = {
-  longPressDelay: 500,
-  doubleTapDelay: 300,
-  dragThreshold: 10,
+interface TouchState {
+  points: TouchPoint[];
+  startPoints: TouchPoint[];
+  lastTap: TapRecord | null;
+  longPressTimer: ReturnType<typeof setTimeout> | null;
+  isDragging: boolean;
+  isPinching: boolean;
+  isPanning: boolean;
+  initialPinchDistance: number;
+}
+
+const INITIAL_TOUCH_STATE: TouchState = {
+  points: [],
+  startPoints: [],
+  lastTap: null,
+  longPressTimer: null,
+  isDragging: false,
+  isPinching: false,
+  isPanning: false,
+  initialPinchDistance: 0,
 };
+
+// Handler definition type for centralized event registration
+interface TouchHandler {
+  type: 'touchstart' | 'touchmove' | 'touchend' | 'touchcancel';
+  handler: (e: TouchEvent) => void;
+  options?: AddEventListenerOptions;
+}
 
 export function usePenpaTouch(
   elementRef: React.RefObject<HTMLElement | SVGElement | null>,
   options: UsePenpaTouchOptions = {}
 ) {
-  const {
-    longPressDelay = DEFAULT_OPTIONS.longPressDelay,
-    doubleTapDelay = DEFAULT_OPTIONS.doubleTapDelay,
-    dragThreshold = DEFAULT_OPTIONS.dragThreshold,
-    onGesture,
-    onTouchStart,
-    onTouchMove,
-    onTouchEnd,
-  } = options;
+  const thresholds: GestureThresholds = {
+    longPressDelay: options.longPressDelay ?? DEFAULT_THRESHOLDS.longPressDelay,
+    doubleTapDelay: options.doubleTapDelay ?? DEFAULT_THRESHOLDS.doubleTapDelay,
+    dragThreshold: options.dragThreshold ?? DEFAULT_THRESHOLDS.dragThreshold,
+    pinchThreshold: DEFAULT_THRESHOLDS.pinchThreshold,
+  };
 
-  const touchStateRef = useRef<{
-    points: TouchPoint[];
-    startPoints: TouchPoint[];
-    lastTap: { x: number; y: number; timestamp: number } | null;
-    longPressTimer: ReturnType<typeof setTimeout> | null;
-    isDragging: boolean;
-    isPinching: boolean;
-    isPanning: boolean;
-    initialPinchDistance: number;
-  }>({
-    points: [],
-    startPoints: [],
-    lastTap: null,
-    longPressTimer: null,
-    isDragging: false,
-    isPinching: false,
-    isPanning: false,
-    initialPinchDistance: 0,
-  });
+  const { onGesture, onTouchStart, onTouchMove, onTouchEnd } = options;
 
-  const getTouchPoint = useCallback((touch: Touch): TouchPoint => ({
-    x: touch.clientX,
-    y: touch.clientY,
-    id: touch.identifier,
-    timestamp: Date.now(),
-  }), []);
+  const touchStateRef = useRef<TouchState>({ ...INITIAL_TOUCH_STATE });
 
-  const getDistance = useCallback((p1: TouchPoint, p2: TouchPoint): number => {
-    const dx = p2.x - p1.x;
-    const dy = p2.y - p1.y;
-    return Math.sqrt(dx * dx + dy * dy);
-  }, []);
-
-  const getMidpoint = useCallback((p1: TouchPoint, p2: TouchPoint): { x: number; y: number } => ({
-    x: (p1.x + p2.x) / 2,
-    y: (p1.y + p2.y) / 2,
-  }), []);
+  // ============================================================================
+  // Timer Management
+  // ============================================================================
 
   const clearLongPressTimer = useCallback(() => {
-    if (touchStateRef.current.longPressTimer) {
-      clearTimeout(touchStateRef.current.longPressTimer);
-      touchStateRef.current.longPressTimer = null;
+    const state = touchStateRef.current;
+    if (state.longPressTimer) {
+      clearTimeout(state.longPressTimer);
+      state.longPressTimer = null;
     }
   }, []);
 
+  const startLongPressTimer = useCallback(() => {
+    const state = touchStateRef.current;
+    clearLongPressTimer();
+    state.longPressTimer = setTimeout(() => {
+      if (shouldTriggerLongPress(state.isDragging, state.points.length)) {
+        onGesture?.({
+          type: 'long-press',
+          points: state.points,
+        });
+      }
+    }, thresholds.longPressDelay);
+  }, [clearLongPressTimer, onGesture, thresholds.longPressDelay]);
+
+  // ============================================================================
+  // Event Handlers
+  // ============================================================================
+
   const handleTouchStart = useCallback((e: TouchEvent) => {
-    const touches = Array.from(e.touches).map(getTouchPoint);
+    const touches = touchListToPoints(e.touches);
     const state = touchStateRef.current;
 
+    // Reset state
     state.points = touches;
     state.startPoints = [...touches];
     state.isDragging = false;
@@ -121,47 +141,35 @@ export function usePenpaTouch(
     onTouchStart?.(touches);
 
     if (touches.length === 1) {
-      // Single touch - check for long press or drag
-      clearLongPressTimer();
-      state.longPressTimer = setTimeout(() => {
-        if (!state.isDragging && state.points.length === 1) {
-          onGesture?.({
-            type: 'long-press',
-            points: state.points,
-          });
-        }
-      }, longPressDelay);
+      // Single touch - prepare for long press
+      startLongPressTimer();
     } else if (touches.length === 2) {
-      // Two touches - prepare for pinch or pan
+      // Two touches - prepare for pinch/pan
       clearLongPressTimer();
       state.initialPinchDistance = getDistance(touches[0], touches[1]);
       state.isPanning = true;
     }
-  }, [getTouchPoint, longPressDelay, onTouchStart, onGesture, clearLongPressTimer, getDistance]);
+  }, [onTouchStart, startLongPressTimer, clearLongPressTimer]);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
-    const touches = Array.from(e.touches).map(getTouchPoint);
+    const touches = touchListToPoints(e.touches);
     const state = touchStateRef.current;
 
     if (touches.length === 0) return;
 
-    const delta = {
-      x: touches[0].x - (state.points[0]?.x ?? touches[0].x),
-      y: touches[0].y - (state.points[0]?.y ?? touches[0].y),
-    };
+    const delta = getDelta(
+      state.points[0] ?? touches[0],
+      touches[0]
+    );
 
     onTouchMove?.(touches, delta);
 
     if (touches.length === 1 && state.startPoints.length === 1) {
-      // Single finger drag
+      // Single finger drag detection
       const startPoint = state.startPoints[0];
-      const totalDelta = {
-        x: touches[0].x - startPoint.x,
-        y: touches[0].y - startPoint.y,
-      };
-      const distance = Math.sqrt(totalDelta.x * totalDelta.x + totalDelta.y * totalDelta.y);
+      const totalDelta = getDelta(startPoint, touches[0]);
 
-      if (distance > dragThreshold) {
+      if (isDragStarted(startPoint, touches[0], thresholds.dragThreshold)) {
         clearLongPressTimer();
         state.isDragging = true;
 
@@ -172,14 +180,15 @@ export function usePenpaTouch(
         });
       }
     } else if (touches.length === 2) {
-      // Two finger gesture
+      // Two finger gesture detection
       clearLongPressTimer();
-      const currentDistance = getDistance(touches[0], touches[1]);
-      const scale = currentDistance / state.initialPinchDistance;
+      const scale = calculatePinchScale(
+        touches[0],
+        touches[1],
+        state.initialPinchDistance
+      );
 
-      // Determine if pinch or pan
-      const scaleChange = Math.abs(scale - 1);
-      if (scaleChange > 0.1) {
+      if (isPinchGesture(scale, thresholds.pinchThreshold)) {
         state.isPinching = true;
         state.isPanning = false;
 
@@ -189,57 +198,47 @@ export function usePenpaTouch(
           scale,
         });
       } else if (state.isPanning) {
-        const midpoint = getMidpoint(touches[0], touches[1]);
+        const currentMidpoint = getMidpoint(touches[0], touches[1]);
         const prevMidpoint = state.points.length >= 2
           ? getMidpoint(state.points[0], state.points[1])
-          : midpoint;
+          : currentMidpoint;
 
         onGesture?.({
           type: 'pan',
           points: touches,
-          delta: {
-            x: midpoint.x - prevMidpoint.x,
-            y: midpoint.y - prevMidpoint.y,
-          },
+          delta: getDelta(prevMidpoint, currentMidpoint),
         });
       }
     }
 
     state.points = touches;
-  }, [getTouchPoint, dragThreshold, onTouchMove, onGesture, clearLongPressTimer, getDistance, getMidpoint]);
+  }, [onTouchMove, onGesture, clearLongPressTimer, thresholds]);
 
   const handleTouchEnd = useCallback((e: TouchEvent) => {
-    const touches = Array.from(e.touches).map(getTouchPoint);
+    const touches = touchListToPoints(e.touches);
     const state = touchStateRef.current;
 
     clearLongPressTimer();
-
     onTouchEnd?.(touches);
 
-    // Check for tap/double-tap
+    // Check for tap/double-tap (only for single finger, non-drag/pinch)
     if (e.changedTouches.length === 1 && !state.isDragging && !state.isPinching) {
-      const endPoint = getTouchPoint(e.changedTouches[0]);
+      const endPoint = touchToPoint(e.changedTouches[0]);
       const now = Date.now();
+      const tapRecord: TapRecord = { x: endPoint.x, y: endPoint.y, timestamp: now };
 
-      // Check for double tap
-      if (
-        state.lastTap &&
-        now - state.lastTap.timestamp < doubleTapDelay &&
-        Math.abs(endPoint.x - state.lastTap.x) < dragThreshold &&
-        Math.abs(endPoint.y - state.lastTap.y) < dragThreshold
-      ) {
+      if (isDoubleTap(tapRecord, state.lastTap, thresholds)) {
         onGesture?.({
           type: 'double-tap',
           points: [endPoint],
         });
         state.lastTap = null;
       } else {
-        // Single tap
         onGesture?.({
           type: 'tap',
           points: [endPoint],
         });
-        state.lastTap = { x: endPoint.x, y: endPoint.y, timestamp: now };
+        state.lastTap = tapRecord;
       }
     }
 
@@ -249,7 +248,7 @@ export function usePenpaTouch(
       state.isPinching = false;
       state.isPanning = false;
     }
-  }, [getTouchPoint, doubleTapDelay, dragThreshold, onTouchEnd, onGesture, clearLongPressTimer]);
+  }, [onTouchEnd, onGesture, clearLongPressTimer, thresholds]);
 
   const handleTouchCancel = useCallback(() => {
     clearLongPressTimer();
@@ -260,30 +259,40 @@ export function usePenpaTouch(
     state.isPanning = false;
   }, [clearLongPressTimer]);
 
+  // ============================================================================
+  // Event Registration (Centralized)
+  // ============================================================================
+
   useEffect(() => {
     const element = elementRef.current;
     if (!element) return;
 
     // Prevent default touch behaviors
     const preventDefault = (e: TouchEvent) => {
-      // Allow scrolling in non-canvas areas
       if (e.touches.length > 1 || element.contains(e.target as Node)) {
         e.preventDefault();
       }
     };
 
-    element.addEventListener('touchstart', handleTouchStart as EventListener, { passive: false });
-    element.addEventListener('touchmove', handleTouchMove as EventListener, { passive: false });
-    element.addEventListener('touchend', handleTouchEnd as EventListener);
-    element.addEventListener('touchcancel', handleTouchCancel as EventListener);
-    document.addEventListener('touchmove', preventDefault as EventListener, { passive: false });
+    // Handler list pattern for centralized registration
+    const handlers: TouchHandler[] = [
+      { type: 'touchstart', handler: handleTouchStart, options: { passive: false } },
+      { type: 'touchmove', handler: handleTouchMove, options: { passive: false } },
+      { type: 'touchend', handler: handleTouchEnd },
+      { type: 'touchcancel', handler: handleTouchCancel },
+    ];
+
+    // Register all handlers
+    handlers.forEach(({ type, handler, options: opts }) => {
+      element.addEventListener(type, handler as EventListener, opts);
+    });
+    document.addEventListener('touchmove', preventDefault, { passive: false });
 
     return () => {
-      element.removeEventListener('touchstart', handleTouchStart as EventListener);
-      element.removeEventListener('touchmove', handleTouchMove as EventListener);
-      element.removeEventListener('touchend', handleTouchEnd as EventListener);
-      element.removeEventListener('touchcancel', handleTouchCancel as EventListener);
-      document.removeEventListener('touchmove', preventDefault as EventListener);
+      handlers.forEach(({ type, handler }) => {
+        element.removeEventListener(type, handler as EventListener);
+      });
+      document.removeEventListener('touchmove', preventDefault);
       clearLongPressTimer();
     };
   }, [elementRef, handleTouchStart, handleTouchMove, handleTouchEnd, handleTouchCancel, clearLongPressTimer]);

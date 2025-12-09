@@ -24,11 +24,15 @@ interface CanvasCursorsProps {
   // Hover cell
   hoverCellPolygon: string | null;
   hoverCellRect: { x: number; y: number; size: number } | null;
+  // Cursor cell (last tapped cell for direction panel)
+  cursorCellPolygon: string | null;
+  cursorCellRect: { x: number; y: number; size: number } | null;
   // Line tool
   lineStartPoint: Point | null;
   lineHoverPoint: Point | null;
   isLineTool: boolean;
   lineColor: string;
+  isStraightMode: boolean;
   // Symbol tool
   symbolHoverPoint: Point | null;
   isSymbolTool: boolean;
@@ -53,10 +57,13 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
   canvas,
   hoverCellPolygon,
   hoverCellRect,
+  cursorCellPolygon,
+  cursorCellRect,
   lineStartPoint,
   lineHoverPoint,
   isLineTool,
   lineColor,
+  isStraightMode,
   symbolHoverPoint,
   isSymbolTool,
   cellCursorPath,
@@ -75,6 +82,33 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
           <path d={cellCursorPath} fill="none" stroke="#0078d4" strokeWidth={2 / canvas.zoom} />
         </g>
       )}
+
+      {/* Cursor cell (last tapped) - stronger highlight */}
+      <g data-cursor="true" transform={`translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom})`}>
+        {/* Topology mode: polygon cursor */}
+        {cursorCellPolygon && (
+          <polygon
+            points={cursorCellPolygon}
+            fill="rgba(255, 152, 0, 0.15)"
+            stroke="rgba(255, 152, 0, 0.8)"
+            strokeWidth={2 / canvas.zoom}
+            pointerEvents="none"
+          />
+        )}
+        {/* Standard mode: rectangle cursor */}
+        {cursorCellRect && (
+          <rect
+            x={cursorCellRect.x}
+            y={cursorCellRect.y}
+            width={cursorCellRect.size}
+            height={cursorCellRect.size}
+            fill="rgba(255, 152, 0, 0.15)"
+            stroke="rgba(255, 152, 0, 0.8)"
+            strokeWidth={2 / canvas.zoom}
+            pointerEvents="none"
+          />
+        )}
+      </g>
 
       {/* Hover cell cursor - must be in transformed space */}
       <g data-cursor="true" transform={`translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom})`}>
@@ -102,6 +136,8 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
           />
         )}
         {/* Line tool preview - line from start point to hover point */}
+        {/* Straight mode (free segment): 70% opacity (line will be drawn) */}
+        {/* Orthogonal/diagonal mode: 30% opacity (line may not be drawable) */}
         {lineStartPoint && lineHoverPoint && isLineTool && (
           <line
             x1={lineStartPoint.x}
@@ -110,7 +146,7 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
             y2={lineHoverPoint.y}
             stroke={lineColor}
             strokeWidth={2 / canvas.zoom}
-            strokeOpacity={0.5}
+            strokeOpacity={isStraightMode ? 0.7 : 0.3}
             pointerEvents="none"
           />
         )}

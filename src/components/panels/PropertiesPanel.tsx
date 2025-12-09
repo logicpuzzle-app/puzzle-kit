@@ -6,6 +6,7 @@ import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../store/puzzleStore';
 import { SymbolPanel } from './SymbolPanel';
+import { DirectionPanel } from './DirectionPanel';
 import { constraintCatalog } from '../../constraints';
 import {
   SolverPanel,
@@ -15,6 +16,7 @@ import {
   GridPropertiesPanel,
   NumberInputPanel,
   ArrowDirectionSettings,
+  MulticolorSettings,
 } from './properties';
 
 export const PropertiesPanel: React.FC = () => {
@@ -86,7 +88,7 @@ export const PropertiesPanel: React.FC = () => {
         </button>
       </div>
 
-      <div className="p-3 flex flex-col gap-4 flex-shrink-0">
+      <div className="p-3 flex flex-col gap-4 flex-1 overflow-y-auto min-h-0">
         {/* Solver mode panel */}
         {(isSolving || isSolverMode || solverStatus) && (
           <SolverPanel />
@@ -133,11 +135,20 @@ export const PropertiesPanel: React.FC = () => {
         {!isSolving && !isSolverMode && !isGridMode && !isSpecificMode && !isConstraintEnabled && (
           <ToolPropertiesPanel />
         )}
-      </div>
 
-      {/* Symbol Panel - show when symbol category selected */}
-      {!isSolving && !isSolverMode && !isGridMode && !isSpecificMode && !isConstraintEnabled &&
-       toolSettings.currentCategory === 'symbol' && <SymbolPanel />}
+        {/* Symbol Panel - show when symbol category selected */}
+        {!isSolving && !isSolverMode && !isGridMode && !isSpecificMode && !isConstraintEnabled &&
+         toolSettings.currentCategory === 'symbol' && (
+          /* Show content based on sub-mode (toggle is in Ribbon) */
+          toolSettings.symbolSubMode === 'multicolor' ? (
+            <MulticolorSettings />
+          ) : toolSettings.symbolSubMode === 'direction' ? (
+            <DirectionPanel />
+          ) : (
+            <SymbolPanel />
+          )
+        )}
+      </div>
     </div>
   );
 };

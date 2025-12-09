@@ -84,6 +84,15 @@ export interface UpdateNumberAction {
   layer: DataLayerType;
 }
 
+// Special action for line updates (color, style, thickness)
+export interface UpdateLineAction {
+  type: 'UPDATE_LINE';
+  id: string;
+  previousElement: LineElement;
+  newElement: LineElement;
+  layer: DataLayerType;
+}
+
 // ========================================
 // Layer Actions
 // ========================================
@@ -130,6 +139,7 @@ export type PuzzleAction =
   | RemoveSurfaceAction
   | AddLineAction
   | RemoveLineAction
+  | UpdateLineAction
   | AddEdgeAction
   | RemoveEdgeAction
   | AddWallAction
@@ -204,6 +214,19 @@ export const createUpdateNumberAction = (
   layer,
 });
 
+export const createUpdateLineAction = (
+  id: string,
+  previousElement: LineElement,
+  newElement: LineElement,
+  layer: DataLayerType
+): UpdateLineAction => ({
+  type: 'UPDATE_LINE',
+  id,
+  previousElement,
+  newElement,
+  layer,
+});
+
 export const createBatchAction = (actions: PuzzleAction[], description?: string): BatchAction => ({
   type: 'BATCH',
   actions,
@@ -256,6 +279,14 @@ export function reverseAction(action: PuzzleAction): PuzzleAction {
         newValue: action.previousValue,
         layer: action.layer,
       };
+    case 'UPDATE_LINE':
+      return {
+        type: 'UPDATE_LINE',
+        id: action.id,
+        previousElement: action.newElement,
+        newElement: action.previousElement,
+        layer: action.layer,
+      };
     case 'SET_ACTIVE_LAYER':
       return {
         type: 'SET_ACTIVE_LAYER',
@@ -292,6 +323,7 @@ const ELEMENT_ACTION_DESCRIPTIONS: Record<string, string> = {
   REMOVE_SURFACE: 'Remove surface',
   ADD_LINE: 'Add line',
   REMOVE_LINE: 'Remove line',
+  UPDATE_LINE: 'Update line',
   ADD_EDGE: 'Add edge',
   REMOVE_EDGE: 'Remove edge',
   ADD_WALL: 'Add wall',

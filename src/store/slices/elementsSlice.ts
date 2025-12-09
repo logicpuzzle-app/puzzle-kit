@@ -35,6 +35,7 @@ import {
   createRemoveSurfaceAction,
   createAddLineAction,
   createRemoveLineAction,
+  createUpdateLineAction,
   createAddEdgeAction,
   createRemoveEdgeAction,
   createAddWallAction,
@@ -167,6 +168,31 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
         };
       });
       historyManager.addAction(createRemoveLineAction(id, element));
+    }
+  },
+
+  updateLine: (id, updates) => {
+    const state = get();
+    const layer = toDataLayer(state.activeLayer);
+    const element = state.puzzle[layer].lines[id];
+    if (element) {
+      const newElement: LineElement = { ...element, ...updates };
+      set((state) => {
+        const dataLayer = toDataLayer(state.activeLayer);
+        return {
+          puzzle: {
+            ...state.puzzle,
+            [dataLayer]: {
+              ...state.puzzle[dataLayer],
+              lines: {
+                ...state.puzzle[dataLayer].lines,
+                [id]: newElement,
+              },
+            },
+          },
+        };
+      });
+      historyManager.addAction(createUpdateLineAction(id, element, newElement, layer));
     }
   },
 

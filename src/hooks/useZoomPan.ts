@@ -45,17 +45,23 @@ export function useZoomPan({ svgRef }: UseZoomPanOptions) {
 
   // Keyboard shortcuts for zoom
   useEffect(() => {
+    const shortcuts = [
+      { keys: ['='], ctrl: true, run: () => setZoom(canvas.zoom * 1.2) },
+      { keys: ['-'], ctrl: true, run: () => setZoom(canvas.zoom / 1.2) },
+      { keys: ['0'], ctrl: true, run: () => { setZoom(1); setPan(0, 0); } },
+    ];
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === '=') {
-        e.preventDefault();
-        setZoom(canvas.zoom * 1.2);
-      } else if ((e.ctrlKey || e.metaKey) && e.key === '-') {
-        e.preventDefault();
-        setZoom(canvas.zoom / 1.2);
-      } else if ((e.ctrlKey || e.metaKey) && e.key === '0') {
-        e.preventDefault();
-        setZoom(1);
-        setPan(0, 0);
+      const key = e.key.toLowerCase();
+      const ctrl = e.ctrlKey || e.metaKey;
+      for (const sc of shortcuts) {
+        const matchesKey = sc.keys.includes(key);
+        const matchesCtrl = sc.ctrl ? ctrl : true;
+        if (matchesKey && matchesCtrl) {
+          e.preventDefault();
+          sc.run();
+          break;
+        }
       }
     };
 

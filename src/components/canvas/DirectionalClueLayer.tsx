@@ -191,6 +191,9 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
       const hasArbitraryAngle = clue.angle !== null && clue.angle !== undefined;
       const fontSize = grid.cellSize * 0.5;
 
+      // Use color from clue if specified, otherwise default to black
+      const clueColor = clue.color || '#000';
+
       if (hasArbitraryAngle || hasDirection) {
         // Use generalized arrow rendering for both arbitrary angles and preset directions
         const angle = hasArbitraryAngle ? clue.angle! : directionToAngle(clue.direction);
@@ -204,7 +207,7 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
             <text
               x={numberOffset.x}
               y={numberOffset.y}
-              fill="#000"
+              fill={clueColor}
               fontSize={fontSize * 0.85}
               fontFamily="Helvetica, Verdana, Arial, sans-serif"
               fontWeight="bold"
@@ -216,7 +219,7 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
             {/* Arrow positioned on upper-right arc, rotated to point in direction */}
             <path
               d={arrowPath}
-              fill="#000"
+              fill={clueColor}
               transform={`translate(${arrowPos.x},${arrowPos.y}) rotate(${angle})`}
             />
           </g>
@@ -228,7 +231,7 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
             <text
               x={0}
               y={0}
-              fill="#000"
+              fill={clueColor}
               fontSize={fontSize}
               fontFamily="Helvetica, Verdana, Arial, sans-serif"
               fontWeight="bold"

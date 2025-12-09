@@ -257,6 +257,8 @@ export interface PenpaDirectionalClue {
   layer: 'problem' | 'answer';
   /** Arbitrary angle in degrees (0=right, 90=down, 180=left, 270=up). Overrides direction if set and non-null. */
   angle?: number | null;
+  /** Logical uniqueness key per cell (same key cannot be placed twice on one cell) */
+  objectKey?: string;
 }
 
 /**

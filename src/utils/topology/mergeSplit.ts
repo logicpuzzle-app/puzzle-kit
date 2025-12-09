@@ -167,16 +167,13 @@ function buildMergedCell(
     const curr = loopVertices[i];
     const next = loopVertices[(i + 1) % n];
 
-    // Preserve vertices on the outer grid boundary (never drop)
-    const isOnOuterBoundary = outerBoundaryVertices.has(curr.id);
-
     const hasExternal = curr.adjacentCells.some(id => !cellIdSet.has(id));
-    // Only drop collinear vertices if:
-    // 1. They're not on the outer boundary of the grid
-    // 2. They have no external adjacent cells (internal to merge group)
-    // 3. They're collinear with neighbors
-    if (!isOnOuterBoundary && !hasExternal && isCollinear(prev.position, curr.position, next.position)) {
-      continue; // internal collinear vertex, drop
+    // Drop collinear vertices if:
+    // 1. They have no external adjacent cells (not shared with cells outside the merge group)
+    // 2. They're collinear with neighbors
+    // Note: We no longer preserve all outer boundary vertices - only non-collinear ones (corners)
+    if (!hasExternal && isCollinear(prev.position, curr.position, next.position)) {
+      continue; // collinear vertex on merge boundary, drop
     }
     filtered.push(curr);
   }

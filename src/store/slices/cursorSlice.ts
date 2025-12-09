@@ -27,6 +27,8 @@ export type CssCursorClass = 'cursor-crosshair' | 'cursor-grab' | 'cursor-defaul
 export interface CursorOverlay {
   /** Show cell hover rectangle/polygon */
   showCellCursor: boolean;
+  /** Show cursor cell (last tapped cell) highlight - used for direction panel, multicolor settings */
+  showCursorCellHighlight: boolean;
   /** Show line/edge tool cursor (blue circle on grid point) */
   showLineCursor: boolean;
   /** Show symbol tool cursor (green circle) */
@@ -66,6 +68,7 @@ const DEFAULT_CURSOR_CONFIG: CursorConfig = {
   css: 'cursor-crosshair',
   overlay: {
     showCellCursor: true,
+    showCursorCellHighlight: true,
     showLineCursor: false,
     showSymbolCursor: false,
     showNumberCursor: false,
@@ -89,17 +92,17 @@ const TOOL_CURSOR_MAP: Record<string, Partial<CursorConfig>> = {
 
   // Line tools - line cursor (blue circle on grid point)
   'line': {
-    overlay: { showCellCursor: false, showLineCursor: true },
+    overlay: { showCellCursor: false, showCursorCellHighlight: false, showLineCursor: true },
   },
 
   // Edge tools - line cursor (same as line)
   'edge': {
-    overlay: { showCellCursor: false, showLineCursor: true },
+    overlay: { showCellCursor: false, showCursorCellHighlight: false, showLineCursor: true },
   },
 
-  // Wall tools - cell cursor
+  // Wall tools - line cursor (same as line/edge)
   'wall': {
-    overlay: { showCellCursor: true },
+    overlay: { showCellCursor: false, showCursorCellHighlight: false, showLineCursor: true },
   },
 
   // Number tools - number cursor (Excel-like border)
@@ -261,6 +264,7 @@ export const createCursorSlice: SliceCreator<CursorSlice> = (_set, get) => ({
         css: 'cursor-grab',
         overlay: {
           showCellCursor: false,
+          showCursorCellHighlight: false,
           showLineCursor: false,
           showSymbolCursor: false,
           showNumberCursor: false,
@@ -279,6 +283,7 @@ export const createCursorSlice: SliceCreator<CursorSlice> = (_set, get) => ({
         css: 'cursor-default',
         overlay: {
           showCellCursor: false,
+          showCursorCellHighlight: false,
           showLineCursor: false,
           showSymbolCursor: false,
           showNumberCursor: false,
@@ -323,6 +328,7 @@ export const createCursorSlice: SliceCreator<CursorSlice> = (_set, get) => ({
           css: 'cursor-crosshair',
           overlay: {
             showCellCursor: false,
+            showCursorCellHighlight: true,
             showLineCursor: false,
             showSymbolCursor: false,
             showNumberCursor: true,
@@ -343,6 +349,7 @@ export const createCursorSlice: SliceCreator<CursorSlice> = (_set, get) => ({
           css: 'cursor-crosshair',
           overlay: {
             showCellCursor: false,
+            showCursorCellHighlight: false,
             showLineCursor: true,
             showSymbolCursor: false,
             showNumberCursor: false,
@@ -362,6 +369,7 @@ export const createCursorSlice: SliceCreator<CursorSlice> = (_set, get) => ({
           css: 'cursor-crosshair',
           overlay: {
             showCellCursor: false,
+            showCursorCellHighlight: false,
             showLineCursor: true,
             showSymbolCursor: false,
             showNumberCursor: false,
@@ -380,6 +388,7 @@ export const createCursorSlice: SliceCreator<CursorSlice> = (_set, get) => ({
           css: 'cursor-crosshair',
           overlay: {
             showCellCursor: true,
+            showCursorCellHighlight: true,
             showLineCursor: false,
             showSymbolCursor: false,
             showNumberCursor: false,
@@ -398,6 +407,7 @@ export const createCursorSlice: SliceCreator<CursorSlice> = (_set, get) => ({
           css: 'cursor-crosshair',
           overlay: {
             showCellCursor: true,
+            showCursorCellHighlight: true,
             showLineCursor: false,
             showSymbolCursor: false,
             showNumberCursor: false,
@@ -415,6 +425,7 @@ export const createCursorSlice: SliceCreator<CursorSlice> = (_set, get) => ({
         css: 'cursor-crosshair',
         overlay: {
           showCellCursor: true,
+          showCursorCellHighlight: true,
           showLineCursor: false,
           showSymbolCursor: false,
           showNumberCursor: false,
@@ -443,6 +454,7 @@ export const createCursorSlice: SliceCreator<CursorSlice> = (_set, get) => ({
     const config = get().getCursorConfig();
     return {
       showCellCursor: config.overlay.showCellCursor ?? false,
+      showCursorCellHighlight: config.overlay.showCursorCellHighlight ?? false,
       showLineCursor: config.overlay.showLineCursor ?? false,
       showSymbolCursor: config.overlay.showSymbolCursor ?? false,
       showNumberCursor: config.overlay.showNumberCursor ?? false,

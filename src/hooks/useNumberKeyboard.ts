@@ -10,16 +10,50 @@
  * - Candidates mode (pencil marks)
  */
 
-import { useEffect } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import { usePuzzleStore } from '../store/puzzleStore';
 import { useCellFinder } from './useCellFinder';
 import { toDataLayer } from '../types';
 import { constraintCatalog } from '../constraints';
 import { getAutoModeConfig } from '../constraints/inputModeMapping';
+import {
+  shouldIgnoreKeyEvent,
+  isArrowKey,
+  getArrowDirection,
+  calculateNextPosition,
+  isDigit,
+  isSingleChar,
+  isDeleteKey,
+  getMaxDigitsForGrid,
+  appendDigit,
+  removeLastChar,
+  type KeyboardShortcut,
+  executeMatchingShortcut,
+} from './keyboardUtils';
 
-/**
- * Hook for handling keyboard input for number tools
- */
+// ============================================================================
+// Types
+// ============================================================================
+
+interface NumberKeyboardContext {
+  isNumberTool: boolean;
+  isConstraintNumberInput: boolean;
+  target: { row: number; col: number } | null;
+  gridRows: number;
+  gridCols: number;
+}
+
+type NumberInputHandler = (
+  target: { row: number; col: number },
+  key: string,
+  isDelete: boolean,
+  isSingleCharInput: boolean
+) => void;
+
+// ============================================================================
+// Hook
+// ============================================================================
+
 export function useNumberKeyboard() {
   const {
     grid,
@@ -43,171 +77,70 @@ export function useNumberKeyboard() {
   // Check if constraint mode number input is active
   const isConstraintEnabled = showConstraintLayer && currentSchemaId !== null;
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      const tool = toolSettings.currentTool;
+  // ============================================================================
+  // Input Mode Detection
+  // ============================================================================
 
-      // Check if we should handle keyboard input
-      // 1. Number tool is active (number-normal, number-directional, etc.)
-      // 2. Constraint mode with number/direc/auto-number/auto-direc input
-      const isNumberTool = tool.startsWith('number');
+  const shouldHandleInput = useCallback((): { isNumberTool: boolean; isConstraintNumberInput: boolean } => {
+    const tool = toolSettings.currentTool;
+    const isNumberTool = tool.startsWith('number');
 
-      let isConstraintNumberInput = false;
-      if (isConstraintEnabled) {
-        const isNumberInputMode = currentInputMode === 'number' || currentInputMode === 'number-';
-        const isDirecInputMode = currentInputMode === 'direc';
+    let isConstraintNumberInput = false;
+    if (isConstraintEnabled) {
+      const isNumberInputMode = currentInputMode === 'number' || currentInputMode === 'number-';
+      const isDirecInputMode = currentInputMode === 'direc';
+      const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
+      const isEditMode = activeLayer === 'problem';
+      const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
+      const isAutoNumberMode = currentInputMode === 'auto' && autoConfig.type === 'number';
+      const isAutoDirecMode = currentInputMode === 'auto' && autoConfig.type === 'direc';
+      const isAutoBorderNumberMode = currentInputMode === 'auto' && autoConfig.type === 'border-number';
+      isConstraintNumberInput =
+        isNumberInputMode || isDirecInputMode || isAutoNumberMode || isAutoDirecMode || isAutoBorderNumberMode;
+    }
+    return { isNumberTool, isConstraintNumberInput };
+  }, [activeLayer, currentInputMode, currentSchemaId, isConstraintEnabled, toolSettings.currentTool]);
 
-        // Check auto mode type
-        const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
-        const isEditMode = activeLayer === 'problem';
-        const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
-        const isAutoNumberMode = currentInputMode === 'auto' && autoConfig.type === 'number';
-        const isAutoDirecMode = currentInputMode === 'auto' && autoConfig.type === 'direc';
-        const isAutoBorderNumberMode = currentInputMode === 'auto' && autoConfig.type === 'border-number';
+  // ============================================================================
+  // Max Digits Calculation
+  // ============================================================================
 
-        isConstraintNumberInput = isNumberInputMode || isDirecInputMode || isAutoNumberMode || isAutoDirecMode || isAutoBorderNumberMode;
-      }
-
-      if (!isNumberTool && !isConstraintNumberInput) return;
-
-      // Skip if focus is on input elements
-      if ((e.target as HTMLElement)?.tagName) {
-        const tag = (e.target as HTMLElement).tagName;
-        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
-      }
-
-      // Handle arrow keys for cursor movement
-      const isArrowKey = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key);
-      if (isArrowKey) {
-        e.preventDefault();
-        const current = numberSelection || { row: 0, col: 0 };
-        let newRow = current.row;
-        let newCol = current.col;
-
-        switch (e.key) {
-          case 'ArrowUp':
-            newRow = Math.max(0, current.row - 1);
-            break;
-          case 'ArrowDown':
-            newRow = Math.min(grid.rows - 1, current.row + 1);
-            break;
-          case 'ArrowLeft':
-            newCol = Math.max(0, current.col - 1);
-            break;
-          case 'ArrowRight':
-            newCol = Math.min(grid.cols - 1, current.col + 1);
-            break;
-        }
-
-        if (newRow !== current.row || newCol !== current.col) {
-          setNumberSelection({ row: newRow, col: newCol });
-        }
-        return;
-      }
-
-      const target = numberSelection;
-      if (!target) return;
-
-      const keyValue = e.key;
-      const isDigit = /^[0-9]$/.test(keyValue);
-      const isSingleChar = keyValue.length === 1 && !isDigit;
-      const isDelete = e.key === 'Backspace' || e.key === 'Delete';
-      if (!isDigit && !isSingleChar && !isDelete) return;
-      e.preventDefault();
-
-      // Handle constraint mode number input (uses directionalClues for unified storage)
-      if (isConstraintNumberInput) {
-        handleConstraintNumber(target, keyValue, isDelete, isSingleChar);
-        return;
-      }
-
-      // Handle directional number tool (non-constraint mode)
-      if (tool === 'number-directional') {
-        handleDirectionalNumber(target, keyValue, isDelete, isSingleChar);
-        return;
-      }
-
-      // Handle normal number tools
-      handleNormalNumber(target, keyValue, isDelete);
-    };
-
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [
-    numberSelection,
-    setNumberSelection,
-    toolSettings.currentTool,
-    toolSettings.numberSize,
-    toolSettings.numberPosition,
-    toolSettings.cornerIndex,
-    toolSettings.sideIndex,
-    toolSettings.arrowDirection,
-    toolSettings.color,
-    puzzle,
-    activeLayer,
-    grid.rows,
-    grid.cols,
-    addNumber,
-    removeNumber,
-    updateNumber,
-    addDirectionalClue,
-    removeDirectionalClue,
-    findCellIdByRowCol,
-    isConstraintEnabled,
-    currentInputMode,
-    currentSchemaId,
-  ]);
-
-  /**
-   * Calculate max digits based on puzzle type and grid size
-   */
-   function getMaxDigits(): number {
-    // Check if direc mode
+  const getMaxDigits = useCallback((): number => {
     const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
     const isEditMode = activeLayer === 'problem';
     const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
     const isDirecType = currentInputMode === 'direc' ||
       (currentInputMode === 'auto' && autoConfig.type === 'direc');
 
-    if (isDirecType) {
-      // Yajilin arrow numbers: max is about half the dimension
-      const maxDimension = Math.max(grid.rows, grid.cols);
-      if (maxDimension <= 20) return 1;
-      if (maxDimension <= 200) return 2;
-      return 3;
-    }
+    return getMaxDigitsForGrid(grid.rows, grid.cols, isDirecType);
+  }, [activeLayer, currentInputMode, currentSchemaId, grid.rows, grid.cols]);
 
-    // Other puzzles: based on total cells
-    const totalCells = grid.rows * grid.cols;
-    if (totalCells >= 3000) return 4;
-    if (totalCells >= 300) return 3;
-    return 2;
-  }
+  // ============================================================================
+  // Number Input Handlers
+  // ============================================================================
 
-  /**
-   * Handle constraint mode number input (multi-digit, uses directionalClues)
-   * Used for: number, number-, direc, auto-number, auto-direc modes
-   * Supports both numeric and single character values (single char uses char field)
-   */
-  function handleConstraintNumber(
-    target: { row: number; col: number },
-    keyValue: string,
-    isDelete: boolean,
-    isSingleChar: boolean
-  ) {
-    // Use findCellIdByRowCol for topology support (Cairo grids, etc.)
+  const handleConstraintNumber: NumberInputHandler = useCallback((
+    target,
+    keyValue,
+    isDelete,
+    isSingleCharInput
+  ) => {
     const cellId = findCellIdByRowCol(target.row, target.col) ?? `cell-${target.row}-${target.col}`;
     const cellIndex = target.row * grid.cols + target.col;
     const dataLayer = toDataLayer(activeLayer);
-    // Find existing clue by cellId (not cell index)
+
+    // Find existing clue by cellId
     const existingEntry = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
       ([, c]) => c.cellId === cellId
     );
     const existingClue = existingEntry?.[1];
     const existingId = existingEntry?.[0];
+
     // For display, char takes precedence over value
     const hasChar = existingClue?.char !== undefined;
-    const currentValue = hasChar ? existingClue!.char! : (existingClue?.value !== undefined ? String(existingClue.value) : null);
+    const currentValue = hasChar
+      ? existingClue!.char!
+      : (existingClue?.value !== undefined ? String(existingClue.value) : null);
 
     // Delete/Backspace handling
     if (isDelete) {
@@ -221,7 +154,7 @@ export function useNumberKeyboard() {
             value: existingClue.value,
             layer: dataLayer,
             angle: existingClue.angle,
-            // No char field - removes it
+            color: existingClue.color,
           });
         }
       } else if (!currentValue || currentValue.length <= 1) {
@@ -239,22 +172,22 @@ export function useNumberKeyboard() {
         }
       } else {
         // Remove last digit
-        const newValue = currentValue.slice(0, -1);
+        const newValue = removeLastChar(currentValue);
         const direction = existingClue?.direction ?? 0;
         addDirectionalClue({
           cellId,
           cell: cellIndex,
           direction: direction as 0 | 1 | 2 | 3 | 4,
-          value: parseInt(newValue, 10),
+          value: newValue ? parseInt(newValue, 10) : 0,
           layer: dataLayer,
+          color: existingClue?.color,
         });
       }
       return;
     }
 
-    // For single character input, set char field (keep value for puzz.link compatibility)
-    if (isSingleChar) {
-      const charValue = keyValue;
+    // For single character input, set char field
+    if (isSingleCharInput) {
       const directionMap: Record<number, 0 | 1 | 2 | 3 | 4> = {
         [-1]: 0, 0: 1, 1: 3, 2: 4, 3: 2,
       };
@@ -264,28 +197,20 @@ export function useNumberKeyboard() {
         cellId,
         cell: cellIndex,
         direction: direction as 0 | 1 | 2 | 3 | 4,
-        value: existingClue?.value ?? 0, // Keep existing value or default to 0
-        char: charValue,
+        value: existingClue?.value ?? 0,
+        char: keyValue,
         layer: dataLayer,
         angle: existingClue?.angle,
+        color: existingClue?.color || toolSettings.color,
       });
       return;
     }
 
     // Digit input - append to existing numeric value
     const maxDigits = getMaxDigits();
-    let newValue: string;
-
-    // If has char, replace with digit (clear char)
-    if (hasChar || !currentValue) {
-      newValue = keyValue;
-    } else if (currentValue.length >= maxDigits) {
-      // At max digits: replace with new digit
-      newValue = keyValue;
-    } else {
-      // Append digit
-      newValue = currentValue + keyValue;
-    }
+    const newValue = hasChar || !currentValue
+      ? keyValue
+      : appendDigit(currentValue, keyValue, maxDigits);
 
     // Preserve existing direction, or use current arrowDirection setting
     const directionMap: Record<number, 0 | 1 | 2 | 3 | 4> = {
@@ -300,25 +225,32 @@ export function useNumberKeyboard() {
       value: parseInt(newValue, 10),
       layer: dataLayer,
       angle: existingClue?.angle,
-      // No char field - digit input clears it
+      color: existingClue?.color || toolSettings.color,
     });
-  }
+  }, [
+    findCellIdByRowCol,
+    grid.cols,
+    activeLayer,
+    puzzle,
+    addDirectionalClue,
+    removeDirectionalClue,
+    removeNumber,
+    toolSettings.arrowDirection,
+    toolSettings.color,
+    getMaxDigits,
+  ]);
 
-  /**
-   * Handle directional number input (Yajilin-style) - non-constraint mode
-   * Supports both numeric and single character values (single char uses char field)
-   */
-  function handleDirectionalNumber(
-    target: { row: number; col: number },
-    keyValue: string,
-    isDelete: boolean,
-    isSingleChar: boolean
-  ) {
-    // Use findCellIdByRowCol for topology support (Cairo grids, etc.)
+  const handleDirectionalNumber: NumberInputHandler = useCallback((
+    target,
+    keyValue,
+    isDelete,
+    isSingleCharInput
+  ) => {
     const cellId = findCellIdByRowCol(target.row, target.col) ?? `cell-${target.row}-${target.col}`;
     const cellIndex = target.row * grid.cols + target.col;
     const dataLayer = toDataLayer(activeLayer);
-    // Find existing clue by cellId (not cell index)
+
+    // Find existing clue by cellId
     const existingEntry = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
       ([, c]) => c.cellId === cellId
     );
@@ -332,18 +264,13 @@ export function useNumberKeyboard() {
       return;
     }
 
-    // Convert arrowDirection (-1=none, 0=up, 1=left, 2=right, 3=down) to Penpa direction (0=none, 1=up, 2=down, 3=left, 4=right)
+    // Convert arrowDirection to Penpa direction
     const directionMap: Record<number, 0 | 1 | 2 | 3 | 4> = {
-      [-1]: 0, // no direction
-      0: 1, // up
-      1: 3, // left
-      2: 4, // right
-      3: 2, // down
+      [-1]: 0, 0: 1, 1: 3, 2: 4, 3: 2,
     };
     const direction = directionMap[toolSettings.arrowDirection] ?? 0;
 
-    if (isSingleChar) {
-      // Single character input: set char field
+    if (isSingleCharInput) {
       addDirectionalClue({
         cellId,
         cell: cellIndex,
@@ -351,28 +278,35 @@ export function useNumberKeyboard() {
         value: existingClue?.value ?? 0,
         char: keyValue,
         layer: dataLayer,
+        color: existingClue?.color || toolSettings.color,
       });
     } else {
-      // Numeric input
       addDirectionalClue({
         cellId,
         cell: cellIndex,
         direction,
         value: parseInt(keyValue, 10),
         layer: dataLayer,
+        color: existingClue?.color || toolSettings.color,
       });
     }
-  }
+  }, [
+    findCellIdByRowCol,
+    grid.cols,
+    activeLayer,
+    puzzle,
+    addDirectionalClue,
+    removeDirectionalClue,
+    toolSettings.arrowDirection,
+    toolSettings.color,
+  ]);
 
-  /**
-   * Handle normal number input (center, corner, side, candidates)
-   */
-  function handleNormalNumber(
-    target: { row: number; col: number },
-    value: string,
-    isDelete: boolean
-  ) {
-    // Use unified cell finder for merged cells
+  const handleNormalNumber: NumberInputHandler = useCallback((
+    target,
+    value,
+    isDelete,
+    _isSingleCharInput
+  ) => {
     const cellId = findCellIdByRowCol(target.row, target.col) ?? `cell-${target.row}-${target.col}`;
     const dataLayerForNumbers = toDataLayer(activeLayer);
     const numbers = puzzle[dataLayerForNumbers].numbers;
@@ -439,5 +373,128 @@ export function useNumberKeyboard() {
         layer: toDataLayer(activeLayer),
       });
     }
-  }
+  }, [
+    findCellIdByRowCol,
+    activeLayer,
+    puzzle,
+    toolSettings.numberPosition,
+    toolSettings.cornerIndex,
+    toolSettings.sideIndex,
+    toolSettings.numberSize,
+    toolSettings.color,
+    removeNumber,
+    addNumber,
+    updateNumber,
+  ]);
+
+  // ============================================================================
+  // Shortcut Definitions
+  // ============================================================================
+
+  const shortcuts = useMemo((): KeyboardShortcut<NumberKeyboardContext>[] => [
+    // Arrow key navigation
+    {
+      keys: ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'],
+      preventDefault: true,
+      when: (ctx) => ctx.isNumberTool || ctx.isConstraintNumberInput,
+      run: (ctx, key) => {
+        const direction = getArrowDirection(key);
+        if (!direction) return;
+
+        const current = numberSelection || { row: 0, col: 0 };
+        const next = calculateNextPosition(current, direction, ctx.gridRows, ctx.gridCols);
+        if (next.row !== current.row || next.col !== current.col) {
+          setNumberSelection(next);
+        }
+      },
+    },
+    // Delete/Backspace
+    {
+      keys: ['Backspace', 'Delete'],
+      preventDefault: true,
+      when: (ctx) => (ctx.isNumberTool || ctx.isConstraintNumberInput) && ctx.target !== null,
+      run: (ctx, key) => {
+        if (!ctx.target) return;
+        const { isConstraintNumberInput, isNumberTool } = ctx;
+
+        if (isConstraintNumberInput) {
+          handleConstraintNumber(ctx.target, key, true, false);
+        } else if (toolSettings.currentTool === 'number-directional') {
+          handleDirectionalNumber(ctx.target, key, true, false);
+        } else if (isNumberTool) {
+          handleNormalNumber(ctx.target, key, true, false);
+        }
+      },
+    },
+    // Digit input (0-9)
+    {
+      keys: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+      preventDefault: true,
+      when: (ctx) => (ctx.isNumberTool || ctx.isConstraintNumberInput) && ctx.target !== null,
+      run: (ctx, key) => {
+        if (!ctx.target) return;
+        const { isConstraintNumberInput, isNumberTool } = ctx;
+
+        if (isConstraintNumberInput) {
+          handleConstraintNumber(ctx.target, key, false, false);
+        } else if (toolSettings.currentTool === 'number-directional') {
+          handleDirectionalNumber(ctx.target, key, false, false);
+        } else if (isNumberTool) {
+          handleNormalNumber(ctx.target, key, false, false);
+        }
+      },
+    },
+    // Single character input (non-digit)
+    {
+      keys: 'abcdefghijklmnopqrstuvwxyz'.split(''),
+      preventDefault: true,
+      when: (ctx) => (ctx.isNumberTool || ctx.isConstraintNumberInput) && ctx.target !== null,
+      run: (ctx, key) => {
+        if (!ctx.target) return;
+        const { isConstraintNumberInput, isNumberTool } = ctx;
+
+        if (isConstraintNumberInput) {
+          handleConstraintNumber(ctx.target, key, false, true);
+        } else if (toolSettings.currentTool === 'number-directional') {
+          handleDirectionalNumber(ctx.target, key, false, true);
+        } else if (isNumberTool) {
+          handleNormalNumber(ctx.target, key, false, true);
+        }
+      },
+    },
+  ], [
+    numberSelection,
+    setNumberSelection,
+    toolSettings.currentTool,
+    handleConstraintNumber,
+    handleDirectionalNumber,
+    handleNormalNumber,
+  ]);
+
+  // ============================================================================
+  // Event Handler
+  // ============================================================================
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Skip if typing in input field
+      if (shouldIgnoreKeyEvent(e)) return;
+
+      const { isNumberTool, isConstraintNumberInput } = shouldHandleInput();
+      if (!isNumberTool && !isConstraintNumberInput) return;
+
+      const context: NumberKeyboardContext = {
+        isNumberTool,
+        isConstraintNumberInput,
+        target: numberSelection,
+        gridRows: grid.rows,
+        gridCols: grid.cols,
+      };
+
+      executeMatchingShortcut(shortcuts, e, context);
+    };
+
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [shortcuts, shouldHandleInput, numberSelection, grid.rows, grid.cols]);
 }

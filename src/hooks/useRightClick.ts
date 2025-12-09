@@ -103,26 +103,73 @@ export function useRightClick(options: UseRightClickOptions) {
   }, []);
 
   // Handle context menu (right-click)
-  const handleContextMenu = useCallback((e: MouseEvent) => {
-    if (!enabled) return;
-
-    if (preventDefault) {
-      e.preventDefault();
-    }
-
-    triggerRightClick(e.clientX, e.clientY);
-  }, [enabled, preventDefault, triggerRightClick]);
-
-  // Handle mouse down for Ctrl+click
-  const handleMouseDown = useCallback((e: MouseEvent) => {
-    if (!enabled) return;
-
-    // Ctrl+click (or Cmd+click on Mac) = right-click
-    if (e.button === 0 && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      triggerRightClick(e.clientX, e.clientY);
-    }
-  }, [enabled, triggerRightClick]);
+  const eventHandlers = useCallback((): Array<{
+    type: keyof HTMLElementEventMap;
+    listener: EventListenerOrEventListenerObject;
+    options?: AddEventListenerOptions | boolean;
+  }> => [
+    {
+      type: 'contextmenu',
+      listener: (e: MouseEvent) => {
+        if (!enabled) return;
+        if (preventDefault) e.preventDefault();
+        triggerRightClick(e.clientX, e.clientY);
+      },
+    },
+    {
+      type: 'mousedown',
+      listener: (e: MouseEvent) => {
+        if (!enabled) return;
+        if (e.button === 0 && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          triggerRightClick(e.clientX, e.clientY);
+        }
+      },
+    },
+    {
+      type: 'touchstart',
+      listener: (e: TouchEvent) => {
+        if (!enabled || e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+        clearLongPressTimer();
+        longPressTimerRef.current = setTimeout(() => {
+          if (touchStartRef.current) {
+            setIsLongPressing(true);
+            triggerRightClick(touchStartRef.current.x, touchStartRef.current.y);
+          }
+        }, longPressDelay);
+      },
+      options: { passive: true },
+    },
+    {
+      type: 'touchmove',
+      listener: (e: TouchEvent) => {
+        if (!touchStartRef.current || !longPressTimerRef.current) return;
+        const touch = e.touches[0];
+        const dx = touch.clientX - touchStartRef.current.x;
+        const dy = touch.clientY - touchStartRef.current.y;
+        if (Math.hypot(dx, dy) > 10) {
+          clearLongPressTimer();
+        }
+      },
+      options: { passive: true },
+    },
+    {
+      type: 'touchend',
+      listener: () => {
+        clearLongPressTimer();
+        touchStartRef.current = null;
+      },
+    },
+    {
+      type: 'touchcancel',
+      listener: () => {
+        clearLongPressTimer();
+        touchStartRef.current = null;
+      },
+    },
+  ], [enabled, preventDefault, triggerRightClick, clearLongPressTimer, longPressDelay]);
 
   // Handle touch start for long press
   const handleTouchStart = useCallback((e: TouchEvent) => {
@@ -165,32 +212,17 @@ export function useRightClick(options: UseRightClickOptions) {
     const element = elementRef.current;
     if (!element || !enabled) return;
 
-    element.addEventListener('contextmenu', handleContextMenu as EventListener);
-    element.addEventListener('mousedown', handleMouseDown as EventListener);
-    element.addEventListener('touchstart', handleTouchStart as EventListener, { passive: true });
-    element.addEventListener('touchmove', handleTouchMove as EventListener, { passive: true });
-    element.addEventListener('touchend', handleTouchEnd as EventListener);
-    element.addEventListener('touchcancel', handleTouchEnd as EventListener);
+    eventHandlers().forEach(({ type, listener, options }) =>
+      element.addEventListener(type, listener, options)
+    );
 
     return () => {
-      element.removeEventListener('contextmenu', handleContextMenu as EventListener);
-      element.removeEventListener('mousedown', handleMouseDown as EventListener);
-      element.removeEventListener('touchstart', handleTouchStart as EventListener);
-      element.removeEventListener('touchmove', handleTouchMove as EventListener);
-      element.removeEventListener('touchend', handleTouchEnd as EventListener);
-      element.removeEventListener('touchcancel', handleTouchEnd as EventListener);
+      eventHandlers().forEach(({ type, listener }) =>
+        element.removeEventListener(type, listener as EventListener)
+      );
       clearLongPressTimer();
     };
-  }, [
-    elementRef,
-    enabled,
-    handleContextMenu,
-    handleMouseDown,
-    handleTouchStart,
-    handleTouchMove,
-    handleTouchEnd,
-    clearLongPressTimer,
-  ]);
+  }, [elementRef, enabled, eventHandlers, clearLongPressTimer]);
 
   return {
     isLongPressing,
