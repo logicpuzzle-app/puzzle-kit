@@ -10,6 +10,8 @@ import {
 import {
   findNearestVertexInTopology,
   findNearestEdgeInTopology,
+  getEdgeBetweenVertices,
+  getEdgeBetweenCells,
 } from '../../utils/gridTopology';
 import { generateLineId } from '../../utils/lineNormalization';
 import {
@@ -23,7 +25,7 @@ import {
   FREEHAND_MIN_DISTANCE,
 } from '../../utils/lineUtils';
 import { useGridPointUtils } from '../useGridPointUtils';
-import type { Point } from '../../types';
+import type { Point, LineTargetType } from '../../types';
 import { toDataLayer } from '../../types';
 
 interface UseLineToolHandlerOptions {
@@ -52,10 +54,6 @@ export function useLineToolHandler({
     activeLayer,
     addLine,
     removeLine,
-    addEdge,
-    removeEdge,
-    addWall,
-    removeWall,
     puzzle,
     useTopology,
     topology,
@@ -205,6 +203,13 @@ export function useLineToolHandler({
             colorToUse
           );
 
+          // Get edgeId from topology if available (for cell-to-cell lines)
+          let edgeId: string | undefined;
+          let lineTarget: LineTargetType = 'cell';
+          if (topology && currentFrom.startsWith('cell-') && toPoint.startsWith('cell-')) {
+            edgeId = getEdgeBetweenCells(topology, currentFrom, toPoint) ?? undefined;
+          }
+
           executeLineAction(
             action,
             addLine,
@@ -213,6 +218,8 @@ export function useLineToolHandler({
             {
               from: currentFrom,
               to: toPoint,
+              edgeId,
+              lineTarget,
               style: toolSettings.lineStyle,
               thickness: toolSettings.lineThickness,
               color: colorToUse,
@@ -242,6 +249,7 @@ export function useLineToolHandler({
       setDrawStartPoint,
       setDrawStartPosition,
       setCurrentStrokeId,
+      topology,
     ]
   );
 
@@ -262,26 +270,44 @@ export function useLineToolHandler({
           return;
         }
 
-        // Check if edge already exists
+        // Get edgeId from topology if available
+        const edgeId = topology
+          ? getEdgeBetweenVertices(topology, drawStartPoint, vertexId) ?? undefined
+          : undefined;
+
+        // Check if edge already exists (in lines with lineTarget='edge')
         const dataLayer = toDataLayer(activeLayer);
         const layerData = puzzle[dataLayer];
+
+        // Look in both lines (new) and edges (legacy) for existing element
+        const existingLine = Object.values(layerData.lines).find(
+          (e) =>
+            e.lineTarget === 'edge' &&
+            ((e.from === drawStartPoint && e.to === vertexId) ||
+             (e.from === vertexId && e.to === drawStartPoint) ||
+             (edgeId && e.edgeId === edgeId))
+        );
         const existingEdge = Object.values(layerData.edges).find(
           (e) =>
             (e.from === drawStartPoint && e.to === vertexId) ||
             (e.from === vertexId && e.to === drawStartPoint)
         );
+        const existing = existingLine || existingEdge;
 
-        const existingColor = existingEdge?.color ?? null;
+        const existingColor = existing?.color ?? null;
         const action = determineLineAction(isShiftKey, existingColor, colorToUse);
 
+        // Use addLine with lineTarget='edge' for new unified representation
         executeLineAction(
           action,
-          addEdge,
-          removeEdge,
-          existingEdge?.id,
+          addLine,
+          removeLine,
+          existing?.id,
           {
             from: drawStartPoint,
             to: vertexId,
+            edgeId,
+            lineTarget: 'edge' as LineTargetType,
             style: toolSettings.lineStyle,
             thickness: toolSettings.lineThickness,
             color: colorToUse,
@@ -298,10 +324,11 @@ export function useLineToolHandler({
       puzzle,
       activeLayer,
       toolSettings,
-      addEdge,
-      removeEdge,
+      addLine,
+      removeLine,
       setDrawStartPoint,
       findVertexId,
+      topology,
     ]
   );
 
@@ -313,20 +340,28 @@ export function useLineToolHandler({
       const colorToUse = isRightClick ? toolSettings.secondaryColor : toolSettings.color;
       const dataLayer = toDataLayer(activeLayer);
       const layerData = puzzle[dataLayer];
+
+      // Look in both lines (new) and walls (legacy) for existing element
+      const existingLine = Object.values(layerData.lines).find(
+        (l) => l.lineTarget === 'wall' && l.edgeId === edgeId
+      );
       const existingWall = Object.values(layerData.walls).find(
         (w) => w.position === edgeId
       );
+      const existing = existingLine || existingWall;
 
-      const existingColor = existingWall?.color ?? null;
+      const existingColor = existing?.color ?? null;
       const action = determineLineAction(isShiftKey, existingColor, colorToUse);
 
+      // Use addLine with lineTarget='wall' for new unified representation
       executeLineAction(
         action,
-        addWall,
-        removeWall,
-        existingWall?.id,
+        addLine,
+        removeLine,
+        existing?.id,
         {
-          position: edgeId,
+          edgeId,
+          lineTarget: 'wall' as LineTargetType,
           style: toolSettings.lineStyle,
           thickness: toolSettings.lineThickness,
           color: colorToUse,
@@ -334,7 +369,7 @@ export function useLineToolHandler({
         }
       );
     },
-    [grid, puzzle, activeLayer, toolSettings, addWall, removeWall, findEdgeId]
+    [grid, puzzle, activeLayer, toolSettings, addLine, removeLine, findEdgeId]
   );
 
   // Handle straight line completion on mouse up

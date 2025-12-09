@@ -121,8 +121,7 @@ function convertSlitherSolutionToAnswer(
     directionalClues: {},
   };
 
-  // Add horizontal edges
-  let edgeId = 1;
+  // Add horizontal edges (using unified lines with lineTarget='edge')
   for (let row = 0; row <= grid.rows; row++) {
     for (let col = 0; col < grid.cols; col++) {
       const edge = state.getHorizontalEdge(row, col);
@@ -130,8 +129,12 @@ function convertSlitherSolutionToAnswer(
         // Horizontal edge at row boundary between columns col and col+1
         const fromVertex = `vertex-${row}-${col}`;
         const toVertex = `vertex-${row}-${col + 1}`;
-        answer.edges[`edge-${edgeId++}`] = {
-          id: `edge-${edgeId - 1}`,
+        const edgeId = `edge-h-${row}-${col}`;
+        const lineId = `edge-${edgeId}`;
+        answer.lines[lineId] = {
+          id: lineId,
+          edgeId,
+          lineTarget: 'edge',
           from: fromVertex,
           to: toVertex,
           color: '#22C55E', // Green
@@ -143,7 +146,7 @@ function convertSlitherSolutionToAnswer(
     }
   }
 
-  // Add vertical edges
+  // Add vertical edges (using unified lines with lineTarget='edge')
   for (let row = 0; row < grid.rows; row++) {
     for (let col = 0; col <= grid.cols; col++) {
       const edge = state.getVerticalEdge(row, col);
@@ -151,8 +154,12 @@ function convertSlitherSolutionToAnswer(
         // Vertical edge at column boundary between rows row and row+1
         const fromVertex = `vertex-${row}-${col}`;
         const toVertex = `vertex-${row + 1}-${col}`;
-        answer.edges[`edge-${edgeId++}`] = {
-          id: `edge-${edgeId - 1}`,
+        const edgeId = `edge-v-${row}-${col}`;
+        const lineId = `edge-${edgeId}`;
+        answer.lines[lineId] = {
+          id: lineId,
+          edgeId,
+          lineTarget: 'edge',
           from: fromVertex,
           to: toVertex,
           color: '#22C55E', // Green

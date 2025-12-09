@@ -146,7 +146,6 @@ function convertCspuzResultToAnswer(
   };
 
   let surfaceId = 1;
-  let edgeId = 1;
   let lineId = 1;
 
   for (const item of description.data) {
@@ -220,15 +219,19 @@ function convertCspuzResultToAnswer(
           }
         }
       } else {
-        // For slitherlink: lines connect vertices (edges)
+        // For slitherlink: lines connect vertices (edges) - using unified lines with lineTarget='edge'
         if (isOnHorizontalEdge && !isOnVerticalEdge) {
           // Horizontal edge at y=2k: connects vertices (k, col) and (k, col+1)
           const edgeRow = item.y / 2;
           const edgeCol = (item.x - 1) / 2;
           const fromVertex = `vertex-${edgeRow}-${edgeCol}`;
           const toVertex = `vertex-${edgeRow}-${edgeCol + 1}`;
-          answer.edges[`edge-${edgeId++}`] = {
-            id: `edge-${edgeId - 1}`,
+          const edgeId = `edge-h-${edgeRow}-${edgeCol}`;
+          const lineId = `edge-${edgeId}`;
+          answer.lines[lineId] = {
+            id: lineId,
+            edgeId,
+            lineTarget: 'edge',
             from: fromVertex,
             to: toVertex,
             color: '#22C55E',
@@ -242,8 +245,12 @@ function convertCspuzResultToAnswer(
           const edgeCol = item.x / 2;
           const fromVertex = `vertex-${edgeRow}-${edgeCol}`;
           const toVertex = `vertex-${edgeRow + 1}-${edgeCol}`;
-          answer.edges[`edge-${edgeId++}`] = {
-            id: `edge-${edgeId - 1}`,
+          const edgeId = `edge-v-${edgeRow}-${edgeCol}`;
+          const lineId = `edge-${edgeId}`;
+          answer.lines[lineId] = {
+            id: lineId,
+            edgeId,
+            lineTarget: 'edge',
             from: fromVertex,
             to: toVertex,
             color: '#22C55E',

@@ -116,8 +116,18 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
       // Freehand lines: use compact ID
       id = generateLineIdCompact();
       normalizedElement = { ...element, id };
-    } else {
-      // Grid-snapped lines: normalize endpoints and generate deterministic ID
+    } else if (element.edgeId && element.lineTarget) {
+      // Edge-based lines (unified representation): use edgeId + lineTarget for ID
+      id = `${element.lineTarget}-${element.edgeId}`;
+      normalizedElement = { ...element, id };
+
+      // Check if line with this ID already exists in this layer
+      const state = get();
+      if (state.puzzle[element.layer].lines[id]) {
+        return id;
+      }
+    } else if (element.from && element.to) {
+      // Legacy grid-snapped lines: normalize endpoints and generate deterministic ID
       const [normFrom, normTo] = normalizeSegmentEndpoints(element.from, element.to);
       id = generateLineId(normFrom, normTo);
       normalizedElement = { ...element, id, from: normFrom, to: normTo };
@@ -127,6 +137,10 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
       if (state.puzzle[element.layer].lines[id]) {
         return id;
       }
+    } else {
+      // Invalid line element - skip
+      console.warn('addLine: Invalid line element (missing edgeId/lineTarget or from/to)');
+      return '';
     }
 
     set((state) => {
@@ -151,8 +165,11 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
   removeLine: (id) => {
     const state = get();
     const layer = toDataLayer(state.activeLayer);
-    const element = state.puzzle[layer].lines[id];
-    if (element) {
+    const lineElement = state.puzzle[layer].lines[id];
+    const edgeElement = state.puzzle[layer].edges[id];
+    const wallElement = state.puzzle[layer].walls[id];
+
+    if (lineElement) {
       set((state) => {
         const dataLayer = toDataLayer(state.activeLayer);
         const newLines = { ...state.puzzle[dataLayer].lines };
@@ -167,7 +184,41 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
           },
         };
       });
-      historyManager.addAction(createRemoveLineAction(id, element));
+      historyManager.addAction(createRemoveLineAction(id, lineElement));
+    } else if (edgeElement) {
+      // Remove from legacy edges
+      set((state) => {
+        const dataLayer = toDataLayer(state.activeLayer);
+        const newEdges = { ...state.puzzle[dataLayer].edges };
+        delete newEdges[id];
+        return {
+          puzzle: {
+            ...state.puzzle,
+            [dataLayer]: {
+              ...state.puzzle[dataLayer],
+              edges: newEdges,
+            },
+          },
+        };
+      });
+      historyManager.addAction(createRemoveEdgeAction(id, edgeElement));
+    } else if (wallElement) {
+      // Remove from legacy walls
+      set((state) => {
+        const dataLayer = toDataLayer(state.activeLayer);
+        const newWalls = { ...state.puzzle[dataLayer].walls };
+        delete newWalls[id];
+        return {
+          puzzle: {
+            ...state.puzzle,
+            [dataLayer]: {
+              ...state.puzzle[dataLayer],
+              walls: newWalls,
+            },
+          },
+        };
+      });
+      historyManager.addAction(createRemoveWallAction(id, wallElement));
     }
   },
 
