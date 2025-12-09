@@ -196,10 +196,11 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
     }
   },
 
-  // Edge operations
+  // Edge operations (deprecated - use addLine with lineTarget='edge')
   addEdge: (element) => {
     const id = generateEdgeId();
-    const fullElement: EdgeElement = { ...element, id };
+    // Add lineTarget='edge' for new unified representation
+    const fullElement: EdgeElement = { ...element, id, lineTarget: 'edge' };
     set((state) => {
       const layer = fullElement.layer;
       return {
@@ -242,10 +243,16 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
     }
   },
 
-  // Wall operations
+  // Wall operations (deprecated - use addLine with lineTarget='wall')
   addWall: (element) => {
     const id = generateWallId();
-    const fullElement: WallElement = { ...element, id };
+    // Add lineTarget='wall' and convert position to edgeId for unified representation
+    const fullElement: WallElement = {
+      ...element,
+      id,
+      lineTarget: 'wall',
+      edgeId: element.position, // position is already an edge ID
+    };
     set((state) => {
       const layer = fullElement.layer;
       return {

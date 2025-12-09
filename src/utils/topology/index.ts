@@ -156,6 +156,13 @@ export {
   isValidIndex,
   findCellByIndex,
   findVertexByIndex,
+  // Edge-based line drawing
+  type EdgeLineDrawInfo,
+  getEdgeLineDrawInfo,
+  getEdgeBetweenVertices,
+  getEdgeBetweenCells,
+  vertexPairToEdgeId,
+  cellPairToEdgeId,
 } from './queries';
 export { applyMergedCells } from './mergeSplit';
 export { applySculptOperations } from './sculpt';

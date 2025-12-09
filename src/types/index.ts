@@ -271,14 +271,41 @@ export interface SurfaceElement {
   displayMode?: SurfaceDisplayMode;
 }
 
+/**
+ * Line target type - determines how lines are drawn
+ * - 'edge': Lines connect vertices (Slitherlink style)
+ * - 'cell': Lines connect cell centers via shared edge (Mashu style)
+ * - 'wall': Lines drawn on edge (room boundaries, thick borders)
+ */
+export type LineTargetType = 'edge' | 'cell' | 'wall';
+
+/**
+ * Unified line element - represents all grid-snapped lines.
+ *
+ * Grid-snapped lines use edgeId as primary identifier:
+ * - lineTarget='edge': Draw between edge's start/end vertices (Slitherlink)
+ * - lineTarget='cell': Draw between edge's adjacent cell centers (Mashu)
+ * - lineTarget='wall': Draw on edge itself (room boundaries)
+ *
+ * Freehand lines use raw SVG coordinates instead of edgeId.
+ */
 export interface LineElement {
   id: string;
-  from: string;  // point ID (for grid-snapped lines)
-  to: string;    // point ID (for grid-snapped lines)
+
+  // Edge-based representation (for grid-snapped lines)
+  edgeId?: string;             // Edge ID that this line passes through
+  lineTarget?: LineTargetType; // How to draw the line
+
+  // Legacy coordinate-based representation (for backward compatibility)
+  // These are derived from edgeId when possible, or used directly for freehand
+  from?: string;  // point ID (vertex or cell) - deprecated for grid-snapped
+  to?: string;    // point ID (vertex or cell) - deprecated for grid-snapped
+
   style: LineStyle;
   thickness: LineThickness;
   color: string;
   layer: DataLayerType;
+
   // For freehand lines (not snapped to grid)
   isFree?: boolean;
   fromX?: number;  // SVG x coordinate
@@ -288,24 +315,15 @@ export interface LineElement {
   strokeId?: string;  // Groups freehand segments into a single stroke
 }
 
-export interface EdgeElement {
-  id: string;
-  from: string;  // vertex ID
-  to: string;    // vertex ID
-  style: LineStyle;
-  thickness: LineThickness;
-  color: string;
-  layer: DataLayerType;
-}
+/**
+ * @deprecated Use LineElement with lineTarget='edge' instead
+ */
+export type EdgeElement = LineElement;
 
-export interface WallElement {
-  id: string;
-  position: string;  // edge-h or edge-v point ID
-  style: LineStyle;
-  thickness?: LineThickness;  // optional, defaults to 'thick' in WallLayer
-  color: string;
-  layer: DataLayerType;
-}
+/**
+ * @deprecated Use LineElement with lineTarget='wall' instead
+ */
+export type WallElement = LineElement;
 
 export interface NumberElement {
   id: string;
@@ -488,8 +506,16 @@ export type RoomMap = Record<string, number>;
 export interface PuzzleElements {
   surfaces: Record<string, SurfaceElement>;
   lines: Record<string, LineElement>;
-  edges: Record<string, EdgeElement>;
-  walls: Record<string, WallElement>;
+  /**
+   * @deprecated Use lines with lineTarget='edge' instead.
+   * Kept for backward compatibility - will be migrated to lines.
+   */
+  edges: Record<string, LineElement>;
+  /**
+   * @deprecated Use lines with lineTarget='wall' instead.
+   * Kept for backward compatibility - will be migrated to lines.
+   */
+  walls: Record<string, LineElement>;
   numbers: Record<string, NumberElement>;
   symbols: Record<string, SymbolElement>;
   cages: Record<string, CageElement>;

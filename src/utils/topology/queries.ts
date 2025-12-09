@@ -565,3 +565,142 @@ export function findVertexByIndex(
   }
   return null;
 }
+
+// ========================================
+// Edge-Based Line Drawing Functions
+// ========================================
+
+/**
+ * Line drawing info for edge-based representation.
+ * Contains all coordinates needed to draw a line.
+ */
+export interface EdgeLineDrawInfo {
+  /** Edge ID */
+  edgeId: string;
+  /** Start vertex position */
+  startVertex: Point;
+  /** End vertex position */
+  endVertex: Point;
+  /** Edge midpoint */
+  midpoint: Point;
+  /** Adjacent cell centers (1 for boundary edge, 2 for internal edge) */
+  adjacentCellCenters: Point[];
+}
+
+/**
+ * Get line drawing info from an edge ID.
+ * Returns all positions needed to draw either vertex-to-vertex (edge) lines
+ * or cell-to-cell (cell) lines.
+ *
+ * @param topology The topology
+ * @param edgeId Edge ID
+ * @returns EdgeLineDrawInfo or null if edge not found
+ */
+export function getEdgeLineDrawInfo(
+  topology: GridTopology,
+  edgeId: string
+): EdgeLineDrawInfo | null {
+  const edge = topology.edges.get(edgeId);
+  if (!edge) return null;
+
+  const startVertex = topology.vertices.get(edge.startVertex);
+  const endVertex = topology.vertices.get(edge.endVertex);
+  if (!startVertex || !endVertex) return null;
+
+  const adjacentCellCenters: Point[] = [];
+  for (const cellId of edge.adjacentCells) {
+    const cell = topology.cells.get(cellId);
+    if (cell) {
+      adjacentCellCenters.push(cell.center);
+    }
+  }
+
+  return {
+    edgeId,
+    startVertex: startVertex.position,
+    endVertex: endVertex.position,
+    midpoint: edge.midpoint,
+    adjacentCellCenters,
+  };
+}
+
+/**
+ * Get the edge ID between two adjacent vertices.
+ *
+ * @param topology The topology
+ * @param vertexId1 First vertex ID
+ * @param vertexId2 Second vertex ID
+ * @returns Edge ID or null if not adjacent
+ */
+export function getEdgeBetweenVertices(
+  topology: GridTopology,
+  vertexId1: string,
+  vertexId2: string
+): string | null {
+  const vertex1 = topology.vertices.get(vertexId1);
+  if (!vertex1) return null;
+
+  for (const edgeId of vertex1.adjacentEdges) {
+    const edge = topology.edges.get(edgeId);
+    if (!edge) continue;
+    if (
+      (edge.startVertex === vertexId1 && edge.endVertex === vertexId2) ||
+      (edge.startVertex === vertexId2 && edge.endVertex === vertexId1)
+    ) {
+      return edgeId;
+    }
+  }
+  return null;
+}
+
+/**
+ * Get the edge ID between two adjacent cells.
+ * This is an alias for getSharedEdge that returns just the edge ID.
+ *
+ * @param topology The topology
+ * @param cellId1 First cell ID
+ * @param cellId2 Second cell ID
+ * @returns Edge ID or null if not adjacent
+ */
+export function getEdgeBetweenCells(
+  topology: GridTopology,
+  cellId1: string,
+  cellId2: string
+): string | null {
+  const edge = getSharedEdge(topology, cellId1, cellId2);
+  return edge?.id ?? null;
+}
+
+/**
+ * Convert from/to vertex IDs to an edge ID.
+ * For backward compatibility with existing LineElement format.
+ *
+ * @param topology The topology
+ * @param from From vertex ID
+ * @param to To vertex ID
+ * @returns Edge ID or null
+ */
+export function vertexPairToEdgeId(
+  topology: GridTopology,
+  from: string,
+  to: string
+): string | null {
+  return getEdgeBetweenVertices(topology, from, to);
+}
+
+/**
+ * Convert from/to cell IDs to an edge ID.
+ * For backward compatibility with existing LineElement format.
+ *
+ * @param topology The topology
+ * @param from From cell ID
+ * @param to To cell ID
+ * @returns Edge ID or null
+ */
+export function cellPairToEdgeId(
+  topology: GridTopology,
+  from: string,
+  to: string
+): string | null {
+  return getEdgeBetweenCells(topology, from, to);
+}

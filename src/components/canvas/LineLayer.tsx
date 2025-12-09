@@ -6,7 +6,8 @@ import {
   parseEdgeId,
   buildVertexGridToTopologyMap,
 } from '../../utils/gridIds';
-import type { LineElement, EdgeElement, WallElement, LayerType, LineStyle, LineThickness, Point, GridConfig } from '../../types';
+import { getEdgeLineDrawInfo } from '../../utils/gridTopology';
+import type { LineElement, LayerType, LineStyle, LineThickness, Point, GridConfig } from '../../types';
 import type { GridTopology, TopologyVertex } from '../../utils/gridTopology';
 
 interface LineLayerProps {
@@ -109,8 +110,36 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
         fromY = line.fromY;
         toX = line.toX;
         toY = line.toY;
-      } else {
-        // Grid-snapped line - calculate positions from IDs (using topology if available)
+      } else if (line.edgeId && activeTopology) {
+        // Edge-based line - use edgeId to get drawing coordinates
+        const drawInfo = getEdgeLineDrawInfo(activeTopology, line.edgeId);
+        if (!drawInfo) return;
+
+        const lineTarget = line.lineTarget || 'cell'; // default to cell for backward compat
+
+        if (lineTarget === 'edge' || lineTarget === 'wall') {
+          // Draw between vertices (Slitherlink/Wall style)
+          fromX = drawInfo.startVertex.x;
+          fromY = drawInfo.startVertex.y;
+          toX = drawInfo.endVertex.x;
+          toY = drawInfo.endVertex.y;
+        } else {
+          // Draw between cell centers (Mashu style)
+          if (drawInfo.adjacentCellCenters.length < 2) {
+            // Boundary edge - can't draw cell-to-cell line
+            return;
+          }
+          fromX = drawInfo.adjacentCellCenters[0].x;
+          fromY = drawInfo.adjacentCellCenters[0].y;
+          toX = drawInfo.adjacentCellCenters[1].x;
+          toY = drawInfo.adjacentCellCenters[1].y;
+          // Go through edge midpoint for isometric grids
+          if (isIsometric) {
+            midpoint = drawInfo.midpoint;
+          }
+        }
+      } else if (line.from && line.to) {
+        // Legacy: Grid-snapped line - calculate positions from IDs (using topology if available)
         const fromPos = getPointPosition(line.from, grid, activeTopology);
         const toPos = getPointPosition(line.to, grid, activeTopology);
         if (!fromPos || !toPos) return;
@@ -123,6 +152,9 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
         if (isIsometric && activeTopology && line.from.startsWith('cell-') && line.to.startsWith('cell-')) {
           midpoint = findSharedEdgeMidpoint(line.from, line.to, activeTopology);
         }
+      } else {
+        // Invalid line - skip
+        return;
       }
 
       const isHighlighted = highlightedLineIds.includes(line.id);
