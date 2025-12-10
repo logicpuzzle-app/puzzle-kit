@@ -13,6 +13,7 @@ import type {
   ToolSettings,
   SurfaceElement,
   LineElement,
+  LineGroup,
   EdgeElement,
   WallElement,
   NumberElement,
@@ -167,6 +168,22 @@ export interface ElementsSlice {
   addDirectionalClue: (element: Omit<import('../../types').PenpaDirectionalClue, 'id'>) => string;
   removeDirectionalClue: (id: string) => void;
 
+  // Line group operations (for arrow chains, etc.)
+  addLineGroup: (lineIds: string[], groupType: LineGroup['groupType']) => string;
+  removeLineGroup: (groupId: string) => void;
+  addLinesToGroup: (groupId: string, lineIds: string[]) => void;
+  removeLinesFromGroup: (groupId: string, lineIds: string[]) => void;
+  getLineGroup: (lineId: string) => LineGroup | undefined;
+  splitLineGroup: (groupId: string, splitAtLineId: string) => {
+    group1: LineGroup | null;
+    group2: LineGroup | null;
+  };
+  normalizeLineGroup: (groupId: string) => void;
+  /** Group selected lines by connectivity (any direction). Returns created group IDs. */
+  groupSelectedLinesByConnectivity: (lineIds: string[]) => string[];
+  /** Group selected lines by collinearity (same direction only). Returns created group IDs. */
+  groupSelectedLinesByCollinearity: (lineIds: string[]) => string[];
+
   // Room map (for Heyawake, etc.)
   setRoomMap: (roomMap: import('../../types').RoomMap) => void;
   clearRoomMap: () => void;
@@ -203,6 +220,10 @@ export interface CanvasSlice {
   // Highlighted lines (for preview in line list)
   highlightedLineIds: string[];
   setHighlightedLineIds: (ids: string[]) => void;
+
+  // Drawing line IDs (lines being drawn in current drag, for live group preview)
+  drawingLineIds: string[];
+  setDrawingLineIds: (ids: string[]) => void;
 }
 
 export interface ToolSlice {

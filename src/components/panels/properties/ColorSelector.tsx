@@ -228,9 +228,6 @@ export const ColorSelector: React.FC<ColorSelectorProps> = ({ compact = false })
 
   return (
     <div>
-      <label className="block text-xs text-office-text-secondary mb-1">
-        {t('prop.color')}
-      </label>
       <div className="flex flex-col gap-2">
         {/* Color palette */}
         <div className="flex gap-0.5 flex-wrap">

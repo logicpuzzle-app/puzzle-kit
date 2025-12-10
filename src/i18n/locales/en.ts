@@ -329,6 +329,10 @@ export const en = {
   'tool.line.list.sortColShort': 'C',
   'tool.line.list.sortLen': 'Sort by length',
   'tool.line.list.sortLenShort': 'L',
+  'tool.line.list.selected': '{{count}} selected',
+
+  // Line arrow properties
+  'prop.mergeArrow': 'Merge Arrow',
 
   // Edge tools
   'tool.edge.normal': 'Normal',

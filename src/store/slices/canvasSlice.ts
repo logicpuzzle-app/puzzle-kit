@@ -55,4 +55,8 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set) => ({
   // Highlighted lines (for preview in line list)
   highlightedLineIds: [],
   setHighlightedLineIds: (ids) => set({ highlightedLineIds: ids }),
+
+  // Drawing line IDs (lines being drawn in current drag, for live group preview)
+  drawingLineIds: [],
+  setDrawingLineIds: (ids) => set({ drawingLineIds: ids }),
 });

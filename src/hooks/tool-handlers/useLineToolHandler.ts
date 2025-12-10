@@ -22,8 +22,10 @@ import {
   areVerticesOrthogonallyAdjacent,
   pointDistance,
   executeLineAction,
+  calculateArrowDirection,
   FREEHAND_MIN_DISTANCE,
 } from '../../utils/lineUtils';
+import { normalizeSegmentEndpoints } from '../../utils/lineNormalization';
 import { useGridPointUtils } from '../useGridPointUtils';
 import type { Point, LineTargetType } from '../../types';
 import { toDataLayer } from '../../types';
@@ -57,6 +59,10 @@ export function useLineToolHandler({
     puzzle,
     useTopology,
     topology,
+    setHighlightedLineIds,
+    setDrawingLineIds,
+    addLineGroup,
+    addLinesToGroup,
   } = usePuzzleStore();
 
   const { findNearestGridPoint, getInterpolatedPath } = useGridPointUtils(grid);
@@ -96,10 +102,67 @@ export function useLineToolHandler({
   // Ref for tracking line fill mode during drag
   const lineFillModeRef = useRef<'draw' | 'erase' | null>(null);
 
+  // Ref for accumulating added line IDs during a single drag operation
+  const addedLineIdsRef = useRef<string[]>([]);
+
+  // Helper to add a line ID and update drawing preview in store
+  const addDrawingLineId = useCallback((id: string) => {
+    addedLineIdsRef.current.push(id);
+    setDrawingLineIds([...addedLineIdsRef.current]);
+  }, [setDrawingLineIds]);
+
   // Reset line fill mode (call on mouse down/touch start)
+  // Note: addedLineIdsRef is reset in finalizeLineSelection, not here,
+  // because RESET_FILL_MODES is called before CLEAR_DRAW_STATE in the state machine
   const resetLineFillMode = useCallback(() => {
     lineFillModeRef.current = null;
   }, []);
+
+  // Finalize line selection (call on mouse up/touch end)
+  // Also resets addedLineIdsRef for the next drag operation
+  // If directed lines were added, automatically create/extend a line group
+  const finalizeLineSelection = useCallback(() => {
+    const addedIds = addedLineIdsRef.current;
+
+    if (addedIds.length > 0) {
+      setHighlightedLineIds([...addedIds]);
+
+      // Auto-group directed lines (arrow lines)
+      const dataLayer = toDataLayer(activeLayer);
+      const layerData = puzzle[dataLayer];
+      const lineGroups = layerData.lineGroups || {};
+
+      // Filter to only directed (arrow) lines that were added
+      const directedLineIds = addedIds.filter(id => {
+        const line = layerData.lines[id];
+        return line && line.directed && !line.isFree;
+      });
+
+      if (directedLineIds.length > 0) {
+        // Find if any of the added lines connect to existing groups
+        // For simplicity, create a new group with all added directed lines
+        // Future enhancement: find connected groups and merge them
+        const existingGroupWithAddedLine = Object.values(lineGroups).find(
+          group => group.groupType === 'arrow' && group.lineIds.some(id => directedLineIds.includes(id))
+        );
+
+        if (existingGroupWithAddedLine) {
+          // Add new lines to existing group
+          const newLineIds = directedLineIds.filter(id => !existingGroupWithAddedLine.lineIds.includes(id));
+          if (newLineIds.length > 0) {
+            addLinesToGroup(existingGroupWithAddedLine.id, newLineIds);
+          }
+        } else if (directedLineIds.length >= 2) {
+          // Create new group with all directed lines from this drag
+          addLineGroup(directedLineIds, 'arrow');
+        }
+      }
+    }
+
+    // Always reset for next drag, even if empty
+    addedLineIdsRef.current = [];
+    setDrawingLineIds([]);
+  }, [setHighlightedLineIds, setDrawingLineIds, puzzle, activeLayer, addLineGroup, addLinesToGroup]);
 
   const handleLineTool = useCallback(
     (point: Point, isStart: boolean, isRightClick: boolean = false, isShiftKey: boolean = false) => {
@@ -131,6 +194,8 @@ export function useLineToolHandler({
               thickness: toolSettings.lineThickness,
               color: colorToUse,
               layer: toDataLayer(activeLayer),
+              directed: toolSettings.lineDirected,
+              arrowDirection: toolSettings.lineArrowDirection,
               isFree: true,
               fromX: drawStartPosition.x,
               fromY: drawStartPosition.y,
@@ -210,7 +275,19 @@ export function useLineToolHandler({
             edgeId = getEdgeBetweenCells(topology, currentFrom, toPoint) ?? undefined;
           }
 
-          executeLineAction(
+          // Calculate effective arrow direction based on draw order
+          const [normalizedFrom, normalizedTo] = normalizeSegmentEndpoints(currentFrom, toPoint);
+          const effectiveArrowDirection = toolSettings.lineDirected
+            ? calculateArrowDirection(
+                currentFrom,
+                toPoint,
+                normalizedFrom,
+                normalizedTo,
+                toolSettings.lineArrowDirection || 'forward'
+              )
+            : undefined;
+
+          const addedId = executeLineAction(
             action,
             addLine,
             removeLine,
@@ -224,8 +301,14 @@ export function useLineToolHandler({
               thickness: toolSettings.lineThickness,
               color: colorToUse,
               layer: toDataLayer(activeLayer),
+              directed: toolSettings.lineDirected,
+              arrowDirection: effectiveArrowDirection,
             }
           );
+
+          if (addedId) {
+            addDrawingLineId(addedId);
+          }
 
           currentFrom = toPoint;
         }
@@ -297,8 +380,20 @@ export function useLineToolHandler({
         const existingColor = existing?.color ?? null;
         const action = determineLineAction(isShiftKey, existingColor, colorToUse);
 
+        // Calculate effective arrow direction based on draw order
+        const [normalizedFrom, normalizedTo] = normalizeSegmentEndpoints(drawStartPoint, vertexId);
+        const effectiveArrowDirection = toolSettings.lineDirected
+          ? calculateArrowDirection(
+              drawStartPoint,
+              vertexId,
+              normalizedFrom,
+              normalizedTo,
+              toolSettings.lineArrowDirection || 'forward'
+            )
+          : undefined;
+
         // Use addLine with lineTarget='edge' for new unified representation
-        executeLineAction(
+        const addedId = executeLineAction(
           action,
           addLine,
           removeLine,
@@ -312,8 +407,15 @@ export function useLineToolHandler({
             thickness: toolSettings.lineThickness,
             color: colorToUse,
             layer: toDataLayer(activeLayer),
+            directed: toolSettings.lineDirected,
+            arrowDirection: effectiveArrowDirection,
           }
         );
+
+        // Accumulate added line ID for selection on drag end
+        if (addedId) {
+          addDrawingLineId(addedId);
+        }
 
         setDrawStartPoint(vertexId);
       }
@@ -325,6 +427,7 @@ export function useLineToolHandler({
       activeLayer,
       toolSettings,
       addLine,
+      addDrawingLineId,
       removeLine,
       setDrawStartPoint,
       findVertexId,
@@ -354,7 +457,7 @@ export function useLineToolHandler({
       const action = determineLineAction(isShiftKey, existingColor, colorToUse);
 
       // Use addLine with lineTarget='wall' for new unified representation
-      executeLineAction(
+      const addedId = executeLineAction(
         action,
         addLine,
         removeLine,
@@ -366,10 +469,17 @@ export function useLineToolHandler({
           thickness: toolSettings.lineThickness,
           color: colorToUse,
           layer: toDataLayer(activeLayer),
+          directed: toolSettings.lineDirected,
+          arrowDirection: toolSettings.lineArrowDirection,
         }
       );
+
+      // Accumulate added line ID for selection on drag end
+      if (addedId) {
+        addDrawingLineId(addedId);
+      }
     },
-    [grid, puzzle, activeLayer, toolSettings, addLine, removeLine, findEdgeId]
+    [grid, puzzle, activeLayer, toolSettings, addLine, addDrawingLineId, removeLine, findEdgeId]
   );
 
   // Handle straight line completion on mouse up
@@ -397,7 +507,19 @@ export function useLineToolHandler({
       const existingColor = existingLine?.color ?? null;
       const action = determineLineAction(isShiftKey, existingColor, colorToUse);
 
-      executeLineAction(
+      // Calculate effective arrow direction based on draw order
+      const [normalizedFrom, normalizedTo] = normalizeSegmentEndpoints(drawStartPoint, pointId);
+      const effectiveArrowDirection = toolSettings.lineDirected
+        ? calculateArrowDirection(
+            drawStartPoint,
+            pointId,
+            normalizedFrom,
+            normalizedTo,
+            toolSettings.lineArrowDirection || 'forward'
+          )
+        : undefined;
+
+      const addedId = executeLineAction(
         action,
         addLine,
         removeLine,
@@ -409,10 +531,18 @@ export function useLineToolHandler({
           thickness: toolSettings.lineThickness,
           color: colorToUse,
           layer: toDataLayer(activeLayer),
+          directed: toolSettings.lineDirected,
+          arrowDirection: effectiveArrowDirection,
         }
       );
+
+      // Accumulate added line ID and finalize selection (straight line completes on mouse up)
+      if (addedId) {
+        addDrawingLineId(addedId);
+      }
+      finalizeLineSelection();
     },
-    [drawStartPoint, puzzle, activeLayer, toolSettings, addLine, removeLine, findNearestGridPoint]
+    [drawStartPoint, puzzle, activeLayer, toolSettings, addLine, addDrawingLineId, removeLine, findNearestGridPoint, finalizeLineSelection]
   );
 
   return {
@@ -421,5 +551,6 @@ export function useLineToolHandler({
     handleWallTool,
     handleStraightLineEnd,
     resetLineFillMode,
+    finalizeLineSelection,
   };
 }

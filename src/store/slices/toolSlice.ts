@@ -4,6 +4,7 @@
 
 import type { ToolSlice, SliceCreator } from './types';
 import { DEFAULT_TOOL_SETTINGS } from './types';
+import { isLineToolCategory } from '../../utils/lineRender';
 
 export const createToolSlice: SliceCreator<ToolSlice> = (set) => ({
   toolSettings: { ...DEFAULT_TOOL_SETTINGS },
@@ -25,6 +26,11 @@ export const createToolSlice: SliceCreator<ToolSlice> = (set) => ({
           ? { row: 0, col: 0 }
           : state.numberSelection;
 
+      // Clear line highlight when switching away from line-related categories
+      const isLineCategory = isLineToolCategory(category);
+      const wasLineCategory = isLineToolCategory(state.toolSettings.currentCategory);
+      const shouldClearHighlight = wasLineCategory && !isLineCategory;
+
       return {
         toolSettings: {
           ...state.toolSettings,
@@ -32,6 +38,8 @@ export const createToolSlice: SliceCreator<ToolSlice> = (set) => ({
           currentCategory: category,
         },
         numberSelection: newNumberSelection,
+        // Clear highlighted lines when leaving line mode
+        ...(shouldClearHighlight ? { highlightedLineIds: [] } : {}),
       };
     }),
 

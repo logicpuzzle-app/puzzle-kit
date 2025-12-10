@@ -7,40 +7,19 @@ import {
   buildVertexGridToTopologyMap,
 } from '../../utils/gridIds';
 import { getEdgeLineDrawInfo } from '../../utils/gridTopology';
-import type { LineElement, LayerType, LineStyle, LineThickness, Point, GridConfig } from '../../types';
+import {
+  mergeDirectedLines,
+  type LineWithPosition,
+} from '../../utils/lineMerge';
+import {
+  getStrokeWidth,
+  getStrokeDasharray,
+  getArrowPoints,
+  buildPathFromPoints,
+  shortenPathEnds,
+} from '../../utils/lineRender';
+import type { LineElement, LayerType, Point, GridConfig } from '../../types';
 import type { GridTopology, TopologyVertex } from '../../utils/gridTopology';
-
-interface LineLayerProps {
-  layer: LayerType;
-}
-
-const getStrokeWidth = (thickness: LineThickness): number => {
-  switch (thickness) {
-    case 'thinnest':
-      return 1;
-    case 'thin':
-      return 2;
-    case 'normal':
-      return 3;
-    case 'thick':
-      return 5;
-    case 'thickest':
-      return 8;
-    default:
-      return 3;
-  }
-};
-
-const getStrokeDasharray = (style: LineStyle): string | undefined => {
-  switch (style) {
-    case 'dashed':
-      return '8,4';
-    case 'dotted':
-      return '2,4';
-    default:
-      return undefined;
-  }
-};
 
 /**
  * Parse any grid point ID (cell, vertex, or edge) and return its position
@@ -83,7 +62,7 @@ const findSharedEdgeMidpoint = (
 };
 
 export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
-  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology, highlightedLineIds } = usePuzzleStore();
+  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology, highlightedLineIds, drawingLineIds } = usePuzzleStore();
 
   const isVisible =
     (layer === 'problem' && showProblemLayer) ||
@@ -93,12 +72,43 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
   const activeTopology = useTopology ? topology : null;
   const isIsometric = grid.gridType === 'iso';
 
+  // Get line groups for this layer, including temporary drawing group
+  const lineGroups = useMemo(() => {
+    const existingGroups = puzzle[layer].lineGroups || {};
+
+    // If there are drawing lines, add them as a temporary group
+    if (drawingLineIds.length >= 1) {
+      // Filter to only directed lines
+      const directedDrawingIds = drawingLineIds.filter(id => {
+        const line = puzzle[layer].lines[id];
+        return line && line.directed && !line.isFree;
+      });
+
+      if (directedDrawingIds.length >= 1) {
+        return {
+          ...existingGroups,
+          '__drawing__': {
+            id: '__drawing__',
+            lineIds: directedDrawingIds,
+            groupType: 'arrow' as const,
+            layer,
+          },
+        };
+      }
+    }
+
+    return existingGroups;
+  }, [puzzle, layer, drawingLineIds]);
+
   // Lines (can connect cell centers, vertices, or edge centers, or free coordinates)
   const lines = useMemo(() => {
     if (!isVisible) return null;
 
     const layerData = puzzle[layer];
     const elements: React.ReactElement[] = [];
+
+    // First pass: collect all lines with their positions
+    const linesWithPos: LineWithPosition[] = [];
 
     Object.values(layerData.lines).forEach((line: LineElement) => {
       let fromX: number, fromY: number, toX: number, toY: number;
@@ -157,69 +167,190 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
         return;
       }
 
-      const isHighlighted = highlightedLineIds.includes(line.id);
+      linesWithPos.push({ line, fromX, fromY, toX, toY, midpoint });
+    });
 
-      if (midpoint) {
-        // Draw path through midpoint
-        elements.push(
-          <React.Fragment key={line.id}>
-            {/* Highlight glow effect */}
-            {isHighlighted && (
+    // Merge lines based on line groups
+    const chains = mergeDirectedLines(linesWithPos, lineGroups);
+
+    // Render each chain
+    for (const chain of chains) {
+      const firstLine = chain.lines[0].line;
+      // Get set of highlighted line IDs in this chain for individual highlighting
+      const highlightedInChain = new Set(chain.lines.filter(l => highlightedLineIds.includes(l.line.id)).map(l => l.line.id));
+      const isDoubleStyle = firstLine.style === 'double';
+      // For double lines, use thinner base stroke
+      const baseStrokeWidth = getStrokeWidth(firstLine.thickness);
+      const strokeWidth = isDoubleStyle ? Math.max(1, baseStrokeWidth * 0.5) : baseStrokeWidth;
+      // For double lines, arrow must be larger than total line width (strokeWidth + doubleGap)
+      // doubleGap = strokeWidth * 2.5, total = strokeWidth * 3.5
+      const totalLineWidth = isDoubleStyle ? strokeWidth * 3.5 : strokeWidth;
+      const arrowSize = isDoubleStyle ? totalLineWidth * 3 : strokeWidth * 3;
+      const chainKey = chain.lines.map(l => l.line.id).join('-');
+
+      // Calculate arrow position(s) for directed lines
+      const arrows: { points: string; cx: number; cy: number }[] = [];
+      let shortenStart = 0;
+      let shortenEnd = 0;
+
+      if (firstLine.directed && chain.points.length >= 2) {
+        const directed = firstLine.directed;
+
+        if (directed === 'endpoint') {
+          // Arrow at the end of the chain (chain.points is ordered start->end)
+          // Use chain.points which is correctly ordered by mergeEndpointLines
+          const chainPoints = chain.points;
+          if (chainPoints.length >= 2) {
+            const endPoint = chainPoints[chainPoints.length - 1];
+            const secondLastPoint = chainPoints[chainPoints.length - 2];
+            arrows.push(getArrowPoints(secondLastPoint.x, secondLastPoint.y, endPoint.x, endPoint.y, arrowSize, 'endpoint', 'forward', true));
+            // Shorten line end so arrow tip sits exactly on endpoint
+            shortenEnd = arrowSize;
+          }
+        } else if (directed === 'midpoint') {
+          // Arrow at the midpoint of the chain
+          // Use chain.points which is correctly ordered
+          const chainPoints = chain.points;
+          if (chainPoints.length >= 2) {
+            const isEven = chainPoints.length % 2 === 0;
+            if (isEven) {
+              // Even number of points: arrow at the midpoint of the middle segment
+              // e.g., 4 points [0,1,2,3]: midIndex=2, draw arrow at midpoint of segment 1->2
+              const midIndex = chainPoints.length / 2;
+              const segStart = chainPoints[midIndex - 1];
+              const segEnd = chainPoints[midIndex];
+              // Arrow at midpoint position (center of the segment)
+              arrows.push(getArrowPoints(segStart.x, segStart.y, segEnd.x, segEnd.y, arrowSize, 'midpoint', 'forward'));
+            } else {
+              // Odd number of points: arrow at the junction point (the middle point itself)
+              // e.g., 3 points [0,1,2]: midIndex=1, draw arrow at point 1 (junction)
+              // e.g., 5 points [0,1,2,3,4]: midIndex=2, draw arrow at point 2 (junction)
+              const midIndex = Math.floor(chainPoints.length / 2);
+              const beforeMid = chainPoints[midIndex - 1];
+              const afterMid = chainPoints[midIndex];
+              // Arrow at the junction point, pointing in chain direction
+              arrows.push(getArrowPoints(beforeMid.x, beforeMid.y, afterMid.x, afterMid.y, arrowSize, 'endpoint', 'forward'));
+            }
+          }
+        } else if (directed === 'both') {
+          // Arrows at both ends of the chain (bidirectional)
+          // Use chain.points which is correctly ordered by mergeEndpointLines
+          const chainPoints = chain.points;
+          if (chainPoints.length >= 2) {
+            const startPoint = chainPoints[0];
+            const secondPoint = chainPoints[1];
+            const endPoint = chainPoints[chainPoints.length - 1];
+            const secondLastPoint = chainPoints[chainPoints.length - 2];
+            // Arrow at start pointing outward (tip at start point)
+            arrows.push(getArrowPoints(secondPoint.x, secondPoint.y, startPoint.x, startPoint.y, arrowSize, 'endpoint', 'forward', true));
+            // Arrow at end pointing outward (tip at end point)
+            arrows.push(getArrowPoints(secondLastPoint.x, secondLastPoint.y, endPoint.x, endPoint.y, arrowSize, 'endpoint', 'forward', true));
+          }
+          // Shorten line at both ends to not overlap with arrows
+          shortenStart = arrowSize;
+          shortenEnd = arrowSize;
+        }
+      }
+
+      // Build SVG path from points, shortening ends if needed for 'both' mode
+      const pathPoints = (shortenStart > 0 || shortenEnd > 0)
+        ? shortenPathEnds(chain.points, shortenStart, shortenEnd)
+        : chain.points;
+      const pathD = buildPathFromPoints(pathPoints);
+
+      const doubleGap = strokeWidth * 2.5; // Gap between double lines
+
+      // For midpoint arrows with double lines, render arrow below the line
+      const isMidpointArrow = firstLine.directed === 'midpoint';
+      const arrowsBelowLine = isDoubleStyle && isMidpointArrow;
+
+      const arrowElements = arrows.map((arrow, i) => arrow.points && (
+        <polygon
+          key={`arrow-${i}`}
+          points={arrow.points}
+          fill={firstLine.color}
+        />
+      ));
+
+      const lineElements = isDoubleStyle ? (
+        <>
+          {/* Double line: outer stroke (color) */}
+          <path
+            d={pathD}
+            fill="none"
+            stroke={firstLine.color}
+            strokeWidth={strokeWidth + doubleGap}
+            strokeLinecap="butt"
+            strokeLinejoin="round"
+          />
+          {/* Double line: inner stroke (white/background) */}
+          <path
+            d={pathD}
+            fill="none"
+            stroke="white"
+            strokeWidth={doubleGap - strokeWidth}
+            strokeLinecap="butt"
+            strokeLinejoin="round"
+          />
+        </>
+      ) : (
+        <path
+          d={pathD}
+          fill="none"
+          stroke={firstLine.color}
+          strokeWidth={strokeWidth}
+          strokeDasharray={getStrokeDasharray(firstLine.style)}
+          strokeLinecap="butt"
+          strokeLinejoin="round"
+        />
+      );
+
+      // Build highlight elements for individual selected lines within the chain
+      const highlightElements: React.ReactNode[] = [];
+      if (highlightedInChain.size > 0) {
+        for (const lineWithPos of chain.lines) {
+          if (highlightedInChain.has(lineWithPos.line.id)) {
+            // Build path for this single line segment
+            const segmentPoints = lineWithPos.midpoint
+              ? [{ x: lineWithPos.fromX, y: lineWithPos.fromY }, lineWithPos.midpoint, { x: lineWithPos.toX, y: lineWithPos.toY }]
+              : [{ x: lineWithPos.fromX, y: lineWithPos.fromY }, { x: lineWithPos.toX, y: lineWithPos.toY }];
+            highlightElements.push(
               <path
-                d={`M ${fromX} ${fromY} L ${midpoint.x} ${midpoint.y} L ${toX} ${toY}`}
+                key={`highlight-${lineWithPos.line.id}`}
+                d={buildPathFromPoints(segmentPoints)}
                 fill="none"
                 stroke="#ff9800"
-                strokeWidth={getStrokeWidth(line.thickness) + 8}
+                strokeWidth={isDoubleStyle ? strokeWidth + doubleGap + 8 : strokeWidth + 8}
                 strokeOpacity={0.5}
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
-            )}
-            <path
-              d={`M ${fromX} ${fromY} L ${midpoint.x} ${midpoint.y} L ${toX} ${toY}`}
-              fill="none"
-              stroke={line.color}
-              strokeWidth={getStrokeWidth(line.thickness)}
-              strokeDasharray={getStrokeDasharray(line.style)}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </React.Fragment>
-        );
-      } else {
-        // Draw direct line
-        elements.push(
-          <React.Fragment key={line.id}>
-            {/* Highlight glow effect */}
-            {isHighlighted && (
-              <line
-                x1={fromX}
-                y1={fromY}
-                x2={toX}
-                y2={toY}
-                stroke="#ff9800"
-                strokeWidth={getStrokeWidth(line.thickness) + 8}
-                strokeOpacity={0.5}
-                strokeLinecap="round"
-              />
-            )}
-            <line
-              x1={fromX}
-              y1={fromY}
-              x2={toX}
-              y2={toY}
-              stroke={line.color}
-              strokeWidth={getStrokeWidth(line.thickness)}
-              strokeDasharray={getStrokeDasharray(line.style)}
-              strokeLinecap="round"
-            />
-          </React.Fragment>
-        );
+            );
+          }
+        }
       }
-    });
+
+      elements.push(
+        <React.Fragment key={chainKey}>
+          {/* Highlight glow effect for individual selected lines */}
+          {highlightElements}
+          {arrowsBelowLine ? (
+            <>
+              {arrowElements}
+              {lineElements}
+            </>
+          ) : (
+            <>
+              {lineElements}
+              {arrowElements}
+            </>
+          )}
+        </React.Fragment>
+      );
+    }
 
     return elements;
-  }, [puzzle, layer, grid, isVisible, activeTopology, isIsometric, highlightedLineIds]);
+  }, [puzzle, layer, grid, isVisible, activeTopology, isIsometric, highlightedLineIds, lineGroups]);
 
   // Build vertex lookup map for efficient grid-mode to topology-mode conversion
   const vertexMap = useMemo(() => {

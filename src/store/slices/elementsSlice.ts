@@ -25,10 +25,14 @@ import type {
   CageElement,
   SpecialElement,
   BoxLineElement,
+  LineGroup,
 } from '../../types';
 import { toDataLayer } from '../../types';
 import type { ElementsSlice, SliceCreator } from './types';
-import { createEmptyElements, createEmptyState } from './types';
+import {
+  normalizeChain,
+  splitChain,
+} from '../../utils/lineMerge';
 import { historyManager } from '../historyManager';
 import {
   createAddSurfaceAction,
@@ -54,6 +58,18 @@ import {
   normalizeSegmentEndpoints,
   generateLineId,
 } from '../../utils/lineNormalization';
+
+// Import from refactored modules
+import { createEmptyState } from './elements/state';
+import {
+  buildLinesWithPosition,
+  groupAndNormalizeByConnectivity,
+  groupAndNormalizeByCollinearity,
+  normalizeLineGroupWithExisting,
+  createLineGroupRecords,
+  applyArrowDirections,
+  type GeometryContext,
+} from './elements/helpers';
 
 export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
   puzzle: createEmptyState(),
@@ -689,6 +705,353 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
         },
       };
     });
+  },
+
+  // Line group operations (for arrow chains, etc.)
+  addLineGroup: (lineIds, groupType) => {
+    const state = get();
+    const layer = toDataLayer(state.activeLayer);
+    const lines = state.puzzle[layer].lines || {};
+    const edges = state.puzzle[layer].edges || {};
+    const walls = state.puzzle[layer].walls || {};
+    const context: GeometryContext = { grid: state.grid, topology: state.topology };
+
+    // Build LineWithPosition array using helper
+    const groupLines = buildLinesWithPosition(lineIds, lines, edges, walls, context);
+
+    // Normalize and get arrow directions using helper
+    const { id, lineIds: normalizedIds, arrowDirections } = normalizeLineGroupWithExisting(groupLines);
+    const newGroup = { id, lineIds: normalizedIds, groupType, layer };
+
+    set((state) => {
+      const dataLayer = toDataLayer(state.activeLayer);
+      const newLines = applyArrowDirections(state.puzzle[dataLayer].lines, arrowDirections);
+
+      return {
+        puzzle: {
+          ...state.puzzle,
+          [dataLayer]: {
+            ...state.puzzle[dataLayer],
+            lines: newLines,
+            lineGroups: {
+              ...(state.puzzle[dataLayer].lineGroups || {}),
+              [id]: newGroup,
+            },
+          },
+        },
+      };
+    });
+    return id;
+  },
+
+  removeLineGroup: (groupId) => {
+    const state = get();
+    const layer = toDataLayer(state.activeLayer);
+    const groups = state.puzzle[layer].lineGroups || {};
+    const group = groups[groupId];
+    if (!group) return;
+
+    const lines = state.puzzle[layer].lines || {};
+    const edges = state.puzzle[layer].edges || {};
+    const walls = state.puzzle[layer].walls || {};
+    const context: GeometryContext = { grid: state.grid, topology: state.topology };
+
+    // Build LineWithPosition array and normalize to get correct arrow directions
+    const groupLines = buildLinesWithPosition(group.lineIds, lines, edges, walls, context);
+    const { arrowDirections } = normalizeLineGroupWithExisting(groupLines);
+
+    set((state) => {
+      const dataLayer = toDataLayer(state.activeLayer);
+      const newGroups = { ...(state.puzzle[dataLayer].lineGroups || {}) };
+      delete newGroups[groupId];
+
+      const newLines = applyArrowDirections(state.puzzle[dataLayer].lines, arrowDirections);
+
+      return {
+        puzzle: {
+          ...state.puzzle,
+          [dataLayer]: {
+            ...state.puzzle[dataLayer],
+            lines: newLines,
+            lineGroups: newGroups,
+          },
+        },
+      };
+    });
+  },
+
+  addLinesToGroup: (groupId, lineIds) => {
+    const state = get();
+    const layer = toDataLayer(state.activeLayer);
+    const groups = state.puzzle[layer].lineGroups || {};
+    const group = groups[groupId];
+    if (group) {
+      const newLineIds = [...new Set([...group.lineIds, ...lineIds])];
+      set((state) => {
+        const dataLayer = toDataLayer(state.activeLayer);
+        return {
+          puzzle: {
+            ...state.puzzle,
+            [dataLayer]: {
+              ...state.puzzle[dataLayer],
+              lineGroups: {
+                ...(state.puzzle[dataLayer].lineGroups || {}),
+                [groupId]: { ...group, lineIds: newLineIds },
+              },
+            },
+          },
+        };
+      });
+    }
+  },
+
+  removeLinesFromGroup: (groupId, lineIds) => {
+    const state = get();
+    const layer = toDataLayer(state.activeLayer);
+    const groups = state.puzzle[layer].lineGroups || {};
+    const group = groups[groupId];
+    if (group) {
+      const lineIdSet = new Set(lineIds);
+      const newLineIds = group.lineIds.filter(id => !lineIdSet.has(id));
+
+      set((state) => {
+        const dataLayer = toDataLayer(state.activeLayer);
+        // If group becomes empty or has only 1 line, remove it entirely
+        if (newLineIds.length <= 1) {
+          const newGroups = { ...(state.puzzle[dataLayer].lineGroups || {}) };
+          delete newGroups[groupId];
+          return {
+            puzzle: {
+              ...state.puzzle,
+              [dataLayer]: {
+                ...state.puzzle[dataLayer],
+                lineGroups: newGroups,
+              },
+            },
+          };
+        }
+        return {
+          puzzle: {
+            ...state.puzzle,
+            [dataLayer]: {
+              ...state.puzzle[dataLayer],
+              lineGroups: {
+                ...(state.puzzle[dataLayer].lineGroups || {}),
+                [groupId]: { ...group, lineIds: newLineIds },
+              },
+            },
+          },
+        };
+      });
+    }
+  },
+
+  getLineGroup: (lineId) => {
+    const state = get();
+    const layer = toDataLayer(state.activeLayer);
+    const groups = state.puzzle[layer].lineGroups || {};
+    return Object.values(groups).find(group => group.lineIds.includes(lineId));
+  },
+
+  splitLineGroup: (groupId, splitAtLineId) => {
+    const state = get();
+    const layer = toDataLayer(state.activeLayer);
+    const groups = state.puzzle[layer].lineGroups || {};
+    const group = groups[groupId];
+
+    if (!group) {
+      return { group1: null, group2: null };
+    }
+
+    const lines = state.puzzle[layer].lines || {};
+    const edges = state.puzzle[layer].edges || {};
+    const walls = state.puzzle[layer].walls || {};
+    const context: GeometryContext = { grid: state.grid, topology: state.topology };
+
+    // Build LineWithPosition array using helper
+    const groupLines = buildLinesWithPosition(group.lineIds, lines, edges, walls, context);
+
+    // Normalize the chain first
+    const normalizedChain = normalizeChain(groupLines);
+    if (!normalizedChain) {
+      return { group1: null, group2: null };
+    }
+
+    // Split the chain
+    const splitResult = splitChain(normalizedChain, splitAtLineId, groupLines);
+
+    let newGroup1: LineGroup | null = null;
+    let newGroup2: LineGroup | null = null;
+
+    set((state) => {
+      const dataLayer = toDataLayer(state.activeLayer);
+      const newGroups = { ...(state.puzzle[dataLayer].lineGroups || {}) };
+
+      // Remove the original group
+      delete newGroups[groupId];
+
+      // Create new groups if they have 2+ lines
+      if (splitResult.before && splitResult.before.lineIds.length >= 2) {
+        const id1 = `lg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        newGroup1 = {
+          id: id1,
+          lineIds: splitResult.before.lineIds,
+          groupType: group.groupType,
+          layer: group.layer,
+        };
+        newGroups[id1] = newGroup1;
+      }
+
+      if (splitResult.after && splitResult.after.lineIds.length >= 2) {
+        const id2 = `lg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}-2`;
+        newGroup2 = {
+          id: id2,
+          lineIds: splitResult.after.lineIds,
+          groupType: group.groupType,
+          layer: group.layer,
+        };
+        newGroups[id2] = newGroup2;
+      }
+
+      return {
+        puzzle: {
+          ...state.puzzle,
+          [dataLayer]: {
+            ...state.puzzle[dataLayer],
+            lineGroups: newGroups,
+          },
+        },
+      };
+    });
+
+    return { group1: newGroup1, group2: newGroup2 };
+  },
+
+  normalizeLineGroup: (groupId) => {
+    const state = get();
+    const layer = toDataLayer(state.activeLayer);
+    const groups = state.puzzle[layer].lineGroups || {};
+    const group = groups[groupId];
+
+    if (!group) return;
+
+    const lines = state.puzzle[layer].lines || {};
+    const edges = state.puzzle[layer].edges || {};
+    const walls = state.puzzle[layer].walls || {};
+    const context: GeometryContext = { grid: state.grid, topology: state.topology };
+
+    // Build LineWithPosition array and normalize using helpers
+    const groupLines = buildLinesWithPosition(group.lineIds, lines, edges, walls, context);
+    const { lineIds: normalizedIds, arrowDirections } = normalizeLineGroupWithExisting(groupLines, groupId);
+
+    set((state) => {
+      const dataLayer = toDataLayer(state.activeLayer);
+      const newLines = applyArrowDirections(state.puzzle[dataLayer].lines, arrowDirections);
+      const currentGroups = { ...(state.puzzle[dataLayer].lineGroups || {}) };
+
+      // Update group lineIds order
+      currentGroups[groupId] = {
+        ...group,
+        lineIds: normalizedIds,
+      };
+
+      return {
+        puzzle: {
+          ...state.puzzle,
+          [dataLayer]: {
+            ...state.puzzle[dataLayer],
+            lines: newLines,
+            lineGroups: currentGroups,
+          },
+        },
+      };
+    });
+  },
+
+  groupSelectedLinesByConnectivity: (lineIds) => {
+    const state = get();
+    const layer = toDataLayer(state.activeLayer);
+    const lines = state.puzzle[layer].lines || {};
+    const edges = state.puzzle[layer].edges || {};
+    const walls = state.puzzle[layer].walls || {};
+    const context: GeometryContext = { grid: state.grid, topology: state.topology };
+
+    // Build LineWithPosition array using helper
+    const selectedLines = buildLinesWithPosition(lineIds, lines, edges, walls, context);
+    if (selectedLines.length === 0) return [];
+
+    // Group and normalize using helper
+    const { groups, allArrowDirections } = groupAndNormalizeByConnectivity(selectedLines);
+    const createdGroupIds = groups.map(g => g.id);
+
+    if (groups.length === 0 && allArrowDirections.size === 0) {
+      return createdGroupIds;
+    }
+
+    // Create LineGroup records
+    const lineGroupRecords = createLineGroupRecords(groups, layer);
+
+    set((state) => {
+      const dataLayer = toDataLayer(state.activeLayer);
+      const existingGroups = state.puzzle[dataLayer].lineGroups || {};
+      const newLines = applyArrowDirections(state.puzzle[dataLayer].lines, allArrowDirections);
+
+      return {
+        puzzle: {
+          ...state.puzzle,
+          [dataLayer]: {
+            ...state.puzzle[dataLayer],
+            lines: newLines,
+            lineGroups: { ...existingGroups, ...lineGroupRecords },
+          },
+        },
+      };
+    });
+
+    return createdGroupIds;
+  },
+
+  groupSelectedLinesByCollinearity: (lineIds) => {
+    const state = get();
+    const layer = toDataLayer(state.activeLayer);
+    const lines = state.puzzle[layer].lines || {};
+    const edges = state.puzzle[layer].edges || {};
+    const walls = state.puzzle[layer].walls || {};
+    const context: GeometryContext = { grid: state.grid, topology: state.topology };
+
+    // Build LineWithPosition array using helper
+    const selectedLines = buildLinesWithPosition(lineIds, lines, edges, walls, context);
+    if (selectedLines.length === 0) return [];
+
+    // Group by collinearity and normalize using helper
+    const { groups, allArrowDirections } = groupAndNormalizeByCollinearity(selectedLines);
+    const createdGroupIds = groups.map(g => g.id);
+
+    if (groups.length === 0 && allArrowDirections.size === 0) {
+      return createdGroupIds;
+    }
+
+    // Create LineGroup records
+    const lineGroupRecords = createLineGroupRecords(groups, layer);
+
+    set((state) => {
+      const dataLayer = toDataLayer(state.activeLayer);
+      const existingGroups = state.puzzle[dataLayer].lineGroups || {};
+      const newLines = applyArrowDirections(state.puzzle[dataLayer].lines, allArrowDirections);
+
+      return {
+        puzzle: {
+          ...state.puzzle,
+          [dataLayer]: {
+            ...state.puzzle[dataLayer],
+            lines: newLines,
+            lineGroups: { ...existingGroups, ...lineGroupRecords },
+          },
+        },
+      };
+    });
+
+    return createdGroupIds;
   },
 
   // Room map operations (for Heyawake, etc.)

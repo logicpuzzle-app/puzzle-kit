@@ -119,6 +119,7 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
     handleBoxLineTool,
     handleStraightLineEnd,
     resetFillModes,
+    finalizeLineSelection,
   } = toolHandlers;
 
   const { findNearestGridPoint } = useGridPointUtils(grid);
@@ -348,12 +349,13 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
         executeGridUp(action.mode, action.point, action.isRightClick);
         break;
       case 'CLEAR_DRAW_STATE':
+        finalizeLineSelection();
         setDrawStartPoint(null);
         setDrawStartPosition(null);
         setCurrentStrokeId(null);
         break;
     }
-  }, [canvas.panX, canvas.panY, setPan, startHistoryGroup, endHistoryGroup, setCanvasState, resetFillModes, executeToolDown, executeToolMove, executeToolUp, executeGridDown, executeGridMove, executeGridUp]);
+  }, [canvas.panX, canvas.panY, setPan, startHistoryGroup, endHistoryGroup, setCanvasState, resetFillModes, executeToolDown, executeToolMove, executeToolUp, executeGridDown, executeGridMove, executeGridUp, finalizeLineSelection]);
 
   // Execute all actions from a transition
   const executeActions = useCallback((actions: InteractionAction[]) => {

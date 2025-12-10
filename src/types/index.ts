@@ -306,6 +306,18 @@ export interface LineElement {
   color: string;
   layer: DataLayerType;
 
+  // Arrow style: determines where arrow is drawn
+  // - 'endpoint': arrow at the end of line (standard arrow)
+  // - 'midpoint': arrow marker at the middle of line (directional indicator)
+  // - 'both': arrows at both ends (bidirectional)
+  // Default is undirected (undefined)
+  directed?: 'endpoint' | 'midpoint' | 'both';
+
+  // Arrow direction: which way the arrow points relative to from->to
+  // - 'forward': arrow points from->to (default)
+  // - 'backward': arrow points to->from
+  arrowDirection?: 'forward' | 'backward';
+
   // For freehand lines (not snapped to grid)
   isFree?: boolean;
   fromX?: number;  // SVG x coordinate
@@ -379,6 +391,26 @@ export interface BoxLineElement {
   id: string;
   cells: string[];  // cell IDs in order (forming a connected path)
   color: string;
+  layer: DataLayerType;
+}
+
+/**
+ * Line Group - groups lines for merged rendering
+ *
+ * Line groups allow multiple lines to be rendered as a single merged chain.
+ * This is useful for arrow lines where you want arrows at the endpoints of
+ * a chain of connected lines rather than on each individual line.
+ *
+ * The groupType determines what kind of merging is applied:
+ * - 'arrow': Lines are merged for arrow rendering (arrows at chain endpoints)
+ */
+export interface LineGroup {
+  id: string;
+  /** IDs of lines that belong to this group */
+  lineIds: string[];
+  /** Type of grouping (determines rendering behavior) */
+  groupType: 'arrow';
+  /** Layer this group belongs to */
   layer: DataLayerType;
 }
 
@@ -521,6 +553,8 @@ export interface PuzzleElements {
   cages: Record<string, CageElement>;
   specials: Record<string, SpecialElement>;
   boxLines: Record<string, BoxLineElement>;
+  /** Line groups for merged rendering (e.g., arrow chains) */
+  lineGroups?: Record<string, LineGroup>;
   directionalClues?: Record<string, import('./penpaElements').PenpaDirectionalClue>;
   roomMap?: RoomMap; // Optional room map for region-based puzzles
   // Optional fields for specific puzzle types
@@ -604,6 +638,9 @@ export interface ToolSettings {
   lineGridPoints: LineGridPoint[];   // Which grid points to use (multiple select)
   lineDirections: LineDirection[];   // Which directions to allow (multiple select)
   lineHalfMode: boolean;             // Half mode: allows lines between cell centers and edge centers
+  lineDirected?: 'endpoint' | 'midpoint' | 'both'; // Arrow style: undefined=undirected, 'endpoint'=arrow at end, 'midpoint'=arrow in middle, 'both'=arrows at both ends
+  lineArrowDirection?: 'forward' | 'backward'; // Arrow direction: 'forward'=from->to, 'backward'=to->from
+  lineMerge?: boolean;               // Merge connected lines with same style for rendering
   // Symbol tool settings
   symbolGridPoints: LineGridPoint[]; // Which grid points symbols can be placed on
   overrideSymbolType?: string; // Override the default symbol type (e.g., 'circle-filled' for constraint modes)

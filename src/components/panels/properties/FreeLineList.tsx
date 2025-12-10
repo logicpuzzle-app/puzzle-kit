@@ -203,6 +203,155 @@ const getStrokeDasharray = (style: string): string | undefined => {
   }
 };
 
+// Calculate angle from coordinate strings (returns degrees)
+const getAngleFromCoords = (fromCoord: string, toCoord: string): number => {
+  const from = parseCoordString(fromCoord);
+  const to = parseCoordString(toCoord);
+  if (!from || !to) return 0;
+
+  // Note: row increases downward, col increases rightward
+  const dCol = to.col - from.col;
+  const dRow = to.row - from.row;
+
+  // atan2 returns angle in radians, convert to degrees
+  // Math.atan2(y, x) - but our y is row (down = positive)
+  return Math.atan2(dRow, dCol) * (180 / Math.PI);
+};
+
+// Line sample preview component with arrow support
+const LineSamplePreview: React.FC<{
+  line: LineElement;
+  fromCoord: string;
+  toCoord: string;
+  size?: number;
+}> = ({ line, fromCoord, toCoord, size = 24 }) => {
+  const isDouble = line.style === 'double';
+  // For double lines, use thinner base stroke
+  const baseStrokeWidth = getStrokeWidth(line.thickness);
+  const strokeWidth = isDouble ? Math.max(1, baseStrokeWidth * 0.5) : baseStrokeWidth;
+  const doubleGap = strokeWidth * 2.5;
+  const dashArray = getStrokeDasharray(line.style);
+
+  // Calculate line angle from coordinates
+  const angle = getAngleFromCoords(fromCoord, toCoord);
+
+  // Use square viewBox so all angles have same line length
+  const viewBoxSize = size;
+  const center = viewBoxSize / 2;
+  const lineHalfLength = (viewBoxSize - 4) / 2;
+
+  // Arrow size - larger for double lines to match line width
+  const totalLineWidth = isDouble ? strokeWidth + doubleGap : strokeWidth;
+  const arrowSize = isDouble ? Math.max(totalLineWidth * 3, 6) : Math.min(6, viewBoxSize * 0.25);
+
+  // Calculate line endpoints based on angle
+  const radians = angle * (Math.PI / 180);
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+
+  const startX = center - cos * lineHalfLength;
+  const startY = center - sin * lineHalfLength;
+  const endX = center + cos * lineHalfLength;
+  const endY = center + sin * lineHalfLength;
+
+  // Calculate arrow positions and rotations
+  const getArrowTransforms = (): { cx: number; cy: number; rotation: number }[] => {
+    if (!line.directed) return [];
+
+    const isBackward = line.arrowDirection === 'backward';
+    const arrowAngle = isBackward ? angle + 180 : angle;
+
+    if (line.directed === 'endpoint') {
+      // Arrow at endpoint
+      if (isBackward) {
+        return [{ cx: startX, cy: startY, rotation: arrowAngle }];
+      } else {
+        return [{ cx: endX, cy: endY, rotation: arrowAngle }];
+      }
+    } else if (line.directed === 'midpoint') {
+      // Arrow at midpoint
+      return [{ cx: center, cy: center, rotation: arrowAngle }];
+    } else if (line.directed === 'both') {
+      // Arrows at both ends (bidirectional)
+      return [
+        { cx: startX, cy: startY, rotation: angle + 180 }, // Arrow pointing outward at start
+        { cx: endX, cy: endY, rotation: angle },           // Arrow pointing outward at end
+      ];
+    }
+    return [];
+  };
+
+  const arrowTransforms = getArrowTransforms();
+
+  // Arrow pointing right (will be rotated)
+  const arrowPoints = `${arrowSize * 0.5},0 ${-arrowSize * 0.5},${-arrowSize * 0.4} ${-arrowSize * 0.5},${arrowSize * 0.4}`;
+
+  // For midpoint arrows with double lines, render arrow below the line
+  const isMidpointArrow = line.directed === 'midpoint';
+  const arrowsBelowLine = isDouble && isMidpointArrow;
+
+  const arrowElements = arrowTransforms.map((transform, i) => (
+    <polygon
+      key={i}
+      points={arrowPoints}
+      fill={line.color}
+      transform={`translate(${transform.cx}, ${transform.cy}) rotate(${transform.rotation})`}
+    />
+  ));
+
+  const lineElements = isDouble ? (
+    <>
+      <line
+        x1={startX}
+        y1={startY}
+        x2={endX}
+        y2={endY}
+        stroke={line.color}
+        strokeWidth={strokeWidth + doubleGap}
+      />
+      <line
+        x1={startX}
+        y1={startY}
+        x2={endX}
+        y2={endY}
+        stroke="white"
+        strokeWidth={doubleGap - strokeWidth}
+      />
+    </>
+  ) : (
+    <line
+      x1={startX}
+      y1={startY}
+      x2={endX}
+      y2={endY}
+      stroke={line.color}
+      strokeWidth={strokeWidth}
+      strokeDasharray={dashArray}
+    />
+  );
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
+      className="flex-shrink-0"
+    >
+      {arrowsBelowLine ? (
+        <>
+          {arrowElements}
+          {lineElements}
+        </>
+      ) : (
+        <>
+          {lineElements}
+          {arrowElements}
+        </>
+      )}
+    </svg>
+  );
+};
+
 // Get coordinate string from grid point ID using topology
 const getCoordinateFromTopology = (id: string, topology: GridTopology | null): string => {
   if (!topology) {
@@ -443,6 +592,7 @@ export const FreeLineList: React.FC = () => {
   const [mergeConsecutive, setMergeConsecutive] = useState(true);
   const [sortOption, setSortOption] = useState<SortOption>('row');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [lastClickedIndex, setLastClickedIndex] = useState<number | null>(null);
 
   // Toggle sort option - if same option clicked, toggle direction; otherwise change option
   const handleSortClick = (option: SortOption) => {
@@ -468,11 +618,17 @@ export const FreeLineList: React.FC = () => {
       // Skip freehand lines (they have their own list)
       if (line.isFree) return;
 
+      // For directed lines, arrowDirection indicates the actual draw direction
+      // 'backward' means the line was drawn from to->from, so swap coordinates for display
+      const isBackward = line.arrowDirection === 'backward';
+      const fromId = isBackward ? line.to : line.from;
+      const toId = isBackward ? line.from : line.to;
+
       result.push({
         id: line.id,
         line,
-        fromCoord: getCoordinateFromTopology(line.from, activeTopology),
-        toCoord: getCoordinateFromTopology(line.to, activeTopology),
+        fromCoord: getCoordinateFromTopology(fromId, activeTopology),
+        toCoord: getCoordinateFromTopology(toId, activeTopology),
       });
     });
 
@@ -593,19 +749,58 @@ export const FreeLineList: React.FC = () => {
     });
   }, [lineInfos, mergedGroups]);
 
-  // Handle toggle selection for multiple line IDs
-  const handleToggleSelection = (ids: string[]) => {
-    const { highlightedLineIds } = usePuzzleStore.getState();
-    // Check if all ids are already selected
-    const allSelected = ids.every(id => highlightedLineIds.includes(id));
-    if (allSelected) {
-      // Deselect: remove these ids from selection
-      setHighlightedLineIds(highlightedLineIds.filter(id => !ids.includes(id)));
+  // Get all item IDs in current display order (for shift-select range)
+  const getOrderedItemIds = React.useCallback((): string[][] => {
+    if (mergedGroups) {
+      return mergedGroups.map(g => g.ids);
     } else {
-      // Select: add these ids to selection (replace for now, could be additive with shift)
-      setHighlightedLineIds(ids);
+      return sortedLineInfos.map(info => [info.id]);
     }
-  };
+  }, [mergedGroups, sortedLineInfos]);
+
+  // Handle selection with modifier keys
+  const handleItemClick = React.useCallback((
+    ids: string[],
+    index: number,
+    event: React.MouseEvent
+  ) => {
+    const { highlightedLineIds } = usePuzzleStore.getState();
+    const orderedItems = getOrderedItemIds();
+
+    if (event.shiftKey && lastClickedIndex !== null) {
+      // Shift+click: range selection from last clicked to current
+      const start = Math.min(lastClickedIndex, index);
+      const end = Math.max(lastClickedIndex, index);
+      const rangeIds: string[] = [];
+      for (let i = start; i <= end; i++) {
+        rangeIds.push(...orderedItems[i]);
+      }
+      setHighlightedLineIds(rangeIds);
+      // Don't update lastClickedIndex for shift-click to allow extending range
+    } else if (event.ctrlKey || event.metaKey) {
+      // Ctrl/Cmd+click: toggle selection (add/remove from current selection)
+      const allSelected = ids.every(id => highlightedLineIds.includes(id));
+      if (allSelected) {
+        // Remove from selection
+        setHighlightedLineIds(highlightedLineIds.filter(id => !ids.includes(id)));
+      } else {
+        // Add to selection
+        setHighlightedLineIds([...highlightedLineIds, ...ids.filter(id => !highlightedLineIds.includes(id))]);
+      }
+      setLastClickedIndex(index);
+    } else {
+      // Normal click: single selection (replace)
+      const allSelected = ids.every(id => highlightedLineIds.includes(id));
+      if (allSelected) {
+        // Deselect
+        setHighlightedLineIds([]);
+      } else {
+        // Select only this item
+        setHighlightedLineIds(ids);
+      }
+      setLastClickedIndex(index);
+    }
+  }, [lastClickedIndex, getOrderedItemIds, setHighlightedLineIds]);
 
   // Handle delete for multiple line IDs
   const handleDeleteMultiple = (ids: string[]) => {
@@ -669,7 +864,7 @@ export const FreeLineList: React.FC = () => {
       <div className="max-h-80 overflow-y-auto space-y-1">
         {mergedGroups ? (
           // Merged view
-          mergedGroups.map((group) => {
+          mergedGroups.map((group, index) => {
             const isSelected = group.ids.every(id => highlightedLineIds.includes(id));
             return (
             <div
@@ -679,27 +874,11 @@ export const FreeLineList: React.FC = () => {
                   ? 'bg-orange-100 border-orange-400'
                   : 'bg-gray-50 border-office-border hover:bg-gray-100'
               }`}
-              onClick={() => handleToggleSelection(group.ids)}
+              onClick={(e) => handleItemClick(group.ids, index, e)}
             >
               <div className="flex items-center gap-2">
-                {/* Line sample preview */}
-                <svg
-                  width="24"
-                  height="12"
-                  viewBox="0 0 24 12"
-                  className="flex-shrink-0"
-                >
-                  <line
-                    x1="2"
-                    y1="6"
-                    x2="22"
-                    y2="6"
-                    stroke={group.lines[0].color}
-                    strokeWidth={getStrokeWidth(group.lines[0].thickness)}
-                    strokeDasharray={getStrokeDasharray(group.lines[0].style)}
-                    strokeLinecap="round"
-                  />
-                </svg>
+                {/* Line sample preview with arrow */}
+                <LineSamplePreview line={group.lines[0]} fromCoord={group.fromCoord} toCoord={group.toCoord} />
                 {/* Coordinates and length */}
                 <span
                   className="text-[10px] text-gray-600 truncate max-w-[140px]"
@@ -728,7 +907,7 @@ export const FreeLineList: React.FC = () => {
           );})
         ) : (
           // Individual view
-          sortedLineInfos.map((info) => {
+          sortedLineInfos.map((info, index) => {
             const isSelected = highlightedLineIds.includes(info.id);
             return (
             <div
@@ -738,27 +917,11 @@ export const FreeLineList: React.FC = () => {
                   ? 'bg-orange-100 border-orange-400'
                   : 'bg-gray-50 border-office-border hover:bg-gray-100'
               }`}
-              onClick={() => handleToggleSelection([info.id])}
+              onClick={(e) => handleItemClick([info.id], index, e)}
             >
               <div className="flex items-center gap-2">
-                {/* Line sample preview */}
-                <svg
-                  width="24"
-                  height="12"
-                  viewBox="0 0 24 12"
-                  className="flex-shrink-0"
-                >
-                  <line
-                    x1="2"
-                    y1="6"
-                    x2="22"
-                    y2="6"
-                    stroke={info.line.color}
-                    strokeWidth={getStrokeWidth(info.line.thickness)}
-                    strokeDasharray={getStrokeDasharray(info.line.style)}
-                    strokeLinecap="round"
-                  />
-                </svg>
+                {/* Line sample preview with arrow */}
+                <LineSamplePreview line={info.line} fromCoord={info.fromCoord} toCoord={info.toCoord} />
                 {/* Coordinates and length */}
                 <span
                   className="text-[10px] text-gray-600 truncate max-w-[100px]"

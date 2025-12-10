@@ -4,9 +4,10 @@
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { X } from 'lucide-react';
+import { X, GitMerge, Minus, Scissors } from 'lucide-react';
 import { usePuzzleStore } from '../../../store/puzzleStore';
 import { LineStyle, LineThickness, LineElement, toDataLayer } from '../../../types';
+import { isLineToolCategory } from '../../../utils/lineRender';
 import {
   ColorSelector,
   MulticolorSettings,
@@ -19,7 +20,18 @@ import {
 
 export const ToolPropertiesPanel: React.FC = () => {
   const { t } = useTranslation();
-  const { toolSettings, setToolSettings, highlightedLineIds, puzzle, activeLayer, updateLine, setHighlightedLineIds } = usePuzzleStore();
+  const {
+    toolSettings,
+    setToolSettings,
+    highlightedLineIds,
+    puzzle,
+    activeLayer,
+    updateLine,
+    setHighlightedLineIds,
+    groupSelectedLinesByConnectivity,
+    groupSelectedLinesByCollinearity,
+    removeLineGroup,
+  } = usePuzzleStore();
   const dataLayer = toDataLayer(activeLayer);
 
   // Get selected lines for property display/update
@@ -38,6 +50,32 @@ export const ToolPropertiesPanel: React.FC = () => {
   const selectedLinesThickness = hasSelectedLines && selectedLines.every(l => l.thickness === selectedLines[0].thickness)
     ? selectedLines[0].thickness
     : null;
+
+  // Check if any selected lines belong to a group
+  const lineGroups = puzzle[dataLayer].lineGroups;
+  const selectedLineGroups = React.useMemo(() => {
+    const groups = new Set<string>();
+    if (!lineGroups) return groups;
+    for (const lineId of highlightedLineIds) {
+      // Check all groups to find if this line belongs to any
+      for (const group of Object.values(lineGroups)) {
+        if (group.lineIds.includes(lineId)) {
+          groups.add(group.id);
+          break;
+        }
+      }
+    }
+    return groups;
+    // Use puzzle[dataLayer] to ensure re-computation when lineGroups changes
+  }, [highlightedLineIds, puzzle, dataLayer]);
+  const hasGroupedLines = selectedLineGroups.size > 0;
+
+  // Handle ungroup - remove selected lines from their groups
+  const handleUngroup = () => {
+    selectedLineGroups.forEach(groupId => {
+      removeLineGroup(groupId);
+    });
+  };
 
   // Handle style change - update both toolSettings and selected lines
   const handleStyleChange = (style: LineStyle) => {
@@ -65,11 +103,86 @@ export const ToolPropertiesPanel: React.FC = () => {
     }
   };
 
+  // Handle directed change - update both toolSettings and selected lines
+  // When changing from undirected to directed, auto-group selected lines
+  const handleDirectedChange = (directed: 'endpoint' | 'midpoint' | 'both' | undefined) => {
+    setToolSettings({ lineDirected: directed });
+
+    // Check if any selected line is currently undirected (before updating)
+    const hasUndirectedLines = selectedLines.some(line => !line.directed);
+    const shouldAutoGroup = hasUndirectedLines && directed && selectedLines.length >= 2;
+
+    // Save line IDs before any state changes
+    const lineIdsToGroup = [...highlightedLineIds];
+
+    // Update all selected lines with directed property only
+    // arrowDirection will be computed during grouping based on chain order
+    if (hasSelectedLines) {
+      highlightedLineIds.forEach(id => {
+        const line = puzzle[dataLayer].lines[id];
+        if (line && !line.isFree) {
+          updateLine(id, { directed });
+        }
+      });
+    }
+
+    // Auto-group when switching from undirected to directed (2+ lines)
+    // This also computes correct arrowDirection for each line based on chain traversal
+    if (shouldAutoGroup) {
+      // midpoint: group by collinearity (same direction)
+      // endpoint/both: group by connectivity (any direction)
+      if (directed === 'midpoint') {
+        groupSelectedLinesByCollinearity(lineIdsToGroup);
+      } else {
+        groupSelectedLinesByConnectivity(lineIdsToGroup);
+      }
+    } else if (hasUndirectedLines && directed && selectedLines.length === 1) {
+      // Single line: set default arrowDirection to 'forward'
+      const lineId = highlightedLineIds[0];
+      if (lineId) {
+        updateLine(lineId, { arrowDirection: 'forward' });
+      }
+    }
+  };
+
+  // Handle arrow direction change - update both toolSettings and selected lines
+  const handleArrowDirectionChange = (arrowDirection: 'forward' | 'backward') => {
+    setToolSettings({ lineArrowDirection: arrowDirection });
+    if (hasSelectedLines) {
+      highlightedLineIds.forEach(id => {
+        const line = puzzle[dataLayer].lines[id];
+        if (line && !line.isFree) {
+          updateLine(id, { arrowDirection });
+        }
+      });
+    }
+  };
+
+  // Flip arrow direction for each selected line individually
+  const handleFlipArrowDirection = () => {
+    // Flip toolSettings direction
+    const newToolDirection = toolSettings.lineArrowDirection === 'backward' ? 'forward' : 'backward';
+    setToolSettings({ lineArrowDirection: newToolDirection });
+
+    // Flip each selected line's direction individually
+    if (hasSelectedLines) {
+      highlightedLineIds.forEach(id => {
+        const line = puzzle[dataLayer].lines[id];
+        if (line && !line.isFree) {
+          const currentDirection = line.arrowDirection || 'forward';
+          const flippedDirection = currentDirection === 'backward' ? 'forward' : 'backward';
+          updateLine(id, { arrowDirection: flippedDirection });
+        }
+      });
+    }
+  };
+
   // Line style/thickness visual configs
-  const lineStyles: { value: LineStyle; dashArray?: string }[] = [
+  const lineStyles: { value: LineStyle; dashArray?: string; isDouble?: boolean }[] = [
     { value: 'solid' },
     { value: 'dashed', dashArray: '6,3' },
     { value: 'dotted', dashArray: '2,3' },
+    { value: 'double', isDouble: true },
   ];
 
   const lineThicknesses: { value: LineThickness; strokeWidth: number }[] = [
@@ -107,28 +220,30 @@ export const ToolPropertiesPanel: React.FC = () => {
     ? selectedLines[0].color
     : null;
 
-  const isLineToolCategory = toolSettings.currentCategory === 'line' ||
-    toolSettings.currentCategory === 'edge' ||
-    toolSettings.currentCategory === 'wall';
+  const isLineTool = isLineToolCategory(toolSettings.currentCategory);
 
   return (
     <>
       {/* Color Selection - show for most tools except select */}
       {toolSettings.currentCategory !== 'select' && (
         <>
-          {/* Selection alert inline with color selector */}
-          {hasSelectedLines && isLineToolCategory && (
-            <div className="flex items-center gap-1 mb-1">
-              <span className="bg-orange-100 text-orange-700 text-[10px] px-1.5 py-0.5 rounded">
-                {t('tool.line.list.selected', '{{count}}件選択中', { count: selectedLines.length })}
-              </span>
-              <button
-                className="text-orange-500 hover:text-orange-700 p-0.5"
-                onClick={handleClearSelection}
-                title={t('action.clearSelection', '選択解除')}
-              >
-                <X size={12} />
-              </button>
+          {/* Selection alert inline with color selector - always reserve space for line tools */}
+          {isLineTool && (
+            <div className="flex items-center gap-1 mb-1 h-5">
+              {hasSelectedLines ? (
+                <>
+                  <span className="bg-orange-100 text-orange-700 text-[10px] px-1.5 py-0.5 rounded">
+                    {t('tool.line.list.selected', '{{count}}件選択中', { count: selectedLines.length })}
+                  </span>
+                  <button
+                    className="text-orange-500 hover:text-orange-700 p-0.5"
+                    onClick={handleClearSelection}
+                    title={t('action.clearSelection', '選択解除')}
+                  >
+                    <X size={12} />
+                  </button>
+                </>
+              ) : null}
             </div>
           )}
           <ColorSelector />
@@ -140,28 +255,44 @@ export const ToolPropertiesPanel: React.FC = () => {
         toolSettings.currentCategory === 'edge' ||
         toolSettings.currentCategory === 'wall') && (
         <>
-          {/* Line Style - SVG samples */}
-          <div>
-            <label className="block text-[10px] text-office-text-secondary mb-1">
-              {t('prop.style')}
-            </label>
-            <div className="flex gap-1">
-              {lineStyles.map((style) => {
-                const isActive = hasSelectedLines
-                  ? selectedLinesStyle === style.value
-                  : toolSettings.lineStyle === style.value;
-                return (
-                  <button
-                    key={style.value}
-                    className={`flex-1 h-6 border rounded-sm transition-colors ${
-                      isActive
-                        ? 'bg-office-accent/10 border-office-accent border-2'
-                        : 'bg-white border-office-border hover:bg-office-ribbon-hover'
-                    }`}
-                    onClick={() => handleStyleChange(style.value)}
-                    title={style.value}
-                  >
-                    <svg width="100%" height="100%" viewBox="0 0 60 24" preserveAspectRatio="xMidYMid meet">
+          {/* Line Style - SVG samples (no label) */}
+          <div className="flex gap-1">
+            {lineStyles.map((style) => {
+              const isActive = hasSelectedLines
+                ? selectedLinesStyle === style.value
+                : toolSettings.lineStyle === style.value;
+              return (
+                <button
+                  key={style.value}
+                  className={`flex-1 h-6 border rounded-sm transition-colors ${
+                    isActive
+                      ? 'bg-office-accent/10 border-office-accent border-2'
+                      : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+                  }`}
+                  onClick={() => handleStyleChange(style.value)}
+                  title={style.value}
+                >
+                  <svg width="100%" height="100%" viewBox="0 0 60 24" preserveAspectRatio="xMidYMid meet">
+                    {style.isDouble ? (
+                      <>
+                        <line
+                          x1="6"
+                          y1="9"
+                          x2="54"
+                          y2="9"
+                          stroke={isActive ? '#0078d4' : '#333'}
+                          strokeWidth="2"
+                        />
+                        <line
+                          x1="6"
+                          y1="15"
+                          x2="54"
+                          y2="15"
+                          stroke={isActive ? '#0078d4' : '#333'}
+                          strokeWidth="2"
+                        />
+                      </>
+                    ) : (
                       <line
                         x1="6"
                         y1="12"
@@ -170,52 +301,161 @@ export const ToolPropertiesPanel: React.FC = () => {
                         stroke={isActive ? '#0078d4' : '#333'}
                         strokeWidth="2"
                         strokeDasharray={style.dashArray}
-                        strokeLinecap="round"
                       />
-                    </svg>
-                  </button>
-                );
-              })}
-            </div>
+                    )}
+                  </svg>
+                </button>
+              );
+            })}
           </div>
 
-          {/* Line Thickness - SVG samples */}
-          <div>
-            <label className="block text-[10px] text-office-text-secondary mb-1">
-              {t('prop.thickness')}
-            </label>
-            <div className="flex gap-1">
-              {lineThicknesses.map((thickness) => {
-                const isActive = hasSelectedLines
-                  ? selectedLinesThickness === thickness.value
-                  : toolSettings.lineThickness === thickness.value;
-                return (
-                  <button
-                    key={thickness.value}
-                    className={`flex-1 h-6 border rounded-sm transition-colors ${
-                      isActive
-                        ? 'bg-office-accent/10 border-office-accent border-2'
-                        : 'bg-white border-office-border hover:bg-office-ribbon-hover'
-                    }`}
-                    onClick={() => handleThicknessChange(thickness.value)}
-                    title={thickness.value}
-                  >
-                    <svg width="100%" height="100%" viewBox="0 0 32 24" preserveAspectRatio="xMidYMid meet">
-                      <line
-                        x1="4"
-                        y1="12"
-                        x2="28"
-                        y2="12"
-                        stroke={isActive ? '#0078d4' : '#333'}
-                        strokeWidth={thickness.strokeWidth}
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </button>
-                );
-              })}
-            </div>
+          {/* Line Thickness - SVG samples (no label) */}
+          <div className="flex gap-1">
+            {lineThicknesses.map((thickness) => {
+              const isActive = hasSelectedLines
+                ? selectedLinesThickness === thickness.value
+                : toolSettings.lineThickness === thickness.value;
+              return (
+                <button
+                  key={thickness.value}
+                  className={`flex-1 h-6 border rounded-sm transition-colors ${
+                    isActive
+                      ? 'bg-office-accent/10 border-office-accent border-2'
+                      : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+                  }`}
+                  onClick={() => handleThicknessChange(thickness.value)}
+                  title={thickness.value}
+                >
+                  <svg width="100%" height="100%" viewBox="0 0 32 24" preserveAspectRatio="xMidYMid meet">
+                    <line
+                      x1="4"
+                      y1="12"
+                      x2="28"
+                      y2="12"
+                      stroke={isActive ? '#0078d4' : '#333'}
+                      strokeWidth={thickness.strokeWidth}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
+              );
+            })}
           </div>
+
+          {/* Arrow style - toggle buttons (no label) */}
+          <div className="flex gap-0.5">
+            {/* Undirected */}
+            <button
+              className={`flex-1 h-6 border rounded-sm transition-colors ${
+                !toolSettings.lineDirected
+                  ? 'bg-office-accent/10 border-office-accent border-2'
+                  : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+              }`}
+              onClick={() => handleDirectedChange(undefined)}
+              title={t('prop.undirected', 'Undirected')}
+            >
+              <svg width="100%" height="100%" viewBox="0 0 32 24" preserveAspectRatio="xMidYMid meet">
+                <line x1="5" y1="12" x2="27" y2="12" stroke={!toolSettings.lineDirected ? '#0078d4' : '#333'} strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+            {/* Midpoint arrow */}
+            <button
+              className={`flex-1 h-6 border rounded-sm transition-colors ${
+                toolSettings.lineDirected === 'midpoint'
+                  ? 'bg-office-accent/10 border-office-accent border-2'
+                  : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+              }`}
+              onClick={() => handleDirectedChange('midpoint')}
+              title={t('prop.midpointArrow', 'Midpoint Arrow')}
+            >
+              <svg width="100%" height="100%" viewBox="0 0 32 24" preserveAspectRatio="xMidYMid meet">
+                <line x1="5" y1="12" x2="27" y2="12" stroke={toolSettings.lineDirected === 'midpoint' ? '#0078d4' : '#333'} strokeWidth="2" strokeLinecap="round" />
+                <polygon points="20,12 14,7 14,17" fill={toolSettings.lineDirected === 'midpoint' ? '#0078d4' : '#333'} />
+              </svg>
+            </button>
+            {/* Endpoint arrow */}
+            <button
+              className={`flex-1 h-6 border rounded-sm transition-colors ${
+                toolSettings.lineDirected === 'endpoint'
+                  ? 'bg-office-accent/10 border-office-accent border-2'
+                  : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+              }`}
+              onClick={() => handleDirectedChange('endpoint')}
+              title={t('prop.endpointArrow', 'Endpoint Arrow')}
+            >
+              <svg width="100%" height="100%" viewBox="0 0 32 24" preserveAspectRatio="xMidYMid meet">
+                <line x1="5" y1="12" x2="27" y2="12" stroke={toolSettings.lineDirected === 'endpoint' ? '#0078d4' : '#333'} strokeWidth="2" strokeLinecap="round" />
+                <polygon points="27,12 21,7 21,17" fill={toolSettings.lineDirected === 'endpoint' ? '#0078d4' : '#333'} />
+              </svg>
+            </button>
+            {/* Both ends arrow (bidirectional) */}
+            <button
+              className={`flex-1 h-6 border rounded-sm transition-colors ${
+                toolSettings.lineDirected === 'both'
+                  ? 'bg-office-accent/10 border-office-accent border-2'
+                  : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+              }`}
+              onClick={() => handleDirectedChange('both')}
+              title={t('prop.bothArrow', 'Both Ends Arrow')}
+            >
+              <svg width="100%" height="100%" viewBox="0 0 32 24" preserveAspectRatio="xMidYMid meet">
+                <line x1="5" y1="12" x2="27" y2="12" stroke={toolSettings.lineDirected === 'both' ? '#0078d4' : '#333'} strokeWidth="2" strokeLinecap="round" />
+                <polygon points="5,12 11,7 11,17" fill={toolSettings.lineDirected === 'both' ? '#0078d4' : '#333'} />
+                <polygon points="27,12 21,7 21,17" fill={toolSettings.lineDirected === 'both' ? '#0078d4' : '#333'} />
+              </svg>
+            </button>
+          </div>
+
+          {/* Reverse direction & Grouping buttons - only show when directed */}
+          {toolSettings.lineDirected && (
+            <div className="flex items-center gap-1">
+              {/* Reverse direction button (flip arrows on selected lines) */}
+              <button
+                className="h-6 px-2 border rounded-sm transition-colors bg-white border-office-border hover:bg-office-ribbon-hover flex items-center gap-1"
+                onClick={handleFlipArrowDirection}
+                title={t('prop.reverseDirection', 'Reverse Direction')}
+              >
+                <svg width="20" height="16" viewBox="0 0 20 16" preserveAspectRatio="xMidYMid meet">
+                  {/* Horizontal flip/reverse icon */}
+                  <path d="M2 4 L6 1 L6 3 L10 3 L10 5 L6 5 L6 7 Z" fill="#333" />
+                  <path d="M18 12 L14 15 L14 13 L10 13 L10 11 L14 11 L14 9 Z" fill="#333" />
+                </svg>
+              </button>
+
+              {/* Grouping buttons - show when 2+ lines selected */}
+              {selectedLines.length >= 2 && (
+                <>
+                  {/* Group by connectivity (any direction) - merge/branch icon */}
+                  <button
+                    className="h-6 px-1.5 border rounded-sm transition-colors bg-white border-office-border hover:bg-office-ribbon-hover flex items-center"
+                    onClick={() => groupSelectedLinesByConnectivity(highlightedLineIds)}
+                    title={t('tool.line.group.connected', '連続でグループ化')}
+                  >
+                    <GitMerge size={14} />
+                  </button>
+                  {/* Group by collinearity (same direction) - straight line icon */}
+                  <button
+                    className="h-6 px-1.5 border rounded-sm transition-colors bg-white border-office-border hover:bg-office-ribbon-hover flex items-center"
+                    onClick={() => groupSelectedLinesByCollinearity(highlightedLineIds)}
+                    title={t('tool.line.group.collinear', '同方向&連続でグループ化')}
+                  >
+                    <Minus size={14} />
+                  </button>
+                </>
+              )}
+
+              {/* Ungroup button - show when any selected lines are in a group */}
+              {hasGroupedLines && (
+                <button
+                  className="h-6 px-1.5 border rounded-sm transition-colors bg-white border-office-border hover:bg-office-ribbon-hover flex items-center"
+                  onClick={handleUngroup}
+                  title={t('tool.line.group.ungroup', 'グループ解除')}
+                >
+                  <Scissors size={14} />
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Freehand line list - only show when in freehand mode */}
           {toolSettings.currentCategory === 'line' &&

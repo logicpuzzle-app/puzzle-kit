@@ -329,6 +329,10 @@ export const ja = {
   'tool.line.list.sortColShort': '列',
   'tool.line.list.sortLen': '長さ優先ソート',
   'tool.line.list.sortLenShort': '長',
+  'tool.line.list.selected': '{{count}}件選択中',
+
+  // Line arrow properties
+  'prop.mergeArrow': '矢印を統合',
 
   // Edge tools
   'tool.edge.normal': '通常',

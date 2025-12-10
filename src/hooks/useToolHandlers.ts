@@ -47,6 +47,7 @@ export function useToolHandlers({
     handleWallTool,
     handleStraightLineEnd,
     resetLineFillMode,
+    finalizeLineSelection,
   } = useLineToolHandler({
     drawStartPoint,
     setDrawStartPoint,
@@ -93,5 +94,6 @@ export function useToolHandlers({
     handleBoxLineTool,
     handleStraightLineEnd,
     resetFillModes,
+    finalizeLineSelection,
   };
 }

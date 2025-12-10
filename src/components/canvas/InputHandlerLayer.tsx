@@ -26,6 +26,7 @@ import { SpecialToolPreview } from './SpecialToolPreview';
 import { constraintCatalog } from '../../constraints';
 import { getAutoModeConfig } from '../../constraints/inputModeMapping';
 import type { GridTopology, TopologyCell } from '../../utils/gridTopology';
+import { getEdgeLineDrawInfo } from '../../utils/gridTopology';
 import {
   type FlickState,
   INITIAL_FLICK_STATE,
@@ -365,9 +366,30 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         continue;
       }
 
-      // Grid-snapped line - resolve positions
-      const fromPos = resolveGridIdToPosition(line.from, grid, activeTopology);
-      const toPos = resolveGridIdToPosition(line.to, grid, activeTopology);
+      let fromPos: Point | null = null;
+      let toPos: Point | null = null;
+
+      // Try edgeId first (new format)
+      if (line.edgeId && activeTopology) {
+        const drawInfo = getEdgeLineDrawInfo(activeTopology, line.edgeId);
+        if (drawInfo) {
+          const lineTarget = line.lineTarget || 'cell';
+          if (lineTarget === 'edge' || lineTarget === 'wall') {
+            fromPos = drawInfo.startVertex;
+            toPos = drawInfo.endVertex;
+          } else if (drawInfo.adjacentCellCenters.length >= 2) {
+            fromPos = drawInfo.adjacentCellCenters[0];
+            toPos = drawInfo.adjacentCellCenters[1];
+          }
+        }
+      }
+
+      // Fallback to from/to (legacy format)
+      if (!fromPos || !toPos) {
+        fromPos = resolveGridIdToPosition(line.from, grid, activeTopology);
+        toPos = resolveGridIdToPosition(line.to, grid, activeTopology);
+      }
+
       if (!fromPos || !toPos) continue;
 
       const dist = pointToLineSegmentDistance(point, fromPos, toPos);
@@ -996,18 +1018,27 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           // Try to find a line near the click point
           const lineThreshold = grid.cellSize * 0.3; // 30% of cell size
           const nearestLineId = findNearestLineAtPoint(currentPoint, lineThreshold);
+          const isMultiSelect = e.ctrlKey || e.metaKey;
 
           if (nearestLineId) {
-            // Toggle selection: if already selected, deselect; otherwise select
-            if (highlightedLineIds.includes(nearestLineId)) {
-              setHighlightedLineIds(highlightedLineIds.filter(id => id !== nearestLineId));
+            if (isMultiSelect) {
+              // Multi-select mode: toggle the clicked line without clearing others
+              if (highlightedLineIds.includes(nearestLineId)) {
+                setHighlightedLineIds(highlightedLineIds.filter(id => id !== nearestLineId));
+              } else {
+                setHighlightedLineIds([...highlightedLineIds, nearestLineId]);
+              }
             } else {
-              // Replace selection (could use shift for additive selection)
-              setHighlightedLineIds([nearestLineId]);
+              // Single-select mode: toggle if already selected, otherwise replace
+              if (highlightedLineIds.includes(nearestLineId)) {
+                setHighlightedLineIds(highlightedLineIds.filter(id => id !== nearestLineId));
+              } else {
+                setHighlightedLineIds([nearestLineId]);
+              }
             }
           } else {
-            // Clicked on empty area - clear selection
-            if (highlightedLineIds.length > 0) {
+            // Clicked on empty area - clear selection (unless multi-select mode)
+            if (!isMultiSelect && highlightedLineIds.length > 0) {
               setHighlightedLineIds([]);
             }
           }

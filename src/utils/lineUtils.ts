@@ -240,29 +240,71 @@ export function pointToLineSegmentDistance(
  * Execute a line action (add, remove, replace, skip)
  *
  * @param action - The action to take
- * @param addFn - Function to add an element
+ * @param addFn - Function to add an element (returns the ID of added element)
  * @param removeFn - Function to remove an element
  * @param existingId - ID of existing element (required for remove/replace)
  * @param newElement - New element data (required for add/replace)
+ * @returns The ID of the added/replaced element, or null if removed/skipped
  */
 export function executeLineAction<T>(
   action: LineAction,
-  addFn: (element: T) => void,
+  addFn: (element: T) => string,
   removeFn: (id: string) => void,
   existingId: string | undefined,
   newElement: T | undefined
-): void {
+): string | null {
   switch (action) {
     case 'remove':
       if (existingId) removeFn(existingId);
-      break;
+      return null;
     case 'replace':
       if (existingId) removeFn(existingId);
-      if (newElement) addFn(newElement);
-      break;
+      if (newElement) return addFn(newElement);
+      return null;
     case 'add':
-      if (newElement) addFn(newElement);
-      break;
+      if (newElement) return addFn(newElement);
+      return null;
     // 'skip' - do nothing
+    default:
+      return null;
+  }
+}
+
+/**
+ * Determine arrow direction based on draw order and endpoint normalization.
+ *
+ * When a line is created, from/to are normalized (sorted lexicographically).
+ * This function determines whether the user drew in the same direction
+ * as the normalized order ('forward') or opposite ('backward').
+ *
+ * @param drawnFrom - The point where user started drawing
+ * @param drawnTo - The point where user ended drawing
+ * @param normalizedFrom - The normalized 'from' endpoint (smaller lexicographically)
+ * @param normalizedTo - The normalized 'to' endpoint (larger lexicographically)
+ * @param baseDirection - The base arrow direction setting ('forward' or 'backward')
+ * @returns The effective arrow direction for this line
+ */
+export function calculateArrowDirection(
+  drawnFrom: string,
+  drawnTo: string,
+  normalizedFrom: string,
+  normalizedTo: string,
+  baseDirection: 'forward' | 'backward' = 'forward'
+): 'forward' | 'backward' {
+  // Check if the draw order matches the normalized order
+  const drawMatchesNormalized = drawnFrom === normalizedFrom && drawnTo === normalizedTo;
+
+  // If draw order matches normalized order:
+  //   - baseDirection 'forward' means arrow points from->to (forward)
+  //   - baseDirection 'backward' means arrow points to->from (backward)
+  // If draw order is reversed from normalized order:
+  //   - baseDirection 'forward' means we want arrow in draw direction, which is normalized backward
+  //   - baseDirection 'backward' means we want arrow opposite to draw direction, which is normalized forward
+
+  if (drawMatchesNormalized) {
+    return baseDirection;
+  } else {
+    // Flip the direction since draw order was opposite to normalized order
+    return baseDirection === 'forward' ? 'backward' : 'forward';
   }
 }
