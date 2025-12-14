@@ -19,7 +19,7 @@ export const createLayerSlice: SliceCreator<LayerSlice> = (set, get) => ({
       savedInputModes,
       setInputMode,
       savedNormalToolSettings,
-      setToolSettings,
+      setTool,
       setHoverCell,
     } = get();
 
@@ -49,10 +49,7 @@ export const createLayerSlice: SliceCreator<LayerSlice> = (set, get) => ({
       } else {
         // Normal mode: restore saved tool settings
         const saved = savedNormalToolSettings[isEditMode ? 'problem' : 'answer'];
-        setToolSettings({
-          currentTool: saved.tool,
-          currentCategory: saved.category,
-        });
+        setTool(saved.tool, saved.category);
       }
     }
   },
