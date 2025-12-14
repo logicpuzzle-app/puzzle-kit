@@ -151,8 +151,22 @@ export function groupAndNormalizeByConnectivity(
 export function groupAndNormalizeByCollinearity(
   lines: LineWithPosition[]
 ): GroupLinesResult {
+  console.log('=== groupAndNormalizeByCollinearity ===');
+  console.log('Input lines:', lines.map(l => ({
+    id: l.line.id,
+    from: { x: l.fromX, y: l.fromY },
+    to: { x: l.toX, y: l.toY },
+    arrowDirection: l.line.arrowDirection,
+  })));
+
   const groups = groupLinesByCollinearity(lines);
-  return processLineGroups(lines, groups);
+  console.log('Collinearity groups:', groups);
+
+  const result = processLineGroups(lines, groups);
+  console.log('Result groups:', result.groups.map(g => ({ id: g.id, lineIds: g.lineIds })));
+  console.log('Arrow directions:', Object.fromEntries(result.allArrowDirections));
+
+  return result;
 }
 
 /**

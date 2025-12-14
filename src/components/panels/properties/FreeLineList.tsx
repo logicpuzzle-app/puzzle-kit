@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Trash2 } from 'lucide-react';
 import { usePuzzleStore } from '../../../store/puzzleStore';
 import { LineElement, toDataLayer } from '../../../types';
+import type { GridConfig } from '../../../types';
 import type { GridTopology } from '../../../utils/gridTopology';
+import { getCellIndexById, getEdgeIndexById, getVertexIndexById } from '../../../utils/gridUtils';
 
 // Free line info for display
 interface FreeLineInfo {
@@ -353,10 +355,23 @@ const LineSamplePreview: React.FC<{
 };
 
 // Get coordinate string from grid point ID using topology
-const getCoordinateFromTopology = (id: string, topology: GridTopology | null): string => {
+const getCoordinateFromTopology = (id: string, topology: GridTopology | null, grid: GridConfig): string => {
   if (!topology) {
-    // Fallback: parse ID directly
-    return parseIdForCoordinate(id);
+    if (id.startsWith('cell-')) {
+      const index = getCellIndexById(id, grid);
+      return index ? `(${index.row + 1},${index.col + 1})` : id;
+    }
+    if (id.startsWith('vertex-')) {
+      const index = getVertexIndexById(id, grid);
+      return index ? `+(${index.row + 1},${index.col + 1})` : id;
+    }
+    if (id.startsWith('edge-')) {
+      const edge = getEdgeIndexById(id, grid);
+      if (!edge) return id;
+      const prefix = edge.type === 'h' ? '-' : '|';
+      return `${prefix}(${edge.row + 1},${edge.col + 1})`;
+    }
+    return id;
   }
 
   // Try to get from cell
@@ -382,45 +397,7 @@ const getCoordinateFromTopology = (id: string, topology: GridTopology | null): s
   }
 
   // Fallback: parse ID directly
-  return parseIdForCoordinate(id);
-};
-
-// Parse grid point ID and convert to 1-based coordinate string (fallback)
-const parseIdForCoordinate = (id: string): string => {
-  // Standard grid mode: cell-r-c
-  const cellMatch = id.match(/^cell-(\d+)-(\d+)(?:-|$)/);
-  if (cellMatch) {
-    const row = parseInt(cellMatch[1], 10) + 1;
-    const col = parseInt(cellMatch[2], 10) + 1;
-    return `(${row},${col})`;
-  }
-
-  // vertex-r-c
-  const vertexMatch = id.match(/^vertex-(\d+)-(\d+)$/);
-  if (vertexMatch) {
-    const row = parseInt(vertexMatch[1], 10) + 1;
-    const col = parseInt(vertexMatch[2], 10) + 1;
-    return `+(${row},${col})`;
-  }
-
-  // edge-h-r-c
-  const edgeHMatch = id.match(/^edge-h-(\d+)-(\d+)$/);
-  if (edgeHMatch) {
-    const row = parseInt(edgeHMatch[1], 10) + 1;
-    const col = parseInt(edgeHMatch[2], 10) + 1;
-    return `-(${row},${col})`;
-  }
-
-  // edge-v-r-c
-  const edgeVMatch = id.match(/^edge-v-(\d+)-(\d+)$/);
-  if (edgeVMatch) {
-    const row = parseInt(edgeVMatch[1], 10) + 1;
-    const col = parseInt(edgeVMatch[2], 10) + 1;
-    return `|(${row},${col})`;
-  }
-
-  // Fallback: return ID as-is
-  return id;
+  return getCoordinateFromTopology(id, null, grid);
 };
 
 // Parse coordinate string to extract row, col, and prefix
@@ -588,7 +565,7 @@ const getLengthNumericValue = (len: IrrationalLength): number => {
 // Free line list component - shows list of grid-snapped lines
 export const FreeLineList: React.FC = () => {
   const { t } = useTranslation();
-  const { puzzle, activeLayer, removeLine, topology, useTopology, setHighlightedLineIds, highlightedLineIds } = usePuzzleStore();
+  const { puzzle, activeLayer, removeLine, topology, useTopology, setHighlightedLineIds, highlightedLineIds, grid } = usePuzzleStore();
   const [mergeConsecutive, setMergeConsecutive] = useState(true);
   const [sortOption, setSortOption] = useState<SortOption>('row');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -627,13 +604,13 @@ export const FreeLineList: React.FC = () => {
       result.push({
         id: line.id,
         line,
-        fromCoord: getCoordinateFromTopology(fromId, activeTopology),
-        toCoord: getCoordinateFromTopology(toId, activeTopology),
+        fromCoord: getCoordinateFromTopology(fromId, activeTopology, grid),
+        toCoord: getCoordinateFromTopology(toId, activeTopology, grid),
       });
     });
 
     return result;
-  }, [puzzle, dataLayer, activeTopology]);
+  }, [puzzle, dataLayer, activeTopology, grid]);
 
   // Sort function for coordinates based on sort option and direction
   const sortByCoord = React.useCallback((

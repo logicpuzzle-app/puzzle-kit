@@ -12,6 +12,7 @@ import {
 } from '@logicpuzzle-app/solver-kit';
 import type { SolverAdapter, SolveResult } from '../types';
 import type { PuzzleState, GridConfig } from '../../types';
+import { getCellIndexById } from '../../utils/gridUtils';
 
 // Parse numeric clue value (supports hex/letters for 10+)
 function parseClueValue(raw: unknown): number | null {
@@ -49,10 +50,10 @@ export const nurikabeSolverAdapter: SolverAdapter = {
             row = Math.floor(clue.cell / grid.cols);
             col = clue.cell % grid.cols;
           } else {
-            const cellMatch = clue.cellId.match(/^cell-(\d+)-(\d+)$/);
-            if (!cellMatch) continue;
-            row = parseInt(cellMatch[1], 10);
-            col = parseInt(cellMatch[2], 10);
+            const index = getCellIndexById(clue.cellId, grid);
+            if (!index) continue;
+            row = index.row;
+            col = index.col;
           }
           const v = parseClueValue(clue.value);
           if (v && v > 0) {
@@ -64,13 +65,11 @@ export const nurikabeSolverAdapter: SolverAdapter = {
       // Regular numbers
       if (problem.numbers) {
         for (const num of Object.values(problem.numbers)) {
-          const match = num.cellId.match(/cell-(\\d+)-(\\d+)/);
-          if (!match) continue;
-          const row = parseInt(match[1], 10);
-          const col = parseInt(match[2], 10);
+          const index = getCellIndexById(num.cellId, grid);
+          if (!index) continue;
           const v = parseClueValue(num.value);
           if (v && v > 0) {
-            clues.push({ row, col, value: v });
+            clues.push({ row: index.row, col: index.col, value: v });
           }
         }
       }
@@ -78,13 +77,11 @@ export const nurikabeSolverAdapter: SolverAdapter = {
       // Symbols fallback (numeric symbolType)
       if (problem.symbols) {
         for (const sym of Object.values(problem.symbols)) {
-          const match = sym.cellId.match(/cell-(\\d+)-(\\d+)/);
-          if (!match) continue;
-          const row = parseInt(match[1], 10);
-          const col = parseInt(match[2], 10);
+          const index = getCellIndexById(sym.cellId, grid);
+          if (!index) continue;
           const v = parseClueValue(sym.symbolType);
           if (v && v > 0) {
-            clues.push({ row, col, value: v });
+            clues.push({ row: index.row, col: index.col, value: v });
           }
         }
       }

@@ -8,7 +8,10 @@ import {
   getEdgeHId,
   getEdgeVId,
   getCellCenter,
+  getCellIndexById,
+  getEdgeIndexById,
   getVertexPosition,
+  getVertexIndexById,
   getEdgePosition,
 } from '../utils/gridUtils';
 import {
@@ -147,24 +150,21 @@ export function useGridPointUtils(grid: GridConfig) {
   // Parse ID to get row/col coordinates
   // For topology mode, returns null (topology IDs don't have row/col)
   const parsePointId = useCallback((id: string): { row: number; col: number; type: string } | null => {
-    // Standard cell ID: cell-row-col
-    const cellMatch = id.match(/^cell-(\d+)-(\d+)$/);
-    if (cellMatch) return { row: parseInt(cellMatch[1]), col: parseInt(cellMatch[2]), type: 'cell' };
-
-    // Standard vertex ID: vertex-row-col
-    const vertexMatch = id.match(/^vertex-(\d+)-(\d+)$/);
-    if (vertexMatch) return { row: parseInt(vertexMatch[1]), col: parseInt(vertexMatch[2]), type: 'vertex' };
-
-    // Standard edge IDs: edge-h-row-col, edge-v-row-col
-    const edgeHMatch = id.match(/^edge-h-(\d+)-(\d+)$/);
-    if (edgeHMatch) return { row: parseInt(edgeHMatch[1]), col: parseInt(edgeHMatch[2]), type: 'edge-h' };
-
-    const edgeVMatch = id.match(/^edge-v-(\d+)-(\d+)$/);
-    if (edgeVMatch) return { row: parseInt(edgeVMatch[1]), col: parseInt(edgeVMatch[2]), type: 'edge-v' };
-
-    // Topology IDs (cell-row-col-suffix, vertex-N, edge-N) don't have standard row/col
+    if (id.startsWith('cell-')) {
+      const index = getCellIndexById(id, grid);
+      return index ? { row: index.row, col: index.col, type: 'cell' } : null;
+    }
+    if (id.startsWith('vertex-')) {
+      const index = getVertexIndexById(id, grid);
+      return index ? { row: index.row, col: index.col, type: 'vertex' } : null;
+    }
+    if (id.startsWith('edge-')) {
+      const edge = getEdgeIndexById(id, grid);
+      return edge ? { row: edge.row, col: edge.col, type: edge.type === 'h' ? 'edge-h' : 'edge-v' } : null;
+    }
+    // Topology IDs (e.g., cell-*-*-suffix, vertex-N, edge-N) don't have standard row/col.
     return null;
-  }, []);
+  }, [grid]);
 
   // Build ID from row/col and type
   const buildPointId = useCallback((row: number, col: number, type: string): string => {

@@ -13,10 +13,144 @@ import {
   findNearestPyramidCell,
   getPyramidCellId,
   getPyramidRowCols,
-  parseHexCellId,
-  parseTriCellId,
-  parsePyramidCellId,
 } from './hexGridUtils';
+
+type CellIndex = { row: number; col: number };
+type EdgeIndex = { type: 'h' | 'v'; row: number; col: number };
+
+function gridIndexCacheKey(grid: GridConfig): string {
+  const {
+    gridType = 'square',
+    rows,
+    cols,
+    marginTop = 0,
+    marginBottom = 0,
+    marginLeft = 0,
+    marginRight = 0,
+  } = grid;
+  return `${gridType}|${rows}|${cols}|${marginTop}|${marginBottom}|${marginLeft}|${marginRight}`;
+}
+
+const cellIndexByIdCache = new Map<string, Map<string, CellIndex>>();
+const vertexIndexByIdCache = new Map<string, Map<string, CellIndex>>();
+const edgeIndexByIdCache = new Map<string, Map<string, EdgeIndex>>();
+
+export function getCellIndexById(cellId: string, grid: GridConfig): CellIndex | null {
+  return getCellIndexMap(grid).get(cellId) ?? null;
+}
+
+export function getVertexIndexById(vertexId: string, grid: GridConfig): CellIndex | null {
+  return getVertexIndexMap(grid).get(vertexId) ?? null;
+}
+
+export function getEdgeIndexById(edgeId: string, grid: GridConfig): EdgeIndex | null {
+  return getEdgeIndexMap(grid).get(edgeId) ?? null;
+}
+
+export function getCellIndexMap(grid: GridConfig): Map<string, CellIndex> {
+  const key = gridIndexCacheKey(grid);
+  const cached = cellIndexByIdCache.get(key);
+  if (cached) return cached;
+
+  const map = new Map<string, CellIndex>();
+  const { gridType = 'square', rows, cols, marginTop = 0, marginBottom = 0, marginLeft = 0, marginRight = 0 } = grid;
+
+  if (gridType === 'hex') {
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        map.set(getHexCellId(row, col), { row, col });
+      }
+    }
+  } else if (gridType === 'triangle') {
+    const triColsPerRow = cols * 2;
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < triColsPerRow; col++) {
+        map.set(getTriCellId(row, col), { row, col });
+      }
+    }
+  } else if (gridType === 'pyramid') {
+    for (let row = 0; row < rows; row++) {
+      const colsInRow = getPyramidRowCols(row);
+      for (let col = 0; col < colsInRow; col++) {
+        map.set(getPyramidCellId(row, col), { row, col });
+      }
+    }
+  } else {
+    // Square-like IDs, including margin cells which use negative row/col in IDs.
+    const rowStart = -marginTop;
+    const rowEnd = rows + marginBottom - 1;
+    const colStart = -marginLeft;
+    const colEnd = cols + marginRight - 1;
+    for (let row = rowStart; row <= rowEnd; row++) {
+      for (let col = colStart; col <= colEnd; col++) {
+        map.set(`cell-${row}-${col}`, { row, col });
+      }
+    }
+  }
+
+  cellIndexByIdCache.set(key, map);
+  return map;
+}
+
+export function getVertexIndexMap(grid: GridConfig): Map<string, CellIndex> {
+  const key = gridIndexCacheKey(grid);
+  const cached = vertexIndexByIdCache.get(key);
+  if (cached) return cached;
+
+  const map = new Map<string, CellIndex>();
+  const { gridType = 'square' } = grid;
+
+  if (gridType !== 'square') {
+    vertexIndexByIdCache.set(key, map);
+    return map;
+  }
+
+  const { rows, cols, marginTop = 0, marginBottom = 0, marginLeft = 0, marginRight = 0 } = grid;
+  const totalRows = rows + marginTop + marginBottom;
+  const totalCols = cols + marginLeft + marginRight;
+
+  for (let row = 0; row <= totalRows; row++) {
+    for (let col = 0; col <= totalCols; col++) {
+      map.set(`vertex-${row}-${col}`, { row, col });
+    }
+  }
+
+  vertexIndexByIdCache.set(key, map);
+  return map;
+}
+
+export function getEdgeIndexMap(grid: GridConfig): Map<string, EdgeIndex> {
+  const key = gridIndexCacheKey(grid);
+  const cached = edgeIndexByIdCache.get(key);
+  if (cached) return cached;
+
+  const map = new Map<string, EdgeIndex>();
+  const { gridType = 'square' } = grid;
+
+  if (gridType !== 'square') {
+    edgeIndexByIdCache.set(key, map);
+    return map;
+  }
+
+  const { rows, cols, marginTop = 0, marginBottom = 0, marginLeft = 0, marginRight = 0 } = grid;
+  const totalRows = rows + marginTop + marginBottom;
+  const totalCols = cols + marginLeft + marginRight;
+
+  for (let row = 0; row <= totalRows; row++) {
+    for (let col = 0; col < totalCols; col++) {
+      map.set(`edge-h-${row}-${col}`, { type: 'h', row, col });
+    }
+  }
+
+  for (let row = 0; row < totalRows; row++) {
+    for (let col = 0; col <= totalCols; col++) {
+      map.set(`edge-v-${row}-${col}`, { type: 'v', row, col });
+    }
+  }
+
+  edgeIndexByIdCache.set(key, map);
+  return map;
+}
 
 export function generateGridPoints(grid: GridConfig): GridPoint[] {
   const { rows, cols, cellSize, outerPadding } = grid;
@@ -104,59 +238,6 @@ export function getEdgeHId(row: number, col: number): string {
 
 export function getEdgeVId(row: number, col: number): string {
   return `edge-v-${row}-${col}`;
-}
-
-/**
- * Parse a cell ID string to extract row and column.
- *
- * This is a string parsing utility - it extracts coordinates from ID strings like "cell-0-1".
- * For topology mode, prefer using `getCellIndex()` from topology/queries which reads
- * the pre-computed `index` property directly from TopologyCell.
- *
- * @param id - Cell ID string (e.g., "cell-0-1", "hex-0-1", "tri-0-1")
- * @param gridType - Grid type for format detection
- * @returns {row, col} or null if parsing fails
- */
-export function parseCellId(id: string, gridType: GridType = 'square'): { row: number; col: number } | null {
-  // Auto-detect by prefix if present
-  if (id.startsWith('hex-')) return parseHexCellId(id);
-  if (id.startsWith('tri-')) return parseTriCellId(id);
-  if (id.startsWith('pyr-')) return parsePyramidCellId(id);
-
-  // Otherwise fall back to gridType or square pattern
-  switch (gridType) {
-    case 'hex':
-      return parseHexCellId(id);
-    case 'triangle':
-      return parseTriCellId(id);
-    case 'pyramid':
-      return parsePyramidCellId(id);
-    default: {
-      const match = id.match(/^cell-(\d+)-(\d+)$/);
-      if (match) {
-        return { row: parseInt(match[1]), col: parseInt(match[2]) };
-      }
-      return null;
-    }
-  }
-}
-
-/**
- * Parse a vertex ID string to extract row and column.
- *
- * This is a string parsing utility - it extracts coordinates from ID strings like "vertex-0-1".
- * For topology mode, prefer using `getVertexIndex()` from topology/queries which reads
- * the pre-computed `index` property directly from TopologyVertex.
- *
- * @param id - Vertex ID string (e.g., "vertex-0-1")
- * @returns {row, col} or null if parsing fails
- */
-export function parseVertexId(id: string): { row: number; col: number } | null {
-  const match = id.match(/^vertex-(\d+)-(\d+)$/);
-  if (match) {
-    return { row: parseInt(match[1]), col: parseInt(match[2]) };
-  }
-  return null;
 }
 
 export function screenToSvg(

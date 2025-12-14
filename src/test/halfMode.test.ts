@@ -5,30 +5,50 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { getCellIndexById, getEdgeIndexById, getVertexIndexById } from '../utils/gridUtils';
+import type { GridConfig } from '../types';
 
 // We need to test the pure logic without React hooks
 // Extract the relevant parsing and adjacency logic
 
-const parsePointId = (id: string): { row: number; col: number; type: string } | null => {
-  const cellMatch = id.match(/^cell-(\d+)-(\d+)$/);
-  if (cellMatch) return { row: parseInt(cellMatch[1]), col: parseInt(cellMatch[2]), type: 'cell' };
+const defaultGrid: GridConfig = {
+  rows: 10,
+  cols: 10,
+  cellSize: 40,
+  outerPadding: 20,
+  showGrid: true,
+  gridStyle: 'normal',
+  gridType: 'square',
+  marginTop: 0,
+  marginBottom: 0,
+  marginLeft: 0,
+  marginRight: 0,
+  frameStyle: 'normal',
+  frameColor: '#000000',
+  gridColor: '#000000',
+  backgroundColor: '#ffffff',
+};
 
-  const vertexMatch = id.match(/^vertex-(\d+)-(\d+)$/);
-  if (vertexMatch) return { row: parseInt(vertexMatch[1]), col: parseInt(vertexMatch[2]), type: 'vertex' };
-
-  const edgeHMatch = id.match(/^edge-h-(\d+)-(\d+)$/);
-  if (edgeHMatch) return { row: parseInt(edgeHMatch[1]), col: parseInt(edgeHMatch[2]), type: 'edge-h' };
-
-  const edgeVMatch = id.match(/^edge-v-(\d+)-(\d+)$/);
-  if (edgeVMatch) return { row: parseInt(edgeVMatch[1]), col: parseInt(edgeVMatch[2]), type: 'edge-v' };
-
+const lookupPointId = (id: string): { row: number; col: number; type: string } | null => {
+  if (id.startsWith('cell-')) {
+    const index = getCellIndexById(id, defaultGrid);
+    return index ? { row: index.row, col: index.col, type: 'cell' } : null;
+  }
+  if (id.startsWith('vertex-')) {
+    const index = getVertexIndexById(id, defaultGrid);
+    return index ? { row: index.row, col: index.col, type: 'vertex' } : null;
+  }
+  if (id.startsWith('edge-')) {
+    const edge = getEdgeIndexById(id, defaultGrid);
+    return edge ? { row: edge.row, col: edge.col, type: edge.type === 'h' ? 'edge-h' : 'edge-v' } : null;
+  }
   return null;
 };
 
 // Check cell-edge adjacency (orthogonal)
 const isCellEdgeAdjacent = (cellId: string, edgeId: string): boolean => {
-  const cell = parsePointId(cellId);
-  const edge = parsePointId(edgeId);
+  const cell = lookupPointId(cellId);
+  const edge = lookupPointId(edgeId);
   if (!cell || !edge) return false;
 
   if (edge.type === 'edge-h') {
@@ -49,8 +69,8 @@ const isCellEdgeAdjacent = (cellId: string, edgeId: string): boolean => {
 
 // Check vertex-edge adjacency (orthogonal)
 const isVertexEdgeAdjacent = (vertexId: string, edgeId: string): boolean => {
-  const vertex = parsePointId(vertexId);
-  const edge = parsePointId(edgeId);
+  const vertex = lookupPointId(vertexId);
+  const edge = lookupPointId(edgeId);
   if (!vertex || !edge) return false;
 
   if (edge.type === 'edge-h') {
@@ -71,8 +91,8 @@ const isVertexEdgeAdjacent = (vertexId: string, edgeId: string): boolean => {
 
 // Check cell-vertex adjacency (diagonal)
 const isCellVertexAdjacent = (cellId: string, vertexId: string): boolean => {
-  const cell = parsePointId(cellId);
-  const vertex = parsePointId(vertexId);
+  const cell = lookupPointId(cellId);
+  const vertex = lookupPointId(vertexId);
   if (!cell || !vertex) return false;
 
   // vertex (r, c) is at the corner of 4 cells:
@@ -87,8 +107,8 @@ const isCellVertexAdjacent = (cellId: string, vertexId: string): boolean => {
 
 // Check edge-h to edge-v adjacency (diagonal)
 const isEdgeHEdgeVAdjacent = (edgeHId: string, edgeVId: string): boolean => {
-  const edgeH = parsePointId(edgeHId);
-  const edgeV = parsePointId(edgeVId);
+  const edgeH = lookupPointId(edgeHId);
+  const edgeV = lookupPointId(edgeVId);
   if (!edgeH || !edgeV) return false;
   if (edgeH.type !== 'edge-h' || edgeV.type !== 'edge-v') return false;
 
@@ -109,8 +129,8 @@ const getInterpolatedPathSimulated = (
   allowedDirections: string[],
   halfMode: boolean
 ): string[] | null => {
-  const from = parsePointId(fromId);
-  const to = parsePointId(toId);
+  const from = lookupPointId(fromId);
+  const to = lookupPointId(toId);
 
   if (!from || !to) return null;
 

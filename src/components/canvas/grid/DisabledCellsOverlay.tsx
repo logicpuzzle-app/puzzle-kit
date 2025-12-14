@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../../store/puzzleStore';
 import type { TopologyVertex } from '../../../utils/gridTopology';
+import { getCellCorners, getCellId, getCellIndexById } from '../../../utils/gridUtils';
 
 /**
  * DisabledCellsOverlay - Renders disabled cells overlay and border lines
@@ -58,14 +59,14 @@ export const DisabledCellsOverlay: React.FC = () => {
     // Use same stroke width as frame style
     const strokeWidth = frameStyle === 'thick' ? 4 : 2;
 
-    // Helper to check if a cell is disabled
-    const isDisabled = (r: number, c: number) => disabledSet.has(`cell-${r}-${c}`);
-
-    // Helper to check if a cell is within the grid bounds
+    // Helper to check if a cell is within the main grid bounds (excludes margin cells)
     const isInBounds = (r: number, c: number) => r >= 0 && r < rows && c >= 0 && c < cols;
 
+    // Helper to check if a cell is disabled (by ID)
+    const isDisabledByIndex = (r: number, c: number) => disabledSet.has(getCellId(r, c, gridType));
+
     // Helper to check if adjacent cell is enabled (in bounds and not disabled)
-    const isAdjacentEnabled = (r: number, c: number) => isInBounds(r, c) && !isDisabled(r, c);
+    const isAdjacentEnabled = (r: number, c: number) => isInBounds(r, c) && !isDisabledByIndex(r, c);
 
     // Topology mode - use topology positions
     if (useTopology && topology) {
@@ -102,13 +103,10 @@ export const DisabledCellsOverlay: React.FC = () => {
           const adjacentCellId = edge.adjacentCells.find(id => id !== cellId);
           if (!adjacentCellId) return; // Boundary edge
 
-          // Parse adjacent cell ID to check if enabled
-          const match = adjacentCellId.match(/^cell-(-?\d+)-(-?\d+)$/);
-          if (!match) return;
-          const adjRow = parseInt(match[1], 10);
-          const adjCol = parseInt(match[2], 10);
-
-          if (isAdjacentEnabled(adjRow, adjCol)) {
+          // In topology mode, treat the adjacent cell as enabled if it exists and isn't disabled.
+          const adjacentCell = topology.cells.get(adjacentCellId);
+          if (!adjacentCell) return;
+          if (!disabledSet.has(adjacentCellId)) {
             const startVertex = topology.vertices.get(edge.startVertex);
             const endVertex = topology.vertices.get(edge.endVertex);
             if (startVertex && endVertex) {
@@ -134,20 +132,17 @@ export const DisabledCellsOverlay: React.FC = () => {
 
     // Standard mode
     disabledArray.forEach((cellId) => {
-      // Parse cell ID (e.g., "cell-0-0")
-      const match = cellId.match(/^cell-(-?\d+)-(-?\d+)$/);
-      if (!match) return;
-      const row = parseInt(match[1], 10);
-      const col = parseInt(match[2], 10);
+      const index = getCellIndexById(cellId, grid);
+      if (!index) return;
+      const row = index.row;
+      const col = index.col;
 
       // Skip cells outside the main grid
       if (!isInBounds(row, col)) return;
 
-      // Calculate actual position (adjusted for margins)
-      const actualCol = col + marginLeft;
-      const actualRow = row + marginTop;
-      const x = outerPadding + actualCol * cellSize;
-      const y = outerPadding + actualRow * cellSize;
+      const [topLeft] = getCellCorners(row, col, grid);
+      const x = topLeft.x;
+      const y = topLeft.y;
 
       // Add overlay for disabled cell
       // Use disabledCellColor in all modes (default: white #ffffff)

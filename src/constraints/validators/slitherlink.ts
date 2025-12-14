@@ -15,6 +15,7 @@ import {
   type ValidationContext,
   type CheckResult,
 } from './core';
+import { getCellIndexById } from '../../utils/gridUtils';
 
 // ========================================
 // Helper Functions
@@ -164,11 +165,10 @@ function checkdir4BorderLine(ctx: ValidationContext): CheckResult {
   // The topology mode uses vertex-N format which doesn't match
   const numbers = ctx.puzzle.problem.numbers;
   for (const num of Object.values(numbers)) {
-    const match = num.cellId.match(/cell-(\d+)-(\d+)/);
-    if (!match) continue;
-
-    const row = parseInt(match[1], 10);
-    const col = parseInt(match[2], 10);
+    const index = getCellIndexById(num.cellId, ctx.grid);
+    if (!index) continue;
+    const row = index.row;
+    const col = index.col;
     const clue = parseInt(String(num.value), 10);
 
     if (isNaN(clue) || clue < 0 || clue > 4) continue;

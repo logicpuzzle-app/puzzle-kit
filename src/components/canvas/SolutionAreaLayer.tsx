@@ -9,6 +9,7 @@
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
 import type { TopologyVertex } from '../../utils/gridTopology';
+import { getCellCorners, getCellId, getCellIndexById } from '../../utils/gridUtils';
 
 interface SolutionAreaMaskLayerProps {
   /** Whether to show the mask overlay */
@@ -141,12 +142,6 @@ export const SolutionAreaBorderLayer: React.FC<SolutionAreaBorderLayerProps> = (
     const edges: Array<{ x1: number; y1: number; x2: number; y2: number }> = [];
 
     for (const cellId of solutionArea.cells) {
-      const match = cellId.match(/cell-(\d+)-(\d+)/);
-      if (!match) continue;
-
-      const row = parseInt(match[1], 10);
-      const col = parseInt(match[2], 10);
-
       if (useTopology && topology) {
         // Get cell from topology and use its edges
         const topoCell = topology.cells.get(cellId);
@@ -175,31 +170,37 @@ export const SolutionAreaBorderLayer: React.FC<SolutionAreaBorderLayerProps> = (
           }
         }
       } else {
+        const index = getCellIndexById(cellId, grid);
+        if (!index) continue;
+        const row = index.row;
+        const col = index.col;
+
         // Standard grid calculation
-        const x = grid.outerPadding + col * grid.cellSize;
-        const y = grid.outerPadding + row * grid.cellSize;
+        const [topLeft] = getCellCorners(row, col, grid);
+        const x = topLeft.x;
+        const y = topLeft.y;
         const size = grid.cellSize;
 
         // Top edge
-        const topCellId = `cell-${row - 1}-${col}`;
+        const topCellId = getCellId(row - 1, col, grid.gridType);
         if (!solutionSet.has(topCellId)) {
           edges.push({ x1: x, y1: y, x2: x + size, y2: y });
         }
 
         // Bottom edge
-        const bottomCellId = `cell-${row + 1}-${col}`;
+        const bottomCellId = getCellId(row + 1, col, grid.gridType);
         if (!solutionSet.has(bottomCellId)) {
           edges.push({ x1: x, y1: y + size, x2: x + size, y2: y + size });
         }
 
         // Left edge
-        const leftCellId = `cell-${row}-${col - 1}`;
+        const leftCellId = getCellId(row, col - 1, grid.gridType);
         if (!solutionSet.has(leftCellId)) {
           edges.push({ x1: x, y1: y, x2: x, y2: y + size });
         }
 
         // Right edge
-        const rightCellId = `cell-${row}-${col + 1}`;
+        const rightCellId = getCellId(row, col + 1, grid.gridType);
         if (!solutionSet.has(rightCellId)) {
           edges.push({ x1: x + size, y1: y, x2: x + size, y2: y + size });
         }

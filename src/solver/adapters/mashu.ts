@@ -8,6 +8,7 @@ import { MasyuField, MasyuSolver, PearlType } from '@logicpuzzle-app/solver-kit'
 import { EdgeState, Direction, SolveStatus } from '@logicpuzzle-app/solver-kit';
 import type { SolverAdapter, SolveResult } from '../types';
 import type { PuzzleState, GridConfig } from '../../types';
+import { getCellIndexById } from '../../utils/gridUtils';
 
 /**
  * Mashu solver adapter implementation
@@ -25,11 +26,9 @@ export const mashuSolverAdapter: SolverAdapter = {
       // Extract pearl clues from symbols
       if (problem.symbols) {
         for (const symbol of Object.values(problem.symbols)) {
-          // Parse cellId like "cell-0-1"
-          const match = symbol.cellId.match(/cell-(\d+)-(\d+)/);
-          if (match) {
-            const row = parseInt(match[1], 10);
-            const col = parseInt(match[2], 10);
+          const index = getCellIndexById(symbol.cellId, grid);
+          if (index) {
+            const { row, col } = index;
 
             // Map symbol types to pearl types
             // circle-empty / circle-unshade → white pearl

@@ -10,6 +10,7 @@ import { usePuzzleStore } from '../../store/puzzleStore';
 import { getPenpaColor } from '../../types/penpaElements';
 import type { GridPoints, Point } from '../../types/point';
 import { PointType, PointUse } from '../../types/point';
+import { getCellIndexById } from '../../utils/gridUtils';
 
 interface CageLayerProps {
   gridPoints?: GridPoints;
@@ -265,10 +266,10 @@ export const CageLayer: React.FC<CageLayerProps> = ({
       for (const cellId of cage.cells) {
         // Cell ID format: "cell-row-col" or numeric index
         if (typeof cellId === 'string') {
-          const match = cellId.match(/cell-(\d+)-(\d+)/);
-          if (match) {
-            const row = parseInt(match[1], 10);
-            const col = parseInt(match[2], 10);
+          const index = getCellIndexById(cellId, grid);
+          if (index) {
+            const row = index.row;
+            const col = index.col;
             // Find cell index in grid points
             const idx = gridPoints.centerList.find((i) => {
               const cell = gridPoints.points[i];

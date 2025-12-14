@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
-import { getCellCenter } from '../../utils/gridUtils';
+import { getCellCenter, getCellIndexById } from '../../utils/gridUtils';
 import type { LayerType, PuzzleElements } from '../../types';
 import { getClueDisplayValue } from '../../types/penpaElements';
 
@@ -165,24 +165,15 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
         if (topoCell) {
           center = { x: topoCell.center.x, y: topoCell.center.y };
         } else {
-          // Fallback: parse row/col from cellId for standard grid
-          const match = cellId.match(/^cell-(\d+)-(\d+)$/);
-          if (match) {
-            const row = parseInt(match[1], 10);
-            const col = parseInt(match[2], 10);
-            center = getCellCenter(row, col, grid);
-          } else {
-            return; // Invalid cellId format
-          }
+          const index = getCellIndexById(cellId, grid);
+          if (!index) return;
+          center = getCellCenter(index.row, index.col, grid);
         }
       } else {
-        // Standard grid: parse row/col from cellId
-        const match = cellId.match(/^cell-(\d+)-(\d+)$/);
-        if (!match) return;
-        const row = parseInt(match[1], 10);
-        const col = parseInt(match[2], 10);
-        if (row < 0 || col < 0 || row >= grid.rows || col >= grid.cols) return;
-        center = getCellCenter(row, col, grid);
+        const index = getCellIndexById(cellId, grid);
+        if (!index) return;
+        if (index.row < 0 || index.col < 0 || index.row >= grid.rows || index.col >= grid.cols) return;
+        center = getCellCenter(index.row, index.col, grid);
       }
       // Get display value using helper (handles char and -2 = "?")
       const displayValue = getClueDisplayValue(clue);

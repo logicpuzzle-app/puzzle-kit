@@ -5,8 +5,8 @@ import {
   getVertexId,
   getEdgeHId,
   getEdgeVId,
-  parseCellId,
-  parseVertexId,
+  getCellIndexById,
+  getVertexIndexById,
   findNearestCell,
   findNearestVertex,
   getCellCenter,
@@ -53,24 +53,26 @@ describe('gridUtils', () => {
     });
   });
 
-  describe('ID parsing', () => {
-    it('parses valid cell ID', () => {
-      expect(parseCellId('cell-3-5')).toEqual({ row: 3, col: 5 });
-      expect(parseCellId('cell-0-0')).toEqual({ row: 0, col: 0 });
+  describe('ID lookup', () => {
+    it('looks up valid cell IDs (including margin cells)', () => {
+      const grid: GridConfig = { ...defaultGrid, rows: 3, cols: 3, marginTop: 1, marginLeft: 2 };
+      expect(getCellIndexById('cell-0-0', grid)).toEqual({ row: 0, col: 0 });
+      // Margin cells can use negative indices in IDs
+      expect(getCellIndexById('cell--1--2', grid)).toEqual({ row: -1, col: -2 });
     });
 
-    it('returns null for invalid cell ID', () => {
-      expect(parseCellId('invalid')).toBeNull();
-      expect(parseCellId('vertex-0-0')).toBeNull();
-      expect(parseCellId('')).toBeNull();
+    it('returns null for unknown cell ID', () => {
+      expect(getCellIndexById('invalid', defaultGrid)).toBeNull();
+      expect(getCellIndexById('vertex-0-0', defaultGrid)).toBeNull();
     });
 
-    it('parses valid vertex ID', () => {
-      expect(parseVertexId('vertex-3-5')).toEqual({ row: 3, col: 5 });
+    it('looks up valid vertex IDs', () => {
+      const grid: GridConfig = { ...defaultGrid, rows: 3, cols: 3 };
+      expect(getVertexIndexById('vertex-3-3', grid)).toEqual({ row: 3, col: 3 });
     });
 
-    it('returns null for invalid vertex ID', () => {
-      expect(parseVertexId('cell-0-0')).toBeNull();
+    it('returns null for unknown vertex ID', () => {
+      expect(getVertexIndexById('cell-0-0', defaultGrid)).toBeNull();
     });
 
     it('parses valid horizontal edge ID', () => {

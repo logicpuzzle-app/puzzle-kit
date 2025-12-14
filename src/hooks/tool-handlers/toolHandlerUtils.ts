@@ -18,6 +18,7 @@ import {
   getEdgeHId,
   getEdgeVId,
   getCellCenter,
+  getCellIndexById,
   getVertexPosition,
   getEdgePosition,
 } from '../../utils/gridUtils';
@@ -410,7 +411,8 @@ export function areCellsAdjacent(
   cellId1: string,
   cellId2: string,
   useTopology: boolean,
-  topology: GridTopology | null
+  topology: GridTopology | null,
+  grid?: GridConfig
 ): boolean {
   // For topology mode, use the topology's adjacency information
   if (useTopology && topology) {
@@ -421,31 +423,15 @@ export function areCellsAdjacent(
     return false;
   }
 
-  // For standard grid, parse IDs and check orthogonal adjacency
-  const coords1 = parseCellId(cellId1);
-  const coords2 = parseCellId(cellId2);
+  // For standard grid, use a lookup derived from the current grid configuration.
+  if (!grid) return false;
+  const coords1 = getCellIndexById(cellId1, grid);
+  const coords2 = getCellIndexById(cellId2, grid);
+  if (!coords1 || !coords2) return false;
 
-  if (coords1 && coords2) {
-    const rowDiff = Math.abs(coords2.row - coords1.row);
-    const colDiff = Math.abs(coords2.col - coords1.col);
-    return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
-  }
-
-  return false;
-}
-
-/**
- * Parse cell ID to get row/col coordinates
- */
-export function parseCellId(cellId: string): { row: number; col: number } | null {
-  const match = cellId.match(/^cell-(\d+)-(\d+)$/);
-  if (match) {
-    return {
-      row: parseInt(match[1], 10),
-      col: parseInt(match[2], 10),
-    };
-  }
-  return null;
+  const rowDiff = Math.abs(coords2.row - coords1.row);
+  const colDiff = Math.abs(coords2.col - coords1.col);
+  return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
 }
 
 // ============================================================================

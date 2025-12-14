@@ -7,6 +7,7 @@
 import { YajilinSolver, Direction, CellState, SolveStatus, LoopEdgeState } from '@logicpuzzle-app/solver-kit';
 import type { SolverAdapter, SolveResult } from '../types';
 import type { PuzzleState, GridConfig } from '../../types';
+import { getCellIndexById } from '../../utils/gridUtils';
 
 /**
  * Convert puzzle-kit direction (1-4) to solver-kit Direction enum
@@ -47,10 +48,10 @@ export const yajilinSolverAdapter: SolverAdapter = {
             row = Math.floor(clue.cell / grid.cols);
             col = clue.cell % grid.cols;
           } else {
-            const cellMatch = clue.cellId.match(/^cell-(\d+)-(\d+)$/);
-            if (!cellMatch) continue;
-            row = parseInt(cellMatch[1], 10);
-            col = parseInt(cellMatch[2], 10);
+            const index = getCellIndexById(clue.cellId, grid);
+            if (!index) continue;
+            row = index.row;
+            col = index.col;
           }
 
           // Handle hatena/unknown: puzzle-kit uses -2, solver-kit uses -1

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
-import { parseCellId, getCellCenter, getCellCorners } from '../../utils/gridUtils';
+import { getCellCenter, getCellCorners, getCellIndexById } from '../../utils/gridUtils';
 import type { NumberElement, LayerType, Point } from '../../types';
 import type { TopologyVertex } from '../../utils/gridTopology';
 
@@ -61,11 +61,11 @@ export const NumberLayer: React.FC<NumberLayerProps> = ({ layer }) => {
         }
       } else {
         // Standard mode
-        const parsed = parseCellId(num.cellId, grid.gridType);
-        if (!parsed) return;
+        const index = getCellIndexById(num.cellId, grid);
+        if (!index) return;
 
-        center = getCellCenter(parsed.row, parsed.col, grid);
-        corners = getCellCorners(parsed.row, parsed.col, grid);
+        center = getCellCenter(index.row, index.col, grid);
+        corners = getCellCorners(index.row, index.col, grid);
       }
       const fontSize = getFontSize(num.size, cellSize);
 

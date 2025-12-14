@@ -15,7 +15,7 @@ import { useCanvasInteraction } from '../../hooks/useCanvasInteraction';
 import { useCellFinder } from '../../hooks/useCellFinder';
 import { useSpecialPreview } from '../../hooks/useSpecialPreview';
 import { useNumberKeyboard } from '../../hooks/useNumberKeyboard';
-import { screenToSvg, getCellCorners, getCellCenter, findNearestEdge } from '../../utils/gridUtils';
+import { screenToSvg, getCellCorners, getCellCenter, findNearestEdge, getCellIndexById } from '../../utils/gridUtils';
 import { resolveGridIdToPosition } from '../../utils/gridIds';
 import { pointToLineSegmentDistance } from '../../utils/lineUtils';
 import type { NumberPosition, SymbolElement, Point } from '../../types';
@@ -1098,14 +1098,10 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     if (useTopology && topology) return null; // Use polygon instead
     // Hide cursor during topology preview (but not in grid mode)
     if (previewTopology && !isGridMode) return null;
-    // Parse row/col from cellId for non-topology mode
-    const match = hoverCell.match(/^cell-(\d+)-(\d+)$/);
-    if (!match) return null;
-    const row = parseInt(match[1]);
-    const col = parseInt(match[2]);
-    const x = grid.outerPadding + col * grid.cellSize;
-    const y = grid.outerPadding + row * grid.cellSize;
-    return { x, y, size: grid.cellSize };
+    const index = getCellIndexById(hoverCell, grid);
+    if (!index) return null;
+    const [topLeft] = getCellCorners(index.row, index.col, grid);
+    return { x: topLeft.x, y: topLeft.y, size: grid.cellSize };
   }, [hoverCell, grid.outerPadding, grid.cellSize, overlayConfig.showCellCursor, useTopology, topology, previewTopology, isGridMode]);
 
   // Cursor cell (last tapped) - for direction panel
@@ -1132,14 +1128,10 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     if (!overlayConfig.showCursorCellHighlight) return null;
     if (!cursorCell) return null;
     if (useTopology && topology) return null; // Use polygon instead
-    // Parse row/col from cellId for non-topology mode
-    const match = cursorCell.match(/^cell-(\d+)-(\d+)$/);
-    if (!match) return null;
-    const row = parseInt(match[1]);
-    const col = parseInt(match[2]);
-    const x = grid.outerPadding + col * grid.cellSize;
-    const y = grid.outerPadding + row * grid.cellSize;
-    return { x, y, size: grid.cellSize };
+    const index = getCellIndexById(cursorCell, grid);
+    if (!index) return null;
+    const [topLeft] = getCellCorners(index.row, index.col, grid);
+    return { x: topLeft.x, y: topLeft.y, size: grid.cellSize };
   }, [cursorCell, overlayConfig.showCursorCellHighlight, grid.outerPadding, grid.cellSize, useTopology, topology]);
 
   // Use special preview hook for thermo/arrow/cage/boxline tools
@@ -1236,11 +1228,9 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     }
 
     // Standard mode - parse row/col from cellId
-    const match = targetCellId.match(/^cell-(\d+)-(\d+)$/);
-    if (!match) return null;
-    const row = parseInt(match[1]);
-    const col = parseInt(match[2]);
-    const corners = getCellCorners(row, col, grid);
+    const index = getCellIndexById(targetCellId, grid);
+    if (!index) return null;
+    const corners = getCellCorners(index.row, index.col, grid);
     return `M ${corners[0].x} ${corners[0].y} L ${corners[1].x} ${corners[1].y} L ${corners[2].x} ${corners[2].y} L ${corners[3].x} ${corners[3].y} Z`;
   }, [hoverCell, numberSelection, grid, toolSettings.currentTool, useTopology, topology, findCellIdByRowCol]);
 

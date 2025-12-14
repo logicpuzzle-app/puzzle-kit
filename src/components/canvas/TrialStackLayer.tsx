@@ -10,7 +10,7 @@
 
 import React from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
-import { parseCellId, getCellCenter, getVertexPosition } from '../../utils/gridUtils';
+import { getCellCenter, getCellIndexById, getEdgeIndexById, getEdgePosition, getVertexIndexById, getVertexPosition } from '../../utils/gridUtils';
 import type { PuzzleElements, SurfaceElement, EdgeElement, LineElement, SymbolElement, NumberElement } from '../../types';
 import type { TopologyVertex } from '../../utils/gridTopology';
 
@@ -57,10 +57,10 @@ const TrialLayer: React.FC<TrialStackLayerProps> = ({ elements, opacity, layerIn
           );
         }
 
-        const parsed = parseCellId(surface.cellId, grid.gridType);
-        if (!parsed) return null;
+        const index = getCellIndexById(surface.cellId, grid);
+        if (!index) return null;
 
-        const center = getCellCenter(parsed.row, parsed.col, grid);
+        const center = getCellCenter(index.row, index.col, grid);
 
         return (
           <rect
@@ -76,21 +76,31 @@ const TrialLayer: React.FC<TrialStackLayerProps> = ({ elements, opacity, layerIn
 
       {/* Edges */}
       {Object.values(elements.edges).map((edge: EdgeElement) => {
-        // Parse vertex IDs: "vertex-row-col"
-        const fromParts = edge.from.split('-');
-        const toParts = edge.to.split('-');
-        if (fromParts.length < 3 || toParts.length < 3) return null;
+        if (useTopology && topology) {
+          const fromVertex = topology.vertices.get(edge.from);
+          const toVertex = topology.vertices.get(edge.to);
+          if (!fromVertex || !toVertex) return null;
 
-        const fromVertex = getVertexPosition(
-          parseInt(fromParts[1]),
-          parseInt(fromParts[2]),
-          grid
-        );
-        const toVertex = getVertexPosition(
-          parseInt(toParts[1]),
-          parseInt(toParts[2]),
-          grid
-        );
+          return (
+            <line
+              key={`trial-${layerIndex}-edge-${edge.id}`}
+              x1={fromVertex.position.x}
+              y1={fromVertex.position.y}
+              x2={toVertex.position.x}
+              y2={toVertex.position.y}
+              stroke={edge.color}
+              strokeWidth={edge.thickness === 'thick' ? 4 : 2}
+              strokeLinecap="round"
+            />
+          );
+        }
+
+        const fromIndex = getVertexIndexById(edge.from, grid);
+        const toIndex = getVertexIndexById(edge.to, grid);
+        if (!fromIndex || !toIndex) return null;
+
+        const fromVertex = getVertexPosition(fromIndex.row, fromIndex.col, grid);
+        const toVertex = getVertexPosition(toIndex.row, toIndex.col, grid);
 
         return (
           <line
@@ -108,16 +118,23 @@ const TrialLayer: React.FC<TrialStackLayerProps> = ({ elements, opacity, layerIn
 
       {/* Lines */}
       {Object.values(elements.lines).map((line: LineElement) => {
-        const fromPos = getCellCenter(
-          parseInt(line.from.split('-')[1]),
-          parseInt(line.from.split('-')[2]),
-          grid
-        );
-        const toPos = getCellCenter(
-          parseInt(line.to.split('-')[1]),
-          parseInt(line.to.split('-')[2]),
-          grid
-        );
+        const fromPos = (() => {
+          if (useTopology && topology) {
+            return topology.cells.get(line.from)?.center ?? null;
+          }
+          const index = getCellIndexById(line.from, grid);
+          return index ? getCellCenter(index.row, index.col, grid) : null;
+        })();
+
+        const toPos = (() => {
+          if (useTopology && topology) {
+            return topology.cells.get(line.to)?.center ?? null;
+          }
+          const index = getCellIndexById(line.to, grid);
+          return index ? getCellCenter(index.row, index.col, grid) : null;
+        })();
+
+        if (!fromPos || !toPos) return null;
 
         return (
           <line
@@ -135,10 +152,31 @@ const TrialLayer: React.FC<TrialStackLayerProps> = ({ elements, opacity, layerIn
 
       {/* Symbols */}
       {Object.values(elements.symbols).map((symbol: SymbolElement) => {
-        const parsed = parseCellId(symbol.cellId, grid.gridType);
-        if (!parsed) return null;
+        const center = (() => {
+          if (useTopology && topology) {
+            const cell = topology.cells.get(symbol.cellId);
+            if (cell) return cell.center;
+            const vertex = topology.vertices.get(symbol.cellId);
+            if (vertex) return vertex.position;
+            const edge = topology.edges.get(symbol.cellId);
+            if (edge) return edge.midpoint;
+            return null;
+          }
 
-        const center = getCellCenter(parsed.row, parsed.col, grid);
+          if (symbol.cellId.startsWith('vertex-')) {
+            const index = getVertexIndexById(symbol.cellId, grid);
+            return index ? getVertexPosition(index.row, index.col, grid) : null;
+          }
+          if (symbol.cellId.startsWith('edge-')) {
+            const edgeIndex = getEdgeIndexById(symbol.cellId, grid);
+            return edgeIndex ? getEdgePosition(edgeIndex.type, edgeIndex.row, edgeIndex.col, grid) : null;
+          }
+
+          const index = getCellIndexById(symbol.cellId, grid);
+          return index ? getCellCenter(index.row, index.col, grid) : null;
+        })();
+
+        if (!center) return null;
         const size = cellSize * 0.3;
 
         // Simple circle/cross rendering for trial layers
@@ -184,10 +222,15 @@ const TrialLayer: React.FC<TrialStackLayerProps> = ({ elements, opacity, layerIn
 
       {/* Numbers */}
       {Object.values(elements.numbers).map((num: NumberElement) => {
-        const parsed = parseCellId(num.cellId, grid.gridType);
-        if (!parsed) return null;
+        const center = (() => {
+          if (useTopology && topology) {
+            return topology.cells.get(num.cellId)?.center ?? null;
+          }
+          const index = getCellIndexById(num.cellId, grid);
+          return index ? getCellCenter(index.row, index.col, grid) : null;
+        })();
 
-        const center = getCellCenter(parsed.row, parsed.col, grid);
+        if (!center) return null;
 
         return (
           <text

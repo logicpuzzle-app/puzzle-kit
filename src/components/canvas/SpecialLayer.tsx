@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
-import { parseCellId, getCellCenter } from '../../utils/gridUtils';
+import { getCellCenter, getCellCorners, getCellIndexById } from '../../utils/gridUtils';
 import type { CageElement, SpecialElement, LayerType, GridConfig } from '../../types';
 import type { GridTopology, TopologyVertex } from '../../utils/gridTopology';
 
@@ -29,7 +29,7 @@ const CageRenderer: React.FC<{
 
     // Get all cell positions
     const cellPositions = cage.cells
-      .map((cellId) => parseCellId(cellId, grid.gridType))
+      .map((cellId) => getCellIndexById(cellId, grid))
       .filter((p): p is { row: number; col: number } => p !== null);
 
     if (cellPositions.length === 0) return [];
@@ -83,8 +83,9 @@ const CageRenderer: React.FC<{
     } else {
       // Standard mode
       for (const cell of cellPositions) {
-        const x = outerPadding + cell.col * cellSize;
-        const y = outerPadding + cell.row * cellSize;
+        const [topLeft] = getCellCorners(cell.row, cell.col, grid);
+        const x = topLeft.x;
+        const y = topLeft.y;
 
         // Check each edge
         // Top edge
@@ -155,13 +156,14 @@ const CageRenderer: React.FC<{
       }
     }
 
-    const firstCell = parseCellId(cage.cells[0], grid.gridType);
+    const firstCell = getCellIndexById(cage.cells[0], grid);
     if (!firstCell) return null;
+    const [topLeft] = getCellCorners(firstCell.row, firstCell.col, grid);
     return {
-      x: outerPadding + firstCell.col * cellSize + 5,
-      y: outerPadding + firstCell.row * cellSize + 12,
+      x: topLeft.x + 5,
+      y: topLeft.y + 12,
     };
-  }, [cage.label, cage.cells, useTopology, topology, grid.gridType, outerPadding, cellSize]);
+  }, [cage.label, cage.cells, useTopology, topology, grid, outerPadding, cellSize]);
 
   return (
     <g>
@@ -211,9 +213,9 @@ const ThermoRenderer: React.FC<{
             return { x: topoCell.center.x, y: topoCell.center.y };
           }
         }
-        const parsed = parseCellId(pointId, grid.gridType);
-        if (!parsed) return null;
-        return getCellCenter(parsed.row, parsed.col, grid);
+        const index = getCellIndexById(pointId, grid);
+        if (!index) return null;
+        return getCellCenter(index.row, index.col, grid);
       })
       .filter((p): p is { x: number; y: number } => p !== null);
   }, [special.points, grid, useTopology, topology]);
@@ -269,9 +271,9 @@ const ArrowRenderer: React.FC<{
             return { x: topoCell.center.x, y: topoCell.center.y };
           }
         }
-        const parsed = parseCellId(pointId, grid.gridType);
-        if (!parsed) return null;
-        return getCellCenter(parsed.row, parsed.col, grid);
+        const index = getCellIndexById(pointId, grid);
+        if (!index) return null;
+        return getCellCenter(index.row, index.col, grid);
       })
       .filter((p): p is { x: number; y: number } => p !== null);
   }, [special.points, grid, useTopology, topology]);
@@ -354,9 +356,9 @@ const PolygonRenderer: React.FC<{
             return { x: topoCell.center.x, y: topoCell.center.y };
           }
         }
-        const parsed = parseCellId(pointId, grid.gridType);
-        if (!parsed) return null;
-        return getCellCenter(parsed.row, parsed.col, grid);
+        const index = getCellIndexById(pointId, grid);
+        if (!index) return null;
+        return getCellCenter(index.row, index.col, grid);
       })
       .filter((p): p is { x: number; y: number } => p !== null);
   }, [special.points, grid, useTopology, topology]);

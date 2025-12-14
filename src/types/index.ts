@@ -425,6 +425,7 @@ export type GridType =
   | 'hex'              // {6,3} - Hexagonal tiling
   | 'pyramid'          // Pyramid (special)
   | 'iso'              // Isometric cube grid (Penpa iso)
+  | 'penrose_P3'       // Penrose P3 rhombus tiling (Penpa)
   // Semi-regular tilings
   | 'snub-square'      // 3².4.3.4 - Snub square tiling
   | 'trihexagonal'     // 3.6.3.6 - Trihexagonal (kagome) tiling
@@ -457,6 +458,11 @@ export interface GridConfig {
   level?: number; // for iso/cube grids (height/depth)
   isometricFaces?: IsometricFace[]; // which faces to show: ['top', 'left', 'right'] by default
   isometricView?: IsometricView; // 'exterior' (default) or 'interior' (shows bottom instead of top)
+  // Penrose settings (used when gridType === 'penrose_P3')
+  penroseSide?: number; // Penpa: nx (tile region size)
+  penroseOrder?: number; // Penpa: ny (typically 5)
+  penroseRotational?: number; // Penpa: rotation parameter (0-4)
+  penroseVariation?: number; // Penpa: seed/variation (0.0-1.0)
   cellSize: number;
   outerPadding: number;
   showGrid: boolean;

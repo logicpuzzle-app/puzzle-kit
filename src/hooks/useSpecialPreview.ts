@@ -7,7 +7,7 @@
 
 import { useMemo } from 'react';
 import { usePuzzleStore } from '../store/puzzleStore';
-import { getCellCenter, parseCellId } from '../utils/gridUtils';
+import { getCellCenter, getCellIndexById } from '../utils/gridUtils';
 import type { Point } from '../types';
 import type { TopologyVertex } from '../utils/gridTopology';
 
@@ -15,8 +15,6 @@ export interface SpecialPreviewCell {
   center: Point;
   polygon: Point[];
   cellId: string;
-  row: number;
-  col: number;
 }
 
 interface UseSpecialPreviewOptions {
@@ -66,20 +64,17 @@ export function useSpecialPreview({ specialPath, hoverCell }: UseSpecialPreviewO
             .map(vId => topology.vertices.get(vId))
             .filter((v): v is TopologyVertex => v !== undefined)
             .map(v => v.position);
-          const match = cellId.match(/^cell-(\d+)-(\d+)$/);
           cells.push({
             center: cell.center,
             polygon,
             cellId,
-            row: cell.row ?? (match ? parseInt(match[1]) : 0),
-            col: cell.col ?? (match ? parseInt(match[2]) : 0),
           });
         }
       } else {
         // Standard mode
-        const parsed = parseCellId(cellId, grid.gridType);
-        if (parsed) {
-          const center = getCellCenter(parsed.row, parsed.col, grid);
+        const index = getCellIndexById(cellId, grid);
+        if (index) {
+          const center = getCellCenter(index.row, index.col, grid);
           const half = grid.cellSize / 2;
           cells.push({
             center,
@@ -90,8 +85,6 @@ export function useSpecialPreview({ specialPath, hoverCell }: UseSpecialPreviewO
               { x: center.x - half, y: center.y + half },
             ],
             cellId,
-            row: parsed.row,
-            col: parsed.col,
           });
         }
       }

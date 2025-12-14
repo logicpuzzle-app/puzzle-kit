@@ -8,6 +8,7 @@ import { SlitherField, SlitherSolver } from '@logicpuzzle-app/solver-kit';
 import { EdgeState, SolveStatus } from '@logicpuzzle-app/solver-kit';
 import type { SolverAdapter, SolveResult } from '../types';
 import type { PuzzleState, GridConfig } from '../../types';
+import { getCellIndexById } from '../../utils/gridUtils';
 
 /**
  * Slitherlink solver adapter implementation
@@ -32,10 +33,10 @@ export const slitherlinkSolverAdapter: SolverAdapter = {
             row = Math.floor(clue.cell / grid.cols);
             col = clue.cell % grid.cols;
           } else {
-            const cellMatch = clue.cellId.match(/^cell-(\d+)-(\d+)$/);
-            if (!cellMatch) continue;
-            row = parseInt(cellMatch[1], 10);
-            col = parseInt(cellMatch[2], 10);
+            const index = getCellIndexById(clue.cellId, grid);
+            if (!index) continue;
+            row = index.row;
+            col = index.col;
           }
           // Slitherlink only uses values 0-3
           if (clue.value >= 0 && clue.value <= 3) {
@@ -47,15 +48,11 @@ export const slitherlinkSolverAdapter: SolverAdapter = {
       // Also check regular numbers (for backward compatibility)
       if (problem.numbers) {
         for (const num of Object.values(problem.numbers)) {
-          // Parse cellId like "cell-0-1"
-          const match = num.cellId.match(/cell-(\d+)-(\d+)/);
-          if (match) {
-            const row = parseInt(match[1], 10);
-            const col = parseInt(match[2], 10);
-            const value = parseInt(num.value, 10);
-            if (value >= 0 && value <= 3) {
-              field.setNumber(row, col, value);
-            }
+          const index = getCellIndexById(num.cellId, grid);
+          if (!index) continue;
+          const value = parseInt(num.value, 10);
+          if (value >= 0 && value <= 3) {
+            field.setNumber(index.row, index.col, value);
           }
         }
       }

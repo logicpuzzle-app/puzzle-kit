@@ -130,18 +130,11 @@ function buildRoomsFromRoomMap(
   // Also check regular numbers
   if (problem.numbers) {
     for (const num of Object.values(problem.numbers)) {
-      const match = num.cellId.match(/cell-(\d+)-(\d+)/);
-      if (match) {
-        const row = parseInt(match[1], 10);
-        const col = parseInt(match[2], 10);
-        const cellId = `cell-${row}-${col}`;
-        const roomId = roomMap[cellId];
-        if (roomId !== undefined) {
-          const value = parseInt(num.value, 10);
-          if (!isNaN(value) && value >= 0) {
-            roomNumbers.set(roomId, value);
-          }
-        }
+      const roomId = roomMap[num.cellId];
+      if (roomId === undefined) continue;
+      const value = parseInt(num.value, 10);
+      if (!isNaN(value) && value >= 0) {
+        roomNumbers.set(roomId, value);
       }
     }
   }

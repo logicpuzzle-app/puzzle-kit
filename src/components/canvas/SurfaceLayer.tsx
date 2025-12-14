@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
-import { parseCellId, getCellCenter } from '../../utils/gridUtils';
+import { getCellCenter, getCellIndexById } from '../../utils/gridUtils';
 import type { SurfaceElement, DataLayerType } from '../../types';
 import type { TopologyVertex } from '../../utils/gridTopology';
 
@@ -82,10 +82,10 @@ export const SurfaceLayer: React.FC<SurfaceLayerProps> = ({ layer }) => {
       }
 
       // Standard mode
-      const parsed = parseCellId(surface.cellId, grid.gridType);
-      if (!parsed) return null;
+      const index = getCellIndexById(surface.cellId, grid);
+      if (!index) return null;
 
-      const center = getCellCenter(parsed.row, parsed.col, grid);
+      const center = getCellCenter(index.row, index.col, grid);
 
       // For dot, render a small circle at cell center
       if (isDot) {

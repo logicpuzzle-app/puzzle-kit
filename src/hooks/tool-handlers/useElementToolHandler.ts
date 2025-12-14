@@ -479,6 +479,7 @@ export function useElementToolHandler({
           enforceAdjacency: true,
           useTopology,
           topology,
+          grid,
         }));
       }
 
@@ -488,6 +489,7 @@ export function useElementToolHandler({
           enforceAdjacency: true,
           useTopology,
           topology,
+          grid,
           minCells: 1,
         });
 

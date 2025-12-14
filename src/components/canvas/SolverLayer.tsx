@@ -8,6 +8,7 @@
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
 import { resolveGridIdToPosition, parseEdgeId } from '../../utils/gridIds';
+import { getCellCorners, getCellIndexById } from '../../utils/gridUtils';
 import type { LineElement, SurfaceElement, Point, GridConfig } from '../../types';
 import type { GridTopology } from '../../utils/gridTopology';
 
@@ -66,13 +67,6 @@ export const SolverLayer: React.FC = () => {
     const elements: React.ReactElement[] = [];
 
     Object.values(solverResult.surfaces || {}).forEach((surface: SurfaceElement) => {
-      // Parse cell ID to get row/col
-      const match = surface.cellId.match(/cell-(\d+)-(\d+)/);
-      if (!match) return;
-
-      const row = parseInt(match[1], 10);
-      const col = parseInt(match[2], 10);
-
       // In topology mode, use cell center and polygon
       if (activeTopology) {
         const cell = activeTopology.cells.get(surface.cellId);
@@ -97,8 +91,11 @@ export const SolverLayer: React.FC = () => {
       }
 
       // Standard square grid
-      const x = outerPadding + col * cellSize;
-      const y = outerPadding + row * cellSize;
+      const index = getCellIndexById(surface.cellId, grid);
+      if (!index) return;
+      const [topLeft] = getCellCorners(index.row, index.col, grid);
+      const x = topLeft.x;
+      const y = topLeft.y;
 
       elements.push(
         <rect

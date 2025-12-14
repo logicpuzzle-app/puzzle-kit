@@ -6,6 +6,7 @@
 import { useCallback, useState } from 'react';
 import { areCellsAdjacent } from './toolHandlerUtils';
 import type { GridTopology } from '../../utils/gridTopology';
+import type { GridConfig } from '../../types';
 
 export interface PathBuilderOptions {
   /** Allow revisiting cells in the path (for cages/specials) */
@@ -43,7 +44,8 @@ export interface PathBuilderActions {
 export function usePathBuilder(
   options: PathBuilderOptions = {},
   useTopology: boolean = false,
-  topology: GridTopology | null = null
+  topology: GridTopology | null = null,
+  grid?: GridConfig
 ): [PathBuilderState, PathBuilderActions] {
   const {
     allowReuse = true,
@@ -81,7 +83,7 @@ export function usePathBuilder(
       // Check adjacency if required
       if (enforceAdjacency) {
         const lastCellId = prev[prev.length - 1];
-        if (!areCellsAdjacent(lastCellId, cellId, useTopology, topology)) {
+        if (!areCellsAdjacent(lastCellId, cellId, useTopology, topology, grid)) {
           return prev;
         }
       }
@@ -101,7 +103,7 @@ export function usePathBuilder(
         // Check if can add (reuse check)
         const canAdd = allowReuse || !finalPath.includes(endCellId);
         // Check adjacency if required
-        const adjacencyOk = !enforceAdjacency || areCellsAdjacent(lastCellId, endCellId, useTopology, topology);
+        const adjacencyOk = !enforceAdjacency || areCellsAdjacent(lastCellId, endCellId, useTopology, topology, grid);
 
         if (canAdd && adjacencyOk) {
           finalPath.push(endCellId);
@@ -151,6 +153,7 @@ export function handlePathContinuation(
     enforceAdjacency?: boolean;
     useTopology?: boolean;
     topology?: GridTopology | null;
+    grid?: GridConfig;
   } = {}
 ): string[] {
   const {
@@ -180,7 +183,7 @@ export function handlePathContinuation(
   // Check adjacency if required
   if (enforceAdjacency) {
     const lastCellId = prevPath[prevPath.length - 1];
-    if (!areCellsAdjacent(lastCellId, cellId, useTopology, topology)) {
+    if (!areCellsAdjacent(lastCellId, cellId, useTopology, topology, options.grid)) {
       return prevPath;
     }
   }
@@ -200,6 +203,7 @@ export function finalizeCellPath(
     enforceAdjacency?: boolean;
     useTopology?: boolean;
     topology?: GridTopology | null;
+    grid?: GridConfig;
     minCells?: number;
   } = {}
 ): string[] {
@@ -218,7 +222,7 @@ export function finalizeCellPath(
     const lastCellId = finalPath[finalPath.length - 1];
     if (lastCellId !== endCellId) {
       const canAdd = allowReuse || !finalPath.includes(endCellId);
-      const adjacencyOk = !enforceAdjacency || areCellsAdjacent(lastCellId, endCellId, useTopology, topology);
+      const adjacencyOk = !enforceAdjacency || areCellsAdjacent(lastCellId, endCellId, useTopology, topology, options.grid);
 
       if (canAdd && adjacencyOk) {
         finalPath.push(endCellId);

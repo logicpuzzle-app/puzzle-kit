@@ -9,8 +9,6 @@ interface SpecialPreviewCell {
   center: Point;
   polygon: Point[];
   cellId: string;
-  row: number;
-  col: number;
 }
 
 interface SpecialToolPreviewProps {
@@ -199,10 +197,26 @@ const BoxLinePreview: React.FC<{ cells: SpecialPreviewCell[]; color: string }> =
       y: center.y + (p.y - center.y) * SCALE,
     }));
 
+  const edgeMidpointKeySet = (polygon: Point[]) => {
+    const keys = new Set<string>();
+    for (let i = 0; i < polygon.length; i++) {
+      const v1 = polygon[i];
+      const v2 = polygon[(i + 1) % polygon.length];
+      const midX = Math.round((v1.x + v2.x) / 2 * 100) / 100;
+      const midY = Math.round((v1.y + v2.y) / 2 * 100) / 100;
+      keys.add(`${midX},${midY}`);
+    }
+    return keys;
+  };
+
   const areAdjacent = (c1: SpecialPreviewCell, c2: SpecialPreviewCell) => {
-    const rowDiff = Math.abs(c1.row - c2.row);
-    const colDiff = Math.abs(c1.col - c2.col);
-    return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+    if (c1.polygon.length < 3 || c2.polygon.length < 3) return false;
+    const s1 = edgeMidpointKeySet(c1.polygon);
+    const s2 = edgeMidpointKeySet(c2.polygon);
+    for (const k of s1) {
+      if (s2.has(k)) return true;
+    }
+    return false;
   };
 
   // Draw connections first

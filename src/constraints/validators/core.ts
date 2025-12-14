@@ -8,6 +8,7 @@
 import type { PuzzleState, GridConfig, LineElement, SymbolElement } from '../../types';
 import type { ConstraintSchema, ConstraintRule } from '../types';
 import type { GridTopology } from '../../utils/topology';
+import { getCellIndexById } from '../../utils/gridUtils';
 
 // ========================================
 // Types
@@ -153,16 +154,13 @@ function createCellLineHelper(puzzle: PuzzleState, grid: GridConfig): (row: numb
   const cellConnections = new Map<string, Set<Direction>>();
 
   for (const line of Object.values(puzzle.answer.lines)) {
-    // Parse cell IDs from line endpoints (cell-row-col format)
-    const fromMatch = line.from.match(/cell-(\d+)-(\d+)/);
-    const toMatch = line.to.match(/cell-(\d+)-(\d+)/);
-
-    if (!fromMatch || !toMatch) continue;
-
-    const fromRow = parseInt(fromMatch[1]);
-    const fromCol = parseInt(fromMatch[2]);
-    const toRow = parseInt(toMatch[1]);
-    const toCol = parseInt(toMatch[2]);
+    const fromPos = getCellIndexById(line.from, grid);
+    const toPos = getCellIndexById(line.to, grid);
+    if (!fromPos || !toPos) continue;
+    const fromRow = fromPos.row;
+    const fromCol = fromPos.col;
+    const toRow = toPos.row;
+    const toCol = toPos.col;
 
     // Add direction for 'from' cell
     const fromKey = `${fromRow}-${fromCol}`;

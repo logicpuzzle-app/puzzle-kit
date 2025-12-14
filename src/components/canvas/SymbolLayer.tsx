@@ -4,7 +4,7 @@
 
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
-import { parseCellId, getCellCenter, parseVertexId, getVertexPosition, getEdgePosition } from '../../utils/gridUtils';
+import { getCellCenter, getCellIndexById, getEdgeIndexById, getEdgePosition, getVertexIndexById, getVertexPosition } from '../../utils/gridUtils';
 import type { SymbolElement, LayerType } from '../../types';
 import { renderSymbol } from './symbols';
 
@@ -51,32 +51,18 @@ export const SymbolLayer: React.FC<SymbolLayerProps> = ({ layer }) => {
       } else {
         // Standard mode - parse different types of cellId
         if (symbol.cellId.startsWith('vertex-')) {
-          const parsed = parseVertexId(symbol.cellId);
-          if (parsed) {
-            center = getVertexPosition(parsed.row, parsed.col, grid);
-          }
+          const index = getVertexIndexById(symbol.cellId, grid);
+          if (index) center = getVertexPosition(index.row, index.col, grid);
         } else if (symbol.cellId.startsWith('edge-h-')) {
-          // edge-h-row-col format
-          const match = symbol.cellId.match(/^edge-h-(\d+)-(\d+)$/);
-          if (match) {
-            const row = parseInt(match[1], 10);
-            const col = parseInt(match[2], 10);
-            center = getEdgePosition('h', row, col, grid);
-          }
+          const index = getEdgeIndexById(symbol.cellId, grid);
+          if (index && index.type === 'h') center = getEdgePosition('h', index.row, index.col, grid);
         } else if (symbol.cellId.startsWith('edge-v-')) {
-          // edge-v-row-col format
-          const match = symbol.cellId.match(/^edge-v-(\d+)-(\d+)$/);
-          if (match) {
-            const row = parseInt(match[1], 10);
-            const col = parseInt(match[2], 10);
-            center = getEdgePosition('v', row, col, grid);
-          }
+          const index = getEdgeIndexById(symbol.cellId, grid);
+          if (index && index.type === 'v') center = getEdgePosition('v', index.row, index.col, grid);
         } else {
           // Regular cell-row-col format
-          const parsed = parseCellId(symbol.cellId, grid.gridType);
-          if (parsed) {
-            center = getCellCenter(parsed.row, parsed.col, grid);
-          }
+          const index = getCellIndexById(symbol.cellId, grid);
+          if (index) center = getCellCenter(index.row, index.col, grid);
         }
       }
 

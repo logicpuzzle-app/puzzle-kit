@@ -34,18 +34,12 @@ export function useSelectionTool({ getMousePosition }: UseSelectionToolOptions) 
   } = usePuzzleStore();
 
   // Helper to find cell considering topology mode
-  const findCell = useCallback((point: Point): { row: number; col: number } | null => {
+  const findCellId = useCallback((point: Point): string | null => {
     if (useTopology && topology) {
-      const topoCell = findNearestCellInTopology(topology, point);
-      if (topoCell) {
-        const match = topoCell.id.match(/^cell-(\d+)-(\d+)$/);
-        if (match) {
-          return { row: parseInt(match[1]), col: parseInt(match[2]) };
-        }
-      }
-      return null;
+      return findNearestCellInTopology(topology, point)?.id ?? null;
     }
-    return findNearestCell(point, grid);
+    const cell = findNearestCell(point, grid);
+    return cell ? getCellId(cell.row, cell.col, grid.gridType) : null;
   }, [grid, useTopology, topology]);
 
   // Selection state
@@ -79,13 +73,12 @@ export function useSelectionTool({ getMousePosition }: UseSelectionToolOptions) 
 
   const findElementAtPoint = useCallback(
     (point: Point): string | null => {
-      const cell = findCell(point);
-      if (!cell) return null;
-      const cellId = getCellId(cell.row, cell.col);
+      const cellId = findCellId(point);
+      if (!cellId) return null;
       const elements = collectElementsAtCell(cellId);
       return elements[0] ?? null;
     },
-    [collectElementsAtCell, findCell]
+    [collectElementsAtCell, findCellId]
   );
 
   /**

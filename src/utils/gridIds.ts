@@ -18,6 +18,7 @@
 
 import type { GridConfig, Point } from '../types';
 import type { GridTopology, TopologyVertex, TopologyEdge } from './topology/types';
+import { getCellIndexById, getEdgeIndexById, getVertexIndexById } from './gridUtils';
 
 // =============================================================================
 // ID Generation (Grid Mode)
@@ -303,20 +304,20 @@ export function resolveGridIdToPosition(
     if (edge) return edge.midpoint;
   }
 
-  // Parse and calculate from grid
-  const cellCoord = parseGridCellId(id);
-  if (cellCoord) {
-    return getCellCenterFromGrid(cellCoord.row, cellCoord.col, grid);
+  // Resolve and calculate from the current grid configuration (no string parsing)
+  if (id.startsWith('cell-')) {
+    const cellCoord = getCellIndexById(id, grid);
+    if (cellCoord) return getCellCenterFromGrid(cellCoord.row, cellCoord.col, grid);
   }
 
-  const vertexCoord = parseGridVertexId(id);
-  if (vertexCoord) {
-    return getVertexPositionFromGrid(vertexCoord.row, vertexCoord.col, grid);
+  if (id.startsWith('vertex-')) {
+    const vertexCoord = getVertexIndexById(id, grid);
+    if (vertexCoord) return getVertexPositionFromGrid(vertexCoord.row, vertexCoord.col, grid);
   }
 
-  const edgeCoord = parseEdgeId(id);
-  if (edgeCoord) {
-    return getEdgePositionFromGrid(edgeCoord.type, edgeCoord.row, edgeCoord.col, grid);
+  if (id.startsWith('edge-')) {
+    const edgeCoord = getEdgeIndexById(id, grid);
+    if (edgeCoord) return getEdgePositionFromGrid(edgeCoord.type, edgeCoord.row, edgeCoord.col, grid);
   }
 
   return null;
@@ -349,10 +350,8 @@ export function resolveVertexId(
   }
 
   // Fall back to grid calculation
-  const coord = parseGridVertexId(id);
-  if (coord) {
-    return { position: getVertexPositionFromGrid(coord.row, coord.col, grid) };
-  }
+  const coord = getVertexIndexById(id, grid);
+  if (coord) return { position: getVertexPositionFromGrid(coord.row, coord.col, grid) };
 
   return null;
 }

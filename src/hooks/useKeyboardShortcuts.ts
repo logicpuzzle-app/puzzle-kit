@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from 'react';
 import { usePuzzleStore } from '../store/puzzleStore';
 import { toDataLayer } from '../types';
+import { getCellId, getCellIndexById } from '../utils/gridUtils';
 
 type Shortcut = {
   keys: string[];
@@ -82,16 +83,15 @@ export function useKeyboardShortcuts() {
         }
       } else {
         if (cursorCell) {
-          const match = cursorCell.match(/^cell-(\d+)-(\d+)$/);
-          if (match) {
-            const row = parseInt(match[1], 10);
-            const col = parseInt(match[2], 10);
+          const index = getCellIndexById(cursorCell, grid);
+          if (index) {
+            const { row, col } = index;
             const newRow = Math.max(0, Math.min(grid.rows - 1, row + dRow));
             const newCol = Math.max(0, Math.min(grid.cols - 1, col + dCol));
-            newCellId = `cell-${newRow}-${newCol}`;
+            newCellId = getCellId(newRow, newCol, grid.gridType);
           }
         } else {
-          newCellId = 'cell-0-0';
+          newCellId = getCellId(0, 0, grid.gridType);
         }
       }
 

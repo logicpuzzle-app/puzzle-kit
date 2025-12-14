@@ -25,6 +25,7 @@ import {
 } from '@logicpuzzle-app/solver-kit';
 import type { PuzzleState, GridConfig } from '../types';
 import type { SolveResult } from './types';
+import { getCellIndexById } from '../utils/gridUtils';
 
 // Message types
 export interface SolverWorkerRequest {
@@ -58,10 +59,10 @@ function solveSlitherlink(grid: GridConfig, problem: PuzzleState['problem']): So
           row = Math.floor(clue.cell / grid.cols);
           col = clue.cell % grid.cols;
         } else {
-          const match = clue.cellId.match(/^cell-(\d+)-(\d+)$/);
-          if (!match) continue;
-          row = parseInt(match[1], 10);
-          col = parseInt(match[2], 10);
+          const index = getCellIndexById(clue.cellId, grid);
+          if (!index) continue;
+          row = index.row;
+          col = index.col;
         }
         if (clue.value >= 0 && clue.value <= 3) {
           field.setNumber(row, col, clue.value);
@@ -72,14 +73,11 @@ function solveSlitherlink(grid: GridConfig, problem: PuzzleState['problem']): So
     // Also check regular numbers (for backward compatibility)
     if (problem.numbers) {
       for (const num of Object.values(problem.numbers)) {
-        const match = num.cellId.match(/cell-(\d+)-(\d+)/);
-        if (match) {
-          const row = parseInt(match[1], 10);
-          const col = parseInt(match[2], 10);
-          const value = parseInt(num.value, 10);
-          if (value >= 0 && value <= 3) {
-            field.setNumber(row, col, value);
-          }
+        const index = getCellIndexById(num.cellId, grid);
+        if (!index) continue;
+        const value = parseInt(num.value, 10);
+        if (value >= 0 && value <= 3) {
+          field.setNumber(index.row, index.col, value);
         }
       }
     }
@@ -227,19 +225,15 @@ function solveMasyu(grid: GridConfig, problem: PuzzleState['problem']): SolveRes
     // Extract pearl clues from symbols (circle-shade = black, circle-unshade = white)
     if (problem.symbols) {
       for (const symbol of Object.values(problem.symbols)) {
-        // Parse cell position from cellId (e.g., "cell-2-3")
-        const match = symbol.cellId.match(/cell-(\d+)-(\d+)/);
-        if (match) {
-          const row = parseInt(match[1], 10);
-          const col = parseInt(match[2], 10);
-          // Support both naming conventions:
-          // - circle-shade / circle-unshade (puzzle-kit native)
-          // - circle-filled / circle-empty (puzz.link import)
-          if (symbol.symbolType === 'circle-shade' || symbol.symbolType === 'circle-filled') {
-            field.setPearl(row, col, PearlType.BLACK);
-          } else if (symbol.symbolType === 'circle-unshade' || symbol.symbolType === 'circle-empty') {
-            field.setPearl(row, col, PearlType.WHITE);
-          }
+        const index = getCellIndexById(symbol.cellId, grid);
+        if (!index) continue;
+        // Support both naming conventions:
+        // - circle-shade / circle-unshade (puzzle-kit native)
+        // - circle-filled / circle-empty (puzz.link import)
+        if (symbol.symbolType === 'circle-shade' || symbol.symbolType === 'circle-filled') {
+          field.setPearl(index.row, index.col, PearlType.BLACK);
+        } else if (symbol.symbolType === 'circle-unshade' || symbol.symbolType === 'circle-empty') {
+          field.setPearl(index.row, index.col, PearlType.WHITE);
         }
       }
     }
@@ -391,10 +385,10 @@ function solveYajilin(grid: GridConfig, problem: PuzzleState['problem']): SolveR
           row = Math.floor(clue.cell / grid.cols);
           col = clue.cell % grid.cols;
         } else {
-          const match = clue.cellId.match(/^cell-(\d+)-(\d+)$/);
-          if (!match) continue;
-          row = parseInt(match[1], 10);
-          col = parseInt(match[2], 10);
+          const index = getCellIndexById(clue.cellId, grid);
+          if (!index) continue;
+          row = index.row;
+          col = index.col;
         }
 
         // Map Penpa direction number to Direction enum
@@ -673,19 +667,16 @@ function solveHeyawake(grid: GridConfig, problem: PuzzleState['problem']): Solve
     // Set room numbers from problem.numbers
     if (problem.numbers) {
       for (const num of Object.values(problem.numbers)) {
-        const match = num.cellId.match(/cell-(\d+)-(\d+)/);
-        if (match) {
-          const numRow = parseInt(match[1], 10);
-          const numCol = parseInt(match[2], 10);
-          const value = parseInt(num.value, 10);
+        const index = getCellIndexById(num.cellId, grid);
+        if (!index) continue;
+        const value = parseInt(num.value, 10);
 
-          // Find which room this cell belongs to
-          for (const room of rooms) {
-            const inRoom = room.members.some(m => m.row === numRow && m.col === numCol);
-            if (inRoom) {
-              room.blackCount = value;
-              break;
-            }
+        // Find which room this cell belongs to
+        for (const room of rooms) {
+          const inRoom = room.members.some(m => m.row === index.row && m.col === index.col);
+          if (inRoom) {
+            room.blackCount = value;
+            break;
           }
         }
       }
@@ -833,10 +824,10 @@ function solveNurikabe(grid: GridConfig, problem: PuzzleState['problem']): Solve
         row = Math.floor(clue.cell / grid.cols);
         col = clue.cell % grid.cols;
       } else {
-        const match = clue.cellId.match(/^cell-(\d+)-(\d+)$/);
-        if (!match) continue;
-        row = parseInt(match[1], 10);
-        col = parseInt(match[2], 10);
+        const index = getCellIndexById(clue.cellId, grid);
+        if (!index) continue;
+        row = index.row;
+        col = index.col;
       }
       const v = parseClueValue(clue.value);
       if (v && v > 0) clues.push({ row, col, value: v });
@@ -844,22 +835,18 @@ function solveNurikabe(grid: GridConfig, problem: PuzzleState['problem']): Solve
   }
   if (problem.numbers) {
     for (const num of Object.values(problem.numbers)) {
-      const match = num.cellId.match(/cell-(\d+)-(\d+)/);
-      if (!match) continue;
-      const row = parseInt(match[1], 10);
-      const col = parseInt(match[2], 10);
+      const index = getCellIndexById(num.cellId, grid);
+      if (!index) continue;
       const v = parseClueValue(num.value);
-      if (v && v > 0) clues.push({ row, col, value: v });
+      if (v && v > 0) clues.push({ row: index.row, col: index.col, value: v });
     }
   }
   if (problem.symbols) {
     for (const sym of Object.values(problem.symbols)) {
-      const match = sym.cellId.match(/cell-(\d+)-(\d+)/);
-      if (!match) continue;
-      const row = parseInt(match[1], 10);
-      const col = parseInt(match[2], 10);
+      const index = getCellIndexById(sym.cellId, grid);
+      if (!index) continue;
       const v = parseClueValue(sym.symbolType);
-      if (v && v > 0) clues.push({ row, col, value: v });
+      if (v && v > 0) clues.push({ row: index.row, col: index.col, value: v });
     }
   }
 

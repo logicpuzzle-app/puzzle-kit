@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
-import { parseCellId, getCellCenter } from '../../utils/gridUtils';
+import { getCellCenter, getCellIndexById } from '../../utils/gridUtils';
 import type { BoxLineElement, DataLayerType } from '../../types';
 import type { TopologyVertex } from '../../utils/gridTopology';
 
@@ -113,16 +113,13 @@ export const BoxLineLayer: React.FC<BoxLineLayerProps> = ({ layer }) => {
       const elements: React.ReactNode[] = [];
       const cells = boxLine.cells;
 
-      // Parse all cell positions with their polygons
+      // Build all cell positions with their polygons
       const positions = cells.map((cellId) => {
         if (useTopology && topology) {
           const topoCell = topology.cells.get(cellId);
           if (topoCell) {
-            const parsed = parseCellId(cellId, grid.gridType);
             return {
               cellId,
-              row: parsed?.row ?? 0,
-              col: parsed?.col ?? 0,
               center: { x: topoCell.center.x, y: topoCell.center.y },
               polygon: topoCell.boundaryVertices
                 .map(vId => topology.vertices.get(vId))
@@ -132,28 +129,39 @@ export const BoxLineLayer: React.FC<BoxLineLayerProps> = ({ layer }) => {
           }
         }
 
-        const parsed = parseCellId(cellId, grid.gridType);
-        if (!parsed) return null;
-        const center = getCellCenter(parsed.row, parsed.col, grid);
+        const index = getCellIndexById(cellId, grid);
+        if (!index) return null;
+        const center = getCellCenter(index.row, index.col, grid);
         return {
           cellId,
-          row: parsed.row,
-          col: parsed.col,
+          index,
           center,
           polygon: getSquarePolygon(center, cellSize),
         };
-      }).filter(Boolean) as { cellId: string; row: number; col: number; center: Point; polygon: Point[] }[];
+      }).filter(Boolean) as (
+        | { cellId: string; center: Point; polygon: Point[] }
+        | { cellId: string; index: { row: number; col: number }; center: Point; polygon: Point[] }
+      )[];
 
       // Draw connections between adjacent cells first (so boxes overlay them)
       for (let i = 0; i < positions.length - 1; i++) {
         const curr = positions[i];
         const next = positions[i + 1];
 
-        // Check if cells are orthogonally adjacent
-        const rowDiff = Math.abs(next.row - curr.row);
-        const colDiff = Math.abs(next.col - curr.col);
+        const isAdjacent = (() => {
+          if (useTopology && topology) {
+            const currCell = topology.cells.get(curr.cellId);
+            return currCell?.adjacentCells.includes(next.cellId) ?? false;
+          }
+          if ('index' in curr && 'index' in next) {
+            const rowDiff = Math.abs(next.index.row - curr.index.row);
+            const colDiff = Math.abs(next.index.col - curr.index.col);
+            return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+          }
+          return false;
+        })();
 
-        if ((rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1)) {
+        if (isAdjacent) {
           // Find the connection polygon using shared edge vertices
           const connPolygon = findConnectionPolygon(
             curr.polygon,

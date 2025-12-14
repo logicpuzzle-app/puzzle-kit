@@ -795,12 +795,19 @@ export const areLinesConnected = (a: LineWithPosition, b: LineWithPosition): boo
  * Check if two lines are connected AND collinear (same direction)
  */
 export const areLinesCollinearConnected = (a: LineWithPosition, b: LineWithPosition): boolean => {
-  if (!areLinesConnected(a, b)) return false;
+  const connected = areLinesConnected(a, b);
+  if (!connected) {
+    console.log(`  ${a.line.id} <-> ${b.line.id}: NOT connected`);
+    return false;
+  }
 
   const aDir = getLineDirection(a.fromX, a.fromY, a.toX, a.toY);
   const bDir = getLineDirection(b.fromX, b.fromY, b.toX, b.toY);
+  const collinear = areDirectionsCollinear(aDir, bDir);
 
-  return areDirectionsCollinear(aDir, bDir);
+  console.log(`  ${a.line.id} <-> ${b.line.id}: connected=${connected}, aDir=(${aDir.dx.toFixed(3)},${aDir.dy.toFixed(3)}), bDir=(${bDir.dx.toFixed(3)},${bDir.dy.toFixed(3)}), collinear=${collinear}`);
+
+  return collinear;
 };
 
 /**
