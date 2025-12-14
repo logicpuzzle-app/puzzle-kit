@@ -40,6 +40,7 @@ import {
   floretPentagonalGridToTopology,
   prismaticPentagonalGridToTopology,
 } from './dual';
+import { penroseP3GridToTopology } from './special/penroseP3';
 import { applyMergedCells, applySplits } from './mergeSplit';
 import { applySculptOperations } from './sculpt';
 
@@ -128,6 +129,9 @@ export function gridConfigToTopology(config: GridConfig): GridTopology {
     case 'iso':
         return isometricGridToTopology(config);
 
+    case 'penrose_P3':
+        return penroseP3GridToTopology(config);
+
     default:
       // Default to square grid
       console.warn(`Unknown grid type: ${gridType}, falling back to square`);
@@ -173,6 +177,7 @@ export function getGridTypeDisplayName(gridType: string): string {
     'prismatic-pentagonal': 'Prismatic Pentagonal (V3³.4²)',
     // Special
     'pyramid': 'Pyramid',
+    'penrose_P3': 'Penrose P3',
   };
 
   return names[gridType] || gridType;
@@ -209,6 +214,6 @@ export function getAvailableGridTypes(): {
       'floret-pentagonal',
       'prismatic-pentagonal',
     ],
-    special: ['pyramid', 'iso'],
+    special: ['pyramid', 'iso', 'penrose_P3'],
   };
 }

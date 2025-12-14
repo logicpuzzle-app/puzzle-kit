@@ -54,8 +54,11 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
   setGrid: (gridUpdate) =>
     set((state) => {
       const newGrid = { ...state.grid, ...gridUpdate };
+      const forceTopology = newGrid.gridType === 'penrose_P3';
+      const nextUseTopology = forceTopology ? true : state.useTopology;
+
       let newTopology = state.topology;
-      if (state.useTopology) {
+      if (nextUseTopology) {
         const base = gridConfigToTopology(newGrid);
         newTopology = applyTopologyPreset(base, {
           preset: state.topologyPreset,
@@ -65,12 +68,16 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       return {
         grid: newGrid,
         topology: newTopology,
+        ...(forceTopology ? { useTopology: true } : {}),
       };
     }),
 
   // Topology mode
   useTopology: true,
   setUseTopology: (useTopology) => {
+    if (get().grid.gridType === 'penrose_P3' && !useTopology) {
+      return;
+    }
     set({ useTopology });
     if (useTopology) {
       get().applyTopologyPreset();
@@ -200,9 +207,18 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       const resizeResult = resizeTopology(state.topology, oldConfig, newConfig);
       const removedCellSet = new Set(resizeResult.removedCells);
 
-      const isCellRemoved = (cellId: string): boolean => {
-        const topologyCellId = `cell-${cellId}`;
-        return removedCellSet.has(topologyCellId);
+      const oldTopology = state.topology;
+
+      const isCellRemoved = (cellId: string): boolean => removedCellSet.has(cellId);
+
+      const isVertexInRemovedCell = (vertexId: string): boolean => {
+        const vertex = oldTopology.vertices.get(vertexId);
+        return vertex ? vertex.adjacentCells.some((cid) => removedCellSet.has(cid)) : false;
+      };
+
+      const isEdgeInRemovedCell = (edgeId: string): boolean => {
+        const edge = oldTopology.edges.get(edgeId);
+        return edge ? edge.adjacentCells.some((cid) => removedCellSet.has(cid)) : false;
       };
 
       const filterElements = <T extends Record<string, unknown>>(elements: T): T => {
@@ -222,24 +238,40 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
             }
           }
 
+          if ('cells' in elem && Array.isArray(elem.cells)) {
+            if (elem.cells.some((cid) => typeof cid === 'string' && isCellRemoved(cid))) {
+              shouldKeep = false;
+            }
+          }
+
+          if ('points' in elem && Array.isArray(elem.points)) {
+            if (elem.points.some((pid) => typeof pid === 'string' && isCellRemoved(pid))) {
+              shouldKeep = false;
+            }
+          }
+
           if ('from' in elem && typeof elem.from === 'string') {
-            const fromParts = elem.from.split('-');
-            if (fromParts.length >= 2) {
-              const cellId = `${fromParts[0]}-${fromParts[1]}`;
-              if (isCellRemoved(cellId)) {
-                shouldKeep = false;
-              }
+            const fromId = elem.from;
+            if (fromId.startsWith('cell-') && isCellRemoved(fromId)) {
+              shouldKeep = false;
+            } else if (fromId.startsWith('vertex-') && isVertexInRemovedCell(fromId)) {
+              shouldKeep = false;
+            }
+          }
+
+          if ('to' in elem && typeof elem.to === 'string') {
+            const toId = elem.to;
+            if (toId.startsWith('cell-') && isCellRemoved(toId)) {
+              shouldKeep = false;
+            } else if (toId.startsWith('vertex-') && isVertexInRemovedCell(toId)) {
+              shouldKeep = false;
             }
           }
 
           if ('position' in elem && typeof elem.position === 'string') {
-            const pos = elem.position;
-            const parts = pos.split('-');
-            if (parts.length >= 2) {
-              const cellId = `${parts[0]}-${parts[1]}`;
-              if (isCellRemoved(cellId)) {
-                shouldKeep = false;
-              }
+            const posId = elem.position;
+            if (posId.startsWith('edge-') && isEdgeInRemovedCell(posId)) {
+              shouldKeep = false;
             }
           }
 

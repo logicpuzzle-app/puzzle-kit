@@ -26,8 +26,12 @@ export const GridBackground: React.FC<GridBackgroundProps> = ({ children }) => {
   const { gridType = 'square' } = effectiveGrid;
   const isPreview = previewTopology !== null;
 
-  // Use topology-based background when in topology mode
-  if (useTopology && effectiveTopology) {
+  // Prefer topology-based rendering for non-rectangular grids
+  const topologyPreferred =
+    useTopology || gridType === 'pyramid' || gridType === 'iso' || gridType === 'penrose_P3';
+
+  // Use topology-based background when enabled and topology available
+  if (topologyPreferred && effectiveTopology) {
     const content = <TopologyGridBackground topology={effectiveTopology}>{children}</TopologyGridBackground>;
     return isPreview ? <g opacity={PREVIEW_OPACITY}>{content}</g> : content;
   }
@@ -52,8 +56,12 @@ export const GridLines: React.FC = () => {
   const { gridType = 'square' } = effectiveGrid;
   const isPreview = previewTopology !== null;
 
-  // Use topology-based lines when in topology mode
-  if (useTopology && effectiveTopology) {
+  // Prefer topology-based rendering for non-rectangular grids
+  const topologyPreferred =
+    useTopology || gridType === 'pyramid' || gridType === 'iso' || gridType === 'penrose_P3';
+
+  // Use topology-based lines when enabled and topology available
+  if (topologyPreferred && effectiveTopology) {
     const content = <TopologyGridLines topology={effectiveTopology} grid={effectiveGrid} />;
     return isPreview ? <g opacity={PREVIEW_OPACITY}>{content}</g> : content;
   }
@@ -79,7 +87,8 @@ export const Grid: React.FC = () => {
   const isPreview = previewTopology !== null;
 
   // For pyramid/iso, force topology rendering if available
-  const topologyPreferred = useTopology || gridType === 'pyramid' || gridType === 'iso';
+  const topologyPreferred =
+    useTopology || gridType === 'pyramid' || gridType === 'iso' || gridType === 'penrose_P3';
 
   // Prefer topology-based rendering when enabled and topology available
   if (topologyPreferred && effectiveTopology) {

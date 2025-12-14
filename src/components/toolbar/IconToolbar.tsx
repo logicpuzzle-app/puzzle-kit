@@ -235,10 +235,22 @@ export const IconToolbar: React.FC = () => {
       }
 
       if (result) {
-        usePuzzleStore.setState({
-          grid: result.grid,
-          puzzle: result.state,
-        });
+        const store = usePuzzleStore.getState();
+
+        if (result.topology) {
+          // Custom topology (e.g., Penrose) must be applied directly; generic presets don't cover it.
+          usePuzzleStore.setState({
+            grid: result.grid,
+            topology: result.topology,
+            useTopology: true,
+            puzzle: result.state,
+          });
+        } else {
+          // Use store APIs so topology stays in sync with the imported grid.
+          store.setGrid(result.grid);
+          usePuzzleStore.setState({ puzzle: result.state });
+        }
+
         showAlert({
           title: t('file.importSuccess'),
           message: t('file.importSuccess'),

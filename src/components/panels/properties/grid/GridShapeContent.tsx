@@ -53,6 +53,7 @@ const gridTypeGroups: { category: string; labelKey: string; types: { id: GridTyp
     types: [
       { id: 'pyramid', labelKey: 'tiling.pyramid' },
       { id: 'iso', labelKey: 'tiling.iso' },
+      { id: 'penrose_P3', labelKey: 'tiling.penroseP3' },
     ],
   },
 ];
