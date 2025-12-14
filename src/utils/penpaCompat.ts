@@ -1,6 +1,10 @@
 import pako from 'pako';
 import type { GridConfig, PuzzleState, PuzzleElements } from '../types';
+import type { GridTopology } from './topology/types';
 import { SurfaceColorPalette, LineColorPalette, SymbolColorPalette, PenpaColors } from '../constants/colors';
+import { penroseP3FromPenpa, penpaIndexToCellId } from './topology/special/penroseP3';
+import { COMPRESS_SUBSTITUTIONS } from './penpaSerializer';
+import { getCellIndexById, getEdgeIndexById, getVertexIndexById } from './gridUtils';
 
 /**
  * Penpa-edit URL compatibility layer
@@ -16,6 +20,7 @@ export interface PuzzlinkData {
   grid: GridConfig;
   state: PuzzleState;
   puzzleType?: string; // puzz.link puzzle type (e.g., 'yajilin', 'slitherlink')
+  topology?: GridTopology; // For non-square grids (Penrose, etc.)
 }
 
 // Penpa URL parameter names
@@ -26,8 +31,8 @@ const PENPA_PARAMS = {
   SOLVE: 'solve',
 };
 
-// Penpa's COMPRESS substitution table (from opt.js)
-const COMPRESS_SUB: Record<string, string> = {
+// Penpa's COMPRESS substitution table (from opt.js) - older Q* format
+const COMPRESS_SUB_OLD: Record<string, string> = {
   '"qa"': 'Qa',
   '"pu_q"': 'Qb',
   '"pu_a"': 'Qc',
@@ -58,9 +63,12 @@ const COMPRESS_SUB: Record<string, string> = {
   '"frame"': 'QB',
 };
 
-// Reverse mapping
-const DECOMPRESS_SUB: Record<string, string> = Object.fromEntries(
-  Object.entries(COMPRESS_SUB).map(([k, v]) => [v, k])
+// Newer z* format substitution table (shared with serializer, derived from penpa-edit)
+const COMPRESS_SUB_NEW = COMPRESS_SUBSTITUTIONS;
+
+// Reverse mapping for old format
+const DECOMPRESS_SUB_OLD: Record<string, string> = Object.fromEntries(
+  Object.entries(COMPRESS_SUB_OLD).map(([k, v]) => [v, k])
 );
 
 interface PenpaData {
@@ -68,6 +76,8 @@ interface PenpaData {
   nx?: number;
   ny?: number;
   cellsize?: number;
+  penroseRotational?: number;
+  penroseVariation?: number;
   pu_q?: PenpaPuData;
   pu_a?: PenpaPuData;
   mode?: PenpaMode;
@@ -104,38 +114,79 @@ interface PenpaMode {
 }
 
 /**
+ * Decode base64 URL-safe format to binary array
+ */
+function decodeBase64ToBinary(data: string): Uint8Array {
+  // Restore standard base64 from URL-safe format
+  let base64 = data.replace(/-/g, '+').replace(/_/g, '/');
+  // Add padding if needed
+  while (base64.length % 4) {
+    base64 += '=';
+  }
+
+  // Decode base64 to binary
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+/**
+ * Decode base64 to Uint8Array (works in both browser and Node.js)
+ */
+function base64ToBytes(base64: string): Uint8Array {
+  // URLSearchParams may decode '+' as space; undo that, and strip other whitespace.
+  const normalized = base64.replace(/ /g, '+').replace(/[\r\n\t]/g, '');
+
+  // First try using Buffer (Node.js)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const globalObj = typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : {}) as any;
+  if (globalObj.Buffer) {
+    return new Uint8Array(globalObj.Buffer.from(normalized, 'base64'));
+  }
+
+  // Fall back to atob (browser)
+  const binary = atob(normalized);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+/**
  * Decode Penpa URL parameter
+ * Penpa uses Raw Deflate compression (no zlib header)
  */
 function decodePenpaUrl(encoded: string): string | null {
   try {
-    // Check if it starts with zL (new format) or raw base64
-    let data = encoded;
-
-    // Remove URL encoding
-    data = decodeURIComponent(data);
-
-    // Restore standard base64
-    data = data.replace(/-/g, '+').replace(/_/g, '/');
-
-    // Add padding if needed
-    while (data.length % 4) {
-      data += '=';
+    // Convert URL-safe base64 to standard base64
+    let base64 = encoded.replace(/ /g, '+').replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4) {
+      base64 += '=';
     }
 
-    // Decode base64
-    const binary = atob(data);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
+    // Decode base64 to binary
+    const bytes = base64ToBytes(base64);
 
-    // Try to decompress with zlib
+    // Try Raw Inflate (no zlib header) - this is what Penpa uses
     try {
-      const inflated = pako.inflate(bytes, { to: 'string' });
-      return inflated;
+      const inflated = pako.inflateRaw(bytes);
+      const decoder = new TextDecoder('utf-8');
+      return decoder.decode(inflated);
     } catch {
-      // If decompression fails, it might be uncompressed
-      return binary;
+      // If raw inflate fails, try regular inflate (zlib header)
+      try {
+        const inflated = pako.inflate(bytes);
+        const decoder = new TextDecoder('utf-8');
+        return decoder.decode(inflated);
+      } catch {
+        // If both fail, assume uncompressed
+        const decoder = new TextDecoder('utf-8');
+        return decoder.decode(bytes);
+      }
     }
   } catch (error) {
     console.error('Failed to decode Penpa URL:', error);
@@ -144,26 +195,216 @@ function decodePenpaUrl(encoded: string): string | null {
 }
 
 /**
- * Expand compressed Penpa JSON keys
+ * Expand compressed Penpa JSON keys (new z* format)
+ * Must be applied in reverse order
  */
-function expandPenpaKeys(json: string): string {
+function expandPenpaKeysNew(json: string): string {
   let expanded = json;
-
-  // Replace compressed keys with full keys
-  for (const [compressed, full] of Object.entries(DECOMPRESS_SUB)) {
-    expanded = expanded.split(compressed).join(full);
+  // Apply substitutions in reverse order
+  for (let i = COMPRESS_SUB_NEW.length - 1; i >= 0; i--) {
+    const [original, compressed] = COMPRESS_SUB_NEW[i];
+    expanded = expanded.split(compressed).join(original);
   }
-
   return expanded;
 }
 
 /**
+ * Expand compressed Penpa JSON keys (old Q* format)
+ */
+function expandPenpaKeysOld(json: string): string {
+  let expanded = json;
+  for (const [compressed, full] of Object.entries(DECOMPRESS_SUB_OLD)) {
+    expanded = expanded.split(compressed).join(full);
+  }
+  return expanded;
+}
+
+/**
+ * Expand compressed Penpa JSON keys (auto-detect format)
+ */
+function expandPenpaKeys(json: string): string {
+  // Check which format is being used
+  // z* format uses 'zQ', 'zA', etc.
+  // Q* format uses 'Qa', 'Qb', etc.
+  if (json.includes('zQ') || json.includes('zA') || json.includes('zS') || json.includes('zL')) {
+    return expandPenpaKeysNew(json);
+  } else if (json.includes('Qa') || json.includes('Qb') || json.includes('Qg')) {
+    return expandPenpaKeysOld(json);
+  }
+  // Try both if no clear indicator
+  const newExpanded = expandPenpaKeysNew(json);
+  const oldExpanded = expandPenpaKeysOld(json);
+  // Return the one that looks more like valid JSON
+  if (newExpanded.includes('"pu_q"') || newExpanded.includes('"surface"')) {
+    return newExpanded;
+  }
+  return oldExpanded;
+}
+
+/**
+ * Sanitize a potentially corrupted JSON line by truncating at the last valid key-value pair.
+ * Penpa data sometimes gets corrupted mid-way through, so we need to find a safe truncation point.
+ */
+function sanitizePenpaJsonLine(line: string): string {
+  // Try parsing as-is first
+  try {
+    JSON.parse(line);
+    return line;
+  } catch {
+    // JSON is invalid, try to truncate at a safe point
+  }
+
+  // Known end patterns for Penpa JSON (after key expansion)
+  // These are typical endings of valid JSON objects in Penpa format
+  const safeEndPatterns = [
+    'z6:[]',    // killercages (compressed)
+    'z7:[]',    // nobulbthermo (compressed)
+    '"killercages":[]',  // expanded form
+    '"nobulbthermo":[]', // expanded form
+  ];
+
+  for (const pattern of safeEndPatterns) {
+    const idx = line.indexOf(pattern);
+    if (idx !== -1) {
+      const truncated = line.slice(0, idx + pattern.length) + '}';
+      try {
+        JSON.parse(expandPenpaKeys(truncated));
+        return truncated;
+      } catch {
+        // This truncation point didn't work, try next
+      }
+    }
+  }
+
+  // If no safe end pattern found, try to find the last valid closing brace
+  // by iteratively testing different truncation points
+  let lastValidTruncation = '{}';
+  for (let i = line.length - 1; i > 0; i--) {
+    if (line[i] === '}' || line[i] === ']') {
+      const truncated = line.slice(0, i + 1);
+      try {
+        JSON.parse(expandPenpaKeys(truncated));
+        lastValidTruncation = truncated;
+        break;
+      } catch {
+        // Keep trying
+      }
+    }
+  }
+
+  return lastValidTruncation;
+}
+
+/**
+ * Parse Penpa text format (line-based format)
+ * Format:
+ * - Line 0: gridtype,nx,ny,size,theta,reflect[0],reflect[1],canvasx,canvasy,center_n,center_n0,...
+ * - Line 1: space array (JSON)
+ * - Line 2: mode (or mode parts separated by ~)
+ * - Line 3: pu_q (JSON with compressed keys)
+ * - Line 4+: additional data
+ */
+function parsePenpaTextFormat(text: string): PenpaData {
+  const lines = text.split('\n');
+  if (lines.length < 4) {
+    throw new Error('Invalid Penpa text format: not enough lines');
+  }
+
+  // Parse Line 0: grid settings
+  const settings = lines[0].split(',');
+  const gridtype = settings[0] || 'square';
+  const nx = parseInt(settings[1]) || 10;
+  const ny = parseInt(settings[2]) || 10;
+  const cellsize = parseInt(settings[3]) || 38;
+
+  // Penrose-specific params (penpa-edit stores them at fixed indices in line 0)
+  let penroseRotational: number | undefined;
+  let penroseVariation: number | undefined;
+  if (gridtype === 'penrose_P3') {
+    const rotational = settings[11] !== undefined ? Number(settings[11]) : NaN;
+    const variation = settings[12] !== undefined ? Number(settings[12]) : NaN;
+    if (!Number.isNaN(rotational)) penroseRotational = rotational;
+    if (!Number.isNaN(variation)) penroseVariation = variation;
+  }
+
+  // Parse Line 3: pu_q data (JSON with compressed keys)
+  // Sanitize the line first (handle potential corruption)
+  let puqLine = sanitizePenpaJsonLine(lines[3]);
+  // Apply key expansion
+  puqLine = expandPenpaKeys(puqLine);
+
+  let pu_q: PenpaPuData = {};
+  try {
+    pu_q = JSON.parse(puqLine);
+  } catch {
+    // pu_q might be invalid/truncated, try to extract what we can
+    console.warn('Failed to parse pu_q, continuing with empty data');
+  }
+
+  // Parse Line 4 if available (pu_a data)
+  let pu_a: PenpaPuData = {};
+  if (lines.length > 4 && lines[4]) {
+    let puaLine = sanitizePenpaJsonLine(lines[4]);
+    puaLine = expandPenpaKeys(puaLine);
+    try {
+      pu_a = JSON.parse(puaLine);
+    } catch {
+      // pu_a might be invalid
+    }
+  }
+
+  return {
+    gridtype,
+    nx,
+    ny,
+    cellsize,
+    penroseRotational,
+    penroseVariation,
+    pu_q,
+    pu_a,
+  };
+}
+
+/**
+ * Parse hash params manually (URLSearchParams converts + to space, which breaks base64)
+ */
+function parseHashParams(hash: string): Map<string, string> {
+  const params = new Map<string, string>();
+  const hashContent = hash.startsWith('#') ? hash.slice(1) : hash;
+
+  for (const pair of hashContent.split('&')) {
+    const idx = pair.indexOf('=');
+    if (idx > 0) {
+      const key = pair.slice(0, idx);
+      // decodeURIComponent does not treat '+' specially, but correctly decodes %2B, %2F, etc.
+      const value = decodeURIComponent(pair.slice(idx + 1));
+      params.set(key, value);
+    }
+  }
+  return params;
+}
+
+/**
  * Parse Penpa puzzle data from URL
+ * Supports both query params (?p=...) and hash params (#m=solve&p=...)
  */
 export function parsePenpaUrl(url: string): PuzzlinkData | null {
   try {
     const urlObj = new URL(url);
-    const puzzleParam = urlObj.searchParams.get(PENPA_PARAMS.PUZZLE);
+
+    // Try query params first (?p=...)
+    let puzzleParam = urlObj.searchParams.get(PENPA_PARAMS.PUZZLE);
+    if (puzzleParam) {
+      // Undo application/x-www-form-urlencoded decoding ('+' -> ' ')
+      puzzleParam = puzzleParam.replace(/ /g, '+');
+    }
+
+    // If not found, try hash params (#m=solve&p=...)
+    // Must parse manually because URLSearchParams converts + to space
+    if (!puzzleParam && urlObj.hash) {
+      const hashParams = parseHashParams(urlObj.hash);
+      puzzleParam = hashParams.get(PENPA_PARAMS.PUZZLE) || null;
+    }
 
     if (!puzzleParam) {
       console.error('No puzzle parameter found in URL');
@@ -179,17 +420,30 @@ export function parsePenpaUrl(url: string): PuzzlinkData | null {
     // Expand compressed keys
     const expanded = expandPenpaKeys(decoded);
 
-    // Parse JSON
+    // Check if it's JSON format or line-based text format
     let penpaData: PenpaData;
-    try {
-      penpaData = JSON.parse(expanded);
-    } catch {
-      console.error('Failed to parse Penpa JSON');
-      return null;
+
+    // Try JSON format first
+    if (expanded.startsWith('{')) {
+      try {
+        penpaData = JSON.parse(expanded);
+      } catch {
+        console.error('Failed to parse Penpa JSON');
+        return null;
+      }
+    } else {
+      // Parse line-based text format (older Penpa format)
+      try {
+        penpaData = parsePenpaTextFormat(expanded);
+      } catch (error) {
+        console.error('Failed to parse Penpa text format:', error);
+        return null;
+      }
     }
 
     // Convert to PuzzleKit format
-    return convertPenpaToPuzzleKit(penpaData);
+    const result = convertPenpaToPuzzleKit(penpaData);
+    return result;
   } catch (error) {
     console.error('Failed to parse Penpa URL:', error);
     return null;
@@ -201,9 +455,43 @@ export function parsePenpaUrl(url: string): PuzzlinkData | null {
  */
 function convertPenpaToPuzzleKit(penpa: PenpaData): PuzzlinkData {
   // Extract grid dimensions
-  const rows = penpa.ny || 10;
   const cols = penpa.nx || 10;
+  let rows = penpa.ny || 10;
   const cellSize = penpa.cellsize || 40;
+
+  // Check if this is a Penrose P3 grid
+  const isPenroseP3 = penpa.gridtype === 'penrose_P3';
+
+  let topology: GridTopology | undefined;
+  let centerlist: number[] | undefined;
+
+  if (isPenroseP3) {
+    // Generate Penrose P3 topology using the same algorithm as Penpa
+    // For Penrose: nx = side, ny = order
+    const penroseResult = penroseP3FromPenpa(
+      penpa.nx || 5,
+      penpa.ny || 5,
+      cellSize,
+      {
+        rotational: penpa.penroseRotational ?? 0,
+        variation: penpa.penroseVariation ?? 0.001,
+      }
+    );
+    topology = penroseResult.topology;
+    // IMPORTANT: penroseP3GridToTopology assigns `cell-r-c` IDs based on a position-sorted centerlist.
+    // Use the same ordering here so imported elements land in the correct tiles.
+    centerlist = [...penroseResult.centerlist].sort((a, b) => {
+      const pa = penroseResult.points[a];
+      const pb = penroseResult.points[b];
+      const dy = pa.y - pb.y;
+      if (Math.abs(dy) > 0.1) return dy;
+      return pa.x - pb.x;
+    });
+
+    // Penpa's nx/ny aren't rectangular dimensions for Penrose; build a pseudo-grid
+    // large enough to map every centerlist index to a unique `cell-r-c` ID.
+    rows = Math.ceil(centerlist.length / cols);
+  }
 
   const grid: GridConfig = {
     rows,
@@ -212,7 +500,7 @@ function convertPenpaToPuzzleKit(penpa: PenpaData): PuzzlinkData {
     outerPadding: 20,
     showGrid: true,
     gridStyle: 'normal',
-    gridType: 'square',
+    gridType: isPenroseP3 ? 'penrose_P3' : 'square',
     marginTop: 0,
     marginBottom: 0,
     marginLeft: 0,
@@ -221,6 +509,14 @@ function convertPenpaToPuzzleKit(penpa: PenpaData): PuzzlinkData {
     frameColor: '#000000',
     gridColor: '#000000',
     backgroundColor: '#ffffff',
+    ...(isPenroseP3
+      ? {
+          penroseSide: penpa.nx || 5,
+          penroseOrder: penpa.ny || 5,
+          penroseRotational: penpa.penroseRotational ?? 0,
+          penroseVariation: penpa.penroseVariation ?? 0.001,
+        }
+      : {}),
   };
 
   const createEmptyElements = (): PuzzleElements => ({
@@ -241,17 +537,20 @@ function convertPenpaToPuzzleKit(penpa: PenpaData): PuzzlinkData {
     answer: createEmptyElements(),
   };
 
+  // Use the generated centerlist for Penrose P3, or the one from penpa data
+  const effectiveCenterlist = centerlist || penpa.centerlist;
+
   // Convert problem layer (pu_q)
   if (penpa.pu_q) {
-    convertPenpaLayer(penpa.pu_q, state.problem, grid, 'problem');
+    convertPenpaLayer(penpa.pu_q, state.problem, grid, 'problem', penpa.gridtype, effectiveCenterlist);
   }
 
   // Convert answer layer (pu_a)
   if (penpa.pu_a) {
-    convertPenpaLayer(penpa.pu_a, state.answer, grid, 'answer');
+    convertPenpaLayer(penpa.pu_a, state.answer, grid, 'answer', penpa.gridtype, effectiveCenterlist);
   }
 
-  return { grid, state };
+  return { grid, state, topology };
 }
 
 /**
@@ -261,21 +560,58 @@ function convertPenpaLayer(
   pu: PenpaPuData,
   elements: PuzzleElements,
   grid: GridConfig,
-  layer: 'problem' | 'answer'
+  layer: 'problem' | 'answer',
+  gridType?: string,
+  centerlist?: number[]
 ): void {
-  const { cols } = grid;
+  const { cols, rows } = grid;
   const width = cols + 4;
+
+  // For non-square grids (Penrose, hex, etc.), create a mapping from Penpa indices to sequential cell positions
+  // Collect all unique indices from the puzzle data and sort them
+  const isNonSquareGrid = gridType && gridType !== 'square' && !gridType.startsWith('sudoku');
+
+  // Build index mapping for non-square grids
+  let indexMapping: Map<number, { row: number; col: number }> | null = null;
+  if (isNonSquareGrid) {
+    // Collect all unique cell indices from all elements
+    const allIndices = new Set<number>();
+    if (pu.surface) Object.keys(pu.surface).forEach(k => allIndices.add(parseInt(k)));
+    if (pu.number) Object.keys(pu.number).forEach(k => allIndices.add(parseInt(k)));
+    if (pu.symbol) Object.keys(pu.symbol).forEach(k => allIndices.add(parseInt(k)));
+    if (pu.numberS) Object.keys(pu.numberS).forEach(k => allIndices.add(parseInt(k)));
+
+    // Use centerlist if available, otherwise use sorted indices
+    const sortedIndices = centerlist && centerlist.length > 0
+      ? centerlist
+      : Array.from(allIndices).sort((a, b) => a - b);
+
+    // Map indices to grid positions sequentially
+    indexMapping = new Map();
+    sortedIndices.forEach((idx, i) => {
+      const row = Math.floor(i / cols);
+      const col = i % cols;
+      if (row < rows && col < cols) {
+        indexMapping!.set(idx, { row, col });
+      }
+    });
+  }
 
   // Convert point index to row/col
   // Penpa uses a linear index with padding
   const indexToRowCol = (index: number): { row: number; col: number } | null => {
+    // Use mapping for non-square grids
+    if (indexMapping) {
+      return indexMapping.get(index) || null;
+    }
+
     // Penpa's point numbering includes margin cells
     // The formula depends on grid type, but for standard square:
     // point = (row + 2) * (cols + 4) + (col + 2)
     const row = Math.floor(index / width) - 2;
     const col = (index % width) - 2;
 
-    if (row >= 0 && row < grid.rows && col >= 0 && col < grid.cols) {
+    if (row >= 0 && row < rows && col >= 0 && col < cols) {
       return { row, col };
     }
     return null;
@@ -593,15 +929,31 @@ function convertPenpaLayer(
 
 /**
  * Check if a URL is a Penpa URL
+ * Supports both query params (?p=...) and hash params (#m=solve&p=...)
  */
 export function isPenpaUrl(url: string): boolean {
   try {
     const urlObj = new URL(url);
-    return (
-      urlObj.hostname.includes('puzz.link') ||
-      urlObj.hostname.includes('penpa') ||
-      urlObj.searchParams.has(PENPA_PARAMS.PUZZLE)
-    );
+
+    // Check hostname
+    if (urlObj.hostname.includes('puzz.link') || urlObj.hostname.includes('penpa')) {
+      return true;
+    }
+
+    // Check query params
+    if (urlObj.searchParams.has(PENPA_PARAMS.PUZZLE)) {
+      return true;
+    }
+
+    // Check hash params (e.g., #m=solve&p=...)
+    if (urlObj.hash) {
+      const hashParams = parseHashParams(urlObj.hash);
+      if (hashParams.has(PENPA_PARAMS.PUZZLE)) {
+        return true;
+      }
+    }
+
+    return false;
   } catch {
     return false;
   }
@@ -1674,13 +2026,10 @@ export function exportToPenpaFormat(
       if (Object.keys(elements.surfaces).length > 0) {
         pu.surface = {};
         Object.values(elements.surfaces).forEach((surface) => {
-          const match = surface.cellId.match(/^cell-(\d+)-(\d+)$/);
-          if (match) {
-            const row = parseInt(match[1]);
-            const col = parseInt(match[2]);
-            const index = rowColToIndex(row, col);
-            pu.surface![index] = surfaceColorToNum[surface.color.toLowerCase()] || 2;
-          }
+          const indexPos = getCellIndexById(surface.cellId, grid);
+          if (!indexPos) return;
+          const index = rowColToIndex(indexPos.row, indexPos.col);
+          pu.surface![index] = surfaceColorToNum[surface.color.toLowerCase()] || 2;
         });
       }
 
@@ -1688,19 +2037,16 @@ export function exportToPenpaFormat(
       if (Object.keys(elements.numbers).length > 0) {
         pu.number = {};
         Object.values(elements.numbers).forEach((num) => {
-          const match = num.cellId.match(/^cell-(\d+)-(\d+)$/);
-          if (match) {
-            const row = parseInt(match[1]);
-            const col = parseInt(match[2]);
-            const index = rowColToIndex(row, col);
+          const indexPos = getCellIndexById(num.cellId, grid);
+          if (!indexPos) return;
+          const index = rowColToIndex(indexPos.row, indexPos.col);
 
-            let style = 1;
-            if (num.position === 'corner') style = 2;
-            if (num.position === 'side') style = 3;
-            if (num.position === 'candidates') style = 4;
+          let style = 1;
+          if (num.position === 'corner') style = 2;
+          if (num.position === 'side') style = 3;
+          if (num.position === 'candidates') style = 4;
 
-            pu.number![index] = [num.value, style, '1'];
-          }
+          pu.number![index] = [num.value, style, '1'];
         });
       }
 
@@ -1708,18 +2054,13 @@ export function exportToPenpaFormat(
       if (Object.keys(elements.lines).length > 0) {
         pu.line = {};
         Object.values(elements.lines).forEach((line) => {
-          const fromMatch = line.from.match(/^cell-(\d+)-(\d+)$/);
-          const toMatch = line.to.match(/^cell-(\d+)-(\d+)$/);
-          if (fromMatch && toMatch) {
-            const fromRow = parseInt(fromMatch[1]);
-            const fromCol = parseInt(fromMatch[2]);
-            const toRow = parseInt(toMatch[1]);
-            const toCol = parseInt(toMatch[2]);
-            const key = lineKey(fromRow, fromCol, toRow, toCol);
+          const fromPos = getCellIndexById(line.from, grid);
+          const toPos = getCellIndexById(line.to, grid);
+          if (!fromPos || !toPos) return;
+          const key = lineKey(fromPos.row, fromPos.col, toPos.row, toPos.col);
 
-            // Penpa line style: 1=black, 2=grey, 3=green, etc.
-            pu.line![key] = lineColorToNum[line.color.toLowerCase()] || 1;
-          }
+          // Penpa line style: 1=black, 2=grey, 3=green, etc.
+          pu.line![key] = lineColorToNum[line.color.toLowerCase()] || 1;
         });
       }
 
@@ -1727,17 +2068,11 @@ export function exportToPenpaFormat(
       if (Object.keys(elements.edges).length > 0) {
         pu.lineE = {};
         Object.values(elements.edges).forEach((edge) => {
-          const fromMatch = edge.from.match(/^vertex-(\d+)-(\d+)$/);
-          const toMatch = edge.to.match(/^vertex-(\d+)-(\d+)$/);
-          if (fromMatch && toMatch) {
-            const fromRow = parseInt(fromMatch[1]);
-            const fromCol = parseInt(fromMatch[2]);
-            const toRow = parseInt(toMatch[1]);
-            const toCol = parseInt(toMatch[2]);
-            const key = edgeKey(fromRow, fromCol, toRow, toCol);
-
-            pu.lineE![key] = lineColorToNum[edge.color.toLowerCase()] || 1;
-          }
+          const fromPos = getVertexIndexById(edge.from, grid);
+          const toPos = getVertexIndexById(edge.to, grid);
+          if (!fromPos || !toPos) return;
+          const key = edgeKey(fromPos.row, fromPos.col, toPos.row, toPos.col);
+          pu.lineE![key] = lineColorToNum[edge.color.toLowerCase()] || 1;
         });
       }
 
@@ -1746,20 +2081,15 @@ export function exportToPenpaFormat(
         pu.wall = {};
         Object.values(elements.walls).forEach((wall) => {
           // Walls are on edge positions (edge-h or edge-v)
-          const hMatch = wall.position.match(/^edge-h-(\d+)-(\d+)$/);
-          const vMatch = wall.position.match(/^edge-v-(\d+)-(\d+)$/);
-
-          if (hMatch) {
+          const edgePos = getEdgeIndexById(wall.position, grid);
+          if (!edgePos) return;
+          if (edgePos.type === 'h') {
             // Horizontal edge between (row-1, col) and (row, col)
-            const row = parseInt(hMatch[1]);
-            const col = parseInt(hMatch[2]);
-            const key = edgeKey(row, col, row, col + 1);
+            const key = edgeKey(edgePos.row, edgePos.col, edgePos.row, edgePos.col + 1);
             pu.wall![key] = lineColorToNum[wall.color.toLowerCase()] || 1;
-          } else if (vMatch) {
+          } else {
             // Vertical edge between (row, col-1) and (row, col)
-            const row = parseInt(vMatch[1]);
-            const col = parseInt(vMatch[2]);
-            const key = edgeKey(row, col, row + 1, col);
+            const key = edgeKey(edgePos.row, edgePos.col, edgePos.row + 1, edgePos.col);
             pu.wall![key] = lineColorToNum[wall.color.toLowerCase()] || 1;
           }
         });
@@ -1781,14 +2111,11 @@ export function exportToPenpaFormat(
         };
 
         Object.values(elements.symbols).forEach((symbol) => {
-          const match = symbol.cellId.match(/^cell-(\d+)-(\d+)$/);
-          if (match) {
-            const row = parseInt(match[1]);
-            const col = parseInt(match[2]);
-            const index = rowColToIndex(row, col);
-            const styleNum = symbolToNum[symbol.symbolType] || 1;
-            pu.symbol![index] = [styleNum, symbol.symbolType, 1];
-          }
+          const indexPos = getCellIndexById(symbol.cellId, grid);
+          if (!indexPos) return;
+          const index = rowColToIndex(indexPos.row, indexPos.col);
+          const styleNum = symbolToNum[symbol.symbolType] || 1;
+          pu.symbol![index] = [styleNum, symbol.symbolType, 1];
         });
       }
 
@@ -1797,13 +2124,8 @@ export function exportToPenpaFormat(
       if (thermos.length > 0) {
         pu.thermo = thermos.map((thermo) => {
           return thermo.points.map((pointId) => {
-            const match = pointId.match(/^cell-(\d+)-(\d+)$/);
-            if (match) {
-              const row = parseInt(match[1]);
-              const col = parseInt(match[2]);
-              return rowColToIndex(row, col);
-            }
-            return 0;
+            const indexPos = getCellIndexById(pointId, grid);
+            return indexPos ? rowColToIndex(indexPos.row, indexPos.col) : 0;
           }).filter(i => i > 0);
         });
       }
@@ -1813,13 +2135,8 @@ export function exportToPenpaFormat(
       if (arrows.length > 0) {
         pu.arrows = arrows.map((arrow) => {
           return arrow.points.map((pointId) => {
-            const match = pointId.match(/^cell-(\d+)-(\d+)$/);
-            if (match) {
-              const row = parseInt(match[1]);
-              const col = parseInt(match[2]);
-              return rowColToIndex(row, col);
-            }
-            return 0;
+            const indexPos = getCellIndexById(pointId, grid);
+            return indexPos ? rowColToIndex(indexPos.row, indexPos.col) : 0;
           }).filter(i => i > 0);
         });
       }
@@ -1833,12 +2150,9 @@ export function exportToPenpaFormat(
           if (clue.cell !== undefined) {
             maxCellIdx = Math.max(maxCellIdx, clue.cell);
           } else {
-            const match = clue.cellId.match(/^cell-(\d+)-(\d+)$/);
-            if (match) {
-              const row = parseInt(match[1], 10);
-              const col = parseInt(match[2], 10);
-              maxCellIdx = Math.max(maxCellIdx, row * cols + col);
-            }
+            const indexPos = getCellIndexById(clue.cellId, grid);
+            if (!indexPos) return;
+            maxCellIdx = Math.max(maxCellIdx, indexPos.row * cols + indexPos.col);
           }
         });
         const widthGuess = cols; // grid.cols from outer scope
@@ -1854,10 +2168,10 @@ export function exportToPenpaFormat(
             y = Math.floor(clue.cell / width);
             x = clue.cell % width;
           } else {
-            const match = clue.cellId.match(/^cell-(\d+)-(\d+)$/);
-            if (!match) return;
-            y = parseInt(match[1], 10);
-            x = parseInt(match[2], 10);
+            const indexPos = getCellIndexById(clue.cellId, grid);
+            if (!indexPos) return;
+            y = indexPos.row;
+            x = indexPos.col;
           }
           if (y < height && x < width) {
             qdir[y][x] = clue.direction;
@@ -1874,13 +2188,8 @@ export function exportToPenpaFormat(
         pu.cage = {};
         Object.values(elements.cages).forEach((cage, idx) => {
           const cells = cage.cells.map((cellId) => {
-            const match = cellId.match(/^cell-(\d+)-(\d+)$/);
-            if (match) {
-              const row = parseInt(match[1]);
-              const col = parseInt(match[2]);
-              return rowColToIndex(row, col);
-            }
-            return 0;
+            const indexPos = getCellIndexById(cellId, grid);
+            return indexPos ? rowColToIndex(indexPos.row, indexPos.col) : 0;
           }).filter(i => i > 0);
 
           if (cells.length > 0) {
@@ -1913,7 +2222,7 @@ export function exportToPenpaFormat(
 
     // Apply Penpa's key compression
     let compressed = json;
-    for (const [full, short] of Object.entries(COMPRESS_SUB)) {
+    for (const [full, short] of Object.entries(COMPRESS_SUBSTITUTIONS)) {
       compressed = compressed.split(full).join(short);
     }
 

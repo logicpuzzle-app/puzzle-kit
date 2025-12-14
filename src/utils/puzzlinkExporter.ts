@@ -4,6 +4,7 @@
  * Currently supports: nurikabe, slitherlink, masyu, yajilin, heyawake.
  */
 import type { GridConfig, PuzzleState } from '../types';
+import { getCellIndexById } from './gridUtils';
 
 export type PuzzlinkType = 'nurikabe' | 'slither' | 'masyu' | 'yajilin' | 'heyawake';
 
@@ -67,11 +68,9 @@ export function generateNurikabePuzzlinkUrl(
         if (clue.cell !== undefined) {
           cellIndex = clue.cell;
         } else {
-          const match = clue.cellId.match(/^cell-(\d+)-(\d+)$/);
-          if (!match) continue;
-          const row = parseInt(match[1], 10);
-          const col = parseInt(match[2], 10);
-          cellIndex = row * width + col;
+          const index = getCellIndexById(clue.cellId, grid);
+          if (!index) continue;
+          cellIndex = index.row * width + index.col;
         }
         clues.set(cellIndex, clue.value);
       }
@@ -79,13 +78,11 @@ export function generateNurikabePuzzlinkUrl(
   }
   if (problem.numbers) {
     for (const num of Object.values(problem.numbers)) {
-      const match = num.cellId.match(/cell-(\d+)-(\d+)/);
-      if (!match) continue;
-      const row = parseInt(match[1], 10);
-      const col = parseInt(match[2], 10);
+      const index = getCellIndexById(num.cellId, grid);
+      if (!index) continue;
       const value = parseInt(String(num.value), 10);
       if (!isNaN(value) && value > 0) {
-        clues.set(row * width + col, value);
+        clues.set(index.row * width + index.col, value);
       }
     }
   }
@@ -141,9 +138,9 @@ function generateSlitherlinkUrl(grid: GridConfig, problem: PuzzleState['problem'
         if (clue.cell !== undefined) {
           cellIndex = clue.cell;
         } else {
-          const m = clue.cellId.match(/^cell-(\d+)-(\d+)$/);
-          if (!m) continue;
-          cellIndex = parseInt(m[1], 10) * width + parseInt(m[2], 10);
+          const index = getCellIndexById(clue.cellId, grid);
+          if (!index) continue;
+          cellIndex = index.row * width + index.col;
         }
         clues[cellIndex] = clue.value;
       }
@@ -151,13 +148,11 @@ function generateSlitherlinkUrl(grid: GridConfig, problem: PuzzleState['problem'
   }
   if (problem.numbers) {
     for (const num of Object.values(problem.numbers)) {
-      const m = num.cellId.match(/cell-(\d+)-(\d+)/);
-      if (!m) continue;
-      const row = parseInt(m[1], 10);
-      const col = parseInt(m[2], 10);
+      const index = getCellIndexById(num.cellId, grid);
+      if (!index) continue;
       const val = parseInt(String(num.value), 10);
       if (!isNaN(val) && val >= 0 && val <= 4) {
-        clues[row * width + col] = val;
+        clues[index.row * width + index.col] = val;
       }
     }
   }
@@ -253,9 +248,9 @@ function generateYajilinUrl(grid: GridConfig, problem: PuzzleState['problem']): 
         if (clue.cell !== undefined) {
           cellIndex = clue.cell;
         } else {
-          const m = clue.cellId.match(/^cell-(\d+)-(\d+)$/);
-          if (!m) continue;
-          cellIndex = parseInt(m[1], 10) * width + parseInt(m[2], 10);
+          const index = getCellIndexById(clue.cellId, grid);
+          if (!index) continue;
+          cellIndex = index.row * width + index.col;
         }
         clues.set(cellIndex, { dir: clue.direction, num: clue.value });
       }
@@ -396,13 +391,11 @@ function generateHeyawakeUrl(grid: GridConfig, problem: PuzzleState['problem']):
   const roomNumbers: number[] = Array(rid).fill(-1);
   if (problem.numbers) {
     for (const num of Object.values(problem.numbers)) {
-      const m = num.cellId.match(/cell-(\d+)-(\d+)/);
-      if (!m) continue;
-      const r = parseInt(m[1], 10);
-      const c = parseInt(m[2], 10);
+      const index = getCellIndexById(num.cellId, grid);
+      if (!index) continue;
       const v = parseInt(String(num.value), 10);
       if (isNaN(v)) continue;
-      const id = roomId[r][c];
+      const id = roomId[index.row][index.col];
       if (id >= 0) {
         roomNumbers[id] = v;
       }

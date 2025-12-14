@@ -6,8 +6,9 @@
  */
 
 import {
-  parseCellId,
-  parseVertexId,
+  getCellIndexById,
+  getEdgeIndexById,
+  getVertexIndexById,
 } from './gridUtils';
 import type {
   GridConfig,
@@ -423,7 +424,7 @@ function convertElementsToPenpa(
   if (Object.keys(elements.surfaces).length > 0) {
     result.surface = {};
     for (const surface of Object.values(elements.surfaces)) {
-      const cell = parseCellId(surface.cellId);
+      const cell = getCellIndexById(surface.cellId, grid);
       if (!cell) continue;
       const index = toPenpaPointIndex(cell.row, cell.col, grid.rows, grid.cols, 'cell');
       result.surface[index.toString()] = hexToPenpaColor(surface.color);
@@ -434,8 +435,8 @@ function convertElementsToPenpa(
   if (Object.keys(elements.lines).length > 0) {
     result.line = {};
     for (const line of Object.values(elements.lines)) {
-      const from = parseCellId(line.from);
-      const to = parseCellId(line.to);
+      const from = getCellIndexById(line.from, grid);
+      const to = getCellIndexById(line.to, grid);
       if (!from || !to) continue;
       const idx1 = toPenpaPointIndex(from.row, from.col, grid.rows, grid.cols, 'cell');
       const idx2 = toPenpaPointIndex(to.row, to.col, grid.rows, grid.cols, 'cell');
@@ -448,8 +449,8 @@ function convertElementsToPenpa(
   if (Object.keys(elements.edges).length > 0) {
     result.lineE = {};
     for (const edge of Object.values(elements.edges)) {
-      const from = parseVertexId(edge.from);
-      const to = parseVertexId(edge.to);
+      const from = getVertexIndexById(edge.from, grid);
+      const to = getVertexIndexById(edge.to, grid);
       if (!from || !to) continue;
       const idx1 = toPenpaPointIndex(from.row, from.col, grid.rows, grid.cols, 'cell');
       const idx2 = toPenpaPointIndex(to.row, to.col, grid.rows, grid.cols, 'cell');
@@ -462,13 +463,13 @@ function convertElementsToPenpa(
   if (Object.keys(elements.walls).length > 0) {
     result.wall = {};
     for (const wall of Object.values(elements.walls)) {
-      const match = wall.position.match(/^edge-(h|v)-(\d+)-(\d+)$/);
-      if (!match) continue;
-      const type = match[1];
-      const row = parseInt(match[2], 10);
-      const col = parseInt(match[3], 10);
+      const edge = getEdgeIndexById(wall.position, grid);
+      if (!edge) continue;
+      const type = edge.type;
+      const row = edge.row;
+      const col = edge.col;
       // Walls are drawn between two adjacent vertices; map edge id to those vertices.
-      const v1 = type === 'h' ? { row, col } : { row, col };
+      const v1 = { row, col };
       const v2 = type === 'h' ? { row, col: col + 1 } : { row: row + 1, col };
       const idx1 = toPenpaPointIndex(v1.row, v1.col, grid.rows, grid.cols, 'vertex');
       const idx2 = toPenpaPointIndex(v2.row, v2.col, grid.rows, grid.cols, 'vertex');
@@ -481,7 +482,7 @@ function convertElementsToPenpa(
   if (Object.keys(elements.numbers).length > 0) {
     result.number = {};
     for (const num of Object.values(elements.numbers)) {
-      const cell = parseCellId(num.cellId);
+      const cell = getCellIndexById(num.cellId, grid);
       if (!cell) continue;
 
       let index: number;
@@ -543,7 +544,7 @@ function convertElementsToPenpa(
   if (Object.keys(elements.symbols).length > 0) {
     result.symbol = {};
     for (const symbol of Object.values(elements.symbols)) {
-      const cell = parseCellId(symbol.cellId);
+      const cell = getCellIndexById(symbol.cellId, grid);
       if (!cell) continue;
       const index = toPenpaPointIndex(cell.row, cell.col, grid.rows, grid.cols, 'cell');
       // Penpa symbol format: [type, style, size]

@@ -240,7 +240,7 @@ export interface PenpaArrow {
  * Stores a direction (0=None,1=Up,2=Down,3=Left,4=Right) and clue value on a cell.
  * For arbitrary angles, use the `angle` field (in degrees, 0=right, 90=down, etc.)
  *
- * NOTE: cellId is the primary identifier. Use parseCellIdToRowCol() to convert to row/col when needed.
+ * NOTE: cellId is the primary identifier. Convert to row/col via grid/topology lookups when needed.
  */
 export interface PenpaDirectionalClue {
   id?: string;
@@ -269,16 +269,6 @@ export function getClueDisplayValue(clue: { value: number; char?: string }): str
   if (clue.char) return clue.char;
   if (clue.value === -2) return '?';
   return String(clue.value);
-}
-
-/**
- * Helper function to parse row/col from cellId
- * Returns null if cellId format is invalid
- */
-export function parseCellIdToRowCol(cellId: string): { row: number; col: number } | null {
-  const match = cellId.match(/^cell-(\d+)-(\d+)$/);
-  if (!match) return null;
-  return { row: parseInt(match[1], 10), col: parseInt(match[2], 10) };
 }
 
 /**
