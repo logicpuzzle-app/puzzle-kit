@@ -84,7 +84,7 @@ export function optimizePuzzleStateForExport(puzzleState: PuzzleState): Record<s
     problem: stripLayerFromPuzzleElements(puzzleState.problem),
     answer: stripLayerFromPuzzleElements(puzzleState.answer),
     ...(puzzleState.multicolorSurfaces && Object.keys(puzzleState.multicolorSurfaces).length > 0
-      ? { multicolorSurfaces: stripLayerFromElements(puzzleState.multicolorSurfaces) }
+      ? { multicolorSurfaces: puzzleState.multicolorSurfaces }
       : {}),
     ...(puzzleState.solutionArea ? { solutionArea: puzzleState.solutionArea } : {}),
   };
@@ -94,6 +94,19 @@ export function optimizePuzzleStateForExport(puzzleState: PuzzleState): Record<s
  * Restore puzzle state from optimized export format
  */
 export function restorePuzzleStateFromExport(data: Record<string, any>): PuzzleState {
+  const normalizeMulticolorSurfaces = (
+    multicolorSurfaces: Record<string, any> | undefined
+  ): Record<string, any> | undefined => {
+    if (!multicolorSurfaces) return undefined;
+    const result: Record<string, any> = {};
+    for (const [id, element] of Object.entries(multicolorSurfaces)) {
+      if (!element || typeof element !== 'object') continue;
+      const layer = element.layer === 'answer' ? 'answer' : 'problem';
+      result[id] = { ...element, layer };
+    }
+    return result;
+  };
+
   // Check if layer is missing from elements to determine format
   const needsLayerRestore = (elements: Record<string, any>) => {
     const firstElement = Object.values(elements)[0] as Record<string, any> | undefined;
@@ -113,12 +126,17 @@ export function restorePuzzleStateFromExport(data: Record<string, any>): PuzzleS
       problem: restoreLayerToPuzzleElements(problemElements, 'problem'),
       answer: restoreLayerToPuzzleElements(answerElements, 'answer'),
       ...(data.multicolorSurfaces
-        ? { multicolorSurfaces: restoreLayerToElements(data.multicolorSurfaces, 'problem') }
+        ? { multicolorSurfaces: normalizeMulticolorSurfaces(data.multicolorSurfaces) }
         : {}),
       ...(data.solutionArea ? { solutionArea: data.solutionArea } : {}),
     };
   }
 
   // Already has layer fields, return as-is
-  return data as PuzzleState;
+  return {
+    ...(data as PuzzleState),
+    ...(data.multicolorSurfaces
+      ? { multicolorSurfaces: normalizeMulticolorSurfaces(data.multicolorSurfaces) as any }
+      : {}),
+  };
 }

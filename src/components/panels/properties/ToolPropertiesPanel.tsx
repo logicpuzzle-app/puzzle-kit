@@ -10,7 +10,6 @@ import { LineStyle, LineThickness, LineElement, toDataLayer } from '../../../typ
 import { isLineToolCategory } from '../../../utils/lineRender';
 import {
   ColorSelector,
-  MulticolorSettings,
   NumberPositionSettings,
   ArrowDirectionSettings,
   NumberInputPanel,
@@ -543,10 +542,6 @@ export const ToolPropertiesPanel: React.FC = () => {
         </>
       )}
 
-      {/* Multicolor surface settings */}
-      {toolSettings.currentTool === 'multicolor-surface' && (
-        <MulticolorSettings />
-      )}
     </>
   );
 };

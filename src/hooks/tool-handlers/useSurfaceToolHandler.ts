@@ -1,8 +1,9 @@
 import { useCallback, useRef } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
-import { findNearestCell, getCellId, parseCellId as parseCellIdFromGridUtils } from '../../utils/gridUtils';
+import { findNearestCell, getCellId, getCellIndexById } from '../../utils/gridUtils';
 import { findNearestCellInTopology, type GridTopology } from '../../utils/gridTopology';
-import type { Point, PuzzleState } from '../../types';
+import { normalizeMulticolorSlots } from '../../utils/multicolor';
+import type { GridConfig, Point, PuzzleState } from '../../types';
 import { toDataLayer } from '../../types';
 
 /**
@@ -14,7 +15,8 @@ import { toDataLayer } from '../../types';
  */
 function getCellCoords(
   cellId: string,
-  topology: GridTopology | null
+  topology: GridTopology | null,
+  grid: GridConfig
 ): { row: number; col: number } | null {
   // Prefer topology index when available
   if (topology) {
@@ -23,8 +25,8 @@ function getCellCoords(
       return { row: cell.index[0], col: cell.index[1] };
     }
   }
-  // Fallback to ID string parsing
-  return parseCellIdFromGridUtils(cellId);
+  // Fallback to grid-derived lookup (no string parsing)
+  return getCellIndexById(cellId, grid);
 }
 
 /**
@@ -97,8 +99,8 @@ export function useSurfaceToolHandler() {
 
   // Helper to get cell row/col from cellId (topology index preferred, fallback to ID parsing)
   const getCellCoordsFromId = useCallback((cellId: string): { row: number; col: number } | null => {
-    return getCellCoords(cellId, topology ?? null);
-  }, [topology]);
+    return getCellCoords(cellId, topology ?? null, grid);
+  }, [topology, grid]);
 
   // Helper to check if cell has same checker parity as first cell (for noAdjacent constraint)
   const hasSameParity = useCallback((cellId: string): boolean => {
@@ -285,18 +287,13 @@ export function useSurfaceToolHandler() {
         removeMulticolorSurface(cellId);
       } else {
         // Left-click adds/updates multicolor surface with current colors
-        const colors = toolSettings.multicolorSlots || [
-          toolSettings.color,
-          0, // transparent
-          0, // transparent
-          0, // transparent
-        ];
+        const colors = normalizeMulticolorSlots(toolSettings.multicolorSlots);
         const pattern = toolSettings.multicolorPattern || 'cross';
         const customColors = toolSettings.multicolorCustomColors || [];
         setMulticolorSurface(cellId, colors, pattern, customColors);
       }
     },
-    [grid, toolSettings.color, toolSettings.multicolorSlots, toolSettings.multicolorPattern, toolSettings.multicolorCustomColors, setMulticolorSurface, removeMulticolorSurface, findCellId]
+    [toolSettings.multicolorSlots, toolSettings.multicolorPattern, toolSettings.multicolorCustomColors, setMulticolorSurface, removeMulticolorSurface, findCellId]
   );
 
   // Handle solution area tool

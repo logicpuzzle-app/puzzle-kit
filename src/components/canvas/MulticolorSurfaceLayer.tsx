@@ -9,12 +9,14 @@
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStore';
 import { getPenpaColor } from '../../types/penpaElements';
-import type { MulticolorSurfaceElement } from '../../types';
+import type { DataLayerType, MulticolorSurfaceElement } from '../../types';
 import type { TopologyVertex } from '../../utils/gridTopology';
 
 interface MulticolorSurfaceLayerProps {
   /** Whether the layer is visible */
   visible?: boolean;
+  /** Which puzzle layer to render (Penpa question/answer) */
+  layer?: DataLayerType;
 }
 
 /**
@@ -239,36 +241,40 @@ const MulticolorCellTopology: React.FC<{
 
 export const MulticolorSurfaceLayer: React.FC<MulticolorSurfaceLayerProps> = ({
   visible = true,
+  layer,
 }) => {
-  const { grid, puzzle, useTopology, topology } = usePuzzleStore();
+  const { grid, puzzle, useTopology, topology, showProblemLayer, showAnswerLayer } = usePuzzleStore();
   const multicolorSurfaces = puzzle.multicolorSurfaces;
 
   const cellData = useMemo(() => {
     const data: Map<string, { x: number; y: number; polygon?: { x: number; y: number }[]; center?: { x: number; y: number } }> = new Map();
 
+    if (useTopology && topology) {
+      for (const [cellId, topoCell] of topology.cells) {
+        const vertices = topoCell.boundaryVertices
+          .map(vId => topology.vertices.get(vId))
+          .filter((v): v is TopologyVertex => v !== undefined)
+          .map(v => v.position);
+
+        if (vertices.length === 0) continue;
+
+        data.set(cellId, {
+          x: 0,
+          y: 0,
+          polygon: vertices,
+          center: topoCell.center,
+        });
+      }
+
+      return data;
+    }
+
     for (let row = 0; row < grid.rows; row++) {
       for (let col = 0; col < grid.cols; col++) {
         const cellId = `cell-${row}-${col}`;
-
-        if (useTopology && topology) {
-          const topoCell = topology.cells.get(cellId);
-          if (topoCell) {
-            const vertices = topoCell.boundaryVertices
-              .map(vId => topology.vertices.get(vId))
-              .filter((v): v is TopologyVertex => v !== undefined)
-              .map(v => v.position);
-            data.set(cellId, {
-              x: 0,
-              y: 0,
-              polygon: vertices,
-              center: topoCell.center,
-            });
-          }
-        } else {
-          const x = grid.outerPadding + col * grid.cellSize;
-          const y = grid.outerPadding + row * grid.cellSize;
-          data.set(cellId, { x, y });
-        }
+        const x = grid.outerPadding + col * grid.cellSize;
+        const y = grid.outerPadding + row * grid.cellSize;
+        data.set(cellId, { x, y });
       }
     }
 
@@ -279,14 +285,22 @@ export const MulticolorSurfaceLayer: React.FC<MulticolorSurfaceLayerProps> = ({
     return null;
   }
 
-  const elements = Object.values(multicolorSurfaces);
+  const isLayerVisible = (dataLayer: DataLayerType) =>
+    (dataLayer === 'problem' && showProblemLayer) ||
+    (dataLayer === 'answer' && showAnswerLayer);
+
+  const elements = Object.values(multicolorSurfaces).filter((element) => {
+    const elementLayer: DataLayerType = element.layer === 'answer' ? 'answer' : 'problem';
+    if (layer && elementLayer !== layer) return false;
+    return isLayerVisible(elementLayer);
+  });
 
   if (elements.length === 0) {
     return null;
   }
 
   return (
-    <g className="multicolor-surface-layer">
+    <g className="multicolor-surface-layer" data-layer={layer ?? 'both'}>
       {elements.map((element) => {
         const cellInfo = cellData.get(element.cellId);
         if (!cellInfo) return null;

@@ -60,10 +60,15 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
 
   const effectiveTopology = previewTopology ?? topology;
   const effectiveGrid = previewGrid ?? grid;
+  const topologyPreferred =
+    useTopology ||
+    effectiveGrid.gridType === 'pyramid' ||
+    effectiveGrid.gridType === 'iso' ||
+    effectiveGrid.gridType === 'penrose_P3';
 
   const { width, height } = useMemo(() => {
     // Prefer topology bounds when available (non-square tilings)
-    if (useTopology && effectiveTopology) {
+    if (topologyPreferred && effectiveTopology) {
       const exportPaddingLeft = effectiveGrid.exportPaddingLeft ?? 0;
       const exportPaddingRight = effectiveGrid.exportPaddingRight ?? 0;
       const exportPaddingTop = effectiveGrid.exportPaddingTop ?? 0;
@@ -74,7 +79,7 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
       };
     }
     return getGridDimensions(effectiveGrid);
-  }, [useTopology, effectiveTopology, effectiveGrid]);
+  }, [topologyPreferred, effectiveTopology, effectiveGrid]);
 
   // Export padding offsets
   const exportPaddingLeft = effectiveGrid.exportPaddingLeft ?? 0;
@@ -82,7 +87,7 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
 
   // Calculate grid area for background image
   const gridArea = useMemo(() => {
-    if (useTopology && effectiveTopology) {
+    if (topologyPreferred && effectiveTopology) {
       return {
         x: effectiveTopology.bounds.minX,
         y: effectiveTopology.bounds.minY,
@@ -99,7 +104,7 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
       width: totalCols * cellSize,
       height: totalRows * cellSize,
     };
-  }, [useTopology, effectiveTopology, effectiveGrid]);
+  }, [topologyPreferred, effectiveTopology, effectiveGrid]);
 
   const transform = `translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom})`;
 
@@ -187,8 +192,11 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
                 <SurfaceLayer layer="answer" />
               </g>
 
-              {/* Multicolor surface layer */}
-              <MulticolorSurfaceLayer />
+              {/* Multicolor surface layers */}
+              <MulticolorSurfaceLayer layer="problem" />
+              <g opacity={currentLayerOpacity}>
+                <MulticolorSurfaceLayer layer="answer" />
+              </g>
 
               {/* Solution area mask (same layer as surfaces) */}
               <SolutionAreaMaskLayer />
@@ -225,8 +233,11 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
                 <SurfaceLayer layer="answer" />
               </g>
 
-              {/* Multicolor surface layer */}
-              <MulticolorSurfaceLayer />
+              {/* Multicolor surface layers */}
+              <MulticolorSurfaceLayer layer="problem" />
+              <g opacity={currentLayerOpacity}>
+                <MulticolorSurfaceLayer layer="answer" />
+              </g>
 
               {/* Solution area mask (same layer as surfaces) */}
               <SolutionAreaMaskLayer />

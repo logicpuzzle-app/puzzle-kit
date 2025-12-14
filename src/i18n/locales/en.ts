@@ -596,6 +596,7 @@ export const en = {
   'tiling.hex': 'Hexagon {6,3}',
   'tiling.pyramid': 'Pyramid',
   'tiling.iso': 'Isometric (Cube)',
+  'tiling.penroseP3': 'Penrose P3',
   'tiling.trihexagonal': 'Trihexagonal (3.6.3.6)',
   'tiling.snubSquare': 'Snub Square (3².4.3.4)',
   'tiling.truncatedSquare': 'Truncated Square (4.8²)',

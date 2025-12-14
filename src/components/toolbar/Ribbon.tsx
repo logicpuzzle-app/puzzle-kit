@@ -16,6 +16,7 @@ import { ConstraintSubCategory, InputModeType } from '../../store/slices/types';
 import { constraintCatalog } from '../../constraints';
 import type { ConstraintSchema, InputMode } from '../../constraints';
 import { cspuzWorkerManager, CspuzSolverCancelledError } from '../../solver';
+import { hexToClosestPenpaLegacyIndex, normalizeMulticolorSlots } from '../../utils/multicolor';
 
 // Import sub-components
 import {
@@ -637,7 +638,14 @@ export const Ribbon: React.FC = () => {
                         : 'bg-white border-office-border hover:bg-office-ribbon-hover'
                     }`}
                     onClick={() => {
-                      usePuzzleStore.getState().setToolSettings({ symbolSubMode: 'multicolor' });
+                      const nextSlots = normalizeMulticolorSlots(toolSettings.multicolorSlots);
+                      if (nextSlots.every((v) => v === 0)) {
+                        nextSlots[0] = hexToClosestPenpaLegacyIndex(toolSettings.color);
+                      }
+                      usePuzzleStore.getState().setToolSettings({
+                        symbolSubMode: 'multicolor',
+                        multicolorSlots: nextSlots,
+                      });
                       setTool('multicolor-surface', 'symbol');
                     }}
                     title={t('tool.multicolor.surface', 'Multicolor Surface')}

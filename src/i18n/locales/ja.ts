@@ -596,6 +596,7 @@ export const ja = {
   'tiling.hex': '六角形 {6,3}',
   'tiling.pyramid': 'ピラミッド',
   'tiling.iso': 'アイソメ（キューブ）',
+  'tiling.penroseP3': 'ペンローズ（P3）',
   'tiling.trihexagonal': '三六角形 (3.6.3.6)',
   'tiling.snubSquare': 'ねじれ正方形 (3².4.3.4)',
   'tiling.truncatedSquare': '切頂正方形 (4.8²)',
