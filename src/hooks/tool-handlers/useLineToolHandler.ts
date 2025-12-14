@@ -449,7 +449,7 @@ export function useLineToolHandler({
         (l) => l.lineTarget === 'wall' && l.edgeId === edgeId
       );
       const existingWall = Object.values(layerData.walls).find(
-        (w) => w.position === edgeId
+        (w) => w.edgeId === edgeId
       );
       const existing = existingLine || existingWall;
 

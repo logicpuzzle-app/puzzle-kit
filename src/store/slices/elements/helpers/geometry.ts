@@ -2,8 +2,8 @@
  * Geometry Helpers - Grid/topology resolution and coordinate helpers
  */
 
-import type { LineElement, EdgeElement, WallElement, Grid } from '../../../../types';
-import type { Topology } from '../../../../types/topology';
+import type { LineElement, EdgeElement, WallElement, GridConfig } from '../../../../types';
+import type { GridTopology } from '../../../../utils/gridTopology';
 import type { LineWithPosition } from '../../../../utils/lineMerge';
 import { resolveEdgeVertices } from '../../../../utils/gridIds';
 
@@ -16,8 +16,8 @@ export type LineElementLike = LineElement | EdgeElement | WallElement;
  * Context needed for resolving line coordinates
  */
 export interface GeometryContext {
-  grid: Grid;
-  topology: Topology | null;
+  grid: GridConfig;
+  topology: GridTopology | null;
 }
 
 /**

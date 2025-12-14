@@ -16,9 +16,11 @@ import type {
   CageElement,
   SpecialElement,
   BoxLineElement,
-  DirectionalClueElement,
+  PenpaDirectionalClue,
   LineGroup,
 } from '../../../../types';
+
+type DirectionalClueElement = PenpaDirectionalClue & { id: string };
 
 // ============================================================================
 // Generic helpers
@@ -395,11 +397,12 @@ export function addDirectionalClueToLayer(
   element: DirectionalClueElement
 ): PuzzleState {
   const layer = element.layer;
+  const existing = puzzle[layer].directionalClues ?? {};
   return updateLayerCollection(
     puzzle,
     layer,
     'directionalClues',
-    addToCollection(puzzle[layer].directionalClues, element)
+    { ...existing, [element.id]: element }
   );
 }
 
@@ -408,11 +411,14 @@ export function removeDirectionalClueFromLayer(
   layer: DataLayerType,
   id: string
 ): PuzzleState {
+  const existing = puzzle[layer].directionalClues ?? {};
+  const updated = { ...existing };
+  delete updated[id];
   return updateLayerCollection(
     puzzle,
     layer,
     'directionalClues',
-    removeFromCollection(puzzle[layer].directionalClues, id)
+    updated
   );
 }
 

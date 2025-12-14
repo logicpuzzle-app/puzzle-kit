@@ -60,7 +60,7 @@ import {
 } from '../../utils/lineNormalization';
 
 // Import from refactored modules
-import { createEmptyState } from './elements/state';
+import { createEmptyElements, createEmptyState } from './elements/state';
 import {
   buildLinesWithPosition,
   groupAndNormalizeByConnectivity,
@@ -313,12 +313,11 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
   // Wall operations (deprecated - use addLine with lineTarget='wall')
   addWall: (element) => {
     const id = generateWallId();
-    // Add lineTarget='wall' and convert position to edgeId for unified representation
+    // Ensure lineTarget='wall' for backward compatibility
     const fullElement: WallElement = {
       ...element,
       id,
       lineTarget: 'wall',
-      edgeId: element.position, // position is already an edge ID
     };
     set((state) => {
       const layer = fullElement.layer;

@@ -5,7 +5,8 @@
  * Each strategy handles a specific tool/mode combination.
  */
 
-import type { Point } from '../../types';
+import type { Point, SurfaceDisplayMode } from '../../types';
+import type { AutoModeConfig } from '../../constraints/inputModeMapping';
 import type { FlickState } from '../inputStrategies';
 import { INITIAL_FLICK_STATE } from '../inputStrategies';
 import { toDataLayer, type DataLayerType } from '../../types';
@@ -49,22 +50,6 @@ export interface MouseDownContext {
 }
 
 /**
- * Auto mode configuration from constraint schema
- */
-export interface AutoModeConfig {
-  type: string;
-  leftButton?: { action: string };
-  rightButton: {
-    action: string;
-    settings?: {
-      color?: string;
-      secondaryColor?: string;
-      symbolGridPoints?: string[];
-    };
-  };
-}
-
-/**
  * Result from mousedown strategy
  */
 export interface MouseDownResult {
@@ -85,7 +70,7 @@ export type MouseDownAction =
   | { type: 'handleSelectTool'; point: Point; shiftKey: boolean }
   | { type: 'handleTextTool'; point: Point; isRightButton: boolean }
   | { type: 'handleSymbolTool'; point: Point; options: SymbolToolOptions }
-  | { type: 'addSurface'; cellId: string; color: string; layer: DataLayerType; displayMode: string }
+  | { type: 'addSurface'; cellId: string; color: string; layer: DataLayerType; displayMode: SurfaceDisplayMode }
   | { type: 'removeDirectionalClue'; id: string }
   | { type: 'setCursorCell'; cellId: string }
   | { type: 'resetFillModes' }
@@ -95,7 +80,7 @@ export interface SymbolToolOptions {
   symbolTypeOverride?: string;
   inputMode?: 'add' | 'remove' | 'toggle';
   colorOverride?: string;
-  symbolGridPointsOverride?: string[];
+  symbolGridPointsOverride?: ('cell' | 'vertex' | 'edge')[];
 }
 
 // ============================================================================
@@ -246,7 +231,7 @@ export function handleLineMouseDown(
   if (ctx.isRightButton) {
     const rightButtonSettings = ctx.autoConfig?.rightButton.settings;
     const pekeColor = rightButtonSettings?.color || '#007F00';
-    const pekeGridPoints = (rightButtonSettings?.symbolGridPoints || ['edge']) as string[];
+    const pekeGridPoints = rightButtonSettings?.symbolGridPoints ?? ['edge'];
     const inputMode: 'add' | 'remove' = pekeExists ? 'remove' : 'add';
 
     return {

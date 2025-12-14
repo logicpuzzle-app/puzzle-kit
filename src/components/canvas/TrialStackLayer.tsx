@@ -13,6 +13,7 @@ import { usePuzzleStore } from '../../store/puzzleStore';
 import { getCellCenter, getCellIndexById, getEdgeIndexById, getEdgePosition, getVertexIndexById, getVertexPosition } from '../../utils/gridUtils';
 import type { PuzzleElements, SurfaceElement, EdgeElement, LineElement, SymbolElement, NumberElement } from '../../types';
 import type { TopologyVertex } from '../../utils/gridTopology';
+import { getEdgeLineDrawInfo } from '../../utils/gridTopology';
 
 interface TrialStackLayerProps {
   /** The saved elements to render */
@@ -77,6 +78,25 @@ const TrialLayer: React.FC<TrialStackLayerProps> = ({ elements, opacity, layerIn
       {/* Edges */}
       {Object.values(elements.edges).map((edge: EdgeElement) => {
         if (useTopology && topology) {
+          if (edge.edgeId) {
+            const drawInfo = getEdgeLineDrawInfo(topology, edge.edgeId);
+            if (!drawInfo) return null;
+            return (
+              <line
+                key={`trial-${layerIndex}-edge-${edge.id}`}
+                x1={drawInfo.startVertex.x}
+                y1={drawInfo.startVertex.y}
+                x2={drawInfo.endVertex.x}
+                y2={drawInfo.endVertex.y}
+                stroke={edge.color}
+                strokeWidth={edge.thickness === 'thick' ? 4 : 2}
+                strokeLinecap="round"
+              />
+            );
+          }
+
+          if (!edge.from || !edge.to) return null;
+
           const fromVertex = topology.vertices.get(edge.from);
           const toVertex = topology.vertices.get(edge.to);
           if (!fromVertex || !toVertex) return null;
@@ -94,6 +114,31 @@ const TrialLayer: React.FC<TrialStackLayerProps> = ({ elements, opacity, layerIn
             />
           );
         }
+
+        if (edge.edgeId) {
+          const edgeIndex = getEdgeIndexById(edge.edgeId, grid);
+          if (!edgeIndex) return null;
+          const fromVertex = getVertexPosition(edgeIndex.row, edgeIndex.col, grid);
+          const toVertex =
+            edgeIndex.type === 'h'
+              ? getVertexPosition(edgeIndex.row, edgeIndex.col + 1, grid)
+              : getVertexPosition(edgeIndex.row + 1, edgeIndex.col, grid);
+
+          return (
+            <line
+              key={`trial-${layerIndex}-edge-${edge.id}`}
+              x1={fromVertex.x}
+              y1={fromVertex.y}
+              x2={toVertex.x}
+              y2={toVertex.y}
+              stroke={edge.color}
+              strokeWidth={edge.thickness === 'thick' ? 4 : 2}
+              strokeLinecap="round"
+            />
+          );
+        }
+
+        if (!edge.from || !edge.to) return null;
 
         const fromIndex = getVertexIndexById(edge.from, grid);
         const toIndex = getVertexIndexById(edge.to, grid);
@@ -118,6 +163,72 @@ const TrialLayer: React.FC<TrialStackLayerProps> = ({ elements, opacity, layerIn
 
       {/* Lines */}
       {Object.values(elements.lines).map((line: LineElement) => {
+        if (line.edgeId) {
+          // Best-effort rendering for edgeId-based lines.
+          if (useTopology && topology) {
+            const drawInfo = getEdgeLineDrawInfo(topology, line.edgeId);
+            if (!drawInfo) return null;
+
+            const lineTarget = line.lineTarget ?? 'cell';
+            const fromPos =
+              lineTarget === 'edge' || lineTarget === 'wall'
+                ? drawInfo.startVertex
+                : drawInfo.adjacentCellCenters[0] ?? null;
+            const toPos =
+              lineTarget === 'edge' || lineTarget === 'wall'
+                ? drawInfo.endVertex
+                : drawInfo.adjacentCellCenters[1] ?? null;
+
+            if (!fromPos || !toPos) return null;
+            return (
+              <line
+                key={`trial-${layerIndex}-line-${line.id}`}
+                x1={fromPos.x}
+                y1={fromPos.y}
+                x2={toPos.x}
+                y2={toPos.y}
+                stroke={line.color}
+                strokeWidth={line.thickness === 'thick' ? 4 : 2}
+                strokeLinecap="round"
+              />
+            );
+          }
+
+          const edgeIndex = getEdgeIndexById(line.edgeId, grid);
+          if (!edgeIndex) return null;
+
+          // Default to cell-center rendering in grid mode.
+          const fromCellId =
+            edgeIndex.type === 'h'
+              ? `cell-${edgeIndex.row - 1}-${edgeIndex.col}`
+              : `cell-${edgeIndex.row}-${edgeIndex.col - 1}`;
+          const toCellId =
+            edgeIndex.type === 'h'
+              ? `cell-${edgeIndex.row}-${edgeIndex.col}`
+              : `cell-${edgeIndex.row}-${edgeIndex.col}`;
+
+          const fromIndex = getCellIndexById(fromCellId, grid);
+          const toIndex = getCellIndexById(toCellId, grid);
+          if (!fromIndex || !toIndex) return null;
+          const fromPos = getCellCenter(fromIndex.row, fromIndex.col, grid);
+          const toPos = getCellCenter(toIndex.row, toIndex.col, grid);
+
+          return (
+            <line
+              key={`trial-${layerIndex}-line-${line.id}`}
+              x1={fromPos.x}
+              y1={fromPos.y}
+              x2={toPos.x}
+              y2={toPos.y}
+              stroke={line.color}
+              strokeWidth={line.thickness === 'thick' ? 4 : 2}
+              strokeLinecap="round"
+            />
+          );
+        }
+
+        if (!line.from || !line.to) return null;
+
         const fromPos = (() => {
           if (useTopology && topology) {
             return topology.cells.get(line.from)?.center ?? null;

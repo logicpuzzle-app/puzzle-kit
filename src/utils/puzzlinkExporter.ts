@@ -4,7 +4,7 @@
  * Currently supports: nurikabe, slitherlink, masyu, yajilin, heyawake.
  */
 import type { GridConfig, PuzzleState } from '../types';
-import { getCellIndexById } from './gridUtils';
+import { getCellIndexById, getEdgeIndexById } from './gridUtils';
 
 export type PuzzlinkType = 'nurikabe' | 'slither' | 'masyu' | 'yajilin' | 'heyawake';
 
@@ -305,19 +305,19 @@ function generateHeyawakeUrl(grid: GridConfig, problem: PuzzleState['problem']):
 
   const walls = problem.walls || {};
   for (const wall of Object.values(walls)) {
-    const mV = wall.position.match(/edge-v-(\d+)-(\d+)/);
-    if (mV) {
-      const r = parseInt(mV[1], 10);
-      const c = parseInt(mV[2], 10) - 1;
+    if (!wall.edgeId) continue;
+    const idx = getEdgeIndexById(wall.edgeId, grid);
+    if (!idx) continue;
+
+    if (idx.type === 'v') {
+      const r = idx.row;
+      const c = idx.col - 1;
       if (r >= 0 && r < height && c >= 0 && c < width - 1) {
         vertical[r][c] = true;
       }
-      continue;
-    }
-    const mH = wall.position.match(/edge-h-(\d+)-(\d+)/);
-    if (mH) {
-      const r = parseInt(mH[1], 10) - 1;
-      const c = parseInt(mH[2], 10);
+    } else {
+      const r = idx.row - 1;
+      const c = idx.col;
       if (r >= 0 && r < height - 1 && c >= 0 && c < width) {
         horizontal[r][c] = true;
       }

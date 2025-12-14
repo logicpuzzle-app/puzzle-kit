@@ -15,11 +15,34 @@ import {
   type ValidationContext,
   type CheckResult,
 } from './core';
-import { getCellIndexById } from '../../utils/gridUtils';
+import { getCellIndexById, getEdgeIndexById } from '../../utils/gridUtils';
 
 // ========================================
 // Helper Functions
 // ========================================
+
+function resolveEdgeEndpoints(ctx: ValidationContext, edge: { from?: string; to?: string; edgeId?: string }): { from: string; to: string } | null {
+  if (edge.from && edge.to) return { from: edge.from, to: edge.to };
+
+  if (!edge.edgeId) return null;
+
+  if (ctx.topology) {
+    const topoEdge = ctx.topology.edges.get(edge.edgeId);
+    if (topoEdge) {
+      return { from: topoEdge.startVertex, to: topoEdge.endVertex };
+    }
+  }
+
+  const idx = getEdgeIndexById(edge.edgeId, ctx.grid);
+  if (!idx) return null;
+
+  const from = `vertex-${idx.row}-${idx.col}`;
+  const to = idx.type === 'h'
+    ? `vertex-${idx.row}-${idx.col + 1}`
+    : `vertex-${idx.row + 1}-${idx.col}`;
+
+  return { from, to };
+}
 
 /**
  * Get the number of edge lines around a cell in topology mode
@@ -45,7 +68,11 @@ function getCellBorderLineCountTopology(
 
   // Count edges that are on this cell's border
   for (const edge of Object.values(edges)) {
-    const key = edge.from < edge.to ? `${edge.from}|${edge.to}` : `${edge.to}|${edge.from}`;
+    const endpoints = resolveEdgeEndpoints(ctx, edge);
+    if (!endpoints) continue;
+    const key = endpoints.from < endpoints.to
+      ? `${endpoints.from}|${endpoints.to}`
+      : `${endpoints.to}|${endpoints.from}`;
     if (validEdges.has(key)) {
       count++;
     }
@@ -62,8 +89,10 @@ function buildVertexCounts(ctx: ValidationContext): Map<string, number> {
   const edges = ctx.puzzle.answer.edges;
 
   for (const edge of Object.values(edges)) {
-    vertexCounts.set(edge.from, (vertexCounts.get(edge.from) || 0) + 1);
-    vertexCounts.set(edge.to, (vertexCounts.get(edge.to) || 0) + 1);
+    const endpoints = resolveEdgeEndpoints(ctx, edge);
+    if (!endpoints) continue;
+    vertexCounts.set(endpoints.from, (vertexCounts.get(endpoints.from) || 0) + 1);
+    vertexCounts.set(endpoints.to, (vertexCounts.get(endpoints.to) || 0) + 1);
   }
 
   return vertexCounts;
@@ -143,7 +172,9 @@ function getCellBorderLineCountSquare(
 
   for (const edge of Object.values(edges)) {
     for (const [v1, v2] of cellEdges) {
-      if ((edge.from === v1 && edge.to === v2) || (edge.from === v2 && edge.to === v1)) {
+      const endpoints = resolveEdgeEndpoints(ctx, edge);
+      if (!endpoints) continue;
+      if ((endpoints.from === v1 && endpoints.to === v2) || (endpoints.from === v2 && endpoints.to === v1)) {
         count++;
         break;
       }
@@ -209,10 +240,12 @@ function checkOneLoop(ctx: ValidationContext): CheckResult {
   const adjacency = new Map<string, string[]>();
 
   for (const edge of edgeList) {
-    if (!adjacency.has(edge.from)) adjacency.set(edge.from, []);
-    if (!adjacency.has(edge.to)) adjacency.set(edge.to, []);
-    adjacency.get(edge.from)!.push(edge.to);
-    adjacency.get(edge.to)!.push(edge.from);
+    const endpoints = resolveEdgeEndpoints(ctx, edge);
+    if (!endpoints) continue;
+    if (!adjacency.has(endpoints.from)) adjacency.set(endpoints.from, []);
+    if (!adjacency.has(endpoints.to)) adjacency.set(endpoints.to, []);
+    adjacency.get(endpoints.from)!.push(endpoints.to);
+    adjacency.get(endpoints.to)!.push(endpoints.from);
   }
 
   const allVertices = Array.from(adjacency.keys());

@@ -788,8 +788,10 @@ function convertPenpaLayer(
         const id = `wall-h-${row}-${col}`;
         elements.walls[id] = {
           id,
-          position: `edge-h-${row}-${col}`,
+          edgeId: `edge-h-${row}-${col}`,
+          lineTarget: 'wall',
           style: 'solid',
+          thickness: 'thick',
           color: lineColorMap[colorIndex] || PenpaColors.BLACK,
           layer,
         };
@@ -800,8 +802,10 @@ function convertPenpaLayer(
         const id = `wall-v-${row}-${col}`;
         elements.walls[id] = {
           id,
-          position: `edge-v-${row}-${col}`,
+          edgeId: `edge-v-${row}-${col}`,
+          lineTarget: 'wall',
           style: 'solid',
+          thickness: 'thick',
           color: lineColorMap[colorIndex] || PenpaColors.BLACK,
           layer,
         };
@@ -1721,8 +1725,10 @@ function parseHeyawakeData(data: string, width: number, height: number, state: P
         const id = `wall-${wallId++}`;
         state.problem.walls[id] = {
           id,
-          position: `edge-v-${row}-${col + 1}`,
+          edgeId: `edge-v-${row}-${col + 1}`,
+          lineTarget: 'wall',
           style: 'solid',
+          thickness: 'thick',
           color: '#000000',
           layer: 'problem',
         };
@@ -1737,8 +1743,10 @@ function parseHeyawakeData(data: string, width: number, height: number, state: P
         const id = `wall-${wallId++}`;
         state.problem.walls[id] = {
           id,
-          position: `edge-h-${row + 1}-${col}`,
+          edgeId: `edge-h-${row + 1}-${col}`,
+          lineTarget: 'wall',
           style: 'solid',
+          thickness: 'thick',
           color: '#000000',
           layer: 'problem',
         };
@@ -2054,8 +2062,29 @@ export function exportToPenpaFormat(
       if (Object.keys(elements.lines).length > 0) {
         pu.line = {};
         Object.values(elements.lines).forEach((line) => {
-          const fromPos = getCellIndexById(line.from, grid);
-          const toPos = getCellIndexById(line.to, grid);
+          const lineTarget = line.lineTarget ?? 'cell';
+          if (lineTarget !== 'cell') return;
+
+          let fromPos = line.from ? getCellIndexById(line.from, grid) : null;
+          let toPos = line.to ? getCellIndexById(line.to, grid) : null;
+
+          if ((!fromPos || !toPos) && line.edgeId) {
+            const edgePos = getEdgeIndexById(line.edgeId, grid);
+            if (edgePos) {
+              const fromCellId =
+                edgePos.type === 'h'
+                  ? `cell-${edgePos.row - 1}-${edgePos.col}`
+                  : `cell-${edgePos.row}-${edgePos.col - 1}`;
+              const toCellId =
+                edgePos.type === 'h'
+                  ? `cell-${edgePos.row}-${edgePos.col}`
+                  : `cell-${edgePos.row}-${edgePos.col}`;
+
+              fromPos = getCellIndexById(fromCellId, grid);
+              toPos = getCellIndexById(toCellId, grid);
+            }
+          }
+
           if (!fromPos || !toPos) return;
           const key = lineKey(fromPos.row, fromPos.col, toPos.row, toPos.col);
 
@@ -2068,10 +2097,24 @@ export function exportToPenpaFormat(
       if (Object.keys(elements.edges).length > 0) {
         pu.lineE = {};
         Object.values(elements.edges).forEach((edge) => {
-          const fromPos = getVertexIndexById(edge.from, grid);
-          const toPos = getVertexIndexById(edge.to, grid);
-          if (!fromPos || !toPos) return;
-          const key = edgeKey(fromPos.row, fromPos.col, toPos.row, toPos.col);
+          if (edge.from && edge.to) {
+            const fromPos = getVertexIndexById(edge.from, grid);
+            const toPos = getVertexIndexById(edge.to, grid);
+            if (!fromPos || !toPos) return;
+            const key = edgeKey(fromPos.row, fromPos.col, toPos.row, toPos.col);
+            pu.lineE![key] = lineColorToNum[edge.color.toLowerCase()] || 1;
+            return;
+          }
+
+          if (!edge.edgeId) return;
+          const edgePos = getEdgeIndexById(edge.edgeId, grid);
+          if (!edgePos) return;
+
+          const fromRow = edgePos.row;
+          const fromCol = edgePos.col;
+          const toRow = edgePos.type === 'h' ? edgePos.row : edgePos.row + 1;
+          const toCol = edgePos.type === 'h' ? edgePos.col + 1 : edgePos.col;
+          const key = edgeKey(fromRow, fromCol, toRow, toCol);
           pu.lineE![key] = lineColorToNum[edge.color.toLowerCase()] || 1;
         });
       }
@@ -2081,7 +2124,8 @@ export function exportToPenpaFormat(
         pu.wall = {};
         Object.values(elements.walls).forEach((wall) => {
           // Walls are on edge positions (edge-h or edge-v)
-          const edgePos = getEdgeIndexById(wall.position, grid);
+          if (!wall.edgeId) return;
+          const edgePos = getEdgeIndexById(wall.edgeId, grid);
           if (!edgePos) return;
           if (edgePos.type === 'h') {
             // Horizontal edge between (row-1, col) and (row, col)
@@ -2222,7 +2266,7 @@ export function exportToPenpaFormat(
 
     // Apply Penpa's key compression
     let compressed = json;
-    for (const [full, short] of Object.entries(COMPRESS_SUBSTITUTIONS)) {
+    for (const [full, short] of COMPRESS_SUBSTITUTIONS) {
       compressed = compressed.split(full).join(short);
     }
 

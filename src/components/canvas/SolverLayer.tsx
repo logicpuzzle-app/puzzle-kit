@@ -130,6 +130,7 @@ export const SolverLayer: React.FC = () => {
         toX = line.toX;
         toY = line.toY;
       } else {
+        if (!line.from || !line.to) return;
         const fromPos = getPointPosition(line.from, grid, activeTopology);
         const toPos = getPointPosition(line.to, grid, activeTopology);
         if (!fromPos || !toPos) return;

@@ -24,7 +24,7 @@ import type { TopologyVertex } from '../../utils/gridTopology';
 import { CanvasCursors } from './CanvasCursors';
 import { SpecialToolPreview } from './SpecialToolPreview';
 import { constraintCatalog } from '../../constraints';
-import { getAutoModeConfig } from '../../constraints/inputModeMapping';
+import { getAutoModeConfig, type AutoModeConfig } from '../../constraints/inputModeMapping';
 import type { GridTopology, TopologyCell } from '../../utils/gridTopology';
 import { getEdgeLineDrawInfo } from '../../utils/gridTopology';
 import {
@@ -49,7 +49,6 @@ import {
   type MouseDownContext,
   type CellInfo as StrategyCellInfo,
   type MouseDownAction,
-  type AutoModeConfig,
 } from '../../hooks/tool-handlers/mouseDownStrategies';
 
 // ========================================
@@ -264,7 +263,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       currentInputMode,
       currentSchemaId,
       isConstraintEnabled,
-      autoConfig: autoConfig as AutoModeConfig | null,
+      autoConfig: autoConfig as AutoModeConfig,
     };
   }, [currentSchemaId, activeLayer, grid.cols, grid.cellSize, toolSettings.currentTool, currentInputMode, isConstraintEnabled]);
 
@@ -386,8 +385,8 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
 
       // Fallback to from/to (legacy format)
       if (!fromPos || !toPos) {
-        fromPos = resolveGridIdToPosition(line.from, grid, activeTopology);
-        toPos = resolveGridIdToPosition(line.to, grid, activeTopology);
+        if (!fromPos && line.from) fromPos = resolveGridIdToPosition(line.from, grid, activeTopology);
+        if (!toPos && line.to) toPos = resolveGridIdToPosition(line.to, grid, activeTopology);
       }
 
       if (!fromPos || !toPos) continue;

@@ -133,6 +133,19 @@ export function normalizeLineGroupWithExisting(
   }
 }
 
+function inferArrowEndFromFirstLine(
+  groupLines: LineWithPosition[]
+): { x: number; y: number } | null {
+  const firstWithDirection = groupLines.find((l) => l.line.arrowDirection !== undefined);
+  if (!firstWithDirection) return null;
+
+  const dir = firstWithDirection.line.arrowDirection ?? 'forward';
+  if (dir === 'backward') {
+    return { x: firstWithDirection.fromX, y: firstWithDirection.fromY };
+  }
+  return { x: firstWithDirection.toX, y: firstWithDirection.toY };
+}
+
 /**
  * Group lines by connectivity and normalize each group
  * Used for endpoint/both arrow types

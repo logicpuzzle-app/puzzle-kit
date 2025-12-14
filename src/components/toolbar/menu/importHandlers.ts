@@ -186,19 +186,12 @@ export const createImportHandlers = (options: ImportHandlersOptions) => {
         // Sync ID counters to avoid collisions
         syncCountersFromPuzzleState(result.state);
 
-        // Set up state including topology if present (for Penrose P3, etc.)
-        const stateUpdate: Parameters<typeof usePuzzleStore.setState>[0] = {
+        usePuzzleStore.setState((state) => ({
+          ...state,
           grid: result.grid,
           puzzle: result.state,
-        };
-
-        // If topology is provided (Penrose P3, etc.), use it
-        if (result.topology) {
-          stateUpdate.topology = result.topology;
-          stateUpdate.useTopology = true;
-        }
-
-        usePuzzleStore.setState(stateUpdate);
+          ...(result.topology ? { topology: result.topology, useTopology: true } : {}),
+        }));
 
         // If puzz.link puzzle type is known, enable constraint mode
         if (puzzleType) {

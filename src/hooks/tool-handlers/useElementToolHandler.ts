@@ -219,6 +219,10 @@ export function useElementToolHandler({
       if (!target) return;
       const targetId = target.id;
 
+      // Get symbol metadata for handling conflicts and side effects
+      const metadata = getSymbolMetadata(symbolType);
+      const objectKey = metadata.objectKey ?? symbolType;
+
       // Find existing symbol of the same type
       const existingSymbol = Object.values(
         layerData.symbols as Record<string, { id: string; cellId: string; symbolType: string; color: string; objectKey?: string }>
@@ -236,10 +240,6 @@ export function useElementToolHandler({
         }
         return;
       }
-
-      // Get symbol metadata for handling conflicts and side effects
-      const metadata = getSymbolMetadata(symbolType);
-      const objectKey = metadata.objectKey ?? symbolType;
 
       // Helper: remove line at the same edge when adding peke
       const applyOnAddEffects = () => {

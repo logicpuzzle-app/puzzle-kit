@@ -8,7 +8,7 @@
 import type { PuzzleState, GridConfig, LineElement, SymbolElement } from '../../types';
 import type { ConstraintSchema, ConstraintRule } from '../types';
 import type { GridTopology } from '../../utils/topology';
-import { getCellIndexById } from '../../utils/gridUtils';
+import { getCellIndexById, getEdgeIndexById } from '../../utils/gridUtils';
 
 // ========================================
 // Types
@@ -154,8 +154,29 @@ function createCellLineHelper(puzzle: PuzzleState, grid: GridConfig): (row: numb
   const cellConnections = new Map<string, Set<Direction>>();
 
   for (const line of Object.values(puzzle.answer.lines)) {
-    const fromPos = getCellIndexById(line.from, grid);
-    const toPos = getCellIndexById(line.to, grid);
+    const lineTarget = line.lineTarget ?? 'cell';
+    if (lineTarget !== 'cell') continue;
+
+    let fromPos = line.from ? getCellIndexById(line.from, grid) : null;
+    let toPos = line.to ? getCellIndexById(line.to, grid) : null;
+
+    if ((!fromPos || !toPos) && line.edgeId) {
+      const edgePos = getEdgeIndexById(line.edgeId, grid);
+      if (edgePos) {
+        const fromCellId =
+          edgePos.type === 'h'
+            ? `cell-${edgePos.row - 1}-${edgePos.col}`
+            : `cell-${edgePos.row}-${edgePos.col - 1}`;
+        const toCellId =
+          edgePos.type === 'h'
+            ? `cell-${edgePos.row}-${edgePos.col}`
+            : `cell-${edgePos.row}-${edgePos.col}`;
+
+        fromPos = getCellIndexById(fromCellId, grid);
+        toPos = getCellIndexById(toCellId, grid);
+      }
+    }
+
     if (!fromPos || !toPos) continue;
     const fromRow = fromPos.row;
     const fromCol = fromPos.col;

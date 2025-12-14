@@ -148,7 +148,7 @@ export interface ElementsSlice {
   removeSurface: (id: string) => void;
   addLine: (element: Omit<LineElement, 'id'>) => string;
   removeLine: (id: string) => void;
-  updateLine: (id: string, updates: Partial<Pick<LineElement, 'color' | 'style' | 'thickness'>>) => void;
+  updateLine: (id: string, updates: Partial<Pick<LineElement, 'color' | 'style' | 'thickness' | 'directed' | 'arrowDirection'>>) => void;
   addEdge: (element: Omit<EdgeElement, 'id'>) => string;
   removeEdge: (id: string) => void;
   addWall: (element: Omit<WallElement, 'id'>) => string;

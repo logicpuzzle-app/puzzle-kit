@@ -110,7 +110,8 @@ export function useRightClick(options: UseRightClickOptions) {
   }> => [
     {
       type: 'contextmenu',
-      listener: (e: MouseEvent) => {
+      listener: (evt: Event) => {
+        const e = evt as MouseEvent;
         if (!enabled) return;
         if (preventDefault) e.preventDefault();
         triggerRightClick(e.clientX, e.clientY);
@@ -118,7 +119,8 @@ export function useRightClick(options: UseRightClickOptions) {
     },
     {
       type: 'mousedown',
-      listener: (e: MouseEvent) => {
+      listener: (evt: Event) => {
+        const e = evt as MouseEvent;
         if (!enabled) return;
         if (e.button === 0 && (e.ctrlKey || e.metaKey)) {
           e.preventDefault();
@@ -128,7 +130,8 @@ export function useRightClick(options: UseRightClickOptions) {
     },
     {
       type: 'touchstart',
-      listener: (e: TouchEvent) => {
+      listener: (evt: Event) => {
+        const e = evt as TouchEvent;
         if (!enabled || e.touches.length !== 1) return;
         const touch = e.touches[0];
         touchStartRef.current = { x: touch.clientX, y: touch.clientY };
@@ -144,7 +147,8 @@ export function useRightClick(options: UseRightClickOptions) {
     },
     {
       type: 'touchmove',
-      listener: (e: TouchEvent) => {
+      listener: (evt: Event) => {
+        const e = evt as TouchEvent;
         if (!touchStartRef.current || !longPressTimerRef.current) return;
         const touch = e.touches[0];
         const dx = touch.clientX - touchStartRef.current.x;

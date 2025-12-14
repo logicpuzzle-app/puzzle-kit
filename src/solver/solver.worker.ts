@@ -25,7 +25,7 @@ import {
 } from '@logicpuzzle-app/solver-kit';
 import type { PuzzleState, GridConfig } from '../types';
 import type { SolveResult } from './types';
-import { getCellIndexById } from '../utils/gridUtils';
+import { getCellIndexById, getEdgeIndexById } from '../utils/gridUtils';
 
 // Message types
 export interface SolverWorkerRequest {
@@ -584,31 +584,25 @@ function solveHeyawake(grid: GridConfig, problem: PuzzleState['problem']): Solve
     // Add extra row for vertical walls between last row and beyond (not needed, but for consistency)
 
     // Parse walls from problem.walls
-    // wall format: { id, position: "edge-v-row-col" or "edge-h-row-col", ... }
+    // wall format: { id, edgeId: "edge-v-row-col" or "edge-h-row-col", ... }
     if (problem.walls) {
       for (const wall of Object.values(problem.walls)) {
-        // Vertical wall: edge-v-row-col (between columns col-1 and col)
-        const vertMatch = wall.position.match(/edge-v-(\d+)-(\d+)/);
-        if (vertMatch) {
-          const row = parseInt(vertMatch[1], 10);
-          const col = parseInt(vertMatch[2], 10);
+        if (!wall.edgeId) continue;
+
+        const idx = getEdgeIndexById(wall.edgeId, grid);
+        if (!idx) continue;
+
+        if (idx.type === 'v') {
           // Vertical wall at col divides cell(row, col-1) from cell(row, col)
           // In our array, horizontalWalls[row][col-1] = true means wall between col-1 and col
-          if (col > 0 && horizontalWalls[row]) {
-            horizontalWalls[row][col - 1] = true;
+          if (idx.col > 0 && horizontalWalls[idx.row]) {
+            horizontalWalls[idx.row][idx.col - 1] = true;
           }
-          continue;
-        }
-
-        // Horizontal wall: edge-h-row-col (between rows row-1 and row)
-        const horzMatch = wall.position.match(/edge-h-(\d+)-(\d+)/);
-        if (horzMatch) {
-          const row = parseInt(horzMatch[1], 10);
-          const col = parseInt(horzMatch[2], 10);
+        } else {
           // Horizontal wall at row divides cell(row-1, col) from cell(row, col)
           // In our array, verticalWalls[row-1][col] = true means wall between row-1 and row
-          if (row > 0 && verticalWalls[row - 1]) {
-            verticalWalls[row - 1][col] = true;
+          if (idx.row > 0 && verticalWalls[idx.row - 1]) {
+            verticalWalls[idx.row - 1][idx.col] = true;
           }
         }
       }

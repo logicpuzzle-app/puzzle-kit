@@ -400,6 +400,53 @@ const getCoordinateFromTopology = (id: string, topology: GridTopology | null, gr
   return getCoordinateFromTopology(id, null, grid);
 };
 
+const resolveLineEndpointIdsForDisplay = (
+  line: LineElement,
+  topology: GridTopology | null,
+  grid: GridConfig
+): { fromId: string; toId: string } | null => {
+  if (line.from && line.to) return { fromId: line.from, toId: line.to };
+  if (!line.edgeId) return null;
+
+  const lineTarget = line.lineTarget ?? 'cell';
+
+  if (topology) {
+    const edge = topology.edges.get(line.edgeId);
+    if (!edge) return null;
+
+    if (lineTarget === 'edge' || lineTarget === 'wall') {
+      return { fromId: edge.startVertex, toId: edge.endVertex };
+    }
+
+    if (edge.adjacentCells.length >= 2) {
+      return { fromId: edge.adjacentCells[0], toId: edge.adjacentCells[1] };
+    }
+
+    return null;
+  }
+
+  const idx = getEdgeIndexById(line.edgeId, grid);
+  if (!idx) return null;
+
+  if (lineTarget === 'edge' || lineTarget === 'wall') {
+    const fromId = `vertex-${idx.row}-${idx.col}`;
+    const toId = idx.type === 'h'
+      ? `vertex-${idx.row}-${idx.col + 1}`
+      : `vertex-${idx.row + 1}-${idx.col}`;
+    return { fromId, toId };
+  }
+
+  const fromId =
+    idx.type === 'h'
+      ? `cell-${idx.row - 1}-${idx.col}`
+      : `cell-${idx.row}-${idx.col - 1}`;
+  const toId =
+    idx.type === 'h'
+      ? `cell-${idx.row}-${idx.col}`
+      : `cell-${idx.row}-${idx.col}`;
+  return { fromId, toId };
+};
+
 // Parse coordinate string to extract row, col, and prefix
 const parseCoordString = (coord: string): { prefix: string; row: number; col: number } | null => {
   // Match patterns like "(1,2)", "+(1,2)", "-(1,2)", "|(1,2)"
@@ -502,7 +549,7 @@ const mergeLines = (lineInfos: FreeLineInfo[]): MergedLineGroup[] => {
     const parsedCoords = allCoords.map(parseCoordString).filter((p): p is NonNullable<typeof p> => p !== null);
 
     // Calculate total length of chain
-    let totalLength: IrrationalLength = { rational: 0, sqrt2: 0, sqrt3: 0 };
+    let totalLength: IrrationalLength = { rational: 0, sqrtTerms: {} };
     for (const info of chain) {
       const segmentLen = calculateSegmentLength(info.fromCoord, info.toCoord);
       totalLength = addLengths(totalLength, segmentLen);
@@ -595,11 +642,11 @@ export const FreeLineList: React.FC = () => {
       // Skip freehand lines (they have their own list)
       if (line.isFree) return;
 
-      // For directed lines, arrowDirection indicates the actual draw direction
-      // 'backward' means the line was drawn from to->from, so swap coordinates for display
+      const endpoints = resolveLineEndpointIdsForDisplay(line, activeTopology, grid);
+      if (!endpoints) return;
       const isBackward = line.arrowDirection === 'backward';
-      const fromId = isBackward ? line.to : line.from;
-      const toId = isBackward ? line.from : line.to;
+      const fromId = isBackward ? endpoints.toId : endpoints.fromId;
+      const toId = isBackward ? endpoints.fromId : endpoints.toId;
 
       result.push({
         id: line.id,

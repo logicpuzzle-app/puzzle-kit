@@ -539,6 +539,7 @@ export interface ExistingNumber {
   cellId: string;
   value: string;
   position: string;
+  objectKey?: string;
   cornerIndex?: number;
   sideIndex?: number;
   candidates?: number[];

@@ -41,7 +41,7 @@ describe('normalizeLineGroup (undirected to directed)', () => {
     ];
 
     // Simulate conversion: mark directed without arrowDirection
-    const directed = base.map((seg) => ({
+    const directed: LineWithPosition[] = base.map((seg): LineWithPosition => ({
       ...seg,
       line: { ...seg.line, directed: 'endpoint', arrowDirection: undefined },
     }));
