@@ -14,6 +14,26 @@ const resources = {
 
 const LANGUAGE_STORAGE_KEY = 'puzzlekit-language';
 
+function safeLocalStorageGet(key: string): string | null {
+  try {
+    if (typeof localStorage === 'undefined') return null;
+    if (typeof localStorage.getItem !== 'function') return null;
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeLocalStorageSet(key: string, value: string): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    if (typeof localStorage.setItem !== 'function') return;
+    localStorage.setItem(key, value);
+  } catch {
+    // ignore
+  }
+}
+
 /**
  * Detect the default language based on:
  * 1. localStorage saved preference
@@ -21,7 +41,7 @@ const LANGUAGE_STORAGE_KEY = 'puzzlekit-language';
  */
 function detectDefaultLanguage(): string {
   // Check localStorage first
-  const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+  const saved = safeLocalStorageGet(LANGUAGE_STORAGE_KEY);
   if (saved === 'ja' || saved === 'en') {
     return saved;
   }
@@ -39,7 +59,7 @@ function detectDefaultLanguage(): string {
  * Save language preference to localStorage
  */
 export function saveLanguagePreference(lang: string): void {
-  localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+  safeLocalStorageSet(LANGUAGE_STORAGE_KEY, lang);
 }
 
 i18n
