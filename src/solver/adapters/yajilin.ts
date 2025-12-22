@@ -8,6 +8,7 @@ import { YajilinSolver, Direction, CellState, SolveStatus, LoopEdgeState } from 
 import type { SolverAdapter, SolveResult } from '../types';
 import type { PuzzleState, GridConfig } from '../../types';
 import { getCellIndexById } from '../../utils/gridUtils';
+import { getDirectionalCluesFromElements } from '../../utils/numberEntries';
 
 /**
  * Convert puzzle-kit direction (1-4) to solver-kit Direction enum
@@ -34,11 +35,12 @@ export const yajilinSolverAdapter: SolverAdapter = {
     const startTime = performance.now();
 
     try {
-      // Extract arrow clues from directionalClues
+      // Extract arrow clues from directional numbers
       const arrows: Array<{ row: number; col: number; direction: Direction; count: number }> = [];
 
-      if (problem.directionalClues) {
-        for (const clue of Object.values(problem.directionalClues)) {
+      const directionalNumbers = getDirectionalCluesFromElements(problem);
+      if (directionalNumbers.length > 0) {
+        for (const clue of directionalNumbers) {
           // Skip clues without direction (direction=0 means no arrow)
           if (clue.direction === 0) continue;
 
@@ -126,7 +128,6 @@ function convertSolutionToAnswer(
     cages: {},
     specials: {},
     boxLines: {},
-    directionalClues: {},
   };
 
   // Add shaded cells as black surfaces

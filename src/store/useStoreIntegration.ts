@@ -6,12 +6,13 @@
  */
 
 import { useEffect, useCallback, useMemo, useState } from 'react';
-import { usePuzzleStore } from './puzzleStore';
-import { actionExecutor, type PuzzleStateSlice } from './actionExecutor';
-import { historyManager, type HistoryState } from './historyManager';
-import { persistenceManager, type PersistedState } from './persistence';
+import { usePuzzleStore, usePuzzleStoreApi } from './puzzleStoreContext';
+import type { PuzzleStateSlice } from './actionExecutor';
+import type { HistoryState } from './historyManager';
+import type { PersistedState } from './persistence';
 import type { PuzzleAction } from './actions';
 import { syncCountersFromPuzzleState } from '../utils/idGenerator';
+import { mergeDirectionalCluesIntoNumbers } from '../utils/legacyDirectionalClues';
 
 // ========================================
 // Integration Hook
@@ -34,15 +35,16 @@ export function useStoreIntegration(options?: {
   const activeLayer = usePuzzleStore((state) => state.activeLayer);
   const grid = usePuzzleStore((state) => state.grid);
   const toolSettings = usePuzzleStore((state) => state.toolSettings);
+  const store = usePuzzleStoreApi();
 
   // History state from HistoryManager
   const [historyState, setHistoryState] = useState<HistoryState>(
-    historyManager.getState()
+    store.getState().historyManager.getState()
   );
 
   // Connect ActionExecutor to store on mount
   useEffect(() => {
-    const store = usePuzzleStore.getState();
+    const storeState = store.getState();
 
     // Create a mutator that uses Zustand's set
     const mutator = (
@@ -51,7 +53,7 @@ export function useStoreIntegration(options?: {
       ) => void
     ) => {
       applyFn((fn) => {
-        usePuzzleStore.setState((state) => {
+        store.setState((state) => {
           const result = fn({
             puzzle: state.puzzle,
             activeLayer: state.activeLayer,
@@ -62,21 +64,21 @@ export function useStoreIntegration(options?: {
       });
     };
 
-    actionExecutor.setMutator(mutator);
+    storeState.actionExecutor.setMutator(mutator);
 
     // Subscribe to history changes
-    const unsubscribeHistory = historyManager.subscribe(setHistoryState);
+    const unsubscribeHistory = storeState.historyManager.subscribe(setHistoryState);
 
     return () => {
       unsubscribeHistory();
     };
-  }, []);
+  }, [store]);
 
   // Auto-save effect
   useEffect(() => {
     if (!enableAutoSave) return;
 
-    persistenceManager.setAutoSaveDelay(autoSaveDelay);
+    store.getState().persistenceManager.setAutoSaveDelay(autoSaveDelay);
 
     const state: PersistedState = {
       version: '1.0.0',
@@ -85,55 +87,55 @@ export function useStoreIntegration(options?: {
       toolSettings,
     };
 
-    persistenceManager.autoSave(state);
+    store.getState().persistenceManager.autoSave(state);
   }, [enableAutoSave, autoSaveDelay, grid, puzzle, toolSettings]);
 
   // Execute action through ActionExecutor
   const executeAction = useCallback((action: PuzzleAction) => {
-    actionExecutor.execute(action);
-  }, []);
+    store.getState().actionExecutor.execute(action);
+  }, [store]);
 
   // Execute multiple actions
   const executeActions = useCallback((actions: PuzzleAction[]) => {
-    actionExecutor.executeAll(actions);
-  }, []);
+    store.getState().actionExecutor.executeAll(actions);
+  }, [store]);
 
   // Undo using HistoryManager
   const undo = useCallback(() => {
-    const actions = historyManager.getUndoActions();
+    const actions = store.getState().historyManager.getUndoActions();
     if (actions.length === 0) return;
 
     actions.forEach((action) => {
-      actionExecutor.executeWithoutHistory(action);
+      store.getState().actionExecutor.executeWithoutHistory(action);
     });
-    historyManager.moveToUndo();
-  }, []);
+    store.getState().historyManager.moveToUndo();
+  }, [store]);
 
   // Redo using HistoryManager
   const redo = useCallback(() => {
-    const actions = historyManager.getRedoActions();
+    const actions = store.getState().historyManager.getRedoActions();
     if (actions.length === 0) return;
 
     actions.forEach((action) => {
-      actionExecutor.executeWithoutHistory(action);
+      store.getState().actionExecutor.executeWithoutHistory(action);
     });
-    historyManager.moveToRedo();
-  }, []);
+    store.getState().historyManager.moveToRedo();
+  }, [store]);
 
   // Start a history group
   const startHistoryGroup = useCallback(() => {
-    return historyManager.startGroup();
-  }, []);
+    return store.getState().historyManager.startGroup();
+  }, [store]);
 
   // End a history group
   const endHistoryGroup = useCallback(() => {
-    historyManager.endGroup();
-  }, []);
+    store.getState().historyManager.endGroup();
+  }, [store]);
 
   // Clear history
   const clearHistory = useCallback(() => {
-    historyManager.clear();
-  }, []);
+    store.getState().historyManager.clear();
+  }, [store]);
 
   // Save current state to a slot
   const saveToSlot = useCallback(
@@ -144,54 +146,60 @@ export function useStoreIntegration(options?: {
         puzzle,
         toolSettings,
       };
-      return persistenceManager.saveToSlot(slotId, state, name);
+      return store.getState().persistenceManager.saveToSlot(slotId, state, name);
     },
-    [grid, puzzle, toolSettings]
+    [grid, puzzle, toolSettings, store]
   );
 
   // Load state from a slot (async for decompression)
   const loadFromSlot = useCallback(async (slotId: string) => {
-    const saved = await persistenceManager.loadFromSlot(slotId);
+    const saved = await store.getState().persistenceManager.loadFromSlot(slotId);
     if (!saved) return false;
 
+    const normalizedPuzzle = mergeDirectionalCluesIntoNumbers(saved.puzzle);
+
     // Sync ID counters to avoid collisions
-    syncCountersFromPuzzleState(saved.puzzle);
+    syncCountersFromPuzzleState(normalizedPuzzle);
 
     // Apply loaded state to store
-    usePuzzleStore.setState({
+    const currentToolSettings = store.getState().toolSettings;
+    store.setState({
       grid: saved.grid,
-      puzzle: saved.puzzle,
+      puzzle: normalizedPuzzle,
       toolSettings: saved.toolSettings
-        ? { ...usePuzzleStore.getState().toolSettings, ...saved.toolSettings }
-        : usePuzzleStore.getState().toolSettings,
+        ? { ...currentToolSettings, ...saved.toolSettings }
+        : currentToolSettings,
     });
 
     // Clear history after load
-    historyManager.clear();
+    store.getState().historyManager.clear();
 
     return true;
-  }, []);
+  }, [store]);
 
   // Load auto-save (async for decompression)
   const loadAutoSave = useCallback(async () => {
-    const saved = await persistenceManager.loadAutoSave();
+    const saved = await store.getState().persistenceManager.loadAutoSave();
     if (!saved) return false;
 
-    // Sync ID counters to avoid collisions
-    syncCountersFromPuzzleState(saved.puzzle);
+    const normalizedPuzzle = mergeDirectionalCluesIntoNumbers(saved.puzzle);
 
-    usePuzzleStore.setState({
+    // Sync ID counters to avoid collisions
+    syncCountersFromPuzzleState(normalizedPuzzle);
+
+    const currentToolSettings = store.getState().toolSettings;
+    store.setState({
       grid: saved.grid,
-      puzzle: saved.puzzle,
+      puzzle: normalizedPuzzle,
       toolSettings: saved.toolSettings
-        ? { ...usePuzzleStore.getState().toolSettings, ...saved.toolSettings }
-        : usePuzzleStore.getState().toolSettings,
+        ? { ...currentToolSettings, ...saved.toolSettings }
+        : currentToolSettings,
     });
 
-    historyManager.clear();
+    store.getState().historyManager.clear();
 
     return true;
-  }, []);
+  }, [store]);
 
   // Export as JSON
   const exportAsJson = useCallback(() => {
@@ -201,29 +209,32 @@ export function useStoreIntegration(options?: {
       puzzle,
       toolSettings,
     };
-    return persistenceManager.exportAsJson(state);
-  }, [grid, puzzle, toolSettings]);
+    return store.getState().persistenceManager.exportAsJson(state);
+  }, [grid, puzzle, toolSettings, store]);
 
   // Import from JSON
   const importFromJson = useCallback((json: string) => {
-    const saved = persistenceManager.importFromJson(json);
+    const saved = store.getState().persistenceManager.importFromJson(json);
     if (!saved) return false;
 
-    // Sync ID counters to avoid collisions
-    syncCountersFromPuzzleState(saved.puzzle);
+    const normalizedPuzzle = mergeDirectionalCluesIntoNumbers(saved.puzzle);
 
-    usePuzzleStore.setState({
+    // Sync ID counters to avoid collisions
+    syncCountersFromPuzzleState(normalizedPuzzle);
+
+    const currentToolSettings = store.getState().toolSettings;
+    store.setState({
       grid: saved.grid,
-      puzzle: saved.puzzle,
+      puzzle: normalizedPuzzle,
       toolSettings: saved.toolSettings
-        ? { ...usePuzzleStore.getState().toolSettings, ...saved.toolSettings }
-        : usePuzzleStore.getState().toolSettings,
+        ? { ...currentToolSettings, ...saved.toolSettings }
+        : currentToolSettings,
     });
 
-    historyManager.clear();
+    store.getState().historyManager.clear();
 
     return true;
-  }, []);
+  }, [store]);
 
   return useMemo(
     () => ({
@@ -236,8 +247,8 @@ export function useStoreIntegration(options?: {
       redo,
       canUndo: historyState.currentIndex >= 0,
       canRedo: historyState.currentIndex < historyState.entries.length - 1,
-      undoDescription: historyManager.getUndoDescription(),
-      redoDescription: historyManager.getRedoDescription(),
+      undoDescription: store.getState().historyManager.getUndoDescription(),
+      redoDescription: store.getState().historyManager.getRedoDescription(),
       startHistoryGroup,
       endHistoryGroup,
       clearHistory,
@@ -248,8 +259,8 @@ export function useStoreIntegration(options?: {
       loadAutoSave,
       exportAsJson,
       importFromJson,
-      hasAutoSave: persistenceManager.loadAutoSave() !== null,
-      savedSlots: persistenceManager.getSlots(),
+      hasAutoSave: store.getState().persistenceManager.loadAutoSave() !== null,
+      savedSlots: store.getState().persistenceManager.getSlots(),
     }),
     [
       executeAction,
@@ -265,6 +276,7 @@ export function useStoreIntegration(options?: {
       loadAutoSave,
       exportAsJson,
       importFromJson,
+      store,
     ]
   );
 }
@@ -277,15 +289,17 @@ export function useStoreIntegration(options?: {
  * Hook for just history functionality
  */
 export function useHistory() {
-  const [historyState, setHistoryState] = useState<HistoryState>(
-    historyManager.getState()
+  const store = usePuzzleStoreApi();
+  const [historyState, setHistoryState] = useState<HistoryState>(() =>
+    store.getState().historyManager.getState()
   );
 
   useEffect(() => {
-    return historyManager.subscribe(setHistoryState);
-  }, []);
+    return store.getState().historyManager.subscribe(setHistoryState);
+  }, [store]);
 
   const undo = useCallback(() => {
+    const { historyManager, actionExecutor } = store.getState();
     const actions = historyManager.getUndoActions();
     if (actions.length === 0) return;
 
@@ -293,9 +307,10 @@ export function useHistory() {
       actionExecutor.executeWithoutHistory(action);
     });
     historyManager.moveToUndo();
-  }, []);
+  }, [store]);
 
   const redo = useCallback(() => {
+    const { historyManager, actionExecutor } = store.getState();
     const actions = historyManager.getRedoActions();
     if (actions.length === 0) return;
 
@@ -303,18 +318,22 @@ export function useHistory() {
       actionExecutor.executeWithoutHistory(action);
     });
     historyManager.moveToRedo();
-  }, []);
+  }, [store]);
 
   return {
     undo,
     redo,
     canUndo: historyState.currentIndex >= 0,
     canRedo: historyState.currentIndex < historyState.entries.length - 1,
-    undoDescription: historyManager.getUndoDescription(),
-    redoDescription: historyManager.getRedoDescription(),
-    startGroup: historyManager.startGroup.bind(historyManager),
-    endGroup: historyManager.endGroup.bind(historyManager),
-    clear: historyManager.clear.bind(historyManager),
+    undoDescription: store.getState().historyManager.getUndoDescription(),
+    redoDescription: store.getState().historyManager.getRedoDescription(),
+    startGroup: store.getState().historyManager.startGroup.bind(
+      store.getState().historyManager
+    ),
+    endGroup: store.getState().historyManager.endGroup.bind(
+      store.getState().historyManager
+    ),
+    clear: store.getState().historyManager.clear.bind(store.getState().historyManager),
   };
 }
 

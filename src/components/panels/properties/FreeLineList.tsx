@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trash2 } from 'lucide-react';
-import { usePuzzleStore } from '../../../store/puzzleStore';
+import { usePuzzleStore, usePuzzleStoreApi } from '../../../store/puzzleStoreContext';
 import { LineElement, toDataLayer } from '../../../types';
+import { getEditableDataLayer } from '../../../utils/editPolicy';
 import type { GridConfig } from '../../../types';
 import type { GridTopology } from '../../../utils/gridTopology';
 import { getCellIndexById, getEdgeIndexById, getVertexIndexById } from '../../../utils/gridUtils';
@@ -612,7 +613,8 @@ const getLengthNumericValue = (len: IrrationalLength): number => {
 // Free line list component - shows list of grid-snapped lines
 export const FreeLineList: React.FC = () => {
   const { t } = useTranslation();
-  const { puzzle, activeLayer, removeLine, topology, useTopology, setHighlightedLineIds, highlightedLineIds, grid } = usePuzzleStore();
+  const { puzzle, activeLayer, isPlayerMode, removeLine, topology, useTopology, setHighlightedLineIds, highlightedLineIds, grid } = usePuzzleStore();
+  const storeApi = usePuzzleStoreApi();
   const [mergeConsecutive, setMergeConsecutive] = useState(true);
   const [sortOption, setSortOption] = useState<SortOption>('row');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -628,7 +630,9 @@ export const FreeLineList: React.FC = () => {
     }
   };
 
-  const dataLayer = toDataLayer(activeLayer);
+  const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
+  const dataLayer = editableLayer ?? toDataLayer(activeLayer);
+  const canEdit = Boolean(editableLayer);
   const activeTopology = useTopology ? topology : null;
 
   // Get all lines (excluding freehand) for current layer only
@@ -788,7 +792,7 @@ export const FreeLineList: React.FC = () => {
     index: number,
     event: React.MouseEvent
   ) => {
-    const { highlightedLineIds } = usePuzzleStore.getState();
+    const { highlightedLineIds } = storeApi.getState();
     const orderedItems = getOrderedItemIds();
 
     if (event.shiftKey && lastClickedIndex !== null) {
@@ -828,6 +832,7 @@ export const FreeLineList: React.FC = () => {
 
   // Handle delete for multiple line IDs
   const handleDeleteMultiple = (ids: string[]) => {
+    if (!canEdit) return;
     ids.forEach(id => removeLine(id));
   };
 
@@ -918,11 +923,14 @@ export const FreeLineList: React.FC = () => {
               </div>
               {/* Delete button */}
               <button
-                className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                className={`p-1 rounded transition-colors ${
+                  canEdit ? 'text-gray-400 hover:text-red-500 hover:bg-red-50' : 'text-gray-300 cursor-not-allowed'
+                }`}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleDeleteMultiple(group.ids);
                 }}
+                disabled={!canEdit}
                 title={t('action.delete')}
               >
                 <Trash2 size={14} />
@@ -961,11 +969,15 @@ export const FreeLineList: React.FC = () => {
               </div>
               {/* Delete button */}
               <button
-                className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                className={`p-1 rounded transition-colors ${
+                  canEdit ? 'text-gray-400 hover:text-red-500 hover:bg-red-50' : 'text-gray-300 cursor-not-allowed'
+                }`}
                 onClick={(e) => {
                   e.stopPropagation();
+                  if (!canEdit) return;
                   removeLine(info.id);
                 }}
+                disabled={!canEdit}
                 title={t('action.delete')}
               >
                 <Trash2 size={14} />

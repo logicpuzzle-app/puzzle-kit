@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStore';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { getCellCenter, getCellIndexById } from '../../utils/gridUtils';
 import type { SurfaceElement, DataLayerType } from '../../types';
 import type { TopologyVertex } from '../../utils/gridTopology';

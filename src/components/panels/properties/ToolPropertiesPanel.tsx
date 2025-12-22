@@ -5,9 +5,10 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, GitMerge, Minus, Scissors } from 'lucide-react';
-import { usePuzzleStore } from '../../../store/puzzleStore';
+import { usePuzzleStore } from '../../../store/puzzleStoreContext';
 import { LineStyle, LineThickness, LineElement, toDataLayer } from '../../../types';
 import { isLineToolCategory } from '../../../utils/lineRender';
+import { getEditableDataLayer } from '../../../utils/editPolicy';
 import {
   ColorSelector,
   NumberPositionSettings,
@@ -25,13 +26,16 @@ export const ToolPropertiesPanel: React.FC = () => {
     highlightedLineIds,
     puzzle,
     activeLayer,
+    isPlayerMode,
     updateLine,
     setHighlightedLineIds,
     groupSelectedLinesByConnectivity,
     groupSelectedLinesByCollinearity,
     removeLineGroup,
   } = usePuzzleStore();
-  const dataLayer = toDataLayer(activeLayer);
+  const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
+  const dataLayer = editableLayer ?? toDataLayer(activeLayer);
+  const canEdit = Boolean(editableLayer);
 
   // Get selected lines for property display/update
   const selectedLines = React.useMemo(() => {
@@ -71,6 +75,7 @@ export const ToolPropertiesPanel: React.FC = () => {
 
   // Handle ungroup - remove selected lines from their groups
   const handleUngroup = () => {
+    if (!canEdit) return;
     selectedLineGroups.forEach(groupId => {
       removeLineGroup(groupId);
     });
@@ -79,7 +84,7 @@ export const ToolPropertiesPanel: React.FC = () => {
   // Handle style change - update both toolSettings and selected lines
   const handleStyleChange = (style: LineStyle) => {
     setToolSettings({ lineStyle: style });
-    if (hasSelectedLines) {
+    if (canEdit && hasSelectedLines) {
       highlightedLineIds.forEach(id => {
         const line = puzzle[dataLayer].lines[id];
         if (line && !line.isFree) {
@@ -92,7 +97,7 @@ export const ToolPropertiesPanel: React.FC = () => {
   // Handle thickness change - update both toolSettings and selected lines
   const handleThicknessChange = (thickness: LineThickness) => {
     setToolSettings({ lineThickness: thickness });
-    if (hasSelectedLines) {
+    if (canEdit && hasSelectedLines) {
       highlightedLineIds.forEach(id => {
         const line = puzzle[dataLayer].lines[id];
         if (line && !line.isFree) {
@@ -106,6 +111,8 @@ export const ToolPropertiesPanel: React.FC = () => {
   // When changing from undirected to directed, auto-group selected lines
   const handleDirectedChange = (directed: 'endpoint' | 'midpoint' | 'both' | undefined) => {
     setToolSettings({ lineDirected: directed });
+
+    if (!canEdit) return;
 
     // Check if any selected line is currently undirected (before updating)
     const hasUndirectedLines = selectedLines.some(line => !line.directed);
@@ -147,7 +154,7 @@ export const ToolPropertiesPanel: React.FC = () => {
   // Handle arrow direction change - update both toolSettings and selected lines
   const handleArrowDirectionChange = (arrowDirection: 'forward' | 'backward') => {
     setToolSettings({ lineArrowDirection: arrowDirection });
-    if (hasSelectedLines) {
+    if (canEdit && hasSelectedLines) {
       highlightedLineIds.forEach(id => {
         const line = puzzle[dataLayer].lines[id];
         if (line && !line.isFree) {
@@ -164,7 +171,7 @@ export const ToolPropertiesPanel: React.FC = () => {
     setToolSettings({ lineArrowDirection: newToolDirection });
 
     // Flip each selected line's direction individually
-    if (hasSelectedLines) {
+    if (canEdit && hasSelectedLines) {
       highlightedLineIds.forEach(id => {
         const line = puzzle[dataLayer].lines[id];
         if (line && !line.isFree) {
@@ -426,16 +433,28 @@ export const ToolPropertiesPanel: React.FC = () => {
                 <>
                   {/* Group by connectivity (any direction) - merge/branch icon */}
                   <button
-                    className="h-6 px-1.5 border rounded-sm transition-colors bg-white border-office-border hover:bg-office-ribbon-hover flex items-center"
-                    onClick={() => groupSelectedLinesByConnectivity(highlightedLineIds)}
+                    className={`h-6 px-1.5 border rounded-sm transition-colors flex items-center ${
+                      canEdit ? 'bg-white border-office-border hover:bg-office-ribbon-hover' : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                    }`}
+                    onClick={() => {
+                      if (!canEdit) return;
+                      groupSelectedLinesByConnectivity(highlightedLineIds);
+                    }}
+                    disabled={!canEdit}
                     title={t('tool.line.group.connected', '連続でグループ化')}
                   >
                     <GitMerge size={14} />
                   </button>
                   {/* Group by collinearity (same direction) - straight line icon */}
                   <button
-                    className="h-6 px-1.5 border rounded-sm transition-colors bg-white border-office-border hover:bg-office-ribbon-hover flex items-center"
-                    onClick={() => groupSelectedLinesByCollinearity(highlightedLineIds)}
+                    className={`h-6 px-1.5 border rounded-sm transition-colors flex items-center ${
+                      canEdit ? 'bg-white border-office-border hover:bg-office-ribbon-hover' : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                    }`}
+                    onClick={() => {
+                      if (!canEdit) return;
+                      groupSelectedLinesByCollinearity(highlightedLineIds);
+                    }}
+                    disabled={!canEdit}
                     title={t('tool.line.group.collinear', '同方向&連続でグループ化')}
                   >
                     <Minus size={14} />
@@ -446,8 +465,11 @@ export const ToolPropertiesPanel: React.FC = () => {
               {/* Ungroup button - show when any selected lines are in a group */}
               {hasGroupedLines && (
                 <button
-                  className="h-6 px-1.5 border rounded-sm transition-colors bg-white border-office-border hover:bg-office-ribbon-hover flex items-center"
+                  className={`h-6 px-1.5 border rounded-sm transition-colors flex items-center ${
+                    canEdit ? 'bg-white border-office-border hover:bg-office-ribbon-hover' : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}
                   onClick={handleUngroup}
+                  disabled={!canEdit}
                   title={t('tool.line.group.ungroup', 'グループ解除')}
                 >
                   <Scissors size={14} />

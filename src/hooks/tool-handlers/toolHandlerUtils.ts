@@ -3,30 +3,14 @@
  * Centralizes common logic for auto mode detection, target finding, and number handling
  */
 
-import type { Point } from '../../types';
-import type { GridConfig } from '../../types';
-import type { GridTopology, TopologyCell, TopologyVertex, TopologyEdge } from '../../utils/gridTopology';
+import type { GridConfig, NumberPosition, Point } from '../../types';
+import type { GridTopology } from '../../utils/gridTopology';
 import type { ConstraintSchema } from '../../constraints/types';
 import { constraintCatalog } from '../../constraints';
 import { getAutoModeConfig } from '../../constraints/inputModeMapping';
-import {
-  findNearestCell,
-  findNearestVertex,
-  findNearestEdge,
-  getCellId,
-  getVertexId,
-  getEdgeHId,
-  getEdgeVId,
-  getCellCenter,
-  getCellIndexById,
-  getVertexPosition,
-  getEdgePosition,
-} from '../../utils/gridUtils';
-import {
-  findNearestCellInTopology,
-  findNearestVertexInTopology,
-  findNearestEdgeInTopology,
-} from '../../utils/gridTopology';
+import { getCellIndexById } from '../../utils/gridUtils';
+import { resolveCell, resolveTarget, type ResolveOptions } from '../../utils/pointResolver';
+import { findNumberEntry } from '../../utils/numberEntries';
 
 // ============================================================================
 // Auto Mode Detection
@@ -96,8 +80,8 @@ export function resolveAutoMode(
 
       // In auto mode, always use constraint-style number handling.
       // The type determines the primary editing mode (line vs number),
-      // but if numbers are entered they should use directionalClues format,
-      // not legacy 0-99 numbers.
+      // but if numbers are entered they should use directional numbers
+      // (NumberElement with direction/angle), not legacy 0-99 numbers.
       return {
         type,
         isDirecMode: type === 'direc',
@@ -111,7 +95,7 @@ export function resolveAutoMode(
   // Auto mode without resolved schema - default to constraint behavior
   // to avoid writing legacy numbers before schema is available.
   // This matches the previous behavior where auto mode always used
-  // constraint-style number handling (min 1..totalCells, directionalClues).
+  // constraint-style number handling (min 1..totalCells, directional numbers).
   return {
     type: 'number', // Default to number type for auto mode
     isDirecMode: false,
@@ -144,151 +128,14 @@ export function findNearestTarget(
   grid: GridConfig,
   useTopology: boolean,
   topology: GridTopology | null,
-  maxDistance?: number
+  options: ResolveOptions = {}
 ): TargetResult | null {
-  let best: TargetResult | null = null;
-
-  for (const targetType of targetTypes) {
-    const result = findTarget(point, targetType, grid, useTopology, topology, maxDistance);
-    if (result && (!best || result.distance < best.distance)) {
-      best = result;
-    }
-  }
-
-  return best;
-}
-
-function findTarget(
-  point: Point,
-  targetType: TargetType,
-  grid: GridConfig,
-  useTopology: boolean,
-  topology: GridTopology | null,
-  maxDistance?: number
-): TargetResult | null {
-  switch (targetType) {
-    case 'cell':
-      return findCellTarget(point, grid, useTopology, topology);
-    case 'vertex':
-      return findVertexTarget(point, grid, useTopology, topology, maxDistance);
-    case 'edge':
-      return findEdgeTarget(point, grid, useTopology, topology, maxDistance);
-    default:
-      return null;
-  }
-}
-
-function findCellTarget(
-  point: Point,
-  grid: GridConfig,
-  useTopology: boolean,
-  topology: GridTopology | null
-): TargetResult | null {
-  if (useTopology && topology) {
-    const topoCell = findNearestCellInTopology(topology, point);
-    if (topoCell) {
-      const dist = distance(point, topoCell.center);
-      return {
-        id: topoCell.id,
-        type: 'cell',
-        distance: dist,
-        position: topoCell.center,
-      };
-    }
-    return null;
-  }
-
-  const cell = findNearestCell(point, grid);
-  if (cell) {
-    const center = getCellCenter(cell.row, cell.col, grid);
-    const dist = distance(point, center);
-    return {
-      id: getCellId(cell.row, cell.col),
-      type: 'cell',
-      distance: dist,
-      position: center,
-    };
-  }
-  return null;
-}
-
-function findVertexTarget(
-  point: Point,
-  grid: GridConfig,
-  useTopology: boolean,
-  topology: GridTopology | null,
-  maxDistance?: number
-): TargetResult | null {
-  const threshold = maxDistance ?? grid.cellSize * 0.6;
-
-  if (useTopology && topology) {
-    const topoVertex = findNearestVertexInTopology(topology, point);
-    if (topoVertex) {
-      const dist = distance(point, topoVertex.position);
-      return {
-        id: topoVertex.id,
-        type: 'vertex',
-        distance: dist,
-        position: topoVertex.position,
-      };
-    }
-    return null;
-  }
-
-  const vertex = findNearestVertex(point, grid, threshold);
-  if (vertex) {
-    const pos = getVertexPosition(vertex.row, vertex.col, grid);
-    const dist = distance(point, pos);
-    return {
-      id: getVertexId(vertex.row, vertex.col),
-      type: 'vertex',
-      distance: dist,
-      position: pos,
-    };
-  }
-  return null;
-}
-
-function findEdgeTarget(
-  point: Point,
-  grid: GridConfig,
-  useTopology: boolean,
-  topology: GridTopology | null,
-  maxDistance?: number
-): TargetResult | null {
-  const threshold = maxDistance ?? grid.cellSize * 0.6;
-
-  if (useTopology && topology) {
-    const topoEdge = findNearestEdgeInTopology(topology, point);
-    if (topoEdge) {
-      const dist = distance(point, topoEdge.midpoint);
-      return {
-        id: topoEdge.id,
-        type: 'edge',
-        distance: dist,
-        position: topoEdge.midpoint,
-      };
-    }
-    return null;
-  }
-
-  const edge = findNearestEdge(point, grid, threshold);
-  if (edge) {
-    const pos = getEdgePosition(edge.type, edge.row, edge.col, grid);
-    const dist = distance(point, pos);
-    const id = edge.type === 'h' ? getEdgeHId(edge.row, edge.col) : getEdgeVId(edge.row, edge.col);
-    return {
-      id,
-      type: 'edge',
-      distance: dist,
-      position: pos,
-    };
-  }
-  return null;
-}
-
-function distance(p1: Point, p2: Point): number {
-  return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+  return resolveTarget(
+    point,
+    { grid, useTopology, topology },
+    targetTypes,
+    options
+  );
 }
 
 /**
@@ -298,14 +145,11 @@ export function findCellIdFromPoint(
   point: Point,
   grid: GridConfig,
   useTopology: boolean,
-  topology: GridTopology | null
+  topology: GridTopology | null,
+  options: ResolveOptions = {}
 ): string | null {
-  if (useTopology && topology) {
-    const topoCell = findNearestCellInTopology(topology, point);
-    return topoCell ? topoCell.id : null;
-  }
-  const cell = findNearestCell(point, grid);
-  return cell ? getCellId(cell.row, cell.col) : null;
+  const cell = resolveCell(point, { grid, useTopology, topology }, options);
+  return cell ? cell.cellId : null;
 }
 
 // ============================================================================
@@ -538,7 +382,7 @@ export interface ExistingNumber {
   id: string;
   cellId: string;
   value: string;
-  position: string;
+  position: NumberPosition;
   objectKey?: string;
   cornerIndex?: number;
   sideIndex?: number;
@@ -559,21 +403,18 @@ export interface ExistingSymbol {
 export function findExistingNumber(
   numbers: Record<string, ExistingNumber>,
   cellId: string,
-  position: string,
+  position: NumberPosition,
   cornerIndex?: number,
   sideIndex?: number,
   objectKey?: string
 ): { id: string; number: ExistingNumber } | null {
-  for (const [id, num] of Object.entries(numbers)) {
-    if (num.cellId !== cellId || num.position !== position) continue;
-    if (objectKey && num.objectKey && num.objectKey !== objectKey) continue;
-
-    if (position === 'corner' && num.cornerIndex !== cornerIndex) continue;
-    if (position === 'side' && num.sideIndex !== sideIndex) continue;
-
-    return { id, number: num };
-  }
-  return null;
+  const existing = findNumberEntry(numbers, cellId, position, {
+    cornerIndex,
+    sideIndex,
+    objectKey,
+  });
+  if (!existing) return null;
+  return { id: existing.id, number: existing.number };
 }
 
 /**

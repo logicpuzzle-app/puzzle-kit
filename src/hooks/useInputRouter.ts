@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { usePuzzleStore } from '../store/puzzleStore';
+import { usePuzzleStore } from '../store/puzzleStoreContext';
 import { screenToSvg } from '../utils/gridUtils';
 import type { Point } from '../types';
 

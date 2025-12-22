@@ -3,7 +3,7 @@
  */
 
 import { useCallback, useRef } from 'react';
-import { usePuzzleStore } from '../store/puzzleStore';
+import { usePuzzleStore } from '../store/puzzleStoreContext';
 import { screenToSvg } from '../utils/gridUtils';
 import type { Point } from '../types';
 
@@ -20,6 +20,7 @@ interface TouchState {
 
 interface UseTouchHandlersOptions {
   svgRef: React.RefObject<SVGSVGElement | null>;
+  allowMultiTouchPanZoom?: boolean;
   toolHandlers: {
     handleSurfaceTool: (point: Point, isRightClick: boolean, isShiftKey: boolean) => void;
     handleSurfaceCycleTool: (point: Point, isRightClick: boolean, colorOverride?: { color?: string; secondaryColor?: string }) => void;
@@ -61,6 +62,7 @@ const getPinchCenter = (touches: React.TouchList | TouchList): Point => {
 
 export function useTouchHandlers({
   svgRef,
+  allowMultiTouchPanZoom = true,
   toolHandlers,
   drawStartPoint,
   setDrawStartPoint,
@@ -128,6 +130,11 @@ export function useTouchHandlers({
       touchState.initialTouchCount = touches.length;
 
       if (touches.length >= 2) {
+        if (!allowMultiTouchPanZoom) {
+          touchState.isPinching = false;
+          touchState.lastTouchPoint = null;
+          return;
+        }
         touchState.isPinching = true;
         touchState.initialPinchDistance = getPinchDistance(touches);
         touchState.initialZoom = canvas.zoom;
@@ -170,6 +177,7 @@ export function useTouchHandlers({
       }
     },
     [
+      allowMultiTouchPanZoom,
       canvas.zoom,
       getTouchPosition,
       toolSettings.currentTool,
@@ -196,6 +204,10 @@ export function useTouchHandlers({
       e.preventDefault();
       const touches = e.touches;
       const touchState = touchStateRef.current;
+
+      if (touches.length >= 2 && !allowMultiTouchPanZoom) {
+        return;
+      }
 
       if (touches.length === 2 && touchState.isPinching) {
         const currentDistance = getPinchDistance(touches);
@@ -258,6 +270,7 @@ export function useTouchHandlers({
       setZoom,
       setPan,
       getTouchPosition,
+      allowMultiTouchPanZoom,
       toolSettings.currentTool,
       handleSurfaceTool,
       handleSurfaceCycleTool,

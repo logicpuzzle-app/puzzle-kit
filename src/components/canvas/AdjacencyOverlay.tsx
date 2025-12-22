@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStore';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
 
 /**
  * AdjacencyOverlay - Draws dotted lines between adjacent cell centers

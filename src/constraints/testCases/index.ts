@@ -8,6 +8,9 @@ import { mashuTestData } from './mashu';
 import { nurikabeTestData } from './nurikabe';
 import { yajilinTestData } from './yajilin';
 import { heyawakeTestData } from './heyawake';
+import { akichiTestData } from './akichi';
+import { numlinTestData } from './numlin';
+import { simpleloopTestData } from './simpleloop';
 
 // Re-export types
 export * from './types';
@@ -21,6 +24,9 @@ const testDataMap: Record<string, PuzzleTestData> = {
   nurikabe: nurikabeTestData,
   yajilin: yajilinTestData,
   heyawake: heyawakeTestData,
+  akichi: akichiTestData,
+  numlin: numlinTestData,
+  simpleloop: simpleloopTestData,
 };
 
 /**

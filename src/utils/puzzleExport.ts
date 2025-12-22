@@ -5,7 +5,49 @@
  * Strips redundant fields like 'layer' which can be inferred from structure.
  */
 
-import type { LayerType, PuzzleElements, PuzzleState } from '../types';
+import type { LayerType, LineElement, PuzzleElements, PuzzleState } from '../types';
+import { generateLineId } from './lineNormalization';
+import { mergeDirectionalCluesIntoNumbersForLayer } from './legacyDirectionalClues';
+import { getDirectionalCluesFromElements } from './numberEntries';
+
+const guessLineTarget = (line: LineElement): LineElement['lineTarget'] => {
+  if (line.lineTarget) return line.lineTarget;
+  if (line.from?.startsWith('vertex-')) return 'edge';
+  if (line.from?.startsWith('cell-')) return 'cell';
+  return undefined;
+};
+
+const mergeLegacyLines = (
+  lines: Record<string, LineElement>,
+  legacy: Record<string, LineElement>,
+  fallbackTarget?: LineElement['lineTarget']
+): Record<string, LineElement> => {
+  const merged = { ...lines };
+  for (const line of Object.values(legacy)) {
+    const lineTarget = line.lineTarget ?? fallbackTarget ?? guessLineTarget(line);
+    const normalized: LineElement = {
+      ...line,
+      lineTarget,
+    };
+    const id = normalized.edgeId && normalized.lineTarget
+      ? `${normalized.lineTarget}-${normalized.edgeId}`
+      : (normalized.from && normalized.to ? generateLineId(normalized.from, normalized.to) : normalized.id);
+    normalized.id = id;
+    if (!merged[id]) {
+      merged[id] = normalized;
+    }
+  }
+  return merged;
+};
+
+const normalizeLineTargets = (lines: Record<string, LineElement>): Record<string, LineElement> => {
+  const normalized: Record<string, LineElement> = {};
+  for (const [id, line] of Object.entries(lines)) {
+    const lineTarget = line.lineTarget ?? guessLineTarget(line);
+    normalized[id] = lineTarget ? { ...line, lineTarget } : line;
+  }
+  return normalized;
+};
 
 /**
  * Strip 'layer' field from all elements in a category (for export optimization)
@@ -27,17 +69,25 @@ function stripLayerFromElements(
  * Strip layer from all elements in a PuzzleElements object
  */
 function stripLayerFromPuzzleElements(elements: PuzzleElements): Record<string, any> {
+  const directionalClueEntries = getDirectionalCluesFromElements(elements);
+  const directionalCluesRecord: Record<string, any> = {};
+  directionalClueEntries.forEach((clue, index) => {
+    let key = clue.id ?? clue.cellId;
+    if (directionalCluesRecord[key]) {
+      key = `${key}-${index}`;
+    }
+    directionalCluesRecord[key] = clue;
+  });
+
   return {
     surfaces: stripLayerFromElements(elements.surfaces || {}),
     lines: stripLayerFromElements(elements.lines || {}),
-    edges: stripLayerFromElements(elements.edges || {}),
-    walls: stripLayerFromElements(elements.walls || {}),
     numbers: stripLayerFromElements(elements.numbers || {}),
     symbols: stripLayerFromElements(elements.symbols || {}),
     cages: stripLayerFromElements(elements.cages || {}),
     specials: stripLayerFromElements(elements.specials || {}),
     boxLines: stripLayerFromElements(elements.boxLines || {}),
-    directionalClues: stripLayerFromElements(elements.directionalClues || {}),
+    directionalClues: stripLayerFromElements(directionalCluesRecord),
   };
 }
 
@@ -62,11 +112,21 @@ export function restoreLayerToPuzzleElements(
   elements: Record<string, any>,
   layer: LayerType
 ): PuzzleElements {
-  return {
+  const lines = normalizeLineTargets(
+    restoreLayerToElements(elements.lines || {}, layer) as Record<string, LineElement>
+  );
+  const legacyEdges = restoreLayerToElements(elements.edges || {}, layer) as Record<string, LineElement>;
+  const legacyWalls = restoreLayerToElements(elements.walls || {}, layer) as Record<string, LineElement>;
+  const mergedLines = mergeLegacyLines(
+    mergeLegacyLines(lines, legacyEdges, 'edge'),
+    legacyWalls,
+    'wall'
+  );
+  const restored: PuzzleElements & { directionalClues?: Record<string, any> } = {
     surfaces: restoreLayerToElements(elements.surfaces || {}, layer),
-    lines: restoreLayerToElements(elements.lines || {}, layer),
-    edges: restoreLayerToElements(elements.edges || {}, layer),
-    walls: restoreLayerToElements(elements.walls || {}, layer),
+    lines: mergedLines,
+    edges: {},
+    walls: {},
     numbers: restoreLayerToElements(elements.numbers || {}, layer),
     symbols: restoreLayerToElements(elements.symbols || {}, layer),
     cages: restoreLayerToElements(elements.cages || {}, layer),
@@ -74,6 +134,7 @@ export function restoreLayerToPuzzleElements(
     boxLines: restoreLayerToElements(elements.boxLines || {}, layer),
     directionalClues: restoreLayerToElements(elements.directionalClues || {}, layer),
   };
+  return mergeDirectionalCluesIntoNumbersForLayer(restored);
 }
 
 /**

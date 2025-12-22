@@ -1,9 +1,18 @@
 import React, { useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { usePuzzleStore } from '../../../store/puzzleStore';
+import { usePuzzleStore } from '../../../store/puzzleStoreContext';
 import { toDataLayer } from '../../../types';
 import { useCellFinder } from '../../../hooks/useCellFinder';
 import { NumericInput } from '../../common';
+import { getEditableDataLayer } from '../../../utils/editPolicy';
+import { toArrowDirection, toPenpaDirection } from '../../../utils/directionalClue';
+import {
+  findDirectionalNumberByCellId,
+  findNumberEntry,
+  getDirectionalClueValueFields,
+  toPenpaDirectionalClue,
+  isDirectionalNumber,
+} from '../../../utils/numberEntries';
 
 // Arrow direction settings for directional numbers (Yajilin-style)
 // Direction: -1=none, 0=up, 1=left, 2=right, 3=down
@@ -16,13 +25,15 @@ export const ArrowDirectionSettings: React.FC = () => {
     numberSelection,
     puzzle,
     activeLayer,
+    isPlayerMode,
     addDirectionalClue,
     removeNumber,
     grid,
   } = usePuzzleStore();
 
   const { findCellIdByRowCol } = useCellFinder();
-  const dataLayer = toDataLayer(activeLayer);
+  const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
+  const dataLayer = editableLayer ?? toDataLayer(activeLayer);
 
   // Track previous selection to detect changes
   const prevSelectionRef = useRef<{ row: number; col: number } | null>(null);
@@ -46,35 +57,24 @@ export const ArrowDirectionSettings: React.FC = () => {
     prevSelectionRef.current = currentSelection;
   }, [numberSelection, setToolSettings]);
 
-  // Convert arrowDirection (-1=none, 0=up, 1=left, 2=right, 3=down) to Penpa direction (0=none, 1=up, 2=down, 3=left, 4=right)
-  const directionMap: Record<number, 0 | 1 | 2 | 3 | 4> = {
-    [-1]: 0, // no direction
-    0: 1, // up
-    1: 3, // left
-    2: 4, // right
-    3: 2, // down
-  };
-
-  // Get current cell's directional clue info (using cellId)
+  // Get current cell's directional number info (using cellId)
   const currentCellClue = useMemo(() => {
     if (!numberSelection) return null;
     const cellId = findCellIdByRowCol(numberSelection.row, numberSelection.col);
     if (!cellId) return null;
-    const entry = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
-      ([, c]) => c.cellId === cellId
-    );
+    const directionalEntry = findDirectionalNumberByCellId(puzzle[dataLayer].numbers, cellId);
+    const entry = directionalEntry
+      ? toPenpaDirectionalClue(directionalEntry.number)
+      : null;
     if (!entry) return null;
-    const [id, clue] = entry;
-    // Convert Penpa direction back to arrowDirection (0=none maps to -1)
-    const reverseDirMap: Record<number, number> = { 0: -1, 1: 0, 2: 3, 3: 1, 4: 2 };
     return {
-      id,
+      id: directionalEntry?.id ?? cellId,
       cellId,
-      value: clue.value,
-      char: clue.char,
-      direction: reverseDirMap[clue.direction] ?? -1,
-      angle: clue.angle,
-      color: clue.color,
+      value: entry.value,
+      char: entry.char,
+      direction: toArrowDirection(entry.direction),
+      angle: entry.angle,
+      color: entry.color,
     };
   }, [numberSelection, findCellIdByRowCol, puzzle, dataLayer]);
 
@@ -83,12 +83,11 @@ export const ArrowDirectionSettings: React.FC = () => {
     if (!numberSelection) return null;
     const cellId = findCellIdByRowCol(numberSelection.row, numberSelection.col);
     if (!cellId) return null;
-    const entry = Object.entries(puzzle[dataLayer].numbers || {}).find(
-      ([, n]) => n.cellId === cellId && n.position === 'center'
-    );
+    const entry = findNumberEntry(puzzle[dataLayer].numbers, cellId, 'center');
     if (!entry) return null;
-    const [id, num] = entry;
-    return { id, cellId, value: num.value };
+    const { id, number } = entry;
+    if (isDirectionalNumber(number)) return null;
+    return { id, cellId, value: number.value };
   }, [numberSelection, findCellIdByRowCol, puzzle, dataLayer]);
 
   // The active direction to highlight: use cell's clue direction if available, otherwise tool setting
@@ -100,38 +99,36 @@ export const ArrowDirectionSettings: React.FC = () => {
     // Clear arbitrary angle when selecting a preset direction
     setToolSettings({ arrowDirection: newDirection, arrowAngle: null });
 
-    if (!numberSelection) return;
+    if (!numberSelection || !editableLayer) return;
 
     const cellId = findCellIdByRowCol(numberSelection.row, numberSelection.col);
     if (!cellId) return;
     const cellIndex = numberSelection.row * grid.cols + numberSelection.col;
 
-    // Update existing directional clue if present (update direction, keep value/char/color)
+  // Update existing directional number if present (update direction, keep value/char/color)
     if (currentCellClue) {
       addDirectionalClue({
         cellId: currentCellClue.cellId,
         cell: cellIndex,
-        direction: directionMap[newDirection] ?? 0,
+        direction: toPenpaDirection(newDirection),
         value: currentCellClue.value,
         char: currentCellClue.char,
-        layer: dataLayer,
+        layer: editableLayer,
         angle: null, // Clear arbitrary angle
         color: currentCellClue.color || toolSettings.color,
       });
     } else if (currentCellNumber) {
       // Convert regular number to directionalClue with direction
       // Single character values use char field, multi-digit numbers use value field
-      const val = currentCellNumber.value;
-      const numValue = parseInt(val, 10);
-      const isSingleChar = val.length === 1 && isNaN(numValue);
+      const { value, char } = getDirectionalClueValueFields(currentCellNumber.value);
 
       addDirectionalClue({
         cellId,
         cell: cellIndex,
-        direction: directionMap[newDirection] ?? 0,
-        value: isSingleChar ? 0 : (isNaN(numValue) ? 0 : numValue),
-        char: isSingleChar ? val : undefined,
-        layer: dataLayer,
+        direction: toPenpaDirection(newDirection),
+        value,
+        char,
+        layer: editableLayer,
         angle: null,
         color: toolSettings.color,
       });
@@ -150,13 +147,13 @@ export const ArrowDirectionSettings: React.FC = () => {
     // Always use arbitrary angle (allows continuous +15/-15 cycling)
     setToolSettings({ arrowAngle: angleValue, arrowDirection: -1 });
 
-    if (!numberSelection) return;
+    if (!numberSelection || !editableLayer) return;
 
     const cellId = findCellIdByRowCol(numberSelection.row, numberSelection.col);
     if (!cellId) return;
     const cellIndex = numberSelection.row * grid.cols + numberSelection.col;
 
-    // Update existing directional clue if present (keep color)
+  // Update existing directional number if present (keep color)
     if (currentCellClue) {
       addDirectionalClue({
         cellId: currentCellClue.cellId,
@@ -164,24 +161,22 @@ export const ArrowDirectionSettings: React.FC = () => {
         direction: 0, // No preset direction when using arbitrary angle
         value: currentCellClue.value,
         char: currentCellClue.char,
-        layer: dataLayer,
+        layer: editableLayer,
         angle: angleValue,
         color: currentCellClue.color || toolSettings.color,
       });
     } else if (currentCellNumber) {
       // Convert regular number to directionalClue with angle
       // Single character values use char field, multi-digit numbers use value field
-      const val = currentCellNumber.value;
-      const numValue = parseInt(val, 10);
-      const isSingleChar = val.length === 1 && isNaN(numValue);
+      const { value, char } = getDirectionalClueValueFields(currentCellNumber.value);
 
       addDirectionalClue({
         cellId,
         cell: cellIndex,
         direction: 0,
-        value: isSingleChar ? 0 : (isNaN(numValue) ? 0 : numValue),
-        char: isSingleChar ? val : undefined,
-        layer: dataLayer,
+        value,
+        char,
+        layer: editableLayer,
         angle: angleValue,
         color: toolSettings.color,
       });
@@ -189,6 +184,8 @@ export const ArrowDirectionSettings: React.FC = () => {
       removeNumber(currentCellNumber.id);
     }
   };
+
+  const isDisabled = !numberSelection || !editableLayer;
 
   return (
     <div className="space-y-1">
@@ -203,6 +200,7 @@ export const ArrowDirectionSettings: React.FC = () => {
               : 'bg-white border-office-border hover:bg-office-ribbon-hover'
           }`}
           onClick={() => handleDirectionChange(0)}
+          disabled={isDisabled}
           title={t('direction.up')}
         >
           ↑
@@ -217,6 +215,7 @@ export const ArrowDirectionSettings: React.FC = () => {
               : 'bg-white border-office-border hover:bg-office-ribbon-hover'
           }`}
           onClick={() => handleDirectionChange(1)}
+          disabled={isDisabled}
           title={t('direction.left')}
         >
           ←
@@ -228,6 +227,7 @@ export const ArrowDirectionSettings: React.FC = () => {
               : 'bg-white border-office-border hover:bg-office-ribbon-hover'
           }`}
           onClick={() => handleDirectionChange(-1)}
+          disabled={isDisabled}
           title={t('direction.none', 'No direction')}
         >
           ○
@@ -239,6 +239,7 @@ export const ArrowDirectionSettings: React.FC = () => {
               : 'bg-white border-office-border hover:bg-office-ribbon-hover'
           }`}
           onClick={() => handleDirectionChange(2)}
+          disabled={isDisabled}
           title={t('direction.right')}
         >
           →
@@ -253,6 +254,7 @@ export const ArrowDirectionSettings: React.FC = () => {
               : 'bg-white border-office-border hover:bg-office-ribbon-hover'
           }`}
           onClick={() => handleDirectionChange(3)}
+          disabled={isDisabled}
           title={t('direction.down')}
         >
           ↓
@@ -265,6 +267,7 @@ export const ArrowDirectionSettings: React.FC = () => {
         <button
           className="h-6 px-1 text-xs font-medium border rounded-sm transition-colors bg-white border-office-border hover:bg-office-ribbon-hover"
           onClick={() => handleAngleChange(activeAngle !== null ? ((activeAngle - 15 + 360) % 360) : 345)}
+          disabled={isDisabled}
           title="-15°"
         >
           -15
@@ -276,11 +279,13 @@ export const ArrowDirectionSettings: React.FC = () => {
           allowNull
           placeholder="°"
           className={`w-10 h-6 ${activeAngle !== null ? 'border-office-accent bg-blue-50' : ''}`}
+          disabled={isDisabled}
           title={t('direction.customAngle', 'Custom angle (degrees)')}
         />
         <button
           className="h-6 px-1 text-xs font-medium border rounded-sm transition-colors bg-white border-office-border hover:bg-office-ribbon-hover"
           onClick={() => handleAngleChange(activeAngle !== null ? ((activeAngle + 15) % 360) : 15)}
+          disabled={isDisabled}
           title="+15°"
         >
           +15

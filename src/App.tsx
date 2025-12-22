@@ -1,26 +1,28 @@
-import React, { useState, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
+import React, { useEffect, useState, useCallback } from 'react';
 import './i18n';
 import { PuzzleCanvas, type TextClickInfo } from './components/canvas';
 import { MenuBar, IconToolbar, Ribbon } from './components/toolbar';
 import { PropertiesPanel, StatusBar } from './components/panels';
 import { TextInputDialog, type TextInputType, StorageErrorDialog } from './components/dialogs';
 import { CheckAnswerModal, ConfirmModal, AlertModal, ShortcutsModal, UrlImportModal } from './components/modals';
-import { usePuzzleStore } from './store/puzzleStore';
+import { usePuzzleStore } from './store/puzzleStoreContext';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useStorageErrorHandler } from './hooks/useStorageErrorHandler';
 import { useStoragePersistence } from './hooks/useStoragePersistence';
 import { toDataLayer } from './types';
 
 function App() {
-  const { t } = useTranslation();
-  const { addSymbol, activeLayer, toolSettings } = usePuzzleStore();
+  const { addSymbol, activeLayer, toolSettings, setPlayerMode } = usePuzzleStore();
 
   // Global keyboard shortcuts
   useKeyboardShortcuts();
 
   // Storage persistence (auto-save/load settings to localStorage)
   useStoragePersistence();
+
+  useEffect(() => {
+    setPlayerMode(false);
+  }, [setPlayerMode]);
 
   // Storage error handling
   const { error: storageError, clearError: clearStorageError, isErrorOpen: isStorageErrorOpen } = useStorageErrorHandler();

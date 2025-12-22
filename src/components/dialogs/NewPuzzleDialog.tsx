@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { usePuzzleStore } from '../../store/puzzleStore';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { constraintCatalog } from '../../constraints';
 import type { GridType, IsometricFace } from '../../types';
 

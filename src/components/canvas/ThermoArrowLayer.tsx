@@ -7,7 +7,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStore';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { getPenpaColor } from '../../types/penpaElements';
 import type { GridPoints, Point } from '../../types/point';
 import { PointType } from '../../types/point';

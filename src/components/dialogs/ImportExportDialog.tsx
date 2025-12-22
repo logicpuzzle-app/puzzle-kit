@@ -25,7 +25,7 @@ import {
   copyImageToClipboard,
 } from '../../utils/export';
 import { getGridDimensions } from '../../utils/gridUtils';
-import { usePuzzleStore } from '../../store/puzzleStore';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import type { PuzzleState, GridConfig } from '../../types';
 import type { GridTopology } from '../../utils/gridTopology';
 import { generatePuzzlinkUrl, type PuzzlinkType } from '../../utils/puzzlinkExporter';
@@ -86,6 +86,15 @@ export const ImportExportDialog: React.FC<ImportExportDialogProps> = ({
     mashu: 'masyu',
     yajilin: 'yajilin',
     heyawake: 'heyawake',
+    lightup: 'akari',
+    ayeheya: 'ayeheya',
+    akichi: 'akichi',
+    lits: 'lits',
+    norinori: 'norinori',
+    cbanana: 'cbanana',
+    nurimisaki: 'nurimisaki',
+    simpleloop: 'simpleloop',
+    nanro: 'nanro',
   };
   const puzzlinkType = currentSchemaId ? schemaToPuzzlink[currentSchemaId] : undefined;
   const puzzlinkSupported = Boolean(puzzlinkType);
@@ -443,22 +452,26 @@ function convertStateToPenpa(elements: PuzzleState['problem']): Record<string, u
   }
 
   // Convert lines
-  if (Object.keys(elements.lines).length > 0) {
+  const cellLines = Object.values(elements.lines).filter((line) => line.lineTarget === 'cell');
+  if (cellLines.length > 0) {
     const line: Record<string, number> = {};
-    for (const [id, el] of Object.entries(elements.lines)) {
+    cellLines.forEach((el) => {
+      if (!el.from || !el.to) return;
       const key = `${el.from},${el.to}`;
       line[key] = 1; // Style
-    }
+    });
     result.line = line;
   }
 
   // Convert edges
-  if (Object.keys(elements.edges).length > 0) {
+  const edgeLines = Object.values(elements.lines).filter((line) => line.lineTarget === 'edge');
+  if (edgeLines.length > 0) {
     const lineE: Record<string, number> = {};
-    for (const [id, el] of Object.entries(elements.edges)) {
+    edgeLines.forEach((el) => {
+      if (!el.from || !el.to) return;
       const key = `${el.from},${el.to}`;
       lineE[key] = 1;
-    }
+    });
     result.lineE = lineE;
   }
 

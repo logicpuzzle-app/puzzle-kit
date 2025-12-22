@@ -31,6 +31,7 @@ interface MenuDefinitionsOptions {
   onExportPng2x: () => void;
   onExportPng4x: () => void;
   onExportSvg: () => void;
+  onExitToHome: () => void;
   // Edit menu handlers
   onUndo: () => void;
   onRedo: () => void;
@@ -71,6 +72,7 @@ export const createMenuDefinitions = (options: MenuDefinitionsOptions): MenuDefi
     onExportPng2x,
     onExportPng4x,
     onExportSvg,
+    onExitToHome,
     onUndo,
     onRedo,
     onToggleConstraintMode,
@@ -108,6 +110,8 @@ export const createMenuDefinitions = (options: MenuDefinitionsOptions): MenuDefi
         { labelKey: 'file.exportPng2x', action: onExportPng2x },
         { labelKey: 'file.exportPng4x', action: onExportPng4x },
         { labelKey: 'file.exportSvg', action: onExportSvg },
+        { divider: true, labelKey: '' },
+        { labelKey: 'file.exitToHome', action: onExitToHome },
       ],
     },
     {

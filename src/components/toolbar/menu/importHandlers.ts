@@ -2,8 +2,7 @@
  * Import handlers for MenuBar
  * Handles JSON, Penpa URL, and puzz.link imports
  */
-import { usePuzzleStore } from '../../../store/puzzleStore';
-import { useModalStore } from '../../../store/modalStore';
+import type { StoreApi, UseBoundStore } from 'zustand';
 import {
   parsePenpaUrl,
   isPenpaUrl,
@@ -17,9 +16,17 @@ import { syncCountersFromPuzzleState } from '../../../utils/idGenerator';
 import { gridConfigToTopology, applyTopologyPreset } from '../../../utils/gridTopology';
 import { loadAutoSave } from '../../../utils/serialization';
 import { getDefaultStorageAdapter } from '../../../modules/storage';
+import { mergeDirectionalCluesIntoNumbers } from '../../../utils/legacyDirectionalClues';
 import type { GridConfig, PuzzleState } from '../../../types';
+import type { PuzzleStore } from '../../../store/slices/types';
+import type { ModalStore } from '../../../store/modalStore';
+
+type PuzzleStoreHook = UseBoundStore<StoreApi<PuzzleStore>>;
+type ModalStoreHook = UseBoundStore<StoreApi<ModalStore>>;
 
 interface ImportHandlersOptions {
+  store: PuzzleStoreHook;
+  modalStore: ModalStoreHook;
   grid: GridConfig;
   puzzle: PuzzleState;
   setActiveMenu: (menu: string | null) => void;
@@ -30,7 +37,9 @@ interface ImportHandlersOptions {
 /**
  * Helper to load puzzle data with topology
  */
-export const loadPuzzleData = (data: {
+export const loadPuzzleData = (
+  store: PuzzleStoreHook,
+  data: {
   grid: GridConfig;
   state: PuzzleState;
   topologySettings?: {
@@ -39,10 +48,11 @@ export const loadPuzzleData = (data: {
     topologyIntensity: number;
   };
 }) => {
-  const storeState = usePuzzleStore.getState();
+  const storeState = store.getState();
+  const normalizedState = mergeDirectionalCluesIntoNumbers(data.state);
 
   // Sync ID counters to avoid collisions
-  syncCountersFromPuzzleState(data.state);
+  syncCountersFromPuzzleState(normalizedState);
 
   // Use saved settings or fall back to current store settings
   const loadedUseTopology = data.topologySettings?.useTopology ?? storeState.useTopology;
@@ -58,9 +68,9 @@ export const loadPuzzleData = (data: {
       })
     : baseTopology;
 
-  usePuzzleStore.setState({
+  store.setState({
     grid: data.grid,
-    puzzle: data.state,
+    puzzle: normalizedState,
     topology: loadedTopology,
     useTopology: loadedUseTopology,
     topologyPreset: loadedTopologyPreset,
@@ -71,7 +81,7 @@ export const loadPuzzleData = (data: {
 /**
  * Load puzzle from URL parameters or auto-save
  */
-export const loadFromUrlOrAutoSave = async () => {
+export const loadFromUrlOrAutoSave = async (store: PuzzleStoreHook) => {
   const urlParams = new URLSearchParams(window.location.search);
 
   // Check for puzzle ID (new format)
@@ -82,7 +92,7 @@ export const loadFromUrlOrAutoSave = async () => {
       try {
         const result = await adapter.load(puzzleId);
         if (result) {
-          loadPuzzleData({
+          loadPuzzleData(store, {
             grid: result.data.grid,
             state: result.data.state,
             topologySettings: result.data.topologySettings,
@@ -100,7 +110,7 @@ export const loadFromUrlOrAutoSave = async () => {
   // Try to load auto-save
   const saved = loadAutoSave();
   if (saved) {
-    loadPuzzleData({
+    loadPuzzleData(store, {
       grid: saved.grid,
       state: saved.state,
       topologySettings: saved.topologySettings,
@@ -113,6 +123,8 @@ export const loadFromUrlOrAutoSave = async () => {
  */
 export const createImportHandlers = (options: ImportHandlersOptions) => {
   const {
+    store,
+    modalStore,
     grid,
     puzzle,
     setActiveMenu,
@@ -120,7 +132,7 @@ export const createImportHandlers = (options: ImportHandlersOptions) => {
     t,
   } = options;
 
-  const { showAlert, showUrlImport } = useModalStore.getState();
+  const { showAlert, showUrlImport } = modalStore.getState();
 
   const handleImportJson = () => {
     const input = document.createElement('input');
@@ -135,7 +147,7 @@ export const createImportHandlers = (options: ImportHandlersOptions) => {
             const content = e.target?.result as string;
             const data = JSON.parse(content);
             if (data.grid && data.state) {
-              loadPuzzleData({
+              loadPuzzleData(store, {
                 grid: data.grid,
                 state: data.state,
                 topologySettings: data.topologySettings,
@@ -186,7 +198,7 @@ export const createImportHandlers = (options: ImportHandlersOptions) => {
         // Sync ID counters to avoid collisions
         syncCountersFromPuzzleState(result.state);
 
-        usePuzzleStore.setState((state) => ({
+        store.setState((state) => ({
           ...state,
           grid: result.grid,
           puzzle: result.state,
@@ -204,15 +216,22 @@ export const createImportHandlers = (options: ImportHandlersOptions) => {
             'mashu': 'mashu',
             'nurikabe': 'nurikabe',
             'heyawake': 'heyawake',
+            'ayeheya': 'ayeheya',
+            'akichi': 'akichi',
+            'numlin': 'numlin',
+            'simpleloop': 'simpleloop',
+            'lits': 'lits',
+            'norinori': 'norinori',
+            'cbanana': 'cbanana',
+            'nurimisaki': 'nurimisaki',
+            'simplegako': 'simplegako',
+            'nanro': 'nanro',
           };
 
           const schemaId = puzzleTypeToSchemaId[puzzleType];
           if (schemaId) {
             setCurrentSchemaId(schemaId);
-            usePuzzleStore.setState({
-              showConstraintLayer: true,
-              activeLayer: 'problem',
-            });
+            store.getState().setActiveLayer('problem');
           }
         }
 

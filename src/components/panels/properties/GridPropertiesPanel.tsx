@@ -11,7 +11,7 @@
  */
 
 import React from 'react';
-import { usePuzzleStore } from '../../../store/puzzleStore';
+import { usePuzzleStore } from '../../../store/puzzleStoreContext';
 import {
   GridShapeContent,
   GridDisplayContent,

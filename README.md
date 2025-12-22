@@ -29,7 +29,18 @@ npm run dev
 
 # Build for production
 npm run build
+
+# Build library artifacts
+npm run build:lib
 ```
+
+## Library Usage
+
+Headless and embedded-UI usage entrypoints are documented here:
+- `puzzle-kit/docs/library-usage.md`
+
+Embedded example page:
+- `puzzle-kit/docs/embedded-example.md`
 
 ## Environment Variables
 

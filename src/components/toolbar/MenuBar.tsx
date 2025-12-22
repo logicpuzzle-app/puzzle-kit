@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
-import { usePuzzleStore } from '../../store/puzzleStore';
-import { useModalStore } from '../../store/modalStore';
+import { usePuzzleStore, usePuzzleStoreApi } from '../../store/puzzleStoreContext';
+import { useModalStore, useModalStoreApi } from '../../store/modalStoreContext';
 import { autoSave } from '../../utils/serialization';
 import { NewPuzzleDialog } from '../dialogs/NewPuzzleDialog';
 import { PerformanceTestDialog } from '../dialogs/PerformanceTestDialog';
@@ -47,6 +47,8 @@ export const MenuBar: React.FC = () => {
     toggleProblemLayer,
     toggleAnswerLayer,
   } = usePuzzleStore();
+  const store = usePuzzleStoreApi();
+  const modalStore = useModalStoreApi();
 
   // Check if constraint mode is enabled
   const isConstraintEnabled = showConstraintLayer && currentSchemaId !== null && currentSchemaId !== '__custom__';
@@ -68,11 +70,12 @@ export const MenuBar: React.FC = () => {
 
   // Load from URL or auto-save on mount
   useEffect(() => {
-    loadFromUrlOrAutoSave();
-  }, []);
+    loadFromUrlOrAutoSave(store);
+  }, [store]);
 
   // Create export handlers
   const exportHandlers = createExportHandlers({
+    modalStore,
     grid,
     puzzle,
     topology,
@@ -85,6 +88,8 @@ export const MenuBar: React.FC = () => {
 
   // Create import handlers
   const importHandlers = createImportHandlers({
+    store,
+    modalStore,
     grid,
     puzzle,
     setActiveMenu,
@@ -105,6 +110,10 @@ export const MenuBar: React.FC = () => {
     onExportPng2x: () => exportHandlers.handleExportPngHQ(2),
     onExportPng4x: () => exportHandlers.handleExportPngHQ(4),
     onExportSvg: exportHandlers.handleExportSvg,
+    onExitToHome: () => {
+      setActiveMenu(null);
+      window.location.href = '/';
+    },
     // Edit menu
     onUndo: () => { undo(); setActiveMenu(null); },
     onRedo: () => { redo(); setActiveMenu(null); },

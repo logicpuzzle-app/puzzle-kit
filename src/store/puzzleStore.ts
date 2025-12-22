@@ -6,6 +6,7 @@
  */
 
 import { create } from 'zustand';
+import type { StoreApi, UseBoundStore } from 'zustand';
 
 import type { PuzzleStore, PuzzleStateSlice } from './slices/types';
 import { createGridSlice } from './slices/gridSlice';
@@ -20,7 +21,9 @@ import { createTrialSlice } from './slices/trialSlice';
 import { createPuzzleIOSlice } from './slices/puzzleIOSlice';
 import { createCursorSlice } from './slices/cursorSlice';
 import { createSolverSlice } from './slices/solverSlice';
-import { actionExecutor } from './actionExecutor';
+import { ActionExecutor, actionExecutor } from './actionExecutor';
+import { HistoryManager, historyManager } from './historyManager';
+import { PersistenceManager, persistenceManager } from './persistence';
 
 // Re-export types for backward compatibility
 export type { PuzzleStore } from './slices/types';
@@ -29,44 +32,78 @@ export type { PuzzleStore } from './slices/types';
 // Store Creation
 // ========================================
 
-export const usePuzzleStore = create<PuzzleStore>((...args) => {
-  const [set, get] = args;
+type PuzzleStoreHook = UseBoundStore<StoreApi<PuzzleStore>>;
 
-  // Connect ActionExecutor to this store synchronously
-  const mutator = (
-    applyFn: (
-      innerSet: (fn: (state: PuzzleStateSlice) => Partial<PuzzleStateSlice>) => void
-    ) => void
-  ) => {
-    applyFn((fn) => {
-      set((state) => {
-        const slice: PuzzleStateSlice = {
-          puzzle: state.puzzle,
-          activeLayer: state.activeLayer,
-          grid: state.grid,
-        };
-        const result = fn(slice);
-        return result as Partial<PuzzleStore>;
+const buildPuzzleStore = (
+  executor: ActionExecutor,
+  history: HistoryManager,
+  persistence: PersistenceManager
+): PuzzleStoreHook =>
+  create<PuzzleStore>((...args) => {
+    const [set] = args;
+
+    // Connect ActionExecutor to this store synchronously
+    const mutator = (
+      applyFn: (
+        innerSet: (fn: (state: PuzzleStateSlice) => Partial<PuzzleStateSlice>) => void
+      ) => void
+    ) => {
+      applyFn((fn) => {
+        set((state) => {
+          const slice: PuzzleStateSlice = {
+            puzzle: state.puzzle,
+            activeLayer: state.activeLayer,
+            grid: state.grid,
+          };
+          const result = fn(slice);
+          return result as Partial<PuzzleStore>;
+        });
       });
-    });
-  };
+    };
 
-  // Initialize synchronously to ensure mutator is available immediately
-  actionExecutor.setMutator(mutator);
+    // Initialize synchronously to ensure mutator is available immediately
+    executor.setMutator(mutator);
+
+    return {
+      // Combine all slices
+      ...createGridSlice(...args),
+      ...createElementsSlice(...args),
+      ...createCanvasSlice(...args),
+      ...createToolSlice(...args),
+      ...createLayerSlice(...args),
+      ...createConstraintSlice(...args),
+      ...createSolutionSlice(...args),
+      ...createHistorySlice(...args),
+      ...createTrialSlice(...args),
+      ...createPuzzleIOSlice(...args),
+      ...createCursorSlice(...args),
+      ...createSolverSlice(...args),
+      actionExecutor: executor,
+      historyManager: history,
+      persistenceManager: persistence,
+    };
+  });
+
+export const usePuzzleStore = buildPuzzleStore(
+  actionExecutor,
+  historyManager,
+  persistenceManager
+);
+
+export const createPuzzleStore = (): {
+  useStore: PuzzleStoreHook;
+  actionExecutor: ActionExecutor;
+  historyManager: HistoryManager;
+  persistenceManager: PersistenceManager;
+} => {
+  const history = new HistoryManager();
+  const persistence = new PersistenceManager();
+  const scopedExecutor = new ActionExecutor(history);
 
   return {
-    // Combine all slices
-    ...createGridSlice(...args),
-    ...createElementsSlice(...args),
-    ...createCanvasSlice(...args),
-    ...createToolSlice(...args),
-    ...createLayerSlice(...args),
-    ...createConstraintSlice(...args),
-    ...createSolutionSlice(...args),
-    ...createHistorySlice(...args),
-    ...createTrialSlice(...args),
-    ...createPuzzleIOSlice(...args),
-    ...createCursorSlice(...args),
-    ...createSolverSlice(...args),
+    useStore: buildPuzzleStore(scopedExecutor, history, persistence),
+    actionExecutor: scopedExecutor,
+    historyManager: history,
+    persistenceManager: persistence,
   };
-});
+};

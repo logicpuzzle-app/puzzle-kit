@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { usePuzzleStore } from '../../store/puzzleStore';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
 
 // Grid Type Tab Content - grid type, size, topology preset
 export const GridShapeContent: React.FC = () => {

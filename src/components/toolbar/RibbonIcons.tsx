@@ -129,6 +129,14 @@ export const ValidationIcon: React.FC<{ size?: number; className?: string }> = (
   </svg>
 );
 
+export const HighlightIcon: React.FC<{ size?: number; className?: string }> = ({ size = 16, className }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    {/* Sparkle */}
+    <path d="M12 3l1.6 3.8 3.9 1.6-3.9 1.6L12 13l-1.6-3.8-3.9-1.6 3.9-1.6L12 3z" />
+    <path d="M18 13l0.9 2.1 2.1 0.9-2.1 0.9L18 19l-0.9-2.1-2.1-0.9 2.1-0.9L18 13z" />
+  </svg>
+);
+
 export const ConstraintIcon: React.FC<{ size?: number; className?: string }> = ({ size = 16, className }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     {/* Settings/cog icon for constraints */}
@@ -151,6 +159,7 @@ export const CONSTRAINT_ICONS = {
   'problem-input': ProblemInputIcon,
   'answer-input': AnswerInputIcon,
   validation: ValidationIcon,
+  highlight: HighlightIcon,
   preset: PresetIcon,
   constraint: ConstraintIcon,
 };

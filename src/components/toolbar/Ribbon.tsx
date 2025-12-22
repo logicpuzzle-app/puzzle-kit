@@ -10,12 +10,12 @@
 
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { usePuzzleStore } from '../../store/puzzleStore';
+import { usePuzzleStore, usePuzzleStoreApi } from '../../store/puzzleStoreContext';
 import { ToolCategory, toDataLayer } from '../../types';
 import { ConstraintSubCategory, InputModeType } from '../../store/slices/types';
 import { constraintCatalog } from '../../constraints';
 import type { ConstraintSchema, InputMode } from '../../constraints';
-import { cspuzWorkerManager, CspuzSolverCancelledError } from '../../solver';
+import { cspuzWorkerManager, CspuzSolverCancelledError, solverWorkerManager, SolverCancelledError } from '../../solver';
 import { hexToClosestPenpaLegacyIndex, normalizeMulticolorSlots } from '../../utils/multicolor';
 
 // Import sub-components
@@ -41,6 +41,7 @@ const constraintSubCategories: { id: ConstraintSubCategory; labelKey: string }[]
   { id: 'edit', labelKey: 'constraint.editSettings' },
   { id: 'play', labelKey: 'constraint.playSettings' },
   { id: 'check', labelKey: 'constraint.checkSettings' },
+  { id: 'highlight', labelKey: 'constraint.highlightSettings' },
 ];
 
 export const Ribbon: React.FC = () => {
@@ -86,20 +87,27 @@ export const Ribbon: React.FC = () => {
     // Solver mode state
     isSolverMode,
     isSolving,
+    solverBackend,
     enterSolverMode,
     setSolving,
     setSolverError,
+    setSolverBackend,
     cancelSolver,
     // Properties panel
     setPropertiesPanelOpen,
   } = usePuzzleStore();
+  const store = usePuzzleStoreApi();
+
+  const hasCspuzSolver = currentSchemaId ? cspuzWorkerManager.hasSolver(currentSchemaId) : false;
+  const hasSolverKit = currentSchemaId ? solverWorkerManager.hasSolver(currentSchemaId) : false;
 
   // Handle solve button click
   const handleSolve = useCallback(async () => {
     if (!currentSchemaId || isSolving) return;
 
-    // Check if solver is available for this puzzle type
-    if (!cspuzWorkerManager.hasSolver(currentSchemaId)) {
+    const useSolverKit = !hasCspuzSolver && hasSolverKit;
+
+    if (!useSolverKit && !hasCspuzSolver) {
       setSolverError(t('solver.notAvailable'));
       return;
     }
@@ -109,30 +117,50 @@ export const Ribbon: React.FC = () => {
 
     setSolving(true);
     setSolverError(null);
+    setSolverBackend(useSolverKit ? 'solver-kit' : 'cspuz');
 
     try {
-      const result = await cspuzWorkerManager.solve(currentSchemaId, grid, puzzle.problem);
+      const result = useSolverKit
+        ? await solverWorkerManager.solve(currentSchemaId, grid, puzzle.problem)
+        : await cspuzWorkerManager.solve(currentSchemaId, grid, puzzle.problem);
 
       // Enter solver mode with the result
       enterSolverMode(result);
     } catch (e) {
       // Don't show error if cancelled
-      if (e instanceof CspuzSolverCancelledError) {
+      if (e instanceof CspuzSolverCancelledError || e instanceof SolverCancelledError) {
         return;
       }
       setSolverError(e instanceof Error ? e.message : t('solver.failed'));
       setSolving(false);
     }
-  }, [currentSchemaId, isSolving, grid, puzzle.problem, t, enterSolverMode, setSolving, setSolverError, setPropertiesPanelOpen]);
+  }, [
+    currentSchemaId,
+    isSolving,
+    grid,
+    puzzle.problem,
+    t,
+    enterSolverMode,
+    setSolving,
+    setSolverError,
+    setPropertiesPanelOpen,
+    hasSolverKit,
+    hasCspuzSolver,
+    setSolverBackend,
+  ]);
 
   // Handle cancel solver click
   const handleCancelSolver = useCallback(() => {
-    cspuzWorkerManager.cancelAll();
+    if (solverBackend === 'solver-kit') {
+      solverWorkerManager.cancelAll();
+    } else {
+      cspuzWorkerManager.cancelAll();
+    }
     cancelSolver();
-  }, [cancelSolver]);
+  }, [cancelSolver, solverBackend]);
 
   // Check if solver is available for current puzzle
-  const hasSolver = currentSchemaId ? cspuzWorkerManager.hasSolver(currentSchemaId) : false;
+  const hasSolver = hasCspuzSolver || hasSolverKit;
 
   // Derived state
   const isGridMode = activeLayer === 'grid';
@@ -431,6 +459,7 @@ export const Ribbon: React.FC = () => {
                 'edit': CONSTRAINT_ICONS['problem-input'],
                 'play': CONSTRAINT_ICONS['answer-input'],
                 'check': CONSTRAINT_ICONS['validation'],
+                'highlight': CONSTRAINT_ICONS['highlight'],
               };
               const IconComponent = iconMap[subCat.id];
               const isActive = constraintSubCategory === subCat.id;
@@ -608,7 +637,7 @@ export const Ribbon: React.FC = () => {
                         : 'bg-white border-office-border hover:bg-office-ribbon-hover'
                     }`}
                     onClick={() => {
-                      usePuzzleStore.getState().setToolSettings({ symbolSubMode: 'direction' });
+                      store.getState().setToolSettings({ symbolSubMode: 'direction' });
                       setTool('symbol-arrow_N', 'symbol');
                     }}
                     title={t('symbols.arrows', 'Arrows')}
@@ -623,7 +652,7 @@ export const Ribbon: React.FC = () => {
                         : 'bg-white border-office-border hover:bg-office-ribbon-hover'
                     }`}
                     onClick={() => {
-                      usePuzzleStore.getState().setToolSettings({ symbolSubMode: 'icon' });
+                      store.getState().setToolSettings({ symbolSubMode: 'icon' });
                       setTool('symbol-circle', 'symbol');
                     }}
                     title={t('panel.symbols', 'Symbols')}
@@ -642,7 +671,7 @@ export const Ribbon: React.FC = () => {
                       if (nextSlots.every((v) => v === 0)) {
                         nextSlots[0] = hexToClosestPenpaLegacyIndex(toolSettings.color);
                       }
-                      usePuzzleStore.getState().setToolSettings({
+                      store.getState().setToolSettings({
                         symbolSubMode: 'multicolor',
                         multicolorSlots: nextSlots,
                       });

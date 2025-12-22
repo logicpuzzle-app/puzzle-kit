@@ -1,10 +1,8 @@
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStore';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import {
   resolveGridIdToPosition,
-  resolveEdgeVertices,
   parseEdgeId,
-  buildVertexGridToTopologyMap,
 } from '../../utils/gridIds';
 import { getEdgeLineDrawInfo } from '../../utils/gridTopology';
 import {
@@ -18,8 +16,8 @@ import {
   buildPathFromPoints,
   shortenPathEnds,
 } from '../../utils/lineRender';
-import type { DataLayerType, EdgeElement, GridConfig, LineElement, Point, WallElement } from '../../types';
-import type { GridTopology, TopologyVertex } from '../../utils/gridTopology';
+import type { DataLayerType, GridConfig, LineElement, Point } from '../../types';
+import type { GridTopology } from '../../utils/gridTopology';
 
 interface LineLayerProps {
   layer: DataLayerType;
@@ -27,16 +25,12 @@ interface LineLayerProps {
 
 /**
  * Parse any grid point ID (cell, vertex, or edge) and return its position
- * Uses topology if available, with fallback to grid-based calculations
- *
- * This function first tries topology lookup (for topology-mode IDs),
- * then falls back to grid-based calculation (for grid-mode IDs like vertex-r-c).
+ * Uses topology if available, with fallback to grid-based calculations.
  */
 const getPointPosition = (
   id: string,
   grid: GridConfig,
-  topology?: GridTopology | null,
-  vertexMap?: Map<string, TopologyVertex>
+  topology?: GridTopology | null
 ): Point | null => {
   // Use the unified resolver which handles both topology and grid modes
   // and properly falls back to grid calculation for grid-mode IDs
@@ -46,8 +40,7 @@ const getPointPosition = (
 const resolveGridEdgeIdToVertices = (
   edgeId: string,
   grid: GridConfig,
-  topology?: GridTopology | null,
-  vertexMap?: Map<string, TopologyVertex>
+  topology?: GridTopology | null
 ): { from: Point; to: Point } | null => {
   const coord = parseEdgeId(edgeId);
   if (!coord) return null;
@@ -58,8 +51,31 @@ const resolveGridEdgeIdToVertices = (
       ? `vertex-${coord.row}-${coord.col + 1}`
       : `vertex-${coord.row + 1}-${coord.col}`;
 
-  const from = getPointPosition(fromVertexId, grid, topology, vertexMap);
-  const to = getPointPosition(toVertexId, grid, topology, vertexMap);
+  const from = getPointPosition(fromVertexId, grid, topology);
+  const to = getPointPosition(toVertexId, grid, topology);
+  if (!from || !to) return null;
+  return { from, to };
+};
+
+const resolveGridEdgeIdToCellCenters = (
+  edgeId: string,
+  grid: GridConfig,
+  topology?: GridTopology | null
+): { from: Point; to: Point } | null => {
+  const coord = parseEdgeId(edgeId);
+  if (!coord) return null;
+
+  const fromCellId =
+    coord.type === 'h'
+      ? `cell-${coord.row - 1}-${coord.col}`
+      : `cell-${coord.row}-${coord.col - 1}`;
+  const toCellId =
+    coord.type === 'h'
+      ? `cell-${coord.row}-${coord.col}`
+      : `cell-${coord.row}-${coord.col}`;
+
+  const from = getPointPosition(fromCellId, grid, topology);
+  const to = getPointPosition(toCellId, grid, topology);
   if (!from || !to) return null;
   return { from, to };
 };
@@ -145,33 +161,49 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
         fromY = line.fromY;
         toX = line.toX;
         toY = line.toY;
-      } else if (line.edgeId && activeTopology) {
-        // Edge-based line - use edgeId to get drawing coordinates
-        const drawInfo = getEdgeLineDrawInfo(activeTopology, line.edgeId);
-        if (!drawInfo) return;
-
+      } else if (line.edgeId) {
         const lineTarget = line.lineTarget || 'cell'; // default to cell for backward compat
 
-        if (lineTarget === 'edge' || lineTarget === 'wall') {
-          // Draw between vertices (Slitherlink/Wall style)
-          fromX = drawInfo.startVertex.x;
-          fromY = drawInfo.startVertex.y;
-          toX = drawInfo.endVertex.x;
-          toY = drawInfo.endVertex.y;
+        if (activeTopology) {
+          // Edge-based line - use edgeId to get drawing coordinates
+          const drawInfo = getEdgeLineDrawInfo(activeTopology, line.edgeId);
+          if (!drawInfo) return;
+
+          if (lineTarget === 'edge' || lineTarget === 'wall') {
+            // Draw between vertices (Slitherlink/Wall style)
+            fromX = drawInfo.startVertex.x;
+            fromY = drawInfo.startVertex.y;
+            toX = drawInfo.endVertex.x;
+            toY = drawInfo.endVertex.y;
+          } else {
+            // Draw between cell centers (Mashu style)
+            if (drawInfo.adjacentCellCenters.length < 2) {
+              // Boundary edge - can't draw cell-to-cell line
+              return;
+            }
+            fromX = drawInfo.adjacentCellCenters[0].x;
+            fromY = drawInfo.adjacentCellCenters[0].y;
+            toX = drawInfo.adjacentCellCenters[1].x;
+            toY = drawInfo.adjacentCellCenters[1].y;
+            // Go through edge midpoint for isometric grids
+            if (isIsometric) {
+              midpoint = drawInfo.midpoint;
+            }
+          }
+        } else if (lineTarget === 'edge' || lineTarget === 'wall') {
+          const vertices = resolveGridEdgeIdToVertices(line.edgeId, grid);
+          if (!vertices) return;
+          fromX = vertices.from.x;
+          fromY = vertices.from.y;
+          toX = vertices.to.x;
+          toY = vertices.to.y;
         } else {
-          // Draw between cell centers (Mashu style)
-          if (drawInfo.adjacentCellCenters.length < 2) {
-            // Boundary edge - can't draw cell-to-cell line
-            return;
-          }
-          fromX = drawInfo.adjacentCellCenters[0].x;
-          fromY = drawInfo.adjacentCellCenters[0].y;
-          toX = drawInfo.adjacentCellCenters[1].x;
-          toY = drawInfo.adjacentCellCenters[1].y;
-          // Go through edge midpoint for isometric grids
-          if (isIsometric) {
-            midpoint = drawInfo.midpoint;
-          }
+          const cells = resolveGridEdgeIdToCellCenters(line.edgeId, grid);
+          if (!cells) return;
+          fromX = cells.from.x;
+          fromY = cells.from.y;
+          toX = cells.to.x;
+          toY = cells.to.y;
         }
       } else if (line.from && line.to) {
         // Legacy: Grid-snapped line - calculate positions from IDs (using topology if available)
@@ -377,145 +409,11 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
     return elements;
   }, [puzzle, layer, grid, isVisible, activeTopology, isIsometric, highlightedLineIds, lineGroups]);
 
-  // Build vertex lookup map for efficient grid-mode to topology-mode conversion
-  const vertexMap = useMemo(() => {
-    if (!activeTopology) return undefined;
-    return buildVertexGridToTopologyMap(activeTopology, grid);
-  }, [activeTopology, grid]);
-
-  // Edges (vertex to vertex)
-  const edges = useMemo(() => {
-    if (!isVisible) return null;
-
-    const layerData = puzzle[layer];
-    const elements: React.ReactElement[] = [];
-
-    Object.values(layerData.edges).forEach((edge: EdgeElement) => {
-      // Prefer edgeId when available (new format)
-      if (edge.edgeId) {
-        if (activeTopology) {
-          const drawInfo = getEdgeLineDrawInfo(activeTopology, edge.edgeId);
-          if (drawInfo) {
-            elements.push(
-              <line
-                key={edge.id}
-                x1={drawInfo.startVertex.x}
-                y1={drawInfo.startVertex.y}
-                x2={drawInfo.endVertex.x}
-                y2={drawInfo.endVertex.y}
-                stroke={edge.color}
-                strokeWidth={getStrokeWidth(edge.thickness)}
-                strokeDasharray={getStrokeDasharray(edge.style)}
-                strokeLinecap="round"
-              />
-            );
-            return;
-          }
-        }
-
-        const fallback = resolveGridEdgeIdToVertices(edge.edgeId, grid, activeTopology, vertexMap);
-        if (fallback) {
-          elements.push(
-            <line
-              key={edge.id}
-              x1={fallback.from.x}
-              y1={fallback.from.y}
-              x2={fallback.to.x}
-              y2={fallback.to.y}
-              stroke={edge.color}
-              strokeWidth={getStrokeWidth(edge.thickness)}
-              strokeDasharray={getStrokeDasharray(edge.style)}
-              strokeLinecap="round"
-            />
-          );
-        }
-        return;
-      }
-
-      if (!edge.from || !edge.to) return;
-
-      // Use unified resolver that handles both topology-mode and grid-mode IDs
-      // This properly converts grid-mode IDs (vertex-r-c) to positions
-      // even when topology is active
-      const result = resolveEdgeVertices(edge.from, edge.to, grid, activeTopology, vertexMap);
-      if (!result) return;
-
-      elements.push(
-        <line
-          key={edge.id}
-          x1={result.from.x}
-          y1={result.from.y}
-          x2={result.to.x}
-          y2={result.to.y}
-          stroke={edge.color}
-          strokeWidth={getStrokeWidth(edge.thickness)}
-          strokeDasharray={getStrokeDasharray(edge.style)}
-          strokeLinecap="round"
-        />
-      );
-    });
-
-    return elements;
-  }, [puzzle, layer, grid, isVisible, activeTopology, vertexMap]);
-
-  // Walls
-  const walls = useMemo(() => {
-    if (!isVisible) return null;
-
-    const layerData = puzzle[layer];
-    const elements: React.ReactElement[] = [];
-
-    Object.values(layerData.walls).forEach((wall: WallElement) => {
-      if (!wall.edgeId) return;
-
-      if (activeTopology) {
-        const drawInfo = getEdgeLineDrawInfo(activeTopology, wall.edgeId);
-        if (drawInfo) {
-          elements.push(
-            <line
-              key={wall.id}
-              x1={drawInfo.startVertex.x}
-              y1={drawInfo.startVertex.y}
-              x2={drawInfo.endVertex.x}
-              y2={drawInfo.endVertex.y}
-              stroke={wall.color}
-              strokeWidth={getStrokeWidth(wall.thickness)}
-              strokeDasharray={getStrokeDasharray(wall.style)}
-              strokeLinecap="round"
-            />
-          );
-          return;
-        }
-      }
-
-      const fallback = resolveGridEdgeIdToVertices(wall.edgeId, grid, activeTopology, vertexMap);
-      if (!fallback) return;
-
-      elements.push(
-        <line
-          key={wall.id}
-          x1={fallback.from.x}
-          y1={fallback.from.y}
-          x2={fallback.to.x}
-          y2={fallback.to.y}
-          stroke={wall.color}
-          strokeWidth={getStrokeWidth(wall.thickness)}
-          strokeDasharray={getStrokeDasharray(wall.style)}
-          strokeLinecap="round"
-        />
-      );
-    });
-
-    return elements;
-  }, [puzzle, layer, grid, isVisible, activeTopology, vertexMap]);
-
   if (!isVisible) return null;
 
   return (
     <g className={`line-layer-${layer}`}>
       {lines}
-      {edges}
-      {walls}
     </g>
   );
 };

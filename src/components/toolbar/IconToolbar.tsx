@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
-import { usePuzzleStore } from '../../store/puzzleStore';
-import { useModalStore } from '../../store/modalStore';
+import { usePuzzleStore, usePuzzleStoreApi } from '../../store/puzzleStoreContext';
+import { useModalStore } from '../../store/modalStoreContext';
 import {
   generateShareUrl,
   downloadAsJson,
@@ -153,8 +153,9 @@ export const IconToolbar: React.FC = () => {
     canUndo,
     canRedo,
   } = usePuzzleStore();
+  const store = usePuzzleStoreApi();
 
-  const { showConfirm, showAlert } = useModalStore();
+  const { showConfirm, showAlert, showUrlImport } = useModalStore();
 
   const handleExportJson = () => {
     downloadAsJson(grid, puzzle, { title: 'Puzzle' });
@@ -173,7 +174,7 @@ export const IconToolbar: React.FC = () => {
             const content = e.target?.result as string;
             const data = JSON.parse(content);
             if (data.grid && data.state) {
-              usePuzzleStore.setState({
+              store.setState({
                 grid: data.grid,
                 puzzle: data.state,
               });
@@ -214,7 +215,6 @@ export const IconToolbar: React.FC = () => {
   };
 
   const handleImportPenpaUrl = () => {
-    const { showUrlImport } = useModalStore.getState();
     showUrlImport(async (url) => {
       let result = null;
 
@@ -235,11 +235,9 @@ export const IconToolbar: React.FC = () => {
       }
 
       if (result) {
-        const store = usePuzzleStore.getState();
-
         if (result.topology) {
           // Custom topology (e.g., Penrose) must be applied directly; generic presets don't cover it.
-          usePuzzleStore.setState({
+          store.setState({
             grid: result.grid,
             topology: result.topology,
             useTopology: true,
@@ -248,7 +246,7 @@ export const IconToolbar: React.FC = () => {
         } else {
           // Use store APIs so topology stays in sync with the imported grid.
           store.setGrid(result.grid);
-          usePuzzleStore.setState({ puzzle: result.state });
+          store.setState({ puzzle: result.state });
         }
 
         showAlert({

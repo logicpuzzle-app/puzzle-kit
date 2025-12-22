@@ -6,10 +6,15 @@ import type { LayerSlice, SliceCreator } from './types';
 import { getToolForInputMode, getDefaultInputMode } from '../../constraints/inputModeMapping';
 import { constraintCatalog } from '../../constraints/ConstraintCatalog';
 import type { InputMode } from '../../constraints/types';
+import { canActivateLayer } from '../../utils/editPolicy';
 
 export const createLayerSlice: SliceCreator<LayerSlice> = (set, get) => ({
   activeLayer: 'grid',
   setActiveLayer: (layer) => {
+    const { isPlayerMode } = get();
+    if (!canActivateLayer(layer, isPlayerMode)) {
+      return;
+    }
     const prevLayer = get().activeLayer;
     set({ activeLayer: layer });
 
@@ -51,6 +56,15 @@ export const createLayerSlice: SliceCreator<LayerSlice> = (set, get) => ({
         const saved = savedNormalToolSettings[isEditMode ? 'problem' : 'answer'];
         setTool(saved.tool, saved.category);
       }
+    }
+  },
+
+  // Player mode (restrict edits to answer layer)
+  isPlayerMode: false,
+  setPlayerMode: (enabled) => {
+    set({ isPlayerMode: enabled });
+    if (enabled) {
+      get().setActiveLayer('answer');
     }
   },
 

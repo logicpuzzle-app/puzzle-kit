@@ -9,6 +9,7 @@ import type { PuzzleState, GridConfig, LineElement, SymbolElement } from '../../
 import type { ConstraintSchema, ConstraintRule } from '../types';
 import type { GridTopology } from '../../utils/topology';
 import { getCellIndexById, getEdgeIndexById } from '../../utils/gridUtils';
+import { mergeDirectionalCluesIntoNumbers } from '../../utils/legacyDirectionalClues';
 
 // ========================================
 // Types
@@ -229,9 +230,11 @@ function createCellLineHelper(puzzle: PuzzleState, grid: GridConfig): (row: numb
 function createEdgeLinesHelper(puzzle: PuzzleState): () => Map<string, LineElement> {
   const edgeLines = new Map<string, LineElement>();
 
-  for (const line of Object.values(puzzle.answer.edges)) {
-    const key = `${line.from}-${line.to}`;
-    edgeLines.set(key, line as unknown as LineElement);
+  for (const line of Object.values(puzzle.answer.lines)) {
+    const isEdgeLine = line.lineTarget === 'edge' || (!line.lineTarget && line.from?.startsWith('vertex-'));
+    if (!isEdgeLine) continue;
+    const key = line.from && line.to ? `${line.from}-${line.to}` : line.edgeId ?? line.id;
+    edgeLines.set(key, line as LineElement);
   }
 
   return () => edgeLines;
@@ -338,6 +341,7 @@ export function runDataDrivenValidation(
   topology: GridTopology | null = null
 ): ValidationResult {
   const errors: ValidationError[] = [];
+  const normalizedPuzzle = mergeDirectionalCluesIntoNumbers(puzzle);
 
   // Build set of enabled rules
   const enabledRules = new Set<string>();
@@ -350,18 +354,18 @@ export function runDataDrivenValidation(
 
   // Create validation context
   const ctx: ValidationContext = {
-    puzzle,
+    puzzle: normalizedPuzzle,
     grid,
     schema,
     topology,
     enabledRules,
     errors,
-    getCellLines: createCellLineHelper(puzzle, grid),
-    getEdgeLines: createEdgeLinesHelper(puzzle),
-    getSymbol: createSymbolHelper(puzzle),
-    getNumber: createNumberHelper(puzzle),
-    getNumberByCellId: createNumberByCellIdHelper(puzzle),
-    isCellShaded: createShadedHelper(puzzle),
+    getCellLines: createCellLineHelper(normalizedPuzzle, grid),
+    getEdgeLines: createEdgeLinesHelper(normalizedPuzzle),
+    getSymbol: createSymbolHelper(normalizedPuzzle),
+    getNumber: createNumberHelper(normalizedPuzzle),
+    getNumberByCellId: createNumberByCellIdHelper(normalizedPuzzle),
+    isCellShaded: createShadedHelper(normalizedPuzzle),
     isRuleEnabled: (ruleId: string) => enabledRules.has(ruleId),
     addError: (ruleId: string, failcode: string, messageKey: string, elements?: string[]) => {
       errors.push({ ruleId, failcode, messageKey, elements });
@@ -394,10 +398,21 @@ export function runDataDrivenValidation(
   }
 
   // Determine overall status
+  const hasElements = (record?: Record<string, unknown>) =>
+    Boolean(record && Object.keys(record).length > 0);
   const hasAnswerElements =
-    Object.keys(puzzle.answer.lines).length > 0 ||
-    Object.keys(puzzle.answer.edges).length > 0 ||
-    Object.keys(puzzle.answer.surfaces).length > 0;
+    hasElements(normalizedPuzzle.answer.lines) ||
+    hasElements(normalizedPuzzle.answer.surfaces) ||
+    hasElements(normalizedPuzzle.answer.numbers) ||
+    hasElements(normalizedPuzzle.answer.symbols) ||
+    hasElements(normalizedPuzzle.answer.cages) ||
+    hasElements(normalizedPuzzle.answer.specials) ||
+    hasElements(normalizedPuzzle.answer.boxLines) ||
+    hasElements(normalizedPuzzle.answer.lineGroups) ||
+    Boolean(
+      normalizedPuzzle.multicolorSurfaces &&
+        Object.values(normalizedPuzzle.multicolorSurfaces).some((surface) => surface.layer === 'answer')
+    );
 
   const complete = errors.length === 0 && hasAnswerElements;
   const undecided = !hasAnswerElements;

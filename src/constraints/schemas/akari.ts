@@ -92,6 +92,16 @@ export const akariSchema: ConstraintSchema = {
     },
   ],
 
+  highlight: [
+    {
+      id: 'akari.light-beams',
+      scope: 'play',
+      title: 'constraint.akari.lightBeams.title',
+      description: 'constraint.akari.lightBeams.description',
+      defaultOn: true,
+    },
+  ],
+
   notes: [
     'Place lights to illuminate all cells',
     'Lights illuminate horizontally and vertically until blocked by walls',

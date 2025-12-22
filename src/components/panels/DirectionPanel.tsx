@@ -6,11 +6,12 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { usePuzzleStore } from '../../store/puzzleStore';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { SymbolPanel } from './SymbolPanel';
 import { NumericInput } from '../common';
 import type { TopologyVertex } from '../../utils/gridTopology';
 import { toDataLayer } from '../../types';
+import { getEditableDataLayer } from '../../utils/editPolicy';
 
 // Get default edge count based on grid type
 const getDefaultEdgeCount = (gridType: string): number => {
@@ -41,12 +42,15 @@ export const DirectionPanel: React.FC = () => {
     useTopology,
     puzzle,
     activeLayer,
+    isPlayerMode,
     addSymbol,
     removeSymbol,
   } = usePuzzleStore();
   const [arrowMode, setArrowMode] = useState<'single' | 'multi'>('single');
   const [selectedShapeIndex, setSelectedShapeIndex] = useState(0);
   const [hoveredDirection, setHoveredDirection] = useState<number | null>(null);
+  const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
+  const readLayer = editableLayer ?? toDataLayer(activeLayer);
 
   // Current rotation
   const currentRotation = toolSettings.symbolRotation;
@@ -274,7 +278,7 @@ export const DirectionPanel: React.FC = () => {
     // Only load state when in direction sub-mode
     if (toolSettings.symbolSubMode !== 'direction') return;
 
-    const dataLayer = toDataLayer(activeLayer);
+    const dataLayer = readLayer;
     const layerData = puzzle[dataLayer];
     const singleArrows = ['arrow_N', 'arrow_B', 'arrow_S', 'arrow_Short', 'arrow_GP', 'arrow_double', 'triangle', 'triangle-filled'];
     const multiArrows = ['arrow_cross', 'arrow_eight', 'arrow_fourtip', 'arrow_fouredge'];
@@ -295,7 +299,7 @@ export const DirectionPanel: React.FC = () => {
       // Load directions from existing multi arrow
       setToolSettings({ multiDirections: [...existingMulti.directions] });
     }
-  }, [cursorCell, activeLayer, puzzle, setToolSettings, arrowMode, toolSettings.symbolSubMode]);
+  }, [cursorCell, readLayer, puzzle, setToolSettings, arrowMode, toolSettings.symbolSubMode]);
 
   // When arrow shape (currentTool) changes, update existing arrow at cursor cell
   const prevToolRef = React.useRef(toolSettings.currentTool);
@@ -318,7 +322,8 @@ export const DirectionPanel: React.FC = () => {
 
     if (!prevSymbol || !newSymbol) return;
 
-    const dataLayer = toDataLayer(activeLayer);
+    if (!editableLayer) return;
+    const dataLayer = editableLayer;
     const layerData = puzzle[dataLayer];
 
     if (arrowMode === 'single') {
@@ -366,7 +371,7 @@ export const DirectionPanel: React.FC = () => {
         }
       }
     }
-  }, [toolSettings.currentTool, cursorCell, arrowMode, activeLayer, puzzle, toolSettings.symbolSize, toolSettings.symbolRotation, toolSettings.color, toolSettings.symbolSubMode, toolSettings.multiDirections, directionAngles, addSymbol, removeSymbol]);
+  }, [toolSettings.currentTool, cursorCell, arrowMode, activeLayer, editableLayer, puzzle, toolSettings.symbolSize, toolSettings.symbolRotation, toolSettings.color, toolSettings.symbolSubMode, toolSettings.multiDirections, directionAngles, addSymbol, removeSymbol]);
 
   // Normalize angle to 0-359 range
   const normalizeAngle = (angle: number) => ((angle % 360) + 360) % 360;
@@ -379,7 +384,8 @@ export const DirectionPanel: React.FC = () => {
     // Update symbol at cursor cell if in single mode
     if (!cursorCell || arrowMode !== 'single') return;
 
-    const dataLayer = toDataLayer(activeLayer);
+    if (!editableLayer) return;
+    const dataLayer = editableLayer;
     const layerData = puzzle[dataLayer];
     const singleArrows = ['arrow_N', 'arrow_B', 'arrow_S', 'arrow_Short', 'arrow_GP', 'arrow_double', 'triangle', 'triangle-filled'];
 
@@ -409,7 +415,7 @@ export const DirectionPanel: React.FC = () => {
       color: toolSettings.color,
       layer: dataLayer,
     });
-  }, [cursorCell, arrowMode, activeLayer, puzzle, toolSettings.currentTool, toolSettings.symbolSize, toolSettings.color, setToolSettings, addSymbol, removeSymbol]);
+  }, [cursorCell, arrowMode, activeLayer, editableLayer, puzzle, toolSettings.currentTool, toolSettings.symbolSize, toolSettings.color, setToolSettings, addSymbol, removeSymbol]);
 
   // Find closest angle index for current rotation
   const getClosestAngleIndex = (): number => {
@@ -441,7 +447,8 @@ export const DirectionPanel: React.FC = () => {
   }) => {
     if (!cursorCell) return;
 
-    const dataLayer = toDataLayer(activeLayer);
+    if (!editableLayer) return;
+    const dataLayer = editableLayer;
     const layerData = puzzle[dataLayer];
 
     // Determine the current symbol type based on mode and tool
@@ -517,7 +524,7 @@ export const DirectionPanel: React.FC = () => {
         });
       }
     }
-  }, [cursorCell, activeLayer, puzzle, arrowMode, toolSettings, addSymbol, removeSymbol, directionAngles]);
+  }, [cursorCell, activeLayer, editableLayer, puzzle, arrowMode, toolSettings, addSymbol, removeSymbol, directionAngles]);
 
   // When size changes, update symbol at cursor cell
   const prevSizeRef = React.useRef(toolSettings.symbolSize);
@@ -532,7 +539,7 @@ export const DirectionPanel: React.FC = () => {
     if (toolSettings.symbolSubMode !== 'direction') return;
 
     // Check if there's an arrow symbol at cursor cell
-    const dataLayer = toDataLayer(activeLayer);
+    const dataLayer = readLayer;
     const layerData = puzzle[dataLayer];
     const singleArrows = ['arrow_N', 'arrow_B', 'arrow_S', 'arrow_Short', 'arrow_GP', 'arrow_double', 'triangle', 'triangle-filled'];
     const multiArrows = ['arrow_cross', 'arrow_eight', 'arrow_fourtip', 'arrow_fouredge'];
@@ -548,7 +555,7 @@ export const DirectionPanel: React.FC = () => {
     if (!existingSingle && !existingMulti) return;
 
     updateSymbolAtCursor({ newSize: toolSettings.symbolSize });
-  }, [toolSettings.symbolSize, cursorCell, activeLayer, puzzle, toolSettings.symbolSubMode, updateSymbolAtCursor]);
+  }, [toolSettings.symbolSize, cursorCell, readLayer, puzzle, toolSettings.symbolSubMode, updateSymbolAtCursor]);
 
   // When color changes, update symbol at cursor cell
   const prevColorRef = React.useRef(toolSettings.color);
@@ -563,7 +570,7 @@ export const DirectionPanel: React.FC = () => {
     if (toolSettings.symbolSubMode !== 'direction') return;
 
     // Check if there's an arrow symbol at cursor cell
-    const dataLayer = toDataLayer(activeLayer);
+    const dataLayer = readLayer;
     const layerData = puzzle[dataLayer];
     const singleArrows = ['arrow_N', 'arrow_B', 'arrow_S', 'arrow_Short', 'arrow_GP', 'arrow_double', 'triangle', 'triangle-filled'];
     const multiArrows = ['arrow_cross', 'arrow_eight', 'arrow_fourtip', 'arrow_fouredge'];
@@ -579,7 +586,7 @@ export const DirectionPanel: React.FC = () => {
     if (!existingSingle && !existingMulti) return;
 
     updateSymbolAtCursor({ newColor: toolSettings.color });
-  }, [toolSettings.color, cursorCell, activeLayer, puzzle, toolSettings.symbolSubMode, updateSymbolAtCursor]);
+  }, [toolSettings.color, cursorCell, readLayer, puzzle, toolSettings.symbolSubMode, updateSymbolAtCursor]);
 
   // Render the direction selector SVG
   const renderDirectionSelector = (isMultiMode: boolean) => {

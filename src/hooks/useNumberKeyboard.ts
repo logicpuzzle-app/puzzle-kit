@@ -11,11 +11,18 @@
  */
 
 import { useEffect, useCallback, useMemo } from 'react';
-import { usePuzzleStore } from '../store/puzzleStore';
+import { usePuzzleStore } from '../store/puzzleStoreContext';
 import { useCellFinder } from './useCellFinder';
-import { toDataLayer } from '../types';
 import { constraintCatalog } from '../constraints';
 import { getAutoModeConfig } from '../constraints/inputModeMapping';
+import { getEditableDataLayer } from '../utils/editPolicy';
+import { toPenpaDirection } from '../utils/directionalClue';
+import {
+  findDirectionalNumberByCellId,
+  findNumberEntry,
+  hasNumberAtCell,
+  isNumericString,
+} from '../utils/numberEntries';
 import {
   shouldIgnoreKeyEvent,
   isArrowKey,
@@ -38,6 +45,7 @@ import {
 interface NumberKeyboardContext {
   isNumberTool: boolean;
   isConstraintNumberInput: boolean;
+  allowNonNumeric: boolean;
   target: { row: number; col: number } | null;
   gridRows: number;
   gridCols: number;
@@ -60,6 +68,7 @@ export function useNumberKeyboard() {
     toolSettings,
     puzzle,
     activeLayer,
+    isPlayerMode,
     numberSelection,
     setNumberSelection,
     addNumber,
@@ -74,6 +83,8 @@ export function useNumberKeyboard() {
 
   const { findCellIdByRowCol } = useCellFinder();
 
+  const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
+
   // Check if constraint mode number input is active
   const isConstraintEnabled = showConstraintLayer && currentSchemaId !== null;
 
@@ -81,7 +92,15 @@ export function useNumberKeyboard() {
   // Input Mode Detection
   // ============================================================================
 
-  const shouldHandleInput = useCallback((): { isNumberTool: boolean; isConstraintNumberInput: boolean } => {
+  const shouldHandleInput = useCallback((): {
+    isNumberTool: boolean;
+    isConstraintNumberInput: boolean;
+    allowNonNumeric: boolean;
+  } => {
+    if (!editableLayer) {
+      return { isNumberTool: false, isConstraintNumberInput: false, allowNonNumeric: false };
+    }
+
     const tool = toolSettings.currentTool;
     const isNumberTool = tool.startsWith('number');
 
@@ -90,7 +109,7 @@ export function useNumberKeyboard() {
       const isNumberInputMode = currentInputMode === 'number' || currentInputMode === 'number-';
       const isDirecInputMode = currentInputMode === 'direc';
       const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
-      const isEditMode = activeLayer === 'problem';
+      const isEditMode = editableLayer === 'problem';
       const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
       const isAutoNumberMode = currentInputMode === 'auto' && autoConfig.type === 'number';
       const isAutoDirecMode = currentInputMode === 'auto' && autoConfig.type === 'direc';
@@ -98,8 +117,9 @@ export function useNumberKeyboard() {
       isConstraintNumberInput =
         isNumberInputMode || isDirecInputMode || isAutoNumberMode || isAutoDirecMode || isAutoBorderNumberMode;
     }
-    return { isNumberTool, isConstraintNumberInput };
-  }, [activeLayer, currentInputMode, currentSchemaId, isConstraintEnabled, toolSettings.currentTool]);
+    const allowNonNumeric = !isConstraintNumberInput && toolSettings.currentTool !== 'number-directional';
+    return { isNumberTool, isConstraintNumberInput, allowNonNumeric };
+  }, [currentInputMode, currentSchemaId, editableLayer, isConstraintEnabled, toolSettings.currentTool]);
 
   // ============================================================================
   // Max Digits Calculation
@@ -107,13 +127,13 @@ export function useNumberKeyboard() {
 
   const getMaxDigits = useCallback((): number => {
     const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
-    const isEditMode = activeLayer === 'problem';
+    const isEditMode = editableLayer === 'problem';
     const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
     const isDirecType = currentInputMode === 'direc' ||
       (currentInputMode === 'auto' && autoConfig.type === 'direc');
 
     return getMaxDigitsForGrid(grid.rows, grid.cols, isDirecType);
-  }, [activeLayer, currentInputMode, currentSchemaId, grid.rows, grid.cols]);
+  }, [currentInputMode, currentSchemaId, editableLayer, grid.rows, grid.cols]);
 
   // ============================================================================
   // Number Input Handlers
@@ -125,62 +145,58 @@ export function useNumberKeyboard() {
     isDelete,
     isSingleCharInput
   ) => {
+    if (!editableLayer) {
+      return;
+    }
     const cellId = findCellIdByRowCol(target.row, target.col) ?? `cell-${target.row}-${target.col}`;
     const cellIndex = target.row * grid.cols + target.col;
-    const dataLayer = toDataLayer(activeLayer);
+    const dataLayer = editableLayer;
 
-    // Find existing clue by cellId
-    const existingEntry = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
-      ([, c]) => c.cellId === cellId
-    );
-    const existingClue = existingEntry?.[1];
-    const existingId = existingEntry?.[0];
+    if (currentSchemaId === 'simplegako' && dataLayer === 'answer') {
+      const hasProblemNumber = hasNumberAtCell(puzzle.problem.numbers, cellId) ||
+        Boolean(findDirectionalNumberByCellId(puzzle.problem.numbers, cellId));
+      if (hasProblemNumber) {
+        return;
+      }
+    }
+
+    const existingDirectionalEntry = findDirectionalNumberByCellId(puzzle[dataLayer].numbers, cellId);
+    const existingId = existingDirectionalEntry?.id;
+    const existingNumber = existingDirectionalEntry?.number;
 
     // For display, char takes precedence over value
-    const hasChar = existingClue?.char !== undefined;
-    const currentValue = hasChar
-      ? existingClue!.char!
-      : (existingClue?.value !== undefined ? String(existingClue.value) : null);
+    const hasChar = existingNumber ? !isNumericString(existingNumber.value) : false;
+    const currentValue = existingNumber?.value ?? null;
 
     // Delete/Backspace handling
     if (isDelete) {
       if (hasChar) {
-        // If has char, remove char and keep value
-        if (existingClue) {
-          addDirectionalClue({
-            cellId,
-            cell: cellIndex,
-            direction: existingClue.direction,
-            value: existingClue.value,
-            layer: dataLayer,
-            angle: existingClue.angle,
-            color: existingClue.color,
-          });
+        if (existingId) {
+          removeNumber(existingId);
         }
+        return;
       } else if (!currentValue || currentValue.length <= 1) {
         // Remove entirely
         if (existingId) {
-          removeDirectionalClue(existingId);
+          removeNumber(existingId);
         } else {
           // Also check for regular numbers (center position) and remove if found
-          const numberEntry = Object.entries(puzzle[dataLayer].numbers || {}).find(
-            ([, n]) => n.cellId === cellId && n.position === 'center'
-          );
-          if (numberEntry) {
-            removeNumber(numberEntry[0]);
+          const numberEntry = findNumberEntry(puzzle[dataLayer].numbers, cellId, 'center');
+            if (numberEntry) {
+              removeNumber(numberEntry.id);
           }
         }
       } else {
         // Remove last digit
         const newValue = removeLastChar(currentValue);
-        const direction = existingClue?.direction ?? 0;
+        const direction = existingNumber?.direction ?? 0;
         addDirectionalClue({
           cellId,
           cell: cellIndex,
           direction: direction as 0 | 1 | 2 | 3 | 4,
           value: newValue ? parseInt(newValue, 10) : 0,
           layer: dataLayer,
-          color: existingClue?.color,
+          color: existingNumber?.color,
         });
       }
       return;
@@ -188,20 +204,20 @@ export function useNumberKeyboard() {
 
     // For single character input, set char field
     if (isSingleCharInput) {
-      const directionMap: Record<number, 0 | 1 | 2 | 3 | 4> = {
-        [-1]: 0, 0: 1, 1: 3, 2: 4, 3: 2,
-      };
-      const direction = existingClue?.direction ?? directionMap[toolSettings.arrowDirection] ?? 0;
+      const direction = existingNumber?.direction ?? toPenpaDirection(toolSettings.arrowDirection);
+      const numericValue = existingNumber && isNumericString(existingNumber.value)
+        ? parseInt(existingNumber.value, 10)
+        : 0;
 
       addDirectionalClue({
         cellId,
         cell: cellIndex,
         direction: direction as 0 | 1 | 2 | 3 | 4,
-        value: existingClue?.value ?? 0,
+        value: numericValue,
         char: keyValue,
         layer: dataLayer,
-        angle: existingClue?.angle,
-        color: existingClue?.color || toolSettings.color,
+        angle: existingNumber?.angle,
+        color: existingNumber?.color || toolSettings.color,
       });
       return;
     }
@@ -213,10 +229,7 @@ export function useNumberKeyboard() {
       : appendDigit(currentValue, keyValue, maxDigits);
 
     // Preserve existing direction, or use current arrowDirection setting
-    const directionMap: Record<number, 0 | 1 | 2 | 3 | 4> = {
-      [-1]: 0, 0: 1, 1: 3, 2: 4, 3: 2,
-    };
-    const direction = existingClue?.direction ?? directionMap[toolSettings.arrowDirection] ?? 0;
+    const direction = existingNumber?.direction ?? toPenpaDirection(toolSettings.arrowDirection);
 
     addDirectionalClue({
       cellId,
@@ -224,14 +237,15 @@ export function useNumberKeyboard() {
       direction: direction as 0 | 1 | 2 | 3 | 4,
       value: parseInt(newValue, 10),
       layer: dataLayer,
-      angle: existingClue?.angle,
-      color: existingClue?.color || toolSettings.color,
+      angle: existingNumber?.angle,
+      color: existingNumber?.color || toolSettings.color,
     });
   }, [
     findCellIdByRowCol,
     grid.cols,
-    activeLayer,
+    editableLayer,
     puzzle,
+    currentSchemaId,
     addDirectionalClue,
     removeDirectionalClue,
     removeNumber,
@@ -246,39 +260,40 @@ export function useNumberKeyboard() {
     isDelete,
     isSingleCharInput
   ) => {
+    if (!editableLayer) {
+      return;
+    }
     const cellId = findCellIdByRowCol(target.row, target.col) ?? `cell-${target.row}-${target.col}`;
     const cellIndex = target.row * grid.cols + target.col;
-    const dataLayer = toDataLayer(activeLayer);
+    const dataLayer = editableLayer;
 
-    // Find existing clue by cellId
-    const existingEntry = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
-      ([, c]) => c.cellId === cellId
-    );
-    const existingId = existingEntry?.[0];
-    const existingClue = existingEntry?.[1];
+    const existingDirectionalEntry = findDirectionalNumberByCellId(puzzle[dataLayer].numbers, cellId);
+    const existingId = existingDirectionalEntry?.id;
+    const existingNumber = existingDirectionalEntry?.number;
 
     if (isDelete) {
       if (existingId) {
-        removeDirectionalClue(existingId);
+        if (existingEntry) {
+          removeDirectionalClue(existingId);
+        } else {
+          removeNumber(existingId);
+        }
       }
       return;
     }
 
     // Convert arrowDirection to Penpa direction
-    const directionMap: Record<number, 0 | 1 | 2 | 3 | 4> = {
-      [-1]: 0, 0: 1, 1: 3, 2: 4, 3: 2,
-    };
-    const direction = directionMap[toolSettings.arrowDirection] ?? 0;
+    const direction = toPenpaDirection(toolSettings.arrowDirection);
 
     if (isSingleCharInput) {
       addDirectionalClue({
         cellId,
         cell: cellIndex,
         direction,
-        value: existingClue?.value ?? 0,
+        value: 0,
         char: keyValue,
         layer: dataLayer,
-        color: existingClue?.color || toolSettings.color,
+        color: existingNumber?.color || toolSettings.color,
       });
     } else {
       addDirectionalClue({
@@ -287,16 +302,17 @@ export function useNumberKeyboard() {
         direction,
         value: parseInt(keyValue, 10),
         layer: dataLayer,
-        color: existingClue?.color || toolSettings.color,
+        color: existingNumber?.color || toolSettings.color,
       });
     }
   }, [
     findCellIdByRowCol,
     grid.cols,
-    activeLayer,
+    editableLayer,
     puzzle,
     addDirectionalClue,
     removeDirectionalClue,
+    removeNumber,
     toolSettings.arrowDirection,
     toolSettings.color,
   ]);
@@ -307,28 +323,23 @@ export function useNumberKeyboard() {
     isDelete,
     _isSingleCharInput
   ) => {
+    if (!editableLayer) {
+      return;
+    }
     const cellId = findCellIdByRowCol(target.row, target.col) ?? `cell-${target.row}-${target.col}`;
-    const dataLayerForNumbers = toDataLayer(activeLayer);
+    const dataLayerForNumbers = editableLayer;
     const numbers = puzzle[dataLayerForNumbers].numbers;
     const position = toolSettings.numberPosition;
     const cornerIndex = toolSettings.cornerIndex;
     const sideIndex = toolSettings.sideIndex;
 
     // Find existing number at this position
-    const existingEntry = Object.entries(numbers).find(([, n]) => {
-      if (n.cellId !== cellId) return false;
-      if (position === 'center') {
-        return n.position === 'center';
-      } else if (position === 'corner') {
-        return n.position === 'corner' && n.cornerIndex === cornerIndex;
-      } else if (position === 'side') {
-        return n.position === 'side' && n.sideIndex === sideIndex;
-      } else if (position === 'candidates') {
-        return n.position === 'candidates' && n.value === value;
-      }
-      return n.position === position;
+    const existingEntry = findNumberEntry(numbers, cellId, position, {
+      cornerIndex,
+      sideIndex,
+      value: position === 'candidates' ? value : undefined,
     });
-    const existingId = existingEntry?.[0];
+    const existingId = existingEntry?.id;
 
     if (isDelete) {
       if (position === 'candidates') {
@@ -352,7 +363,7 @@ export function useNumberKeyboard() {
           cornerIndex: 0,
           sideIndex: 0,
           color: toolSettings.color,
-          layer: toDataLayer(activeLayer),
+          layer: dataLayerForNumbers,
         });
       }
       return;
@@ -370,12 +381,12 @@ export function useNumberKeyboard() {
         cornerIndex,
         sideIndex,
         color: toolSettings.color,
-        layer: toDataLayer(activeLayer),
+        layer: dataLayerForNumbers,
       });
     }
   }, [
     findCellIdByRowCol,
-    activeLayer,
+    editableLayer,
     puzzle,
     toolSettings.numberPosition,
     toolSettings.cornerIndex,
@@ -412,7 +423,7 @@ export function useNumberKeyboard() {
     {
       keys: ['Backspace', 'Delete'],
       preventDefault: true,
-      when: (ctx) => (ctx.isNumberTool || ctx.isConstraintNumberInput) && ctx.target !== null,
+      when: (ctx) => (ctx.isNumberTool || ctx.isConstraintNumberInput) && ctx.allowNonNumeric && ctx.target !== null,
       run: (ctx, key) => {
         if (!ctx.target) return;
         const { isConstraintNumberInput, isNumberTool } = ctx;
@@ -480,12 +491,13 @@ export function useNumberKeyboard() {
       // Skip if typing in input field
       if (shouldIgnoreKeyEvent(e)) return;
 
-      const { isNumberTool, isConstraintNumberInput } = shouldHandleInput();
+      const { isNumberTool, isConstraintNumberInput, allowNonNumeric } = shouldHandleInput();
       if (!isNumberTool && !isConstraintNumberInput) return;
 
       const context: NumberKeyboardContext = {
         isNumberTool,
         isConstraintNumberInput,
+        allowNonNumeric,
         target: numberSelection,
         gridRows: grid.rows,
         gridCols: grid.cols,

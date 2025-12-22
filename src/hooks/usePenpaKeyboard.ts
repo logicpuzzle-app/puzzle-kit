@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useCallback, useRef, useMemo } from 'react';
-import { usePuzzleStore } from '../store/puzzleStore';
+import { usePuzzleStore } from '../store/puzzleStoreContext';
 import type { PenpaEditMode, PenpaLayerMode } from '../types/penpaModes';
 import {
   shouldIgnoreKeyEvent,

@@ -8,8 +8,9 @@
  */
 
 import type { PuzzleAction } from './actions';
-import type { PuzzleElements, LayerType, DataLayerType, GridConfig } from '../types';
-import { historyManager } from './historyManager';
+import type { LineElement, PuzzleElements, LayerType, GridConfig } from '../types';
+import type { HistoryManager } from './historyManager';
+import { historyManager as defaultHistoryManager } from './historyManager';
 
 // ========================================
 // Types
@@ -48,6 +49,11 @@ export type StateMutator = (
 export class ActionExecutor {
   private mutator: StateMutator | null = null;
   private recordHistory: boolean = true;
+  private historyManager: HistoryManager;
+
+  constructor(history: HistoryManager = defaultHistoryManager) {
+    this.historyManager = history;
+  }
 
   /**
    * Set the state mutator (connected to Zustand store)
@@ -79,7 +85,7 @@ export class ActionExecutor {
 
     // Add to history if enabled
     if (addToHistory && this.recordHistory) {
-      historyManager.addAction(action);
+      this.historyManager.addAction(action);
     }
   }
 
@@ -96,7 +102,7 @@ export class ActionExecutor {
 
     // Add to history
     if (addToHistory && this.recordHistory) {
-      actions.forEach(action => historyManager.addAction(action));
+      actions.forEach(action => this.historyManager.addAction(action));
     }
   }
 
@@ -122,6 +128,20 @@ export class ActionExecutor {
     action: PuzzleAction,
     set: (fn: (state: PuzzleStateSlice) => Partial<PuzzleStateSlice>) => void
   ): void {
+    const normalizeLegacyLine = (
+      element: LineElement,
+      fallbackTarget: LineElement['lineTarget']
+    ): LineElement => {
+      const lineTarget = element.lineTarget ?? fallbackTarget;
+      const normalized: LineElement = { ...element, lineTarget };
+      const normalizedId = normalized.edgeId && lineTarget
+        ? `${lineTarget}-${normalized.edgeId}`
+        : normalized.id;
+      return normalizedId && normalizedId !== normalized.id
+        ? { ...normalized, id: normalizedId }
+        : normalized;
+    };
+
     switch (action.type) {
       case 'ADD_SURFACE':
         set((state) => ({
@@ -188,31 +208,38 @@ export class ActionExecutor {
         break;
 
       case 'ADD_EDGE':
-        set((state) => ({
-          puzzle: {
-            ...state.puzzle,
-            [action.element.layer]: {
-              ...state.puzzle[action.element.layer],
-              edges: {
-                ...state.puzzle[action.element.layer].edges,
-                [action.element.id]: action.element,
+        set((state) => {
+          const line = normalizeLegacyLine(action.element, 'edge');
+          return {
+            puzzle: {
+              ...state.puzzle,
+              [action.element.layer]: {
+                ...state.puzzle[action.element.layer],
+                lines: {
+                  ...state.puzzle[action.element.layer].lines,
+                  [line.id]: line,
+                },
               },
             },
-          },
-        }));
+          };
+        });
         break;
 
       case 'REMOVE_EDGE':
         set((state) => {
           const layer = action.element.layer;
-          const newEdges = { ...state.puzzle[layer].edges };
-          delete newEdges[action.id];
+          const line = normalizeLegacyLine(action.element, 'edge');
+          const newLines = { ...state.puzzle[layer].lines };
+          delete newLines[line.id];
+          if (action.id !== line.id) {
+            delete newLines[action.id];
+          }
           return {
             puzzle: {
               ...state.puzzle,
               [layer]: {
                 ...state.puzzle[layer],
-                edges: newEdges,
+                lines: newLines,
               },
             },
           };
@@ -220,31 +247,38 @@ export class ActionExecutor {
         break;
 
       case 'ADD_WALL':
-        set((state) => ({
-          puzzle: {
-            ...state.puzzle,
-            [action.element.layer]: {
-              ...state.puzzle[action.element.layer],
-              walls: {
-                ...state.puzzle[action.element.layer].walls,
-                [action.element.id]: action.element,
+        set((state) => {
+          const line = normalizeLegacyLine(action.element, 'wall');
+          return {
+            puzzle: {
+              ...state.puzzle,
+              [action.element.layer]: {
+                ...state.puzzle[action.element.layer],
+                lines: {
+                  ...state.puzzle[action.element.layer].lines,
+                  [line.id]: line,
+                },
               },
             },
-          },
-        }));
+          };
+        });
         break;
 
       case 'REMOVE_WALL':
         set((state) => {
           const layer = action.element.layer;
-          const newWalls = { ...state.puzzle[layer].walls };
-          delete newWalls[action.id];
+          const line = normalizeLegacyLine(action.element, 'wall');
+          const newLines = { ...state.puzzle[layer].lines };
+          delete newLines[line.id];
+          if (action.id !== line.id) {
+            delete newLines[action.id];
+          }
           return {
             puzzle: {
               ...state.puzzle,
               [layer]: {
                 ...state.puzzle[layer],
-                walls: newWalls,
+                lines: newLines,
               },
             },
           };

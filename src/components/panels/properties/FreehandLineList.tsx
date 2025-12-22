@@ -1,8 +1,9 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trash2 } from 'lucide-react';
-import { usePuzzleStore } from '../../../store/puzzleStore';
+import { usePuzzleStore } from '../../../store/puzzleStoreContext';
 import { LineElement, toDataLayer } from '../../../types';
+import { getEditableDataLayer } from '../../../utils/editPolicy';
 
 // Group freehand lines by strokeId
 interface FreehandStroke {
@@ -17,9 +18,11 @@ interface FreehandStroke {
 // Freehand line list component - shows list of strokes that can be deleted
 export const FreehandLineList: React.FC = () => {
   const { t } = useTranslation();
-  const { puzzle, activeLayer, removeLine } = usePuzzleStore();
+  const { puzzle, activeLayer, isPlayerMode, removeLine } = usePuzzleStore();
 
-  const dataLayer = toDataLayer(activeLayer);
+  const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
+  const dataLayer = editableLayer ?? toDataLayer(activeLayer);
+  const canEdit = Boolean(editableLayer);
 
   // Get all freehand lines grouped by strokeId
   const strokes = React.useMemo(() => {
@@ -66,6 +69,7 @@ export const FreehandLineList: React.FC = () => {
 
   // Delete all lines in a stroke
   const deleteStroke = (stroke: FreehandStroke) => {
+    if (!canEdit) return;
     stroke.lines.forEach((line) => removeLine(line.id));
   };
 
@@ -127,8 +131,11 @@ export const FreehandLineList: React.FC = () => {
               </div>
               {/* Delete button */}
               <button
-                className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                className={`p-1 rounded transition-colors ${
+                  canEdit ? 'text-gray-400 hover:text-red-500 hover:bg-red-50' : 'text-gray-300 cursor-not-allowed'
+                }`}
                 onClick={() => deleteStroke(stroke)}
+                disabled={!canEdit}
                 title={t('action.delete')}
               >
                 <Trash2 size={14} />

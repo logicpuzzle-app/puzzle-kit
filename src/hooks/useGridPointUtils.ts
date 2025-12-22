@@ -1,27 +1,8 @@
 import { useCallback } from 'react';
-import {
-  findNearestCell,
-  findNearestVertex,
-  findNearestEdge,
-  getCellId,
-  getVertexId,
-  getEdgeHId,
-  getEdgeVId,
-  getCellCenter,
-  getCellIndexById,
-  getEdgeIndexById,
-  getVertexPosition,
-  getVertexIndexById,
-  getEdgePosition,
-} from '../utils/gridUtils';
-import {
-  findNearestCellInTopology,
-  findNearestVertexInTopology,
-  findNearestEdgeInTopology,
-} from '../utils/gridTopology';
+import { getCellIndexById, getEdgeIndexById, getVertexIndexById } from '../utils/gridUtils';
 import type { Point, LineGridPoint, LineDirection, GridConfig } from '../types';
-import type { GridTopology } from '../utils/gridTopology';
-import { usePuzzleStore } from '../store/puzzleStore';
+import { usePuzzleStore } from '../store/puzzleStoreContext';
+import { resolveGridPoint, type ResolveOptions } from '../utils/pointResolver';
 
 /**
  * Hook providing grid point utilities for line/edge tools
@@ -33,116 +14,19 @@ export function useGridPointUtils(grid: GridConfig) {
    * Returns { id: string, position: Point } or null
    */
   const findNearestGridPoint = useCallback(
-    (point: Point, allowedTypes: LineGridPoint[], halfMode: boolean = false): { id: string; position: Point } | null => {
-      // Detection threshold depends on mode:
-      // - cell-only: 0.7 (Yajilin-style lines - almost full cell)
-      // - vertex-only: 0.7 (vertices are at corners, need wider detection)
-      // - half mode: 0.55 (need to reach half-cell distance for edge detection)
-      // - mixed types (no half): 0.4 (need to distinguish between nearby point types)
-      const isSingleType = allowedTypes.length === 1;
-      const isCellOnly = isSingleType && allowedTypes[0] === 'cell';
-      const isVertexOnly = isSingleType && allowedTypes[0] === 'vertex';
-      let threshold: number;
-      if (isCellOnly || isVertexOnly) {
-        threshold = grid.cellSize * 0.7;
-      } else if (halfMode) {
-        // Half mode needs wider threshold to detect points at half-cell distance
-        threshold = grid.cellSize * 0.55;
-      } else {
-        threshold = grid.cellSize * 0.4;
-      }
-      let bestId: string | null = null;
-      let bestPosition: Point | null = null;
-      let bestDistance = Infinity;
-
-      // Use topology-based finding if in topology mode
-      if (useTopology && topology) {
-        // Check cell centers
-        if (allowedTypes.includes('cell')) {
-          const cell = findNearestCellInTopology(topology, point);
-          if (cell) {
-            const distance = Math.sqrt(Math.pow(point.x - cell.center.x, 2) + Math.pow(point.y - cell.center.y, 2));
-            if (distance < threshold && distance < bestDistance) {
-              bestId = cell.id;
-              bestPosition = cell.center;
-              bestDistance = distance;
-            }
-          }
-        }
-
-        // Check vertices
-        if (allowedTypes.includes('vertex')) {
-          const vertex = findNearestVertexInTopology(topology, point);
-          if (vertex) {
-            const distance = Math.sqrt(Math.pow(point.x - vertex.position.x, 2) + Math.pow(point.y - vertex.position.y, 2));
-            if (distance < threshold && distance < bestDistance) {
-              bestId = vertex.id;
-              bestPosition = vertex.position;
-              bestDistance = distance;
-            }
-          }
-        }
-
-        // Check edge centers
-        if (allowedTypes.includes('edge')) {
-          const edge = findNearestEdgeInTopology(topology, point);
-          if (edge) {
-            const distance = Math.sqrt(Math.pow(point.x - edge.midpoint.x, 2) + Math.pow(point.y - edge.midpoint.y, 2));
-            if (distance < threshold && distance < bestDistance) {
-              bestId = edge.id;
-              bestPosition = edge.midpoint;
-              bestDistance = distance;
-            }
-          }
-        }
-
-        return bestId && bestPosition ? { id: bestId, position: bestPosition } : null;
-      }
-
-      // Standard mode - use grid-based finding
-      // Check cell centers
-      if (allowedTypes.includes('cell')) {
-        const cell = findNearestCell(point, grid);
-        if (cell) {
-          const center = getCellCenter(cell.row, cell.col, grid);
-          const distance = Math.sqrt(Math.pow(point.x - center.x, 2) + Math.pow(point.y - center.y, 2));
-          if (distance < threshold && distance < bestDistance) {
-            bestId = getCellId(cell.row, cell.col);
-            bestPosition = center;
-            bestDistance = distance;
-          }
-        }
-      }
-
-      // Check vertices
-      if (allowedTypes.includes('vertex')) {
-        const vertex = findNearestVertex(point, grid, threshold);
-        if (vertex) {
-          const pos = getVertexPosition(vertex.row, vertex.col, grid);
-          const distance = Math.sqrt(Math.pow(point.x - pos.x, 2) + Math.pow(point.y - pos.y, 2));
-          if (distance < threshold && distance < bestDistance) {
-            bestId = getVertexId(vertex.row, vertex.col);
-            bestPosition = pos;
-            bestDistance = distance;
-          }
-        }
-      }
-
-      // Check edge centers
-      if (allowedTypes.includes('edge')) {
-        const edge = findNearestEdge(point, grid, threshold);
-        if (edge) {
-          const pos = getEdgePosition(edge.type, edge.row, edge.col, grid);
-          const distance = Math.sqrt(Math.pow(point.x - pos.x, 2) + Math.pow(point.y - pos.y, 2));
-          if (distance < threshold && distance < bestDistance) {
-            bestId = edge.type === 'h' ? getEdgeHId(edge.row, edge.col) : getEdgeVId(edge.row, edge.col);
-            bestPosition = pos;
-            bestDistance = distance;
-          }
-        }
-      }
-
-      return bestId && bestPosition ? { id: bestId, position: bestPosition } : null;
+    (
+      point: Point,
+      allowedTypes: LineGridPoint[],
+      halfMode: boolean = false,
+      options: ResolveOptions = {}
+    ): { id: string; position: Point } | null => {
+      return resolveGridPoint(
+        point,
+        { grid, useTopology, topology },
+        allowedTypes,
+        halfMode,
+        options
+      );
     },
     [grid, useTopology, topology]
   );

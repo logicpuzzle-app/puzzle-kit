@@ -1,10 +1,12 @@
 import { useCallback, useRef } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStore';
-import { findNearestCell, getCellId, getCellIndexById } from '../../utils/gridUtils';
-import { findNearestCellInTopology, type GridTopology } from '../../utils/gridTopology';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { getCellIndexById } from '../../utils/gridUtils';
+import type { GridTopology } from '../../utils/gridTopology';
 import { normalizeMulticolorSlots } from '../../utils/multicolor';
 import type { GridConfig, Point, PuzzleState } from '../../types';
-import { toDataLayer } from '../../types';
+import { resolveCell } from '../../utils/pointResolver';
+import { getEditableDataLayer } from '../../utils/editPolicy';
+import { findDirectionalNumberByCellId } from '../../utils/numberEntries';
 
 /**
  * Get cell coordinates from cellId, preferring topology index when available.
@@ -30,19 +32,13 @@ function getCellCoords(
 }
 
 /**
- * Check if a cell has a directional clue (Yajilin arrow+number)
+ * Check if a cell has a directional number (Yajilin arrow+number)
  */
 function cellHasDirectionalClue(
   cellId: string,
   puzzle: PuzzleState,
-  cols: number,
-  topology: GridTopology | null
 ): boolean {
-  const directionalClues = puzzle.problem.directionalClues;
-  if (!directionalClues) return false;
-
-  // Use cellId directly for comparison
-  return Object.values(directionalClues).some(clue => clue.cellId === cellId);
+  return Boolean(findDirectionalNumberByCellId(puzzle.problem.numbers, cellId));
 }
 
 /**
@@ -62,6 +58,7 @@ export function useSurfaceToolHandler() {
     grid,
     toolSettings,
     activeLayer,
+    isPlayerMode,
     addSurface,
     removeSurface,
     puzzle,
@@ -74,20 +71,12 @@ export function useSurfaceToolHandler() {
     topology,
   } = usePuzzleStore();
 
+  const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
+
   // Helper to find cell ID considering topology mode
-  const findCellId = useCallback((point: Point): string | null => {
-    if (useTopology && topology) {
-      const topoCell = findNearestCellInTopology(topology, point);
-      if (topoCell) {
-        return topoCell.id;
-      }
-      return null;
-    }
-    const cell = findNearestCell(point, grid);
-    if (cell) {
-      return getCellId(cell.row, cell.col);
-    }
-    return null;
+  const findCellId = useCallback((point: Point, options?: { allowOutboard?: boolean }): string | null => {
+    const cell = resolveCell(point, { grid, useTopology, topology }, { allowOutboard: options?.allowOutboard });
+    return cell ? cell.cellId : null;
   }, [grid, useTopology, topology]);
 
   // Refs for tracking fill modes during drag
@@ -121,6 +110,7 @@ export function useSurfaceToolHandler() {
 
   const handleSurfaceTool = useCallback(
     (point: Point, isRightClick: boolean, isShiftKey: boolean = false) => {
+      if (!editableLayer) return;
       const cellId = findCellId(point);
       if (!cellId) return;
 
@@ -133,7 +123,7 @@ export function useSurfaceToolHandler() {
         return;
       }
 
-      const dataLayer = toDataLayer(activeLayer);
+      const dataLayer = editableLayer;
       const layerData = puzzle[dataLayer];
 
       // Determine which color to use
@@ -174,8 +164,8 @@ export function useSurfaceToolHandler() {
         if (!hasSameParity(cellId)) {
           return;
         }
-        // Check 2: skip cells with directional clues (Yajilin arrow+number)
-        if (cellHasDirectionalClue(cellId, puzzle, grid.cols, topology ?? null)) {
+        // Check 2: skip cells with directional numbers (Yajilin arrow+number)
+        if (cellHasDirectionalClue(cellId, puzzle)) {
           return;
         }
         // Check 3: skip cells with lines passing through (Yajilin loop)
@@ -219,12 +209,12 @@ export function useSurfaceToolHandler() {
         }
       }
     },
-    [grid, puzzle, activeLayer, toolSettings.currentTool, toolSettings.color, toolSettings.secondaryColor, toolSettings.inputConstraint, addSurface, removeSurface, findCellId, getCellCoordsFromId, hasSameParity, topology]
+    [grid, puzzle, activeLayer, editableLayer, toolSettings.currentTool, toolSettings.color, toolSettings.secondaryColor, toolSettings.inputConstraint, addSurface, removeSurface, findCellId, getCellCoordsFromId, hasSameParity, topology]
   );
 
   const handleGridTool = useCallback(
     (point: Point, isRightClick: boolean, isShiftKey: boolean = false) => {
-      const cellId = findCellId(point);
+      const cellId = findCellId(point, { allowOutboard: true });
       if (!cellId) return;
 
       // Skip if this cell was already processed during this drag
@@ -279,6 +269,7 @@ export function useSurfaceToolHandler() {
   // Handle multicolor surface tool
   const handleMulticolorSurfaceTool = useCallback(
     (point: Point, isRightClick: boolean) => {
+      if (!editableLayer) return;
       const cellId = findCellId(point);
       if (!cellId) return;
 
@@ -293,25 +284,27 @@ export function useSurfaceToolHandler() {
         setMulticolorSurface(cellId, colors, pattern, customColors);
       }
     },
-    [toolSettings.multicolorSlots, toolSettings.multicolorPattern, toolSettings.multicolorCustomColors, setMulticolorSurface, removeMulticolorSurface, findCellId]
+    [toolSettings.multicolorSlots, toolSettings.multicolorPattern, toolSettings.multicolorCustomColors, setMulticolorSurface, removeMulticolorSurface, findCellId, editableLayer]
   );
 
   // Handle solution area tool
   const handleSolutionAreaTool = useCallback(
     (point: Point, _isRightClick: boolean) => {
+      if (!editableLayer) return;
       const cellId = findCellId(point);
       if (!cellId) return;
 
       // Toggle cell in solution area
       toggleSolutionAreaCell(cellId);
     },
-    [grid, toggleSolutionAreaCell, findCellId]
+    [grid, toggleSolutionAreaCell, findCellId, editableLayer]
   );
 
   // Handle surface cycle tool (auto mode: none -> shade -> unshade -> none)
   // colorOverride allows direct color specification without relying on async state updates
   const handleSurfaceCycleTool = useCallback(
     (point: Point, isRightClick: boolean, colorOverride?: { color?: string; secondaryColor?: string }) => {
+      if (!editableLayer) return;
       const cellId = findCellId(point);
       if (!cellId) return;
 
@@ -320,7 +313,7 @@ export function useSurfaceToolHandler() {
         return;
       }
 
-      const dataLayer = toDataLayer(activeLayer);
+      const dataLayer = editableLayer;
       const layerData = puzzle[dataLayer];
 
       // Use color override if provided, otherwise fall back to toolSettings
@@ -357,8 +350,8 @@ export function useSurfaceToolHandler() {
         if (!hasSameParity(cellId)) {
           return;
         }
-        // Check 2: skip cells with directional clues (Yajilin arrow+number)
-        if (cellHasDirectionalClue(cellId, puzzle, grid.cols, topology ?? null)) {
+        // Check 2: skip cells with directional numbers (Yajilin arrow+number)
+        if (cellHasDirectionalClue(cellId, puzzle)) {
           return;
         }
         // Check 3: skip cells with lines passing through (Yajilin loop)
@@ -397,7 +390,7 @@ export function useSurfaceToolHandler() {
         }
       }
     },
-    [grid, puzzle, activeLayer, toolSettings.color, toolSettings.secondaryColor, toolSettings.inputConstraint, addSurface, removeSurface, findCellId, getCellCoordsFromId, hasSameParity, topology]
+    [grid, puzzle, activeLayer, editableLayer, toolSettings.color, toolSettings.secondaryColor, toolSettings.inputConstraint, addSurface, removeSurface, findCellId, getCellCoordsFromId, hasSameParity, topology]
   );
 
   return {

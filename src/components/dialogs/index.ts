@@ -1,5 +1,5 @@
 export { NumberInputDialog } from './NumberInputDialog';
-export type { NumberPosition } from './NumberInputDialog';
+export type { NumberPosition } from '../../types';
 export { TextInputDialog } from './TextInputDialog';
 export type { TextInputType } from './TextInputDialog';
 export { GridSettingsDialog } from './GridSettingsDialog';

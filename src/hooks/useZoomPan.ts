@@ -3,7 +3,7 @@
  */
 
 import { useCallback, useEffect } from 'react';
-import { usePuzzleStore } from '../store/puzzleStore';
+import { usePuzzleStore } from '../store/puzzleStoreContext';
 import type { Point } from '../types';
 
 interface UseZoomPanOptions {

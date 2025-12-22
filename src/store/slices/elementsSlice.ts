@@ -5,21 +5,16 @@
 import {
   generateSurfaceId,
   generateLineId as generateLineIdCompact,
-  generateEdgeId,
-  generateWallId,
   generateNumberId,
   generateSymbolId,
   generateCageId,
   generateSpecialId,
   generateBoxLineId,
-  generateDirectionalClueId,
   resetIdCounters,
 } from '../../utils/idGenerator';
 import type {
   SurfaceElement,
   LineElement,
-  EdgeElement,
-  WallElement,
   NumberElement,
   SymbolElement,
   CageElement,
@@ -27,23 +22,18 @@ import type {
   BoxLineElement,
   LineGroup,
 } from '../../types';
-import { toDataLayer } from '../../types';
+import { toDataLayer, type DataLayerType } from '../../types';
 import type { ElementsSlice, SliceCreator } from './types';
 import {
   normalizeChain,
   splitChain,
 } from '../../utils/lineMerge';
-import { historyManager } from '../historyManager';
 import {
   createAddSurfaceAction,
   createRemoveSurfaceAction,
   createAddLineAction,
   createRemoveLineAction,
   createUpdateLineAction,
-  createAddEdgeAction,
-  createRemoveEdgeAction,
-  createAddWallAction,
-  createRemoveWallAction,
   createAddNumberAction,
   createRemoveNumberAction,
   createUpdateNumberAction,
@@ -58,6 +48,11 @@ import {
   normalizeSegmentEndpoints,
   generateLineId,
 } from '../../utils/lineNormalization';
+import { canEditDataLayer, getEditableDataLayer } from '../../utils/editPolicy';
+import {
+  getDirectionalClueDisplayValue,
+  isDirectionalNumber,
+} from '../../utils/numberEntries';
 
 // Import from refactored modules
 import { createEmptyElements, createEmptyState } from './elements/state';
@@ -71,13 +66,19 @@ import {
   type GeometryContext,
 } from './elements/helpers';
 
-export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
-  puzzle: createEmptyState(),
+export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
+  const canEditLayer = (layer: DataLayerType) => canEditDataLayer(layer, get().isPlayerMode);
+
+  return {
+    puzzle: createEmptyState(),
 
   // Surface operations
   addSurface: (element) => {
     const id = generateSurfaceId();
     const fullElement: SurfaceElement = { ...element, id };
+    if (!canEditLayer(fullElement.layer)) {
+      return '';
+    }
 
     set((state) => {
       const layer = fullElement.layer;
@@ -95,13 +96,16 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
       };
     });
 
-    historyManager.addAction(createAddSurfaceAction(fullElement));
+    get().historyManager.addAction(createAddSurfaceAction(fullElement));
     return id;
   },
 
   removeSurface: (id) => {
     const state = get();
-    const layer = toDataLayer(state.activeLayer);
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer) {
+      return;
+    }
     const element = state.puzzle[layer].surfaces[id];
     if (element) {
       set((state) => {
@@ -119,12 +123,15 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
         };
       });
 
-      historyManager.addAction(createRemoveSurfaceAction(id, element));
+      get().historyManager.addAction(createRemoveSurfaceAction(id, element));
     }
   },
 
   // Line operations
   addLine: (element) => {
+    if (!canEditLayer(element.layer)) {
+      return '';
+    }
     let id: string;
     let normalizedElement: LineElement;
 
@@ -174,16 +181,17 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
         },
       };
     });
-    historyManager.addAction(createAddLineAction(normalizedElement));
+    get().historyManager.addAction(createAddLineAction(normalizedElement));
     return id;
   },
 
   removeLine: (id) => {
     const state = get();
-    const layer = toDataLayer(state.activeLayer);
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer) {
+      return;
+    }
     const lineElement = state.puzzle[layer].lines[id];
-    const edgeElement = state.puzzle[layer].edges[id];
-    const wallElement = state.puzzle[layer].walls[id];
 
     if (lineElement) {
       set((state) => {
@@ -200,47 +208,16 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
           },
         };
       });
-      historyManager.addAction(createRemoveLineAction(id, lineElement));
-    } else if (edgeElement) {
-      // Remove from legacy edges
-      set((state) => {
-        const dataLayer = toDataLayer(state.activeLayer);
-        const newEdges = { ...state.puzzle[dataLayer].edges };
-        delete newEdges[id];
-        return {
-          puzzle: {
-            ...state.puzzle,
-            [dataLayer]: {
-              ...state.puzzle[dataLayer],
-              edges: newEdges,
-            },
-          },
-        };
-      });
-      historyManager.addAction(createRemoveEdgeAction(id, edgeElement));
-    } else if (wallElement) {
-      // Remove from legacy walls
-      set((state) => {
-        const dataLayer = toDataLayer(state.activeLayer);
-        const newWalls = { ...state.puzzle[dataLayer].walls };
-        delete newWalls[id];
-        return {
-          puzzle: {
-            ...state.puzzle,
-            [dataLayer]: {
-              ...state.puzzle[dataLayer],
-              walls: newWalls,
-            },
-          },
-        };
-      });
-      historyManager.addAction(createRemoveWallAction(id, wallElement));
+      get().historyManager.addAction(createRemoveLineAction(id, lineElement));
     }
   },
 
   updateLine: (id, updates) => {
     const state = get();
-    const layer = toDataLayer(state.activeLayer);
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer) {
+      return;
+    }
     const element = state.puzzle[layer].lines[id];
     if (element) {
       const newElement: LineElement = { ...element, ...updates };
@@ -259,125 +236,53 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
           },
         };
       });
-      historyManager.addAction(createUpdateLineAction(id, element, newElement, layer));
+      get().historyManager.addAction(createUpdateLineAction(id, element, newElement, layer));
     }
   },
 
   // Edge operations (deprecated - use addLine with lineTarget='edge')
   addEdge: (element) => {
-    const id = generateEdgeId();
-    // Add lineTarget='edge' for new unified representation
-    const fullElement: EdgeElement = { ...element, id, lineTarget: 'edge' };
-    set((state) => {
-      const layer = fullElement.layer;
-      return {
-        puzzle: {
-          ...state.puzzle,
-          [layer]: {
-            ...state.puzzle[layer],
-            edges: {
-              ...state.puzzle[layer].edges,
-              [id]: fullElement,
-            },
-          },
-        },
-      };
-    });
-    historyManager.addAction(createAddEdgeAction(fullElement));
-    return id;
+    if (!canEditLayer(element.layer)) {
+      return '';
+    }
+    return get().addLine({ ...element, lineTarget: 'edge' });
   },
 
   removeEdge: (id) => {
-    const state = get();
-    const layer = toDataLayer(state.activeLayer);
-    const element = state.puzzle[layer].edges[id];
-    if (element) {
-      set((state) => {
-        const dataLayer = toDataLayer(state.activeLayer);
-        const newEdges = { ...state.puzzle[dataLayer].edges };
-        delete newEdges[id];
-        return {
-          puzzle: {
-            ...state.puzzle,
-            [dataLayer]: {
-              ...state.puzzle[dataLayer],
-              edges: newEdges,
-            },
-          },
-        };
-      });
-      historyManager.addAction(createRemoveEdgeAction(id, element));
-    }
+    get().removeLine(id);
   },
 
   // Wall operations (deprecated - use addLine with lineTarget='wall')
   addWall: (element) => {
-    const id = generateWallId();
-    // Ensure lineTarget='wall' for backward compatibility
-    const fullElement: WallElement = {
-      ...element,
-      id,
-      lineTarget: 'wall',
-    };
-    set((state) => {
-      const layer = fullElement.layer;
-      return {
-        puzzle: {
-          ...state.puzzle,
-          [layer]: {
-            ...state.puzzle[layer],
-            walls: {
-              ...state.puzzle[layer].walls,
-              [id]: fullElement,
-            },
-          },
-        },
-      };
-    });
-    historyManager.addAction(createAddWallAction(fullElement));
-    return id;
+    if (!canEditLayer(element.layer)) {
+      return '';
+    }
+    return get().addLine({ ...element, lineTarget: 'wall' });
   },
 
   removeWall: (id) => {
-    const state = get();
-    const layer = toDataLayer(state.activeLayer);
-    const element = state.puzzle[layer].walls[id];
-    if (element) {
-      set((state) => {
-        const dataLayer = toDataLayer(state.activeLayer);
-        const newWalls = { ...state.puzzle[dataLayer].walls };
-        delete newWalls[id];
-        return {
-          puzzle: {
-            ...state.puzzle,
-            [dataLayer]: {
-              ...state.puzzle[dataLayer],
-              walls: newWalls,
-            },
-          },
-        };
-      });
-      historyManager.addAction(createRemoveWallAction(id, element));
-    }
+    get().removeLine(id);
   },
 
   // Number operations
   addNumber: (element) => {
     const id = generateNumberId();
     const fullElement: NumberElement = { ...element, id };
+    if (!canEditLayer(fullElement.layer)) {
+      return '';
+    }
     set((state) => {
       const layer = fullElement.layer;
+      const isDirectional = isDirectionalNumber(fullElement);
       const newNumbers = { ...state.puzzle[layer].numbers, [id]: fullElement };
 
-      // If adding center number, remove any directionalClue at the same cell
-      let newClues = state.puzzle[layer].directionalClues || {};
       if (fullElement.position === 'center') {
-        const existingClueEntry = Object.entries(newClues).find(
-          ([, clue]) => clue.cellId === fullElement.cellId
-        );
-        if (existingClueEntry) {
-          newClues = { ...newClues };
-          delete newClues[existingClueEntry[0]];
+        for (const [existingId, num] of Object.entries(newNumbers)) {
+          if (existingId === id) continue;
+          if (num.cellId !== fullElement.cellId || num.position !== 'center') continue;
+          if (isDirectional || isDirectionalNumber(num)) {
+            delete newNumbers[existingId];
+          }
         }
       }
 
@@ -387,18 +292,20 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
           [layer]: {
             ...state.puzzle[layer],
             numbers: newNumbers,
-            directionalClues: newClues,
           },
         },
       };
     });
-    historyManager.addAction(createAddNumberAction(fullElement));
+    get().historyManager.addAction(createAddNumberAction(fullElement));
     return id;
   },
 
   removeNumber: (id) => {
     const state = get();
-    const layer = toDataLayer(state.activeLayer);
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer) {
+      return;
+    }
     const element = state.puzzle[layer].numbers[id];
     if (element) {
       set((state) => {
@@ -415,17 +322,21 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
           },
         };
       });
-      historyManager.addAction(createRemoveNumberAction(id, element));
+      get().historyManager.addAction(createRemoveNumberAction(id, element));
     }
   },
 
   updateNumber: (id, value) => {
     const state = get();
-    const layer = toDataLayer(state.activeLayer);
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer) {
+      return;
+    }
     const element = state.puzzle[layer].numbers[id];
     if (element) {
       set((state) => {
         const dataLayer = toDataLayer(state.activeLayer);
+        const updatedElement = { ...element, value };
         return {
           puzzle: {
             ...state.puzzle,
@@ -433,13 +344,13 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
               ...state.puzzle[dataLayer],
               numbers: {
                 ...state.puzzle[dataLayer].numbers,
-                [id]: { ...element, value },
+                [id]: updatedElement,
               },
             },
           },
         };
       });
-      historyManager.addAction(createUpdateNumberAction(id, element.value, value, layer));
+      get().historyManager.addAction(createUpdateNumberAction(id, element.value, value, layer));
     }
   },
 
@@ -447,6 +358,9 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
   addSymbol: (element) => {
     const id = generateSymbolId();
     const fullElement: SymbolElement = { ...element, id };
+    if (!canEditLayer(fullElement.layer)) {
+      return '';
+    }
     set((state) => {
       const layer = fullElement.layer;
       return {
@@ -462,13 +376,16 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
         },
       };
     });
-    historyManager.addAction(createAddSymbolAction(fullElement));
+    get().historyManager.addAction(createAddSymbolAction(fullElement));
     return id;
   },
 
   removeSymbol: (id) => {
     const state = get();
-    const layer = toDataLayer(state.activeLayer);
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer) {
+      return;
+    }
     const element = state.puzzle[layer].symbols[id];
     if (element) {
       set((state) => {
@@ -485,7 +402,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
           },
         };
       });
-      historyManager.addAction(createRemoveSymbolAction(id, element));
+      get().historyManager.addAction(createRemoveSymbolAction(id, element));
     }
   },
 
@@ -493,6 +410,9 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
   addCage: (element) => {
     const id = generateCageId();
     const fullElement: CageElement = { ...element, id };
+    if (!canEditLayer(fullElement.layer)) {
+      return '';
+    }
     set((state) => {
       const layer = fullElement.layer;
       return {
@@ -508,13 +428,16 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
         },
       };
     });
-    historyManager.addAction(createAddCageAction(fullElement));
+    get().historyManager.addAction(createAddCageAction(fullElement));
     return id;
   },
 
   removeCage: (id) => {
     const state = get();
-    const layer = toDataLayer(state.activeLayer);
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer) {
+      return;
+    }
     const element = state.puzzle[layer].cages[id];
     if (element) {
       set((state) => {
@@ -531,7 +454,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
           },
         };
       });
-      historyManager.addAction(createRemoveCageAction(id, element));
+      get().historyManager.addAction(createRemoveCageAction(id, element));
     }
   },
 
@@ -539,6 +462,9 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
   addSpecial: (element) => {
     const id = generateSpecialId();
     const fullElement: SpecialElement = { ...element, id };
+    if (!canEditLayer(fullElement.layer)) {
+      return '';
+    }
     set((state) => {
       const layer = fullElement.layer;
       return {
@@ -554,13 +480,16 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
         },
       };
     });
-    historyManager.addAction(createAddSpecialAction(fullElement));
+    get().historyManager.addAction(createAddSpecialAction(fullElement));
     return id;
   },
 
   removeSpecial: (id) => {
     const state = get();
-    const layer = toDataLayer(state.activeLayer);
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer) {
+      return;
+    }
     const element = state.puzzle[layer].specials[id];
     if (element) {
       set((state) => {
@@ -577,7 +506,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
           },
         };
       });
-      historyManager.addAction(createRemoveSpecialAction(id, element));
+      get().historyManager.addAction(createRemoveSpecialAction(id, element));
     }
   },
 
@@ -585,6 +514,9 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
   addBoxLine: (element) => {
     const id = generateBoxLineId();
     const fullElement: BoxLineElement = { ...element, id };
+    if (!canEditLayer(fullElement.layer)) {
+      return '';
+    }
     set((state) => {
       const layer = fullElement.layer;
       return {
@@ -605,7 +537,10 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   removeBoxLine: (id) => {
     const state = get();
-    const layer = toDataLayer(state.activeLayer);
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer) {
+      return;
+    }
     const boxLines = state.puzzle[layer].boxLines || {};
     if (boxLines[id]) {
       set((state) => {
@@ -627,7 +562,10 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   updateBoxLine: (id, cells) => {
     const state = get();
-    const layer = toDataLayer(state.activeLayer);
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer) {
+      return;
+    }
     const boxLines = state.puzzle[layer].boxLines || {};
     const element = boxLines[id];
     if (element) {
@@ -651,28 +589,36 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   // DirectionalClue operations
   addDirectionalClue: (element) => {
-    const id = generateDirectionalClueId();
+    const id = generateNumberId();
     const fullElement = { ...element, id };
+    if (!canEditLayer(fullElement.layer)) {
+      return '';
+    }
     set((state) => {
       const layer = fullElement.layer;
-      const clues = { ...(state.puzzle[layer].directionalClues || {}) };
-      // enforce one clue per cell (using cellId for lookup)
-      const existingEntry = Object.entries(clues).find(
-        ([, clue]) => clue.cellId === fullElement.cellId
-      );
-      if (existingEntry) {
-        delete clues[existingEntry[0]];
-      }
-      clues[id] = fullElement;
+      const displayValue = getDirectionalClueDisplayValue(fullElement) ?? '';
+      let newNumbers: Record<string, NumberElement> = {
+        ...state.puzzle[layer].numbers,
+        [id]: {
+          id,
+          cellId: fullElement.cellId,
+          value: displayValue,
+          size: 'large',
+          position: 'center',
+          direction: fullElement.direction,
+          angle: fullElement.angle ?? null,
+          color: fullElement.color || '#000',
+          layer: fullElement.layer,
+          objectKey: fullElement.objectKey,
+        },
+      };
 
       // Remove any center number at the same cell (mutual exclusivity)
-      let newNumbers = state.puzzle[layer].numbers;
-      const existingNumberEntry = Object.entries(newNumbers).find(
-        ([, num]) => num.cellId === fullElement.cellId && num.position === 'center'
-      );
-      if (existingNumberEntry) {
-        newNumbers = { ...newNumbers };
-        delete newNumbers[existingNumberEntry[0]];
+      for (const [existingId, num] of Object.entries(newNumbers)) {
+        if (existingId === id) continue;
+        if (num.cellId === fullElement.cellId && num.position === 'center') {
+          delete newNumbers[existingId];
+        }
       }
 
       return {
@@ -680,7 +626,6 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
           ...state.puzzle,
           [layer]: {
             ...state.puzzle[layer],
-            directionalClues: clues,
             numbers: newNumbers,
           },
         },
@@ -690,16 +635,23 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
   },
 
   removeDirectionalClue: (id) => {
+    const state = get();
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer) {
+      return;
+    }
+    const element = state.puzzle[layer].numbers[id];
+    if (!element) return;
     set((state) => {
-      const layer = toDataLayer(state.activeLayer);
-      const clues = { ...(state.puzzle[layer].directionalClues || {}) };
-      delete clues[id];
+      const dataLayer = toDataLayer(state.activeLayer);
+      const newNumbers = { ...state.puzzle[dataLayer].numbers };
+      delete newNumbers[id];
       return {
         puzzle: {
           ...state.puzzle,
-          [layer]: {
-            ...state.puzzle[layer],
-            directionalClues: clues,
+          [dataLayer]: {
+            ...state.puzzle[dataLayer],
+            numbers: newNumbers,
           },
         },
       };
@@ -709,14 +661,15 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
   // Line group operations (for arrow chains, etc.)
   addLineGroup: (lineIds, groupType) => {
     const state = get();
-    const layer = toDataLayer(state.activeLayer);
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer) {
+      return '';
+    }
     const lines = state.puzzle[layer].lines || {};
-    const edges = state.puzzle[layer].edges || {};
-    const walls = state.puzzle[layer].walls || {};
     const context: GeometryContext = { grid: state.grid, topology: state.topology };
 
     // Build LineWithPosition array using helper
-    const groupLines = buildLinesWithPosition(lineIds, lines, edges, walls, context);
+    const groupLines = buildLinesWithPosition(lineIds, lines, context);
 
     // Normalize and get arrow directions using helper
     const { id, lineIds: normalizedIds, arrowDirections } = normalizeLineGroupWithExisting(groupLines);
@@ -745,18 +698,19 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   removeLineGroup: (groupId) => {
     const state = get();
-    const layer = toDataLayer(state.activeLayer);
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer) {
+      return;
+    }
     const groups = state.puzzle[layer].lineGroups || {};
     const group = groups[groupId];
     if (!group) return;
 
     const lines = state.puzzle[layer].lines || {};
-    const edges = state.puzzle[layer].edges || {};
-    const walls = state.puzzle[layer].walls || {};
     const context: GeometryContext = { grid: state.grid, topology: state.topology };
 
     // Build LineWithPosition array and normalize to get correct arrow directions
-    const groupLines = buildLinesWithPosition(group.lineIds, lines, edges, walls, context);
+    const groupLines = buildLinesWithPosition(group.lineIds, lines, context);
     const { arrowDirections } = normalizeLineGroupWithExisting(groupLines);
 
     set((state) => {
@@ -781,7 +735,10 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   addLinesToGroup: (groupId, lineIds) => {
     const state = get();
-    const layer = toDataLayer(state.activeLayer);
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer) {
+      return;
+    }
     const groups = state.puzzle[layer].lineGroups || {};
     const group = groups[groupId];
     if (group) {
@@ -806,7 +763,10 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   removeLinesFromGroup: (groupId, lineIds) => {
     const state = get();
-    const layer = toDataLayer(state.activeLayer);
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer) {
+      return;
+    }
     const groups = state.puzzle[layer].lineGroups || {};
     const group = groups[groupId];
     if (group) {
@@ -854,7 +814,10 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   splitLineGroup: (groupId, splitAtLineId) => {
     const state = get();
-    const layer = toDataLayer(state.activeLayer);
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer) {
+      return { group1: null, group2: null };
+    }
     const groups = state.puzzle[layer].lineGroups || {};
     const group = groups[groupId];
 
@@ -863,12 +826,10 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
     }
 
     const lines = state.puzzle[layer].lines || {};
-    const edges = state.puzzle[layer].edges || {};
-    const walls = state.puzzle[layer].walls || {};
     const context: GeometryContext = { grid: state.grid, topology: state.topology };
 
     // Build LineWithPosition array using helper
-    const groupLines = buildLinesWithPosition(group.lineIds, lines, edges, walls, context);
+    const groupLines = buildLinesWithPosition(group.lineIds, lines, context);
 
     // Normalize the chain first
     const normalizedChain = normalizeChain(groupLines);
@@ -928,19 +889,20 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   normalizeLineGroup: (groupId) => {
     const state = get();
-    const layer = toDataLayer(state.activeLayer);
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer) {
+      return;
+    }
     const groups = state.puzzle[layer].lineGroups || {};
     const group = groups[groupId];
 
     if (!group) return;
 
     const lines = state.puzzle[layer].lines || {};
-    const edges = state.puzzle[layer].edges || {};
-    const walls = state.puzzle[layer].walls || {};
     const context: GeometryContext = { grid: state.grid, topology: state.topology };
 
     // Build LineWithPosition array and normalize using helpers
-    const groupLines = buildLinesWithPosition(group.lineIds, lines, edges, walls, context);
+    const groupLines = buildLinesWithPosition(group.lineIds, lines, context);
     const { lineIds: normalizedIds, arrowDirections } = normalizeLineGroupWithExisting(groupLines, groupId);
 
     set((state) => {
@@ -969,14 +931,15 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   groupSelectedLinesByConnectivity: (lineIds) => {
     const state = get();
-    const layer = toDataLayer(state.activeLayer);
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer) {
+      return [];
+    }
     const lines = state.puzzle[layer].lines || {};
-    const edges = state.puzzle[layer].edges || {};
-    const walls = state.puzzle[layer].walls || {};
     const context: GeometryContext = { grid: state.grid, topology: state.topology };
 
     // Build LineWithPosition array using helper
-    const selectedLines = buildLinesWithPosition(lineIds, lines, edges, walls, context);
+    const selectedLines = buildLinesWithPosition(lineIds, lines, context);
     if (selectedLines.length === 0) return [];
 
     // Group and normalize using helper
@@ -1012,14 +975,15 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   groupSelectedLinesByCollinearity: (lineIds) => {
     const state = get();
-    const layer = toDataLayer(state.activeLayer);
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer) {
+      return [];
+    }
     const lines = state.puzzle[layer].lines || {};
-    const edges = state.puzzle[layer].edges || {};
-    const walls = state.puzzle[layer].walls || {};
     const context: GeometryContext = { grid: state.grid, topology: state.topology };
 
     // Build LineWithPosition array using helper
-    const selectedLines = buildLinesWithPosition(lineIds, lines, edges, walls, context);
+    const selectedLines = buildLinesWithPosition(lineIds, lines, context);
     if (selectedLines.length === 0) return [];
 
     // Group by collinearity and normalize using helper
@@ -1055,6 +1019,9 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   // Room map operations (for Heyawake, etc.)
   setRoomMap: (roomMap) => {
+    if (!canEditLayer('problem')) {
+      return;
+    }
     set((state) => ({
       puzzle: {
         ...state.puzzle,
@@ -1067,6 +1034,9 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
   },
 
   clearRoomMap: () => {
+    if (!canEditLayer('problem')) {
+      return;
+    }
     set((state) => {
       const { roomMap, ...rest } = state.puzzle.problem;
       return {
@@ -1080,6 +1050,9 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
 
   // Clear operations
   clearLayer: (layer) => {
+    if (!canEditLayer(layer)) {
+      return;
+    }
     set((state) => ({
       puzzle: {
         ...state.puzzle,
@@ -1088,11 +1061,15 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => ({
     }));
   },
 
-  clearAll: () => {
-    set({
-      puzzle: createEmptyState(),
-    });
-    historyManager.clear();
-    resetIdCounters();
-  },
-});
+    clearAll: () => {
+      if (!canEditLayer('problem')) {
+        return;
+      }
+      set({
+        puzzle: createEmptyState(),
+      });
+      get().historyManager.clear();
+      resetIdCounters();
+    },
+  };
+};

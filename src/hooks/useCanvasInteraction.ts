@@ -22,7 +22,7 @@
  */
 
 import { useCallback, useState, useEffect, useMemo } from 'react';
-import { usePuzzleStore } from '../store/puzzleStore';
+import { usePuzzleStore } from '../store/puzzleStoreContext';
 import { screenToSvg } from '../utils/gridUtils';
 import { useToolHandlers } from './useToolHandlers';
 import { useSelectionTool, type SelectionRect } from './useSelectionTool';
@@ -43,12 +43,14 @@ import {
   type GridEditMode as StateMachineGridEditMode,
 } from './interactionStateMachine';
 import type { Point } from '../types';
+import { shouldAllowOutboardForTool } from '../utils/outboardPolicy';
 
 interface UseCanvasInteractionOptions {
   svgRef: React.RefObject<SVGSVGElement | null>;
+  allowMultiTouchPanZoom?: boolean;
 }
 
-export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
+export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom }: UseCanvasInteractionOptions) {
   const {
     grid,
     canvas,
@@ -367,6 +369,7 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
   // Touch handlers
   const { handleTouchStart, handleTouchMove, handleTouchEnd } = useTouchHandlers({
     svgRef,
+    allowMultiTouchPanZoom,
     toolHandlers,
     drawStartPoint,
     setDrawStartPoint,
@@ -464,14 +467,19 @@ export function useCanvasInteraction({ svgRef }: UseCanvasInteractionOptions) {
       }
 
       const allowedGridPoints = toolSettings.symbolGridPoints || ['cell'];
-      const gridPoint = findNearestGridPoint(point, allowedGridPoints);
+      const gridPoint = findNearestGridPoint(
+        point,
+        allowedGridPoints,
+        false,
+        { allowOutboard: shouldAllowOutboardForTool(tool, activeLayer) }
+      );
       if (gridPoint) {
         setSymbolHoverPoint(gridPoint.position);
       } else {
         setSymbolHoverPoint(null);
       }
     },
-    [toolSettings.currentTool, toolSettings.symbolGridPoints, findNearestGridPoint]
+    [toolSettings.currentTool, toolSettings.symbolGridPoints, activeLayer, findNearestGridPoint]
   );
 
   return {

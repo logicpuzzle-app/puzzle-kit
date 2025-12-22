@@ -230,7 +230,8 @@ export function getMaxDigitsForGrid(
     const maxDimension = Math.max(rows, cols);
     if (maxDimension <= 20) return 1;
     if (maxDimension <= 200) return 2;
-    return 3;
+    if (maxDimension <= 2000) return 3;
+    return 4;
   }
 
   // Other puzzles: based on total cells

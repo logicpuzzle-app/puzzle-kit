@@ -123,7 +123,7 @@ class SolverWorkerManager {
    */
   hasSolver(pid: string): boolean {
     // List of supported solvers in the worker
-    const supportedSolvers = ['slither', 'mashu', 'yajilin', 'heyawake', 'nurikabe'];
+    const supportedSolvers = ['slither', 'mashu', 'yajilin', 'heyawake', 'nurikabe', 'nurimisaki'];
     return supportedSolvers.includes(pid);
   }
 

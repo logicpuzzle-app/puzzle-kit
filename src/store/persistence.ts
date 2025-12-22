@@ -407,44 +407,44 @@ export const persistenceManager = new PersistenceManager();
 
 import { useState, useEffect, useCallback } from 'react';
 
-export function usePersistence() {
+export function usePersistence(manager: PersistenceManager = persistenceManager) {
   const [slots, setSlots] = useState<PuzzleSlot[]>([]);
   const [hasAutoSave, setHasAutoSave] = useState(false);
 
   useEffect(() => {
     // Initial load
-    setSlots(persistenceManager.getSlots());
+    setSlots(manager.getSlots());
 
     // Check for auto-save asynchronously
-    persistenceManager.loadAutoSave().then(result => {
+    manager.loadAutoSave().then(result => {
       setHasAutoSave(result !== null);
     });
 
     // Subscribe to changes
-    const unsubscribe = persistenceManager.subscribe(setSlots);
+    const unsubscribe = manager.subscribe(setSlots);
     return unsubscribe;
-  }, []);
+  }, [manager]);
 
   const saveToSlot = useCallback(async (slotId: string, state: PersistedState, name?: string) => {
-    return persistenceManager.saveToSlot(slotId, state, name);
-  }, []);
+    return manager.saveToSlot(slotId, state, name);
+  }, [manager]);
 
   const loadFromSlot = useCallback(async (slotId: string) => {
-    return persistenceManager.loadFromSlot(slotId);
-  }, []);
+    return manager.loadFromSlot(slotId);
+  }, [manager]);
 
   const deleteSlot = useCallback((slotId: string) => {
-    return persistenceManager.deleteSlot(slotId);
-  }, []);
+    return manager.deleteSlot(slotId);
+  }, [manager]);
 
   const loadAutoSave = useCallback(async () => {
-    return persistenceManager.loadAutoSave();
-  }, []);
+    return manager.loadAutoSave();
+  }, [manager]);
 
   const clearAutoSave = useCallback(() => {
-    persistenceManager.clearAutoSave();
+    manager.clearAutoSave();
     setHasAutoSave(false);
-  }, []);
+  }, [manager]);
 
   return {
     slots,
@@ -454,7 +454,7 @@ export function usePersistence() {
     deleteSlot,
     loadAutoSave,
     clearAutoSave,
-    exportAsJson: persistenceManager.exportAsJson.bind(persistenceManager),
-    importFromJson: persistenceManager.importFromJson.bind(persistenceManager),
+    exportAsJson: manager.exportAsJson.bind(manager),
+    importFromJson: manager.importFromJson.bind(manager),
   };
 }

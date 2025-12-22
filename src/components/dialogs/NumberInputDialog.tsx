@@ -1,7 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-
-export type NumberPosition = 'center' | 'corner' | 'side' | 'candidates';
+import type { NumberPosition } from '../../types';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { constraintCatalog } from '../../constraints/ConstraintCatalog';
+import { getAutoModeConfig } from '../../constraints/inputModeMapping';
+import { getEditableDataLayer } from '../../utils/editPolicy';
+import { appendDigit, getMaxDigitsForGrid } from '../../hooks/keyboardUtils';
+import { candidatesToValue, limitNumericString, normalizeCandidates } from '../../utils/numberEntries';
 
 interface NumberInputDialogProps {
   isOpen: boolean;
@@ -12,6 +17,7 @@ interface NumberInputDialogProps {
   initialCornerIndex?: number;
   initialSideIndex?: number;
   initialCandidates?: number[];
+  maxDigits?: number;
   onSubmit: (data: {
     value: string;
     position: NumberPosition;
@@ -30,15 +36,39 @@ export const NumberInputDialog: React.FC<NumberInputDialogProps> = ({
   initialCornerIndex,
   initialSideIndex,
   initialCandidates,
+  maxDigits,
   onSubmit,
 }) => {
   const { t } = useTranslation();
+  const {
+    grid,
+    toolSettings,
+    activeLayer,
+    isPlayerMode,
+    currentSchemaId,
+    currentInputMode,
+    showConstraintLayer,
+  } = usePuzzleStore();
   const [value, setValue] = useState(initialValue);
   const [position, setPosition] = useState<NumberPosition>(initialPosition);
   const [cornerIndex, setCornerIndex] = useState<number>(initialCornerIndex ?? 0);
   const [sideIndex, setSideIndex] = useState<number>(initialSideIndex ?? 0);
   const [candidates, setCandidates] = useState<Set<number>>(new Set(initialCandidates ?? []));
   const inputRef = useRef<HTMLInputElement>(null);
+  const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
+  const isEditMode = editableLayer === 'problem';
+  const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
+  const isConstraintEnabled = showConstraintLayer && currentSchemaId !== null;
+  const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
+  const isDirecType = toolSettings.currentTool === 'number-directional' ||
+    (isConstraintEnabled && (
+      currentInputMode === 'direc' ||
+      (currentInputMode === 'auto' && autoConfig.type === 'direc')
+    ));
+  const effectiveMaxDigits = useMemo(
+    () => maxDigits ?? getMaxDigitsForGrid(grid.rows, grid.cols, isDirecType),
+    [grid.rows, grid.cols, isDirecType, maxDigits]
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -46,7 +76,7 @@ export const NumberInputDialog: React.FC<NumberInputDialogProps> = ({
       setPosition(initialPosition);
       setCornerIndex(initialCornerIndex ?? 0);
       setSideIndex(initialSideIndex ?? 0);
-      setCandidates(new Set(initialCandidates ?? []));
+      setCandidates(new Set(normalizeCandidates(initialCandidates ?? [])));
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [isOpen, initialValue, initialPosition, initialCornerIndex, initialSideIndex, initialCandidates]);
@@ -54,11 +84,12 @@ export const NumberInputDialog: React.FC<NumberInputDialogProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (position === 'candidates') {
-      if (candidates.size > 0) {
+      const normalizedCandidates = normalizeCandidates(candidates);
+      if (normalizedCandidates.length > 0) {
         onSubmit({
-          value: Array.from(candidates).sort((a, b) => a - b).join(''),
+          value: candidatesToValue(normalizedCandidates),
           position,
-          candidates: Array.from(candidates).sort((a, b) => a - b),
+          candidates: normalizedCandidates,
         });
       }
     } else if (value.trim()) {
@@ -92,7 +123,10 @@ export const NumberInputDialog: React.FC<NumberInputDialogProps> = ({
 
   // Quick number buttons
   const handleQuickNumber = (num: string) => {
-    setValue((prev) => prev + num);
+    setValue((prev) => {
+      const normalized = prev === '?' ? null : prev;
+      return appendDigit(normalized, num, effectiveMaxDigits);
+    });
   };
 
   if (!isOpen) return null;
@@ -114,7 +148,7 @@ export const NumberInputDialog: React.FC<NumberInputDialogProps> = ({
               type="text"
               className="input-office w-full"
               value={value}
-              onChange={(e) => setValue(e.target.value)}
+              onChange={(e) => setValue(limitNumericString(e.target.value, effectiveMaxDigits))}
               placeholder="1, 2, 3..."
               maxLength={20}
             />
@@ -270,7 +304,7 @@ export const NumberInputDialog: React.FC<NumberInputDialogProps> = ({
               </div>
               <div className="text-center text-xs text-office-text-secondary mt-2">
                 {candidates.size > 0
-                  ? `Selected: ${Array.from(candidates).sort((a, b) => a - b).join(', ')}`
+                  ? `Selected: ${normalizeCandidates(candidates).join(', ')}`
                   : t('tool.number.noCandidatesSelected') || 'Click numbers to toggle'}
               </div>
             </div>

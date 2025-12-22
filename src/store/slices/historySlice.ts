@@ -4,7 +4,6 @@
 
 import type { HistorySlice, SliceCreator, PuzzleStore } from './types';
 import type { PuzzleAction } from '../actions';
-import { historyManager } from '../historyManager';
 import { createEmptyElements } from './types';
 
 /**
@@ -15,6 +14,18 @@ export const applyActionToState = (
   state: PuzzleStore,
   action: PuzzleAction
 ): Partial<PuzzleStore> => {
+  const normalizeLegacyLine = (element: any, fallbackTarget: 'edge' | 'wall') => {
+    const lineTarget = element.lineTarget ?? fallbackTarget;
+    const normalizedId = element.edgeId
+      ? `${lineTarget}-${element.edgeId}`
+      : element.id;
+    return {
+      lineTarget,
+      id: normalizedId,
+      element: normalizedId !== element.id ? { ...element, id: normalizedId, lineTarget } : { ...element, lineTarget },
+    };
+  };
+
   switch (action.type) {
     case 'ADD_SURFACE': {
       const layer = action.element.layer;
@@ -76,14 +87,15 @@ export const applyActionToState = (
     }
     case 'ADD_EDGE': {
       const layer = action.element.layer;
+      const normalized = normalizeLegacyLine(action.element, 'edge');
       return {
         puzzle: {
           ...state.puzzle,
           [layer]: {
             ...state.puzzle[layer],
-            edges: {
-              ...state.puzzle[layer].edges,
-              [action.element.id]: action.element,
+            lines: {
+              ...state.puzzle[layer].lines,
+              [normalized.id]: normalized.element,
             },
           },
         },
@@ -91,28 +103,33 @@ export const applyActionToState = (
     }
     case 'REMOVE_EDGE': {
       const layer = action.element.layer;
-      const newEdges = { ...state.puzzle[layer].edges };
-      delete newEdges[action.id];
+      const normalized = normalizeLegacyLine(action.element, 'edge');
+      const newLines = { ...state.puzzle[layer].lines };
+      delete newLines[normalized.id];
+      if (action.id !== normalized.id) {
+        delete newLines[action.id];
+      }
       return {
         puzzle: {
           ...state.puzzle,
           [layer]: {
             ...state.puzzle[layer],
-            edges: newEdges,
+            lines: newLines,
           },
         },
       };
     }
     case 'ADD_WALL': {
       const layer = action.element.layer;
+      const normalized = normalizeLegacyLine(action.element, 'wall');
       return {
         puzzle: {
           ...state.puzzle,
           [layer]: {
             ...state.puzzle[layer],
-            walls: {
-              ...state.puzzle[layer].walls,
-              [action.element.id]: action.element,
+            lines: {
+              ...state.puzzle[layer].lines,
+              [normalized.id]: normalized.element,
             },
           },
         },
@@ -120,14 +137,18 @@ export const applyActionToState = (
     }
     case 'REMOVE_WALL': {
       const layer = action.element.layer;
-      const newWalls = { ...state.puzzle[layer].walls };
-      delete newWalls[action.id];
+      const normalized = normalizeLegacyLine(action.element, 'wall');
+      const newLines = { ...state.puzzle[layer].lines };
+      delete newLines[normalized.id];
+      if (action.id !== normalized.id) {
+        delete newLines[action.id];
+      }
       return {
         puzzle: {
           ...state.puzzle,
           [layer]: {
             ...state.puzzle[layer],
-            walls: newWalls,
+            lines: newLines,
           },
         },
       };
@@ -297,30 +318,30 @@ export const applyActionToState = (
 
 export const createHistorySlice: SliceCreator<HistorySlice> = (set, get) => ({
   undo: () => {
-    const actions = historyManager.getUndoActions();
+    const actions = get().historyManager.getUndoActions();
     if (actions.length === 0) return;
 
     actions.forEach((action) => {
       set((state) => applyActionToState(state, action));
     });
-    historyManager.moveToUndo();
+    get().historyManager.moveToUndo();
   },
 
   redo: () => {
-    const actions = historyManager.getRedoActions();
+    const actions = get().historyManager.getRedoActions();
     if (actions.length === 0) return;
 
     actions.forEach((action) => {
       set((state) => applyActionToState(state, action));
     });
-    historyManager.moveToRedo();
+    get().historyManager.moveToRedo();
   },
 
-  canUndo: () => historyManager.canUndo(),
+  canUndo: () => get().historyManager.canUndo(),
 
-  canRedo: () => historyManager.canRedo(),
+  canRedo: () => get().historyManager.canRedo(),
 
-  startHistoryGroup: () => historyManager.startGroup(),
+  startHistoryGroup: () => get().historyManager.startGroup(),
 
-  endHistoryGroup: () => historyManager.endGroup(),
+  endHistoryGroup: () => get().historyManager.endGroup(),
 });

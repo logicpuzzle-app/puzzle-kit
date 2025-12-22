@@ -21,6 +21,12 @@ import { getCellIndexById, getEdgeIndexById } from '../../utils/gridUtils';
 // Helper Functions
 // ========================================
 
+function getEdgeLines(ctx: ValidationContext) {
+  return Object.values(ctx.puzzle.answer.lines).filter(
+    (line) => line.lineTarget === 'edge' || (!line.lineTarget && line.from?.startsWith('vertex-'))
+  );
+}
+
 function resolveEdgeEndpoints(ctx: ValidationContext, edge: { from?: string; to?: string; edgeId?: string }): { from: string; to: string } | null {
   if (edge.from && edge.to) return { from: edge.from, to: edge.to };
 
@@ -54,7 +60,7 @@ function getCellBorderLineCountTopology(
   cellVertices: string[]
 ): number {
   let count = 0;
-  const edges = ctx.puzzle.answer.edges;
+  const edges = getEdgeLines(ctx);
 
   // Build a set of valid edge pairs for this cell
   const validEdges = new Set<string>();
@@ -67,7 +73,7 @@ function getCellBorderLineCountTopology(
   }
 
   // Count edges that are on this cell's border
-  for (const edge of Object.values(edges)) {
+  for (const edge of edges) {
     const endpoints = resolveEdgeEndpoints(ctx, edge);
     if (!endpoints) continue;
     const key = endpoints.from < endpoints.to
@@ -86,9 +92,9 @@ function getCellBorderLineCountTopology(
  */
 function buildVertexCounts(ctx: ValidationContext): Map<string, number> {
   const vertexCounts = new Map<string, number>();
-  const edges = ctx.puzzle.answer.edges;
+  const edges = getEdgeLines(ctx);
 
-  for (const edge of Object.values(edges)) {
+  for (const edge of edges) {
     const endpoints = resolveEdgeEndpoints(ctx, edge);
     if (!endpoints) continue;
     vertexCounts.set(endpoints.from, (vertexCounts.get(endpoints.from) || 0) + 1);
@@ -106,7 +112,7 @@ function buildVertexCounts(ctx: ValidationContext): Map<string, number> {
  * checkLineExist - Check if any edge lines exist
  */
 function checkLineExist(ctx: ValidationContext): CheckResult {
-  const edgeCount = Object.keys(ctx.puzzle.answer.edges).length;
+  const edgeCount = getEdgeLines(ctx).length;
   if (edgeCount === 0) {
     return { ok: false };
   }
@@ -150,7 +156,7 @@ function getCellBorderLineCountSquare(
   col: number
 ): number {
   let count = 0;
-  const edges = ctx.puzzle.answer.edges;
+  const edges = getEdgeLines(ctx);
 
   // Cell at (row, col) has 4 border edges:
   // Top: vertex-(row)-(col) to vertex-(row)-(col+1)
@@ -170,7 +176,7 @@ function getCellBorderLineCountSquare(
     [topRight, bottomRight],   // right
   ];
 
-  for (const edge of Object.values(edges)) {
+  for (const edge of edges) {
     for (const [v1, v2] of cellEdges) {
       const endpoints = resolveEdgeEndpoints(ctx, edge);
       if (!endpoints) continue;
@@ -231,8 +237,7 @@ function checkDeadendLine(ctx: ValidationContext): CheckResult {
  * checkOneLoop - Check that all lines form a single connected loop
  */
 function checkOneLoop(ctx: ValidationContext): CheckResult {
-  const edges = ctx.puzzle.answer.edges;
-  const edgeList = Object.values(edges);
+  const edgeList = getEdgeLines(ctx);
 
   if (edgeList.length === 0) return { ok: true };
 
@@ -282,7 +287,7 @@ function checkOneLoop(ctx: ValidationContext): CheckResult {
 // ========================================
 
 // Edge-based functions (vertex-to-vertex connections, e.g., Slitherlink)
-// These check edges stored in puzzle.answer.edges
+// These check lines with lineTarget='edge'
 registerCheckFunction('checkEdgeExist', checkLineExist);
 registerCheckFunction('checkEdgeBranch', checkBranchLine);
 registerCheckFunction('checkEdgeCross', checkCrossLine);

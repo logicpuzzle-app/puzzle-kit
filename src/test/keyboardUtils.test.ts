@@ -158,6 +158,10 @@ describe('keyboardUtils', () => {
       it('returns 3 for large grids', () => {
         expect(getMaxDigitsForGrid(300, 300, true)).toBe(3);
       });
+
+      it('returns 4 for huge grids', () => {
+        expect(getMaxDigitsForGrid(3000, 3000, true)).toBe(4);
+      });
     });
 
     describe('for regular puzzles', () => {

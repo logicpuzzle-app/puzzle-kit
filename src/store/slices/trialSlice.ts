@@ -36,7 +36,6 @@ function cloneElements(elements: PuzzleElements): PuzzleElements {
     cages: { ...elements.cages },
     specials: { ...elements.specials },
     boxLines: { ...elements.boxLines },
-    directionalClues: { ...elements.directionalClues },
   };
 }
 

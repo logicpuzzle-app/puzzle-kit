@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
-import { usePuzzleStore } from '../store/puzzleStore';
-import { findNearestCell, getCellId } from '../utils/gridUtils';
-import { findNearestCellInTopology } from '../utils/gridTopology';
+import { usePuzzleStore } from '../store/puzzleStoreContext';
+import { resolveCell } from '../utils/pointResolver';
+import { shouldAllowOutboardForTool } from '../utils/outboardPolicy';
 import type { Point } from '../types';
 import { toDataLayer } from '../types';
 
@@ -35,12 +35,13 @@ export function useSelectionTool({ getMousePosition }: UseSelectionToolOptions) 
 
   // Helper to find cell considering topology mode
   const findCellId = useCallback((point: Point): string | null => {
-    if (useTopology && topology) {
-      return findNearestCellInTopology(topology, point)?.id ?? null;
-    }
-    const cell = findNearestCell(point, grid);
-    return cell ? getCellId(cell.row, cell.col, grid.gridType) : null;
-  }, [grid, useTopology, topology]);
+    const cell = resolveCell(
+      point,
+      { grid, useTopology, topology },
+      { allowOutboard: shouldAllowOutboardForTool('select', activeLayer) }
+    );
+    return cell ? cell.cellId : null;
+  }, [grid, useTopology, topology, activeLayer]);
 
   // Selection state
   const [isSelecting, setIsSelecting] = useState(false);

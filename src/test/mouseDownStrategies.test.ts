@@ -314,7 +314,7 @@ describe('Strategy Functions', () => {
       expect(result.action).toEqual({ type: 'setNumberSelection', row: 2, col: 3 });
     });
 
-    it('removes directional clue on right click for directional tool', () => {
+    it('removes directional number on right click for directional tool', () => {
       const ctx = createContext({
         currentTool: 'number-directional',
         isRightButton: true,

@@ -8,7 +8,7 @@
  */
 
 import React, { useRef, useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStore';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { getGridDimensions } from '../../utils/gridUtils';
 import { InputHandlerLayer } from './InputHandlerLayer';
 import { Grid, GridBackground, GridLines, DisabledCellsOverlay } from './Grid';
@@ -16,6 +16,7 @@ import { BackgroundImageLayer } from './grid/BackgroundImageLayer';
 import { SurfaceLayer } from './SurfaceLayer';
 import { MulticolorSurfaceLayer } from './MulticolorSurfaceLayer';
 import { BoxLineLayer } from './BoxLineLayer';
+import { HighlightLayer } from './HighlightLayer';
 import { LineLayer } from './LineLayer';
 import { NumberLayer } from './NumberLayer';
 import { SymbolLayer } from './SymbolLayer';
@@ -32,14 +33,17 @@ export type { NumberClickInfo, TextClickInfo } from './InputHandlerLayer';
 interface PuzzleCanvasProps {
   onNumberClick?: (info: import('./InputHandlerLayer').NumberClickInfo) => void;
   onTextClick?: (info: import('./InputHandlerLayer').TextClickInfo) => void;
-  /** Arrow style for directional clues: 'polygon' (pzprjs-style) or 'unicode' */
+  /** Arrow style for directional numbers: 'polygon' (pzprjs-style) or 'unicode' */
   arrowStyle?: ArrowStyle;
+  /** Allow multi-touch pan/zoom gestures */
+  allowMultiTouchPanZoom?: boolean;
 }
 
 export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
   onNumberClick,
   onTextClick,
   arrowStyle = 'polygon',
+  allowMultiTouchPanZoom,
 }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const {
@@ -112,6 +116,7 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
     <div className="flex-1 overflow-hidden bg-office-bg relative">
       <InputHandlerLayer
         svgRef={svgRef}
+        allowMultiTouchPanZoom={allowMultiTouchPanZoom}
         onNumberClick={onNumberClick}
         onTextClick={onTextClick}
       >
@@ -183,6 +188,11 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
               {/* Grid background (cell fills) */}
               <GridBackground />
 
+              {/* Highlight layer below surfaces (play-only visual helpers) */}
+              <g opacity={currentLayerOpacity}>
+                <HighlightLayer layer="under-surfaces" />
+              </g>
+
               {/* Surface layers (rendered after grid background, before grid lines) */}
               <SurfaceLayer layer="problem" />
               {/* Trial stack layers (saved states with graduated opacity) */}
@@ -200,6 +210,11 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
 
               {/* Solution area mask (same layer as surfaces) */}
               <SolutionAreaMaskLayer />
+
+              {/* Highlight layer (play-only visual helpers) */}
+              <g opacity={currentLayerOpacity}>
+                <HighlightLayer layer="under-lines" />
+              </g>
 
               {/* Grid lines and frame (rendered after surfaces) */}
               <GridLines />
@@ -224,6 +239,11 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
               {/* Non-square grids: Grid renders everything together */}
               <Grid />
 
+              {/* Highlight layer below surfaces (play-only visual helpers) */}
+              <g opacity={currentLayerOpacity}>
+                <HighlightLayer layer="under-surfaces" />
+              </g>
+
               {/* Surface layers (rendered after grid for non-square) */}
               <SurfaceLayer layer="problem" />
               {/* Trial stack layers (saved states with graduated opacity) */}
@@ -241,6 +261,11 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
 
               {/* Solution area mask (same layer as surfaces) */}
               <SolutionAreaMaskLayer />
+
+              {/* Highlight layer (play-only visual helpers) */}
+              <g opacity={currentLayerOpacity}>
+                <HighlightLayer layer="under-lines" />
+              </g>
 
               {/* Adjacency overlay (dotted lines between adjacent cell centers) */}
               <AdjacencyOverlay />
@@ -280,7 +305,7 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
 
           {/* Directional clue layer (Yajilin-style arrows with numbers) */}
           <DirectionalClueLayer layer="problem" arrowStyle={arrowStyle} />
-          {/* Answer directional clues with trial opacity */}
+          {/* Answer directional numbers with trial opacity */}
           <g opacity={currentLayerOpacity}>
             <DirectionalClueLayer layer="answer" arrowStyle={arrowStyle} />
           </g>

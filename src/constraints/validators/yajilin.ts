@@ -18,6 +18,7 @@ import {
   type CheckResult,
   type Direction,
 } from './core';
+import { getDirectionalCluesFromElements } from '../../utils/numberEntries';
 
 // Shaded cell color
 const SHADE_COLORS = ['#000000', '#444444', '#808080'];
@@ -67,13 +68,16 @@ function penpaDirectionToDirection(dir: 0 | 1 | 2 | 3 | 4): Direction | null {
 }
 
 /**
- * Get directional clue at a cell (returns { direction, number } or null)
+ * Get directional number at a cell (returns { direction, number } or null)
  * If direction is null (no arrow), the clue is just a number without directional constraint
  */
-function getDirectionalClue(ctx: ValidationContext, row: number, col: number): { direction: Direction | null; number: number } | null {
-  // Check for directional clues in problem layer
-  const clues = ctx.puzzle.problem.directionalClues;
-  if (!clues) return null;
+function getDirectionalNumber(
+  ctx: ValidationContext,
+  row: number,
+  col: number,
+  clues: ReturnType<typeof getDirectionalCluesFromElements>
+): { direction: Direction | null; number: number } | null {
+  if (clues.length === 0) return null;
 
   // Support multiple cell index formats:
   // 1. pzprv3 format: simple row * cols + col
@@ -83,7 +87,7 @@ function getDirectionalClue(ctx: ValidationContext, row: number, col: number): {
   // 3. cellId format
   const cellId = `cell-${row}-${col}`;
 
-  for (const clue of Object.values(clues)) {
+  for (const clue of clues) {
     // Check by cellId (primary) or cell index (legacy)
     if (clue.cellId === cellId || clue.cell === pzprCellIndex || clue.cell === penpaCellIndex) {
       // Skip non-numeric clues (e.g., "?" or letters)
@@ -217,9 +221,10 @@ function checkDeadendLine(ctx: ValidationContext): CheckResult {
  * checkArrowNumber - Arrow number must match shaded cells in that direction
  */
 function checkArrowNumber(ctx: ValidationContext): CheckResult {
+  const clues = getDirectionalCluesFromElements(ctx.puzzle.problem);
   for (let row = 0; row < ctx.grid.rows; row++) {
     for (let col = 0; col < ctx.grid.cols; col++) {
-      const clue = getDirectionalClue(ctx, row, col);
+      const clue = getDirectionalNumber(ctx, row, col, clues);
       if (!clue) continue;
 
       // Skip clues without direction (number only, no arrow constraint)
@@ -292,11 +297,12 @@ function checkOneLoop(ctx: ValidationContext): CheckResult {
  * checkEmptyCell_yajilin - No cell should be empty (not shaded, no line, no clue)
  */
 function checkEmptyCell_yajilin(ctx: ValidationContext): CheckResult {
+  const clues = getDirectionalCluesFromElements(ctx.puzzle.problem);
   for (let row = 0; row < ctx.grid.rows; row++) {
     for (let col = 0; col < ctx.grid.cols; col++) {
       const lineCount = getCellLineCount(ctx, row, col);
       const shaded = isShaded(ctx, row, col);
-      const hasClue = getDirectionalClue(ctx, row, col) !== null;
+      const hasClue = getDirectionalNumber(ctx, row, col, clues) !== null;
 
       if (lineCount === 0 && !shaded && !hasClue) {
         return { ok: false, elements: [`cell-${row}-${col}`] };

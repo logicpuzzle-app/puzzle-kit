@@ -5,6 +5,12 @@ import { SurfaceColorPalette, LineColorPalette, SymbolColorPalette, PenpaColors 
 import { penroseP3FromPenpa, penpaIndexToCellId } from './topology/special/penroseP3';
 import { COMPRESS_SUBSTITUTIONS } from './penpaSerializer';
 import { getCellIndexById, getEdgeIndexById, getVertexIndexById } from './gridUtils';
+import { getDirectionalCluesFromElements, isDirectionalNumber } from './numberEntries';
+import {
+  mergeDirectionalCluesIntoNumbers,
+  type PuzzleElementsWithDirectionalClues,
+  type PuzzleStateWithDirectionalClues,
+} from './legacyDirectionalClues';
 
 /**
  * Penpa-edit URL compatibility layer
@@ -519,7 +525,7 @@ function convertPenpaToPuzzleKit(penpa: PenpaData): PuzzlinkData {
       : {}),
   };
 
-  const createEmptyElements = (): PuzzleElements => ({
+  const createEmptyElements = (): PuzzleElementsWithDirectionalClues => ({
     surfaces: {},
     lines: {},
     edges: {},
@@ -532,7 +538,7 @@ function convertPenpaToPuzzleKit(penpa: PenpaData): PuzzlinkData {
     directionalClues: {},
   });
 
-  const state: PuzzleState = {
+  const state: PuzzleStateWithDirectionalClues = {
     problem: createEmptyElements(),
     answer: createEmptyElements(),
   };
@@ -550,7 +556,8 @@ function convertPenpaToPuzzleKit(penpa: PenpaData): PuzzlinkData {
     convertPenpaLayer(penpa.pu_a, state.answer, grid, 'answer', penpa.gridtype, effectiveCenterlist);
   }
 
-  return { grid, state, topology };
+  const normalizedState = mergeDirectionalCluesIntoNumbers(state);
+  return { grid, state: normalizedState, topology };
 }
 
 /**
@@ -558,7 +565,7 @@ function convertPenpaToPuzzleKit(penpa: PenpaData): PuzzlinkData {
  */
 function convertPenpaLayer(
   pu: PenpaPuData,
-  elements: PuzzleElements,
+  elements: PuzzleElementsWithDirectionalClues,
   grid: GridConfig,
   layer: 'problem' | 'answer',
   gridType?: string,
@@ -692,7 +699,7 @@ function convertPenpaLayer(
     });
   }
 
-  // Convert Yajilin-style directional clues (qdir/qnum)
+  // Convert Yajilin-style directional numbers (qdir/qnum)
   if (pu.qdir && pu.qnum) {
     const height = pu.qdir.length;
     const width = height > 0 ? pu.qdir[0].length : grid.cols;
@@ -755,11 +762,19 @@ function convertPenpaLayer(
       // Check bounds (vertices can be at row/col boundaries)
       if (fromRow >= 0 && fromRow <= grid.rows && fromCol >= 0 && fromCol <= grid.cols &&
           toRow >= 0 && toRow <= grid.rows && toCol >= 0 && toCol <= grid.cols) {
-        const id = `edge-${fromRow}-${fromCol}-${toRow}-${toCol}`;
-        elements.edges[id] = {
+        const edgeId = fromRow === toRow
+          ? `edge-h-${fromRow}-${Math.min(fromCol, toCol)}`
+          : fromCol === toCol
+            ? `edge-v-${Math.min(fromRow, toRow)}-${fromCol}`
+            : undefined;
+        if (!edgeId) return;
+        const id = `edge-${edgeId}`;
+        elements.lines[id] = {
           id,
           from: `vertex-${fromRow}-${fromCol}`,
           to: `vertex-${toRow}-${toCol}`,
+          edgeId,
+          lineTarget: 'edge',
           style: 'solid',
           thickness: 'normal',
           color: lineColorMap[colorIndex] || PenpaColors.BLACK,
@@ -785,10 +800,11 @@ function convertPenpaLayer(
         // Horizontal wall
         const row = fromRow;
         const col = Math.min(fromCol, toCol);
-        const id = `wall-h-${row}-${col}`;
-        elements.walls[id] = {
+        const edgeId = `edge-h-${row}-${col}`;
+        const id = `wall-${edgeId}`;
+        elements.lines[id] = {
           id,
-          edgeId: `edge-h-${row}-${col}`,
+          edgeId,
           lineTarget: 'wall',
           style: 'solid',
           thickness: 'thick',
@@ -799,10 +815,11 @@ function convertPenpaLayer(
         // Vertical wall
         const row = Math.min(fromRow, toRow);
         const col = fromCol;
-        const id = `wall-v-${row}-${col}`;
-        elements.walls[id] = {
+        const edgeId = `edge-v-${row}-${col}`;
+        const id = `wall-${edgeId}`;
+        elements.lines[id] = {
           id,
-          edgeId: `edge-v-${row}-${col}`,
+          edgeId,
           lineTarget: 'wall',
           style: 'solid',
           thickness: 'thick',
@@ -1128,8 +1145,16 @@ export function parsePuzzlinkUrl(url: string): PuzzlinkData | null {
         case 'masyu':
         case 'nurikabe':
         case 'heyawake':
+        case 'ayeheya':
+        case 'akichi':
+        case 'lits':
+        case 'norinori':
         case 'yajilin':
+        case 'simplegako':
+        case 'nanro':
           return { gridStyle: 'normal', frameStyle: 'thick' };
+        case 'simpleloop':
+          return { gridStyle: 'dashed', frameStyle: 'normal' };
         case 'sudoku':
           return { gridStyle: 'sudoku', frameStyle: 'thick' };
         default:
@@ -1156,7 +1181,7 @@ export function parsePuzzlinkUrl(url: string): PuzzlinkData | null {
       backgroundColor: '#ffffff',
     };
 
-    const createEmptyElements = (): PuzzleElements => ({
+    const createEmptyElements = (): PuzzleElementsWithDirectionalClues => ({
       surfaces: {},
       lines: {},
       edges: {},
@@ -1169,7 +1194,7 @@ export function parsePuzzlinkUrl(url: string): PuzzlinkData | null {
       directionalClues: {},
     });
 
-    const state: PuzzleState = {
+    const state: PuzzleStateWithDirectionalClues = {
       problem: createEmptyElements(),
       answer: createEmptyElements(),
     };
@@ -1179,7 +1204,8 @@ export function parsePuzzlinkUrl(url: string): PuzzlinkData | null {
       parsePuzzlinkData(puzzleType, data, width, height, state);
     }
 
-    return { grid, state, puzzleType };
+    const normalizedState = mergeDirectionalCluesIntoNumbers(state);
+    return { grid, state: normalizedState, puzzleType };
   } catch (error) {
     console.error('Failed to parse puzz.link URL:', error);
     return null;
@@ -1194,7 +1220,7 @@ function parsePuzzlinkData(
   data: string,
   width: number,
   height: number,
-  state: PuzzleState
+  state: PuzzleStateWithDirectionalClues
 ): void {
   // puzz.link uses a base64-like encoding with run-length compression
   // Different puzzle types have different data formats
@@ -1216,6 +1242,30 @@ function parsePuzzlinkData(
       // Nurikabe uses decodeNumber16 encoding
       parseNurikabeData(data, width, height, state);
       break;
+    case 'simplegako':
+      // Simple Gako uses decodeNumber16 encoding
+      parseSimplegakoData(data, width, height, state);
+      break;
+    case 'cbanana':
+      // Choco Banana uses decodeNumber16 encoding
+      parseSimplegakoData(data, width, height, state);
+      break;
+    case 'nurimisaki':
+      // Nurimisaki uses decodeNumber16 encoding
+      parseSimplegakoData(data, width, height, state);
+      break;
+    case 'numlin':
+      // Numberlink uses decodeNumber16 encoding
+      parseSimplegakoData(data, width, height, state);
+      break;
+    case 'simpleloop':
+      // Simple Loop uses binary encoding for empty cells
+      parseSimpleloopData(data, width, height, state);
+      break;
+    case 'nanro':
+      // Nanro uses decodeBorder + decodeNumber16 encoding
+      parseNanroData(data, width, height, state);
+      break;
     case 'masyu':
     case 'mashu':
       // Masyu uses decode4Cell encoding (1=white, 2=black)
@@ -1223,8 +1273,17 @@ function parsePuzzlinkData(
       break;
     case 'heyawake':
     case 'ayeheya':
+    case 'akichi':
       // Heyawake uses decodeBorder + decodeRoomNumber16
       parseHeyawakeData(data, width, height, state);
+      break;
+    case 'lits':
+      // LITS uses decodeBorder (room borders)
+      parseLitsData(data, width, height, state);
+      break;
+    case 'norinori':
+      // Norinori uses decodeBorder (room borders)
+      parseLitsData(data, width, height, state);
       break;
     case 'shakashaka':
     case 'akari':
@@ -1252,7 +1311,12 @@ function parsePuzzlinkData(
  * Direction mapping (pzprjs): 1=UP, 2=DOWN, 3=LEFT, 4=RIGHT
  * Direction mapping (puzzle-kit): 1=UP, 2=DOWN, 3=LEFT, 4=RIGHT
  */
-function parseYajilinData(data: string, width: number, height: number, state: PuzzleState): void {
+function parseYajilinData(
+  data: string,
+  width: number,
+  height: number,
+  state: PuzzleStateWithDirectionalClues
+): void {
   const totalCells = width * height;
   let cellIndex = 0;
   let i = 0;
@@ -1283,7 +1347,7 @@ function parseYajilinData(data: string, width: number, height: number, state: Pu
 
       // dir > 0 means has direction, num >= 0 OR num === -2 (hatena) are valid
       if (dir > 0 && (num >= 0 || num === -2)) {
-        // Create directional clue
+        // Create directional number
         const row = Math.floor(cellIndex / width);
         const col = cellIndex % width;
         const id = `dirclue-${row}-${col}`;
@@ -1350,7 +1414,7 @@ function parseYajilinData(data: string, width: number, height: number, state: Pu
 /**
  * Parse sudoku data from puzz.link
  */
-function parseSudokuData(data: string, state: PuzzleState): void {
+function parseSudokuData(data: string, state: PuzzleStateWithDirectionalClues): void {
   // Sudoku uses a simple character-based encoding
   // '.' or '0' = empty, '1'-'9' = given numbers
   // Some variants use 'a'-'i' for 10-18 in larger puzzles
@@ -1405,7 +1469,12 @@ function parseSudokuData(data: string, state: PuzzleState): void {
  * So '5'-'9' places value at c, then c++, then c++ at end = advance 2.
  * And 'a'-'e' places value at c, then c+=2, then c++ at end = advance 3.
  */
-function parseSlitherlinkData(data: string, width: number, height: number, state: PuzzleState): void {
+function parseSlitherlinkData(
+  data: string,
+  width: number,
+  height: number,
+  state: PuzzleStateWithDirectionalClues
+): void {
   const totalCells = width * height;
   let cellIndex = 0;
   let i = 0;
@@ -1503,7 +1572,12 @@ function parseSlitherlinkData(data: string, width: number, height: number, state
  * - '+': followed by 3 hex digits for larger numbers
  * - '.': question mark (unknown number)
  */
-function parseNurikabeData(data: string, width: number, height: number, state: PuzzleState): void {
+function parseNurikabeData(
+  data: string,
+  width: number,
+  height: number,
+  state: PuzzleStateWithDirectionalClues
+): void {
   const totalCells = width * height;
   let cellIndex = 0;
   let i = 0;
@@ -1608,6 +1682,116 @@ function parseNurikabeData(data: string, width: number, height: number, state: P
 }
 
 /**
+ * Parse Simple Gako data from puzz.link
+ * Format: decodeNumber16 from pzprjs
+ */
+function parseSimplegakoData(
+  data: string,
+  width: number,
+  height: number,
+  state: PuzzleStateWithDirectionalClues
+): void {
+  const totalCells = width * height;
+  let cellIndex = 0;
+  let i = 0;
+
+  const addNumber = (index: number, value: string) => {
+    const row = Math.floor(index / width);
+    const col = index % width;
+    const cellId = `cell-${row}-${col}`;
+    const id = `number-${row}-${col}`;
+    state.problem.numbers[id] = {
+      id,
+      cellId,
+      value,
+      size: 'medium',
+      position: 'center',
+      color: '#000000',
+      layer: 'problem',
+    };
+  };
+
+  while (i < data.length && cellIndex < totalCells) {
+    const char = data[i];
+
+    if (char >= 'g' && char <= 'z') {
+      // Skip cells: 'g'=1, 'h'=2, ... 'z'=20
+      const skip = char.charCodeAt(0) - 'f'.charCodeAt(0);
+      cellIndex += skip;
+      i++;
+      continue;
+    }
+
+    let value: number | null = null;
+    if ((char >= '0' && char <= '9') || (char >= 'a' && char <= 'f')) {
+      value = parseInt(char, 16);
+      i++;
+    } else if (char === '-') {
+      const hex = data.substring(i + 1, i + 3);
+      value = parseInt(hex, 16);
+      i += 3;
+    } else if (char === '+') {
+      const hex = data.substring(i + 1, i + 4);
+      value = parseInt(hex, 16);
+      i += 4;
+    } else if (char === '.') {
+      addNumber(cellIndex, '?');
+      cellIndex++;
+      i++;
+      continue;
+    } else {
+      i++;
+      continue;
+    }
+
+    if (value !== null && !isNaN(value)) {
+      addNumber(cellIndex, String(value));
+    }
+
+    cellIndex++;
+  }
+}
+
+/**
+ * Parse Simple Loop data from puzz.link
+ * Format: decodeBinary (empty cells), using base32 (0-9a-v)
+ */
+function parseSimpleloopData(
+  data: string,
+  width: number,
+  height: number,
+  state: PuzzleStateWithDirectionalClues
+): void {
+  const totalCells = width * height;
+  let cellIndex = 0;
+  const weights = [16, 8, 4, 2, 1];
+
+  for (let i = 0; i < data.length && cellIndex < totalCells; i++) {
+    const char = data[i];
+    const value = parseInt(char, 32);
+    if (Number.isNaN(value)) continue;
+
+    for (let w = 0; w < weights.length && cellIndex < totalCells; w++) {
+      const isEmpty = (value & weights[w]) !== 0;
+      if (isEmpty) {
+        const row = Math.floor(cellIndex / width);
+        const col = cellIndex % width;
+        const cellId = `cell-${row}-${col}`;
+        const id = `surface-empty-${cellId}`;
+        state.problem.surfaces[id] = {
+          id,
+          cellId,
+          color: '#000000',
+          displayMode: 'fill',
+          layer: 'problem',
+        };
+      }
+      cellIndex++;
+    }
+  }
+}
+
+/**
  * Parse Masyu data from puzz.link
  * Format: decodeCircle from pzprjs (base-27, 3 cells per character)
  *
@@ -1618,7 +1802,12 @@ function parseNurikabeData(data: string, width: number, height: number, state: P
  * - cell1 = floor(val / 3) % 3
  * - cell2 = val % 3
  */
-function parseMasyuData(data: string, width: number, height: number, state: PuzzleState): void {
+function parseMasyuData(
+  data: string,
+  width: number,
+  height: number,
+  state: PuzzleStateWithDirectionalClues
+): void {
   const totalCells = width * height;
   const tri = [9, 3, 1]; // Divisors for extracting 3 values from base-27
   let cellIndex = 0;
@@ -1662,7 +1851,12 @@ function parseMasyuData(data: string, width: number, height: number, state: Puzz
  *    - Horizontal borders: cols*(rows-1) borders
  * 2. Room numbers (decodeNumber16 format after border data)
  */
-function parseHeyawakeData(data: string, width: number, height: number, state: PuzzleState): void {
+function parseHeyawakeData(
+  data: string,
+  width: number,
+  height: number,
+  state: PuzzleStateWithDirectionalClues
+): void {
   // Calculate border data length
   const verticalBorderCount = (width - 1) * height;
   const horizontalBorderCount = width * (height - 1);
@@ -1716,16 +1910,16 @@ function parseHeyawakeData(data: string, width: number, height: number, state: P
   }
 
   // Convert borders to walls
-  let wallId = 1;
 
   // Add vertical walls (between column col and col+1)
   for (let row = 0; row < height; row++) {
     for (let col = 0; col < width - 1; col++) {
       if (verticalBorders[row][col]) {
-        const id = `wall-${wallId++}`;
-        state.problem.walls[id] = {
+        const edgeId = `edge-v-${row}-${col + 1}`;
+        const id = `wall-${edgeId}`;
+        state.problem.lines[id] = {
           id,
-          edgeId: `edge-v-${row}-${col + 1}`,
+          edgeId,
           lineTarget: 'wall',
           style: 'solid',
           thickness: 'thick',
@@ -1740,10 +1934,11 @@ function parseHeyawakeData(data: string, width: number, height: number, state: P
   for (let row = 0; row < height - 1; row++) {
     for (let col = 0; col < width; col++) {
       if (horizontalBorders[row][col]) {
-        const id = `wall-${wallId++}`;
-        state.problem.walls[id] = {
+        const edgeId = `edge-h-${row + 1}-${col}`;
+        const id = `wall-${edgeId}`;
+        state.problem.lines[id] = {
           id,
-          edgeId: `edge-h-${row + 1}-${col}`,
+          edgeId,
           lineTarget: 'wall',
           style: 'solid',
           thickness: 'thick',
@@ -1857,9 +2052,291 @@ function parseHeyawakeData(data: string, width: number, height: number, state: P
 }
 
 /**
+ * Parse LITS data from puzz.link
+ * Format: decodeBorder from pzprjs (room borders only)
+ */
+function parseLitsData(
+  data: string,
+  width: number,
+  height: number,
+  state: PuzzleStateWithDirectionalClues
+): void {
+  const verticalBorderCount = (width - 1) * height;
+  const horizontalBorderCount = width * (height - 1);
+  const verticalChars = Math.ceil(verticalBorderCount / 5);
+  const horizontalChars = Math.ceil(horizontalBorderCount / 5);
+  const borderChars = verticalChars + horizontalChars;
+
+  const borderData = data.substring(0, Math.min(borderChars, data.length));
+  const twi = [16, 8, 4, 2, 1];
+
+  const verticalBorders: boolean[][] = Array.from({ length: height }, () =>
+    Array(width - 1).fill(false)
+  );
+
+  let borderIndex = 0;
+  for (let i = 0; i < verticalChars && i < borderData.length; i++) {
+    const ca = parseInt(borderData.charAt(i), 32);
+    for (let w = 0; w < 5; w++) {
+      if (borderIndex < verticalBorderCount) {
+        const row = Math.floor(borderIndex / (width - 1));
+        const col = borderIndex % (width - 1);
+        verticalBorders[row][col] = (ca & twi[w]) !== 0;
+        borderIndex++;
+      }
+    }
+  }
+
+  const horizontalBorders: boolean[][] = Array.from({ length: height - 1 }, () =>
+    Array(width).fill(false)
+  );
+
+  borderIndex = 0;
+  for (let i = verticalChars; i < verticalChars + horizontalChars && i < borderData.length; i++) {
+    const ca = parseInt(borderData.charAt(i), 32);
+    for (let w = 0; w < 5; w++) {
+      if (borderIndex < horizontalBorderCount) {
+        const row = Math.floor(borderIndex / width);
+        const col = borderIndex % width;
+        horizontalBorders[row][col] = (ca & twi[w]) !== 0;
+        borderIndex++;
+      }
+    }
+  }
+
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width - 1; col++) {
+      if (verticalBorders[row][col]) {
+        const edgeId = `edge-v-${row}-${col + 1}`;
+        const id = `wall-${edgeId}`;
+        state.problem.lines[id] = {
+          id,
+          edgeId,
+          lineTarget: 'wall',
+          style: 'solid',
+          thickness: 'thick',
+          color: '#000000',
+          layer: 'problem',
+        };
+      }
+    }
+  }
+
+  for (let row = 0; row < height - 1; row++) {
+    for (let col = 0; col < width; col++) {
+      if (horizontalBorders[row][col]) {
+        const edgeId = `edge-h-${row + 1}-${col}`;
+        const id = `wall-${edgeId}`;
+        state.problem.lines[id] = {
+          id,
+          edgeId,
+          lineTarget: 'wall',
+          style: 'solid',
+          thickness: 'thick',
+          color: '#000000',
+          layer: 'problem',
+        };
+      }
+    }
+  }
+
+  const cellRoom: number[][] = Array.from({ length: height }, () =>
+    Array(width).fill(-1)
+  );
+  let roomId = 0;
+
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      if (cellRoom[row][col] === -1) {
+        const queue: { r: number; c: number }[] = [{ r: row, c: col }];
+        cellRoom[row][col] = roomId;
+
+        while (queue.length > 0) {
+          const { r, c } = queue.shift()!;
+
+          if (r > 0 && !horizontalBorders[r - 1][c] && cellRoom[r - 1][c] === -1) {
+            cellRoom[r - 1][c] = roomId;
+            queue.push({ r: r - 1, c });
+          }
+          if (r < height - 1 && !horizontalBorders[r][c] && cellRoom[r + 1][c] === -1) {
+            cellRoom[r + 1][c] = roomId;
+            queue.push({ r: r + 1, c });
+          }
+          if (c > 0 && !verticalBorders[r][c - 1] && cellRoom[r][c - 1] === -1) {
+            cellRoom[r][c - 1] = roomId;
+            queue.push({ r, c: c - 1 });
+          }
+          if (c < width - 1 && !verticalBorders[r][c] && cellRoom[r][c + 1] === -1) {
+            cellRoom[r][c + 1] = roomId;
+            queue.push({ r, c: c + 1 });
+          }
+        }
+        roomId++;
+      }
+    }
+  }
+
+  const roomMap: Record<string, number> = {};
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      roomMap[`cell-${row}-${col}`] = cellRoom[row][col];
+    }
+  }
+  state.problem.roomMap = roomMap;
+}
+
+/**
+ * Parse Nanro data from puzz.link
+ * Format: decodeBorder + decodeNumber16 from pzprjs
+ */
+function parseNanroData(
+  data: string,
+  width: number,
+  height: number,
+  state: PuzzleStateWithDirectionalClues
+): void {
+  // Calculate border data length
+  const verticalBorderCount = (width - 1) * height;
+  const horizontalBorderCount = width * (height - 1);
+  const verticalChars = Math.ceil(verticalBorderCount / 5);
+  const horizontalChars = Math.ceil(horizontalBorderCount / 5);
+  const borderChars = verticalChars + horizontalChars;
+
+  // Split border and number data
+  const borderData = data.substring(0, Math.min(borderChars, data.length));
+  const numberData = data.substring(borderChars);
+
+  // Decode borders (base-32, 5 bits per character)
+  const twi = [16, 8, 4, 2, 1];
+
+  const verticalBorders: boolean[][] = Array.from({ length: height }, () =>
+    Array(width - 1).fill(false)
+  );
+
+  let borderIndex = 0;
+  for (let i = 0; i < verticalChars && i < borderData.length; i++) {
+    const ca = parseInt(borderData.charAt(i), 32);
+    for (let w = 0; w < 5; w++) {
+      if (borderIndex < verticalBorderCount) {
+        const row = Math.floor(borderIndex / (width - 1));
+        const col = borderIndex % (width - 1);
+        verticalBorders[row][col] = (ca & twi[w]) !== 0;
+        borderIndex++;
+      }
+    }
+  }
+
+  const horizontalBorders: boolean[][] = Array.from({ length: height - 1 }, () =>
+    Array(width).fill(false)
+  );
+
+  borderIndex = 0;
+  for (let i = verticalChars; i < verticalChars + horizontalChars && i < borderData.length; i++) {
+    const ca = parseInt(borderData.charAt(i), 32);
+    for (let w = 0; w < 5; w++) {
+      if (borderIndex < horizontalBorderCount) {
+        const row = Math.floor(borderIndex / width);
+        const col = borderIndex % width;
+        horizontalBorders[row][col] = (ca & twi[w]) !== 0;
+        borderIndex++;
+      }
+    }
+  }
+
+  // Convert borders to walls
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width - 1; col++) {
+      if (verticalBorders[row][col]) {
+        const edgeId = `edge-v-${row}-${col + 1}`;
+        const id = `wall-${edgeId}`;
+        state.problem.lines[id] = {
+          id,
+          edgeId,
+          lineTarget: 'wall',
+          style: 'solid',
+          thickness: 'thick',
+          color: '#000000',
+          layer: 'problem',
+        };
+      }
+    }
+  }
+
+  for (let row = 0; row < height - 1; row++) {
+    for (let col = 0; col < width; col++) {
+      if (horizontalBorders[row][col]) {
+        const edgeId = `edge-h-${row + 1}-${col}`;
+        const id = `wall-${edgeId}`;
+        state.problem.lines[id] = {
+          id,
+          edgeId,
+          lineTarget: 'wall',
+          style: 'solid',
+          thickness: 'thick',
+          color: '#000000',
+          layer: 'problem',
+        };
+      }
+    }
+  }
+
+  // Build rooms from borders using flood fill
+  const cellRoom: number[][] = Array.from({ length: height }, () =>
+    Array(width).fill(-1)
+  );
+  let roomId = 0;
+
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      if (cellRoom[row][col] === -1) {
+        const queue: { r: number; c: number }[] = [{ r: row, c: col }];
+        cellRoom[row][col] = roomId;
+
+        while (queue.length > 0) {
+          const { r, c } = queue.shift()!;
+
+          if (r > 0 && !horizontalBorders[r - 1][c] && cellRoom[r - 1][c] === -1) {
+            cellRoom[r - 1][c] = roomId;
+            queue.push({ r: r - 1, c });
+          }
+          if (r < height - 1 && !horizontalBorders[r][c] && cellRoom[r + 1][c] === -1) {
+            cellRoom[r + 1][c] = roomId;
+            queue.push({ r: r + 1, c });
+          }
+          if (c > 0 && !verticalBorders[r][c - 1] && cellRoom[r][c - 1] === -1) {
+            cellRoom[r][c - 1] = roomId;
+            queue.push({ r, c: c - 1 });
+          }
+          if (c < width - 1 && !verticalBorders[r][c] && cellRoom[r][c + 1] === -1) {
+            cellRoom[r][c + 1] = roomId;
+            queue.push({ r, c: c + 1 });
+          }
+        }
+        roomId++;
+      }
+    }
+  }
+
+  const roomMap: Record<string, number> = {};
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      roomMap[`cell-${row}-${col}`] = cellRoom[row][col];
+    }
+  }
+  state.problem.roomMap = roomMap;
+
+  if (numberData) {
+    parseSimplegakoData(numberData, width, height, state);
+  }
+}
+
+/**
  * Parse generic number data from puzz.link (for puzzles with clue numbers)
  */
-function parseGenericNumberData(data: string, state: PuzzleState): void {
+function parseGenericNumberData(
+  data: string,
+  state: PuzzleStateWithDirectionalClues
+): void {
   // Many puzzles use similar encoding:
   // Numbers are placed in cells, with run-length encoding for empty cells
 
@@ -1982,6 +2459,7 @@ export function exportToPenpaFormat(
   state: PuzzleState
 ): string | null {
   try {
+    const normalizedState = mergeDirectionalCluesIntoNumbers(state);
     const { rows, cols, cellSize } = grid;
     const width = cols + 4;
 
@@ -2045,6 +2523,7 @@ export function exportToPenpaFormat(
       if (Object.keys(elements.numbers).length > 0) {
         pu.number = {};
         Object.values(elements.numbers).forEach((num) => {
+          if (isDirectionalNumber(num)) return;
           const indexPos = getCellIndexById(num.cellId, grid);
           if (!indexPos) return;
           const index = rowColToIndex(indexPos.row, indexPos.col);
@@ -2094,9 +2573,10 @@ export function exportToPenpaFormat(
       }
 
       // Convert edges (vertex-to-vertex)
-      if (Object.keys(elements.edges).length > 0) {
+      const edgeLines = Object.values(elements.lines).filter((line) => line.lineTarget === 'edge');
+      if (edgeLines.length > 0) {
         pu.lineE = {};
-        Object.values(elements.edges).forEach((edge) => {
+        edgeLines.forEach((edge) => {
           if (edge.from && edge.to) {
             const fromPos = getVertexIndexById(edge.from, grid);
             const toPos = getVertexIndexById(edge.to, grid);
@@ -2120,9 +2600,10 @@ export function exportToPenpaFormat(
       }
 
       // Convert walls
-      if (Object.keys(elements.walls).length > 0) {
+      const wallLines = Object.values(elements.lines).filter((line) => line.lineTarget === 'wall');
+      if (wallLines.length > 0) {
         pu.wall = {};
-        Object.values(elements.walls).forEach((wall) => {
+        wallLines.forEach((wall) => {
           // Walls are on edge positions (edge-h or edge-v)
           if (!wall.edgeId) return;
           const edgePos = getEdgeIndexById(wall.edgeId, grid);
@@ -2185,9 +2666,10 @@ export function exportToPenpaFormat(
         });
       }
 
-      // Convert directional clues (Yajilin qdir/qnum)
-      if (elements.directionalClues && Object.keys(elements.directionalClues).length > 0) {
-        const clues = Object.values(elements.directionalClues);
+      // Convert directional numbers (Yajilin qdir/qnum)
+      const directionalNumbers = getDirectionalCluesFromElements(elements);
+      if (directionalNumbers.length > 0) {
+        const clues = directionalNumbers;
         // Compute max cell index for sizing
         let maxCellIdx = 0;
         clues.forEach((clue) => {
@@ -2249,8 +2731,8 @@ export function exportToPenpaFormat(
       return pu;
     };
 
-    const pu_q = convertLayer(state.problem);
-    const pu_a = convertLayer(state.answer);
+    const pu_q = convertLayer(normalizedState.problem);
+    const pu_a = convertLayer(normalizedState.answer);
 
     const penpaData = {
       gridtype: grid.gridType === 'hex' ? 'hex' : 'square',

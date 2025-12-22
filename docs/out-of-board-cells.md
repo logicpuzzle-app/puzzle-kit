@@ -4,15 +4,17 @@
 - 不定形盤面や穴あき盤、解答禁止領域を「セルとして扱わない」明示的領域として表現する。
 - 検証や入力処理で「無視」「通過不可」を判定しやすくする。
 
-## 表現案
-- **Topology 拡張**: `TopologyCell` に `kind: 'normal' | 'void'`（盤面外）を追加。`coord` は通常 `[col,row]`、void も持てるが論理上無視する。
-- **GridConfig / GridPoint**: 正方形グリッド生成時に void マスクを反映し、`generateGridPoints` では `type: 'cell'` に `isVoid` フラグを付与。
-- **ID 方針**: void も通常の `cell-*` ID を持たせる（ID 体系変更を避ける）。「存在はするが非プレイアブル」という意味付け。
+## 現状の表現
+- **GridConfig**: `voidCells` / `outboardCells` を保持（legacy `disabledCells` は void 扱い）。
+- **TopologyCell**: `outboard?: boolean` を保持。void はトポロジに生成されない。
+- **ID 方針**: outboard は通常の `cell-*` ID を維持（ID 体系変更なし）。
 
 ## 入力・UI
-- クリック/ドラッグ時に `isVoid`/`kind==='void'` のセルはヒットしない or ただちに無視（hoverも外す）。
-- レイヤー描画では背景のみ（枠線/塗りなし、もしくは灰色マスク）。
-- 選択・ツール適用（数字/線/シェード/分割など）は禁止。カーソル表示もスキップ。
+- void はヒットしない（hover も無効）。
+- outboard は問題レイヤーでヒント系のみ許可（number/text/symbol/select）。
+- line/surface/edge と answer レイヤーは outboard を禁止。
+- grid 編集は outboard を許可（切替用）。
+- 判定は `pointResolver` + `outboardPolicy` に集約。
 
 ## 検証/ソルバー
 - 連結判定・隣接探索で void は「セルが無い」扱い：隣接リスト構築時に除外するか、探索時に `kind==='void'` をスキップ。
@@ -28,12 +30,16 @@
 - `PuzzleState` に void を直接持たせず、`topology` のセル属性で表現。保存時は topology を含めて永続化。
 - 互換性確保のため、新フィールドは後方互換（欠落時は normal と解釈）。
 
+## 決定事項
+- outboard への special ツール（thermo/arrow/cage/boxline）は禁止。
+- auto-mode の line-cell で dot 置きは outboard 禁止。
+
 ## 論点
 - **隣接の定義**: void を「空隙」とするか「壁」とするかでループ/連結ルールが変わる。パズル種別ごとに設定が必要。
 - **見た目**: 透明にするか、淡色マスクで示すか。印刷時も考慮。
 - **操作感**: void に近接したドラッグ操作の許容幅（スナップ範囲）をどうするか。
 - **互換性**: 既存 ID 体系を崩さないこと（非正方形トポロジでの void も同様に扱う）。
 - **外周ヒント**: 盤面外セルに数字や矢印を配置する要望に対応する場合、
-  - トポロジ上「装飾セル」として `kind: 'hint'` 等の拡張を検討（隣接リストは張らず、描画・入力のみ許可）。
-  - 表示は外枠延長としてスペースを確保し、グリッド外側のヒットテストも許可する。
+  - 現状は outboardCells + `shouldAllowOutboardForTool` で number/text/symbol/select のみ対応。
+  - 追加ツールの許可は `outboardPolicy` の更新で対応。
   - Export/Import は対応フォーマットが限定されるため、非対応時はエラーまたは無視を明示する。

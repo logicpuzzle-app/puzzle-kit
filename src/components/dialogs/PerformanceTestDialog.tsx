@@ -7,7 +7,7 @@ import {
   generateLineId,
   resetIdCounters,
 } from '../../utils/idGenerator';
-import { usePuzzleStore } from '../../store/puzzleStore';
+import { usePuzzleStore, usePuzzleStoreApi } from '../../store/puzzleStoreContext';
 import { gridConfigToTopology, applyTopologyPreset } from '../../utils/gridTopology';
 import { getCellId } from '../../utils/gridUtils';
 import type { GridConfig, PuzzleState, SurfaceElement, NumberElement, SymbolElement, LineElement } from '../../types';
@@ -35,6 +35,7 @@ export const PerformanceTestDialog: React.FC<PerformanceTestDialogProps> = ({
 }) => {
   const { t } = useTranslation();
   const { useTopology, topologyPreset, topologyIntensity } = usePuzzleStore();
+  const store = usePuzzleStoreApi();
 
   const [rows, setRows] = useState(20);
   const [cols, setCols] = useState(20);
@@ -194,7 +195,6 @@ export const PerformanceTestDialog: React.FC<PerformanceTestDialogProps> = ({
           cages: {},
           specials: {},
           boxLines: {},
-          directionalClues: {},
         },
         answer: {
           surfaces: {},
@@ -206,13 +206,12 @@ export const PerformanceTestDialog: React.FC<PerformanceTestDialogProps> = ({
           cages: {},
           specials: {},
           boxLines: {},
-          directionalClues: {},
         },
         multicolorSurfaces: {},
       };
 
       // Set the entire state at once
-      usePuzzleStore.setState({
+      store.setState({
         grid: baseGrid,
         puzzle: puzzleState,
         topology,

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { usePuzzleStore } from '../../store/puzzleStore';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { ToolType } from '../../types';
 import { ANIMAL_ICON_MAP, GhostBlackIcon, FryingPanIcon } from '../icons/AnimalIcons';
 

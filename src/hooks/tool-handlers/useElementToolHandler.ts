@@ -1,8 +1,7 @@
 import { useCallback, useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStore';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { parseEdgeId } from '../../utils/gridIds';
 import type { Point } from '../../types';
-import { toDataLayer } from '../../types';
 import {
   resolveAutoMode,
   findCellIdFromPoint,
@@ -16,6 +15,13 @@ import {
   buildNumberObjectKey,
 } from './toolHandlerUtils';
 import { handlePathContinuation, finalizeCellPath } from './usePathBuilder';
+import { shouldAllowOutboardForTool } from '../../utils/outboardPolicy';
+import { getEditableDataLayer } from '../../utils/editPolicy';
+import {
+  findDirectionalNumberByCellId,
+  hasNumberAtCell,
+  isNumericString,
+} from '../../utils/numberEntries';
 
 interface UseElementToolHandlerOptions {
   specialPath: string[];
@@ -33,6 +39,7 @@ export function useElementToolHandler({
     grid,
     toolSettings,
     activeLayer,
+    isPlayerMode,
     addNumber,
     removeNumber,
     updateNumber,
@@ -46,13 +53,15 @@ export function useElementToolHandler({
     addBoxLine,
     removeBoxLine,
     addDirectionalClue,
-    removeDirectionalClue,
     puzzle,
     useTopology,
     topology,
     currentInputMode,
     currentSchemaId,
+    showConstraintLayer,
   } = usePuzzleStore();
+
+  const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
 
   // Unified auto mode detection - replaces 3 separate useMemo blocks
   const autoModeInfo = useMemo(
@@ -62,7 +71,14 @@ export function useElementToolHandler({
 
   // Helper to find cell ID considering topology mode
   const findCellId = useCallback(
-    (point: Point): string | null => findCellIdFromPoint(point, grid, useTopology, topology),
+    (point: Point, options?: { allowOutboard?: boolean }): string | null =>
+      findCellIdFromPoint(
+        point,
+        grid,
+        useTopology,
+        topology,
+        { allowOutboard: options?.allowOutboard }
+      ),
     [grid, useTopology, topology]
   );
 
@@ -75,17 +91,18 @@ export function useElementToolHandler({
 
   const handleNumberTool = useCallback(
     (point: Point, isRightClick: boolean, options?: { cellId?: string }) => {
-      const cellId = options?.cellId ?? findCellId(point);
+      if (!editableLayer) return null;
+      const cellId = options?.cellId ?? findCellId(point, { allowOutboard: shouldAllowOutboardForTool(toolSettings.currentTool, activeLayer) });
       if (!cellId) return null;
 
-      const dataLayer = toDataLayer(activeLayer);
+      const dataLayer = editableLayer;
       const layerData = puzzle[dataLayer];
       const { numberPosition, cornerIndex, sideIndex, selectedCandidates, color, numberSize } = toolSettings;
       const numberObjectKey = buildNumberObjectKey(numberPosition, cornerIndex, sideIndex);
 
       // Find existing number at this position with same submode
       const existingResult = findExistingNumber(
-        layerData.numbers as Record<string, { id: string; cellId: string; value: string; position: string; cornerIndex?: number; sideIndex?: number; candidates?: number[]; objectKey?: string }>,
+        layerData.numbers,
         cellId,
         numberPosition,
         cornerIndex,
@@ -95,48 +112,57 @@ export function useElementToolHandler({
       const existingNumber = existingResult?.number;
       const existingId = existingResult?.id;
 
-      // Check if in constraint number mode (handled by resolveAutoMode)
-      if (autoModeInfo.isConstraintNumberMode) {
-        // Check existing directionalClue for this cell
-        const existingClueEntry = Object.entries(layerData.directionalClues || {}).find(
-          ([, c]) => c.cellId === cellId
-        );
-        const existingClue = existingClueEntry ? existingClueEntry[1] : null;
-        const existingClueId = existingClueEntry ? existingClueEntry[0] : null;
+      const isConstraintNumberMode =
+        showConstraintLayer && currentSchemaId !== null && autoModeInfo.isConstraintNumberMode;
 
-        // Get current value from directionalClue or fallback to numbers
-        const hasChar = existingClue?.char !== undefined;
+      // Check if in constraint number mode (handled by resolveAutoMode)
+      if (isConstraintNumberMode) {
+        const isPlayMode = editableLayer === 'answer';
+        if (currentSchemaId === 'simplegako' && isPlayMode) {
+          const hasProblemNumber = hasNumberAtCell(puzzle.problem.numbers, cellId) ||
+            Boolean(findDirectionalNumberByCellId(puzzle.problem.numbers, cellId));
+          if (hasProblemNumber) {
+            return null;
+          }
+        }
+
+        const existingDirectionalEntry = findDirectionalNumberByCellId(layerData.numbers, cellId);
+        const existingDirectionalNumber = existingDirectionalEntry?.number ?? null;
+        const existingClueId = existingDirectionalEntry?.id ?? null;
+
+        // Get current value from directional numbers or fallback to regular number
+        const hasChar = existingDirectionalNumber ? !isNumericString(existingDirectionalNumber.value) : false;
         const currentNum = hasChar ? null :
-          (existingClue ? existingClue.value :
+          (existingDirectionalNumber ? parseInt(existingDirectionalNumber.value, 10) :
             (existingNumber ? parseInt(existingNumber.value, 10) : null));
 
         // Determine increment mode
         const incrementMode = currentInputMode === 'number-' ? 'reverse' : 'normal';
         const newValue = calculateNextValue(currentNum, numberRange, isRightClick, incrementMode);
 
-        // Apply the change using directionalClues
+        // Apply the change using directional numbers
         if (newValue === null) {
-          // Clear - remove both directionalClue and legacy number
+          // Clear - remove both directional number and legacy number
           if (existingClueId) {
-            removeDirectionalClue(existingClueId);
+            removeNumber(existingClueId);
           }
           if (existingId) {
             removeNumber(existingId);
           }
         } else {
           // Preserve existing direction and angle if updating
-          const direction = existingClue?.direction ?? 0;
-          const angle = existingClue?.angle ?? null;
+          const direction = existingDirectionalNumber?.direction ?? 0;
+          const angle = existingDirectionalNumber?.angle ?? null;
           addDirectionalClue({
             cellId,
             direction: direction as 0 | 1 | 2 | 3 | 4,
             value: newValue,
             layer: dataLayer,
             angle: angle,
-            color: existingClue?.color || toolSettings.color,
+            color: existingDirectionalNumber?.color || toolSettings.color,
             objectKey: 'directional-clue',
           });
-          // Remove legacy number if it exists (migrate to directionalClues)
+          // Remove legacy number if it exists (migrate to directional number)
           if (existingId) {
             removeNumber(existingId);
           }
@@ -186,7 +212,7 @@ export function useElementToolHandler({
       }
       return null;
     },
-    [grid, puzzle, activeLayer, toolSettings, currentInputMode, autoModeInfo, numberRange, addNumber, removeNumber, updateNumber, addDirectionalClue, removeDirectionalClue, findCellId]
+    [grid, puzzle, activeLayer, editableLayer, currentSchemaId, toolSettings, currentInputMode, autoModeInfo, numberRange, addNumber, removeNumber, updateNumber, addDirectionalClue, findCellId, showConstraintLayer]
   );
 
   /**
@@ -199,7 +225,8 @@ export function useElementToolHandler({
       colorOverride?: string;
       symbolGridPointsOverride?: ('cell' | 'vertex' | 'edge')[];
     }) => {
-      const dataLayer = toDataLayer(activeLayer);
+      if (!editableLayer) return;
+      const dataLayer = editableLayer;
       const layerData = puzzle[dataLayer];
 
       const symbolType = options?.symbolTypeOverride || toolSettings.overrideSymbolType || toolSettings.currentTool.replace('symbol-', '');
@@ -213,7 +240,8 @@ export function useElementToolHandler({
         symbolGridPoints,
         grid,
         useTopology,
-        topology
+        topology,
+        { allowOutboard: shouldAllowOutboardForTool(toolSettings.currentTool, activeLayer) }
       );
 
       if (!target) return;
@@ -324,16 +352,17 @@ export function useElementToolHandler({
         addSymbol(symbolProps);
       }
     },
-    [grid, puzzle, activeLayer, toolSettings, addSymbol, removeSymbol, removeLine, useTopology, topology]
+    [grid, puzzle, activeLayer, editableLayer, toolSettings, addSymbol, removeSymbol, removeLine, useTopology, topology]
   );
 
   // Handle special tools (thermo, arrow)
   const handleSpecialTool = useCallback(
     (point: Point, isStart: boolean, isEnd: boolean, isRightClick: boolean) => {
+      if (!editableLayer) return;
       const cellId = findCellId(point);
       if (!cellId) return;
 
-      const dataLayer = toDataLayer(activeLayer);
+      const dataLayer = editableLayer;
       const layerData = puzzle[dataLayer];
       const specialType = toolSettings.currentTool.replace('special-', '') as 'thermo' | 'arrow';
 
@@ -374,16 +403,17 @@ export function useElementToolHandler({
         setSpecialPath([]);
       }
     },
-    [puzzle, activeLayer, toolSettings, specialPath, addSpecial, removeSpecial, setSpecialPath, findCellId]
+    [puzzle, activeLayer, editableLayer, toolSettings, specialPath, addSpecial, removeSpecial, setSpecialPath, findCellId]
   );
 
   // Handle text tool
   const handleTextTool = useCallback(
     (point: Point, isRightClick: boolean) => {
-      const cellId = findCellId(point);
+      if (!editableLayer) return null;
+      const cellId = findCellId(point, { allowOutboard: shouldAllowOutboardForTool(toolSettings.currentTool, activeLayer) });
       if (!cellId) return null;
 
-      const dataLayer = toDataLayer(activeLayer);
+      const dataLayer = editableLayer;
       const layerData = puzzle[dataLayer];
       const textType = toolSettings.currentTool.replace('text-', '');
 
@@ -399,16 +429,17 @@ export function useElementToolHandler({
       }
       return null;
     },
-    [puzzle, activeLayer, toolSettings.currentTool, removeSymbol, findCellId]
+    [puzzle, activeLayer, editableLayer, toolSettings.currentTool, removeSymbol, findCellId]
   );
 
   // Handle cage tool
   const handleCageTool = useCallback(
     (point: Point, isStart: boolean, isEnd: boolean, isRightClick: boolean) => {
+      if (!editableLayer) return;
       const cellId = findCellId(point);
       if (!cellId) return;
 
-      const dataLayer = toDataLayer(activeLayer);
+      const dataLayer = editableLayer;
       const layerData = puzzle[dataLayer];
 
       if (isRightClick) {
@@ -448,16 +479,17 @@ export function useElementToolHandler({
         setSpecialPath([]);
       }
     },
-    [puzzle, activeLayer, specialPath, addCage, removeCage, setSpecialPath, findCellId]
+    [puzzle, activeLayer, editableLayer, specialPath, addCage, removeCage, setSpecialPath, findCellId]
   );
 
   // Handle BoxLine tool
   const handleBoxLineTool = useCallback(
     (point: Point, isStart: boolean, isEnd: boolean, isRightClick: boolean) => {
+      if (!editableLayer) return;
       const cellId = findCellId(point);
       if (!cellId) return;
 
-      const dataLayer = toDataLayer(activeLayer);
+      const dataLayer = editableLayer;
       const layerData = puzzle[dataLayer];
       const boxLines = layerData.boxLines || {};
 
@@ -503,7 +535,7 @@ export function useElementToolHandler({
         setSpecialPath([]);
       }
     },
-    [puzzle, activeLayer, toolSettings.color, specialPath, addBoxLine, removeBoxLine, setSpecialPath, findCellId, useTopology, topology]
+    [puzzle, activeLayer, editableLayer, toolSettings.color, specialPath, addBoxLine, removeBoxLine, setSpecialPath, findCellId, useTopology, topology]
   );
 
   return {

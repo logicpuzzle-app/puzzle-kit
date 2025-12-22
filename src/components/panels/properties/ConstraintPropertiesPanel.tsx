@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { usePuzzleStore } from '../../../store/puzzleStore';
+import { usePuzzleStore } from '../../../store/puzzleStoreContext';
 import { constraintCatalog } from '../../../constraints';
 import { CONSTRAINT_ICONS } from '../../toolbar/RibbonIcons';
 import { NumberInputPanel } from './NumberInputPanel';
@@ -18,6 +18,8 @@ export const ConstraintPropertiesPanel: React.FC = () => {
     setCurrentSchemaId,
     constraintSubCategory,
     currentInputMode,
+    setHighlightOverride,
+    isHighlightRuleEnabled,
   } = usePuzzleStore();
 
   const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
@@ -117,6 +119,16 @@ export const ConstraintPropertiesPanel: React.FC = () => {
         <ValidationSection
           rules={currentSchema?.validation || []}
           currentSchemaId={currentSchemaId}
+        />
+      )}
+
+      {/* Highlight tab: Show play-only visual helpers */}
+      {constraintSubCategory === 'highlight' && (
+        <HighlightSection
+          rules={currentSchema?.highlight || []}
+          currentSchemaId={currentSchemaId}
+          setHighlightOverride={setHighlightOverride}
+          isHighlightRuleEnabled={isHighlightRuleEnabled}
         />
       )}
     </div>
@@ -236,6 +248,70 @@ const ValidationSection: React.FC<ValidationSectionProps> = ({ rules, currentSch
         </svg>
         <span>{t('action.add', 'Add')}</span>
       </button>
+    </div>
+  );
+};
+
+interface HighlightSectionProps {
+  rules: Array<{ id: string; title: string; description: string; defaultOn?: boolean }>;
+  currentSchemaId: string | null;
+  setHighlightOverride: (ruleId: string, enabled: boolean) => void;
+  isHighlightRuleEnabled: (ruleId: string, defaultOn?: boolean) => boolean;
+}
+
+const HighlightSection: React.FC<HighlightSectionProps> = ({
+  rules,
+  currentSchemaId,
+  setHighlightOverride,
+  isHighlightRuleEnabled,
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="space-y-2">
+      {currentSchemaId === null && (
+        <div className="text-xs text-office-text-secondary p-2 bg-gray-50 rounded-sm border border-office-border">
+          {t('constraint.noneDesc')}
+        </div>
+      )}
+      {currentSchemaId === '__custom__' && (
+        <div className="text-xs text-office-text-secondary p-2 bg-gray-50 rounded-sm border border-office-border">
+          {t('constraint.customDesc')}
+        </div>
+      )}
+      {rules.length > 0 && (
+        <div className="space-y-1.5">
+          {rules.map((rule) => {
+            const enabled = isHighlightRuleEnabled(rule.id, rule.defaultOn);
+            return (
+              <div key={rule.id} className="p-2 bg-gray-50 rounded-sm border border-office-border">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium text-xs text-office-text">{t(rule.title)}</span>
+                  <button
+                    type="button"
+                    className={`text-[10px] px-1.5 py-0.5 rounded border ${
+                      enabled
+                        ? 'bg-office-accent/10 text-office-accent border-office-accent/40'
+                        : 'bg-gray-200 text-gray-500 border-gray-300'
+                    }`}
+                    onClick={() => setHighlightOverride(rule.id, !enabled)}
+                  >
+                    {enabled ? t('constraint.enabled') : t('constraint.disabled')}
+                  </button>
+                </div>
+                <div className="text-xs text-office-text-secondary mt-0.5">
+                  {t(rule.description)}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {rules.length === 0 && currentSchemaId && currentSchemaId !== '__custom__' && (
+        <div className="text-xs text-office-text-secondary p-2 bg-gray-50 rounded-sm border border-office-border">
+          {t('constraint.highlightEmpty', 'No highlight rules for this preset')}
+        </div>
+      )}
     </div>
   );
 };

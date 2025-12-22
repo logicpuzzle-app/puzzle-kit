@@ -3,9 +3,39 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/lib/core.d.ts",
+      "default": "./dist/lib/core.js"
+    },
+    "./core": {
+      "types": "./dist/lib/core.d.ts",
+      "default": "./dist/lib/core.js"
+    },
+    "./compat": {
+      "types": "./dist/lib/compat.d.ts",
+      "default": "./dist/lib/compat.js"
+    },
+    "./runtime": {
+      "types": "./dist/lib/runtime.d.ts",
+      "default": "./dist/lib/runtime.js"
+    },
+    "./react": {
+      "types": "./dist/lib/react.d.ts",
+      "default": "./dist/lib/react.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "docs/library-usage.md",
+    "docs/embedded-example.md"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:lib": "tsc -p tsconfig.lib.json",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",

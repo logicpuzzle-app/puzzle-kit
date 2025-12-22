@@ -4,7 +4,7 @@
 
 import React, { useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useModalStore } from '../../store/modalStore';
+import { useModalStore } from '../../store/modalStoreContext';
 
 export const AlertModal: React.FC = () => {
   const { t } = useTranslation();

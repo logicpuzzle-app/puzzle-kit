@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { usePuzzleStore } from '../../store/puzzleStore';
-import { historyManager } from '../../store/historyManager';
+import { usePuzzleStore, usePuzzleStoreApi } from '../../store/puzzleStoreContext';
 
 export const StatusBar: React.FC = () => {
   const { t } = useTranslation();
   const { grid, canvas } = usePuzzleStore();
+  const store = usePuzzleStoreApi();
 
   // Subscribe to history changes for reactive updates
-  const [historyState, setHistoryState] = useState(() => historyManager.getState());
+  const [historyState, setHistoryState] = useState(() =>
+    store.getState().historyManager.getState()
+  );
   useEffect(() => {
-    return historyManager.subscribe(setHistoryState);
-  }, []);
+    return store.getState().historyManager.subscribe(setHistoryState);
+  }, [store]);
 
   const historyLength = historyState.entries.length;
   const historyIndex = historyState.currentIndex;

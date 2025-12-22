@@ -6,9 +6,20 @@ import type { ConstraintSchema, ConstraintCatalog as IConstraintCatalog } from '
 import {
   slitherlinkSchema,
   mashuSchema,
+  akariSchema,
+  litsSchema,
+  cbananaSchema,
+  norinoriSchema,
+  nurimisakiSchema,
   yajilinSchema,
   nurikabeSchema,
   heyawakeSchema,
+  ayeheyaSchema,
+  akichiSchema,
+  numlinSchema,
+  simpleloopSchema,
+  simplegakoSchema,
+  nanroSchema,
 } from './schemas';
 
 /**
@@ -21,9 +32,20 @@ class ConstraintCatalogImpl implements IConstraintCatalog {
     // Register built-in schemas
     this.registerSchema(slitherlinkSchema);
     this.registerSchema(mashuSchema);
+    this.registerSchema(akariSchema);
+    this.registerSchema(litsSchema);
+    this.registerSchema(cbananaSchema);
+    this.registerSchema(norinoriSchema);
+    this.registerSchema(nurimisakiSchema);
     this.registerSchema(yajilinSchema);
     this.registerSchema(nurikabeSchema);
     this.registerSchema(heyawakeSchema);
+    this.registerSchema(ayeheyaSchema);
+    this.registerSchema(akichiSchema);
+    this.registerSchema(numlinSchema);
+    this.registerSchema(simpleloopSchema);
+    this.registerSchema(simplegakoSchema);
+    this.registerSchema(nanroSchema);
   }
 
   /**

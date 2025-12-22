@@ -10,16 +10,24 @@
  */
 
 import React, { useCallback, useMemo, RefObject, useEffect, useRef } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStore';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { useCanvasInteraction } from '../../hooks/useCanvasInteraction';
 import { useCellFinder } from '../../hooks/useCellFinder';
 import { useSpecialPreview } from '../../hooks/useSpecialPreview';
 import { useNumberKeyboard } from '../../hooks/useNumberKeyboard';
-import { screenToSvg, getCellCorners, getCellCenter, findNearestEdge, getCellIndexById } from '../../utils/gridUtils';
+import { screenToSvg, getCellCorners, getCellCenter, getCellIndexById } from '../../utils/gridUtils';
 import { resolveGridIdToPosition } from '../../utils/gridIds';
 import { pointToLineSegmentDistance } from '../../utils/lineUtils';
 import type { NumberPosition, SymbolElement, Point } from '../../types';
 import { toDataLayer } from '../../types';
+import { getEditableDataLayer } from '../../utils/editPolicy';
+import {
+  buildDirectionalClueIncrementPlan,
+  findDirectionalNumberByCellId,
+  findNumberEntry,
+  getDirectionalClueValueFields,
+  toPenpaDirectionalClue,
+} from '../../utils/numberEntries';
 import type { TopologyVertex } from '../../utils/gridTopology';
 import { CanvasCursors } from './CanvasCursors';
 import { SpecialToolPreview } from './SpecialToolPreview';
@@ -34,6 +42,8 @@ import {
   calculateTopologyFlickDirection,
   type TopologyCellInfo,
 } from '../../hooks/inputStrategies';
+import { resolveEdge } from '../../utils/pointResolver';
+import { shouldAllowOutboardForTool } from '../../utils/outboardPolicy';
 import {
   isDirecInputMode,
   isNumberInputMode,
@@ -122,6 +132,8 @@ export interface TextClickInfo {
 export interface InputHandlerLayerProps {
   /** Reference to the SVG canvas element */
   svgRef: RefObject<SVGSVGElement | null>;
+  /** Allow multi-touch pan/zoom gestures */
+  allowMultiTouchPanZoom?: boolean;
   /** Callback when number tool is clicked */
   onNumberClick?: (info: NumberClickInfo) => void; // unused for number tools (typing/selection only)
   /** Callback when text tool is clicked */
@@ -136,6 +148,7 @@ export interface InputHandlerLayerProps {
 
 export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
   svgRef,
+  allowMultiTouchPanZoom,
   onNumberClick,
   onTextClick,
   children,
@@ -151,6 +164,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     setCursorCell,
     puzzle,
     activeLayer,
+    isPlayerMode,
     addDirectionalClue,
     removeDirectionalClue,
     removeNumber,
@@ -183,6 +197,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
   const isSpecificMode = activeLayer === 'constraint';
   // Specific enabled: showConstraintLayer + schema selected (for number input)
   const isConstraintEnabled = showConstraintLayer && currentSchemaId !== null;
+  const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
 
   // Use preview topology if available (for grid shape preview)
   const topology = previewTopology ?? storeTopology;
@@ -241,7 +256,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     sculptHover,
     updateSculptHover,
     getSculptHoverPolygons,
-  } = useCanvasInteraction({ svgRef });
+  } = useCanvasInteraction({ svgRef, allowMultiTouchPanZoom });
 
   // Get cursor configuration from centralized cursor model
   const { getCssCursor, getOverlayConfig } = usePuzzleStore();
@@ -313,6 +328,9 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         break;
       case 'addSurface': {
         const dataLayer = action.layer;
+        if (!editableLayer || dataLayer !== editableLayer) {
+          break;
+        }
         const existingSurface = Object.values(puzzle[dataLayer].surfaces).find(
           (s) => s.cellId === action.cellId
         );
@@ -322,6 +340,9 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         break;
       }
       case 'removeDirectionalClue':
+        if (!editableLayer) {
+          break;
+        }
         removeDirectionalClue(action.id);
         break;
       case 'setCursorCell':
@@ -334,7 +355,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         baseHandleMouseDown(e);
         break;
     }
-  }, [setNumberSelection, handleNumberTool, handleSelectTool, handleTextTool, handleSymbolTool, puzzle, addSurface, removeDirectionalClue, setCursorCell, resetFillModes, baseHandleMouseDown]);
+  }, [setNumberSelection, handleNumberTool, handleSelectTool, handleTextTool, handleSymbolTool, puzzle, addSurface, removeDirectionalClue, setCursorCell, resetFillModes, baseHandleMouseDown, editableLayer]);
 
   // Find nearest line to a point within threshold
   const findNearestLineAtPoint = useCallback((point: Point, threshold: number): string | null => {
@@ -419,9 +440,11 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       mouseDownPointRef.current = point;
 
       // Handle constraint input based on currentInputMode (when constraint is enabled)
-      if (isConstraintEnabled) {
+      if (isConstraintEnabled && editableLayer) {
         const ctx = buildMouseDownContext(point, isRightButton);
-        const cellInfo = findCellAtPoint(point);
+        const allowOutboardForConstraint = activeLayer === 'problem' &&
+          (isDirecInputMode(ctx.currentInputMode, ctx.autoConfig) || isNumberInputMode(ctx.currentInputMode, ctx.autoConfig));
+        const cellInfo = findCellAtPoint(point, { allowOutboard: allowOutboardForConstraint });
         const strategyCellInfo = toStrategyCellInfo(cellInfo);
         // Ensure center is populated for flick state
         if (strategyCellInfo && !strategyCellInfo.center && cellInfo?.row !== undefined && cellInfo?.col !== undefined) {
@@ -479,13 +502,14 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           if (isRightButton) {
             const dataLayer = toDataLayer(activeLayer);
             const layerData = puzzle[dataLayer];
-            const edge = findNearestEdge(point, grid, grid.cellSize * 0.6);
+            const edge = resolveEdge(
+              point,
+              { grid, useTopology, topology },
+              { maxDistance: grid.cellSize * 0.6 }
+            );
             if (edge) {
-              const edgeId = edge.type === 'h'
-                ? `edge-h-${edge.row}-${edge.col}`
-                : `edge-v-${edge.row}-${edge.col}`;
               pekeExists = Object.values(layerData.symbols).some(
-                (s) => s.cellId === edgeId && s.symbolType === 'cross'
+                (s) => s.cellId === edge.id && s.symbolType === 'cross'
               );
             }
           }
@@ -530,7 +554,9 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
 
       // Handle number tools (including directional)
       if (tool.startsWith('number')) {
-        const cellInfo = findCellAtPoint(point);
+        const cellInfo = findCellAtPoint(point, {
+          allowOutboard: shouldAllowOutboardForTool(toolSettings.currentTool, activeLayer),
+        });
         if (!cellInfo || cellInfo.row === undefined || cellInfo.col === undefined) return;
 
         setNumberSelection({ row: cellInfo.row, col: cellInfo.col });
@@ -544,9 +570,8 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         let existingDirectionalClueId: string | null = null;
         if (tool === 'number-directional' && isRightButton) {
           const dataLayer = toDataLayer(activeLayer);
-          existingDirectionalClueId = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
-            ([, clue]) => clue.cellId === cellInfo.cellId
-          )?.[0] ?? null;
+          existingDirectionalClueId =
+            findDirectionalNumberByCellId(puzzle[dataLayer].numbers, cellInfo.cellId)?.id ?? null;
         }
 
         const ctx = buildMouseDownContext(point, isRightButton);
@@ -571,7 +596,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       }
 
       // Update cursor cell for any mouse down (for DirectionPanel/MulticolorSettings)
-      const cursorCellInfo = findCellAtPoint(point);
+      const cursorCellInfo = findCellAtPoint(point, { allowOutboard: shouldAllowOutboardForTool(toolSettings.currentTool, activeLayer) });
       if (cursorCellInfo?.cellId) {
         setCursorCell(cursorCellInfo.cellId);
       }
@@ -595,9 +620,12 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       setNumberSelection,
       puzzle,
       activeLayer,
+      useTopology,
+      topology,
       isGridMode,
       isSpecificMode,
       isConstraintEnabled,
+      editableLayer,
       buildMouseDownContext,
       executeMouseDownAction,
     ]
@@ -618,7 +646,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         svgRef.current
       );
 
-      const cellInfo = findCellAtPoint(point);
+      const cellInfo = findCellAtPoint(point, { allowOutboard: shouldAllowOutboardForTool(toolSettings.currentTool, activeLayer) });
       const cellId = cellInfo?.cellId ?? null;
 
       if (cellId !== hoverCell) {
@@ -642,17 +670,17 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         if ((isConstraintEnabled && (isDirecInputMode || isAutoDirecMode)) || isNumberDirectionalTool) {
           const { startPoint, startCellId } = flickStateRef.current;
           if (!startCellId) return;
-          const dataLayer = toDataLayer(activeLayer);
+          if (!editableLayer) return;
+          const dataLayer = editableLayer;
 
-          // Check if there's a directional clue at the start cell (using cellId)
-          const existingClueEntry = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
-            ([, clue]) => clue.cellId === startCellId
-          );
+          // Check if there's a directional number at the start cell (using cellId)
+          const existingDirectionalEntry = findDirectionalNumberByCellId(puzzle[dataLayer].numbers, startCellId);
+          const existingClue = existingDirectionalEntry
+            ? toPenpaDirectionalClue(existingDirectionalEntry.number)
+            : null;
 
           // Also check if there's a regular number at this cell (for conversion)
-          const existingNumberEntry = Object.entries(puzzle[dataLayer].numbers || {}).find(
-            ([, n]) => n.cellId === startCellId && n.position === 'center'
-          );
+          const existingNumberEntry = findNumberEntry(puzzle[dataLayer].numbers, startCellId, 'center');
 
           // Calculate direction from start point to current point
           // For deformed grids (topology mode), use edge-perpendicular direction
@@ -671,9 +699,9 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
 
           // If we got a valid direction or angle, update the clue
           if (direction !== 0 || angle !== null) {
-            if (existingClueEntry) {
-              // Update existing directional clue's direction/angle
-              const [, clue] = existingClueEntry;
+            if (existingClue) {
+              // Update existing directional number's direction/angle
+              const clue = existingClue;
               // Check if direction or angle changed
               const directionChanged = angle === null && direction !== clue.direction;
               const angleChanged = angle !== null && (clue.angle !== angle);
@@ -682,6 +710,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
                   cellId: startCellId,
                   direction: angle !== null ? 0 : direction, // Use direction 0 when using angle
                   value: clue.value,
+                  char: clue.char,
                   layer: dataLayer,
                   angle: angle,
                   color: clue.color || toolSettings.color,
@@ -689,18 +718,17 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
                 flickStateRef.current.inputted = true;
               }
             } else if (existingNumberEntry) {
-              // Convert regular number to directional clue with arrow
-              const [numberId, num] = existingNumberEntry;
-              const numValue = parseInt(num.value, 10);
-              const isSingleChar = num.value.length === 1 && isNaN(numValue);
+              // Convert regular number to directional number with arrow
+              const { id: numberId, number: num } = existingNumberEntry;
+              const { value, char } = getDirectionalClueValueFields(num.value);
 
-              // Add directional clue with the number value and direction/angle
+              // Add directional number with the number value and direction/angle
               // For single char, use char field; for number, use value field
               addDirectionalClue({
                 cellId: startCellId,
                 direction: angle !== null ? 0 : direction,
-                value: isSingleChar ? 0 : (isNaN(numValue) ? 0 : numValue),
-                char: isSingleChar ? num.value : undefined,
+                value,
+                char,
                 layer: dataLayer,
                 angle: angle,
                 color: toolSettings.color,
@@ -720,10 +748,10 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         const autoConfig = getAutoModeConfig(currentSchema, !isPlayMode);
         const isAutoLineCellMode = currentInputMode === 'auto' && autoConfig.type === 'line-cell';
 
-        if (isAutoLineCellMode) {
+        if (isAutoLineCellMode && editableLayer) {
           const cellInfo = findCellAtPoint(point);
           if (cellInfo) {
-            const dataLayer = toDataLayer(activeLayer);
+            const dataLayer = editableLayer;
             // Check if surface already exists (use cellInfo.cellId for topology support)
             const existingSurface = Object.values(puzzle[dataLayer].surfaces).find(
               (s) => s.cellId === cellInfo.cellId
@@ -796,7 +824,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
         updateSculptHover(point);
       }
     },
-    [baseHandleMouseMove, canvas.zoom, canvas.panX, canvas.panY, svgRef, hoverCell, setHoverCell, updateLineHoverPoint, updateSymbolHoverPoint, findCellAtPoint, isGridMode, gridEditMode, updateSplitHoverVertex, updateSculptHover, isConstraintEnabled, currentInputMode, currentSchemaId, grid.cols, grid.cellSize, puzzle, activeLayer, addDirectionalClue, addSurface, handleSymbolTool]
+    [baseHandleMouseMove, canvas.zoom, canvas.panX, canvas.panY, svgRef, hoverCell, setHoverCell, updateLineHoverPoint, updateSymbolHoverPoint, findCellAtPoint, isGridMode, gridEditMode, updateSplitHoverVertex, updateSculptHover, isConstraintEnabled, currentInputMode, currentSchemaId, grid.cols, grid.cellSize, puzzle, activeLayer, editableLayer, addDirectionalClue, addSurface, handleSymbolTool, toolSettings.currentTool]
   );
 
   // Handle mouse up for selection end
@@ -826,7 +854,9 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           );
           // Use start cell for number input (not current mouse position)
           const { row, col } = flickState.startCell;
-          const cellInfo = findCellAtPoint(currentPoint);
+          const cellInfo = findCellAtPoint(currentPoint, {
+            allowOutboard: shouldAllowOutboardForTool(toolSettings.currentTool, activeLayer),
+          });
           // Only input if mouse is still on the same cell (or close enough)
           const isSameCell = cellInfo && cellInfo.row === row && cellInfo.col === col;
           if (isSameCell && flickState.startCellCenter && flickState.startCellId) {
@@ -849,62 +879,31 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
           canvas.panY,
           svgRef.current
         );
-        const cellInfo = findCellAtPoint(point);
+        const cellInfo = findCellAtPoint(point, {
+          allowOutboard: shouldAllowOutboardForTool(toolSettings.currentTool, activeLayer),
+        });
         const { row, col } = flickState.startCell;
         const isSameCell = cellInfo && cellInfo.row === row && cellInfo.col === col;
 
-        if (isSameCell && flickState.startCellId) {
-          // Increment/decrement the directional clue value (or create new one with value 1)
+        if (isSameCell && flickState.startCellId && editableLayer) {
+          // Increment/decrement the directional number value (or create new one with value 1)
           const startCellId = flickState.startCellId;
-          const dataLayer = toDataLayer(activeLayer);
-          const existingEntry = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
-            ([, clue]) => clue.cellId === startCellId
-          );
+          const dataLayer = editableLayer;
+          const existingDirectionalEntry = findDirectionalNumberByCellId(puzzle[dataLayer].numbers, startCellId);
+          const existingEntry = existingDirectionalEntry
+            ? toPenpaDirectionalClue(existingDirectionalEntry.number)
+            : null;
+          const plan = buildDirectionalClueIncrementPlan({
+            cellId: startCellId,
+            layer: dataLayer,
+            existingClue: existingEntry ?? null,
+            existingNumber: existingEntry ? null : findNumberEntry(puzzle[dataLayer].numbers, startCellId, 'center'),
+          });
 
-          if (existingEntry) {
-            // Increment existing value (preserve direction, angle, and char)
-            const [, clue] = existingEntry;
-            // Only increment if no char field (char takes precedence for display)
-            if (!clue.char) {
-              const newValue = (clue.value ?? 0) + 1;
-              addDirectionalClue({
-                cellId: startCellId,
-                direction: clue.direction,
-                value: newValue,
-                layer: dataLayer,
-                angle: clue.angle, // Preserve existing angle
-              });
-            }
-            // If has char, clicking doesn't change value - leave as is
-          } else {
-            // Check if there's a regular number to convert
-            const existingNumber = Object.entries(puzzle[dataLayer].numbers).find(
-              ([, num]) => num.cellId === startCellId && num.position === 'center'
-            );
-
-            if (existingNumber) {
-              // Convert regular number to directional clue (with direction=0 for no arrow)
-              const [numberId, num] = existingNumber;
-              const numValue = parseInt(num.value, 10);
-              if (!isNaN(numValue)) {
-                addDirectionalClue({
-                  cellId: startCellId,
-                  direction: 0,
-                  value: numValue + 1,
-                  layer: dataLayer,
-                  angle: null, // No angle for newly converted number
-                });
-                removeNumber(numberId);
-              }
-            } else {
-              // Create new directional clue with value 1 (no arrow)
-              addDirectionalClue({
-                cellId: startCellId,
-                direction: 0,
-                value: 1,
-                layer: dataLayer,
-                angle: null, // No angle for new clue
-              });
+          if (plan.type === 'update' || plan.type === 'create' || plan.type === 'convert-number') {
+            addDirectionalClue(plan.clue);
+            if (plan.type === 'convert-number') {
+              removeNumber(plan.removeNumberId);
             }
           }
         }
@@ -1051,7 +1050,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       flickStateRef.current = { ...INITIAL_FLICK_STATE };
       baseHandleMouseUp(e);
     },
-    [baseHandleMouseUp, currentInputMode, currentSchemaId, activeLayer, isConstraintEnabled, canvas.zoom, canvas.panX, canvas.panY, svgRef, findCellAtPoint, handleNumberTool, handleSurfaceCycleTool, handleSymbolTool, resetFillModes, setToolSettings, toolSettings.currentTool, toolSettings.currentCategory, grid.cellSize, grid.cols, puzzle, addDirectionalClue, removeNumber, findNearestLineAtPoint, highlightedLineIds, setHighlightedLineIds]
+    [baseHandleMouseUp, currentInputMode, currentSchemaId, activeLayer, editableLayer, isConstraintEnabled, canvas.zoom, canvas.panX, canvas.panY, svgRef, findCellAtPoint, handleNumberTool, handleSurfaceCycleTool, handleSymbolTool, resetFillModes, setToolSettings, toolSettings.currentTool, toolSettings.currentCategory, grid.cellSize, grid.cols, puzzle, addDirectionalClue, removeNumber, findNearestLineAtPoint, highlightedLineIds, setHighlightedLineIds]
   );
 
   // Handle mouse leave - clear hover cell

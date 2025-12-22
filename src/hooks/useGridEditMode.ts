@@ -7,7 +7,7 @@
  */
 
 import { useCallback, useState } from 'react';
-import { usePuzzleStore } from '../store/puzzleStore';
+import { usePuzzleStore } from '../store/puzzleStoreContext';
 import type { Point } from '../types';
 import type { GridTopology } from '../utils/gridTopology';
 

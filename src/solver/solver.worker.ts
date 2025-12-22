@@ -22,10 +22,13 @@ import {
   HeyawakeRoom,
   NurikabeField,
   NurikabeSolver,
+  NurimisakiField,
+  NurimisakiSolver,
 } from '@logicpuzzle-app/solver-kit';
 import type { PuzzleState, GridConfig } from '../types';
 import type { SolveResult } from './types';
 import { getCellIndexById, getEdgeIndexById } from '../utils/gridUtils';
+import { getDirectionalCluesFromElements, isDirectionalNumber } from '../utils/numberEntries';
 
 // Message types
 export interface SolverWorkerRequest {
@@ -50,9 +53,10 @@ function solveSlitherlink(grid: GridConfig, problem: PuzzleState['problem']): So
     // Create field
     const field = new SlitherField(grid.rows, grid.cols);
 
-    // Extract number clues from directionalClues (used by constraint mode)
-    if (problem.directionalClues) {
-      for (const clue of Object.values(problem.directionalClues)) {
+    const directionalNumbers = getDirectionalCluesFromElements(problem);
+    // Extract number clues from directional numbers (used by constraint mode)
+    if (directionalNumbers.length > 0) {
+      for (const clue of directionalNumbers) {
         // Use cell index if available, otherwise parse from cellId
         let row: number, col: number;
         if (clue.cell !== undefined) {
@@ -73,6 +77,7 @@ function solveSlitherlink(grid: GridConfig, problem: PuzzleState['problem']): So
     // Also check regular numbers (for backward compatibility)
     if (problem.numbers) {
       for (const num of Object.values(problem.numbers)) {
+        if (isDirectionalNumber(num)) continue;
         const index = getCellIndexById(num.cellId, grid);
         if (!index) continue;
         const value = parseInt(num.value, 10);
@@ -158,7 +163,6 @@ function convertSlitherSolutionToAnswer(
     cages: {},
     specials: {},
     boxLines: {},
-    directionalClues: {},
   };
 
   // Add horizontal edges (using unified lines with lineTarget='edge')
@@ -315,7 +319,6 @@ function convertMasyuSolutionToAnswer(
     cages: {},
     specials: {},
     boxLines: {},
-    directionalClues: {},
   };
 
   let lineId = 1;
@@ -375,10 +378,11 @@ function solveYajilin(grid: GridConfig, problem: PuzzleState['problem']): SolveR
     // Create field
     const field = new YajilinField(grid.rows, grid.cols);
 
-    // Extract arrow clues from directionalClues
+    const directionalNumbers = getDirectionalCluesFromElements(problem);
+    // Extract arrow clues from directional numbers
     // PenpaDirectionalClue direction: 0=None, 1=Up, 2=Down, 3=Left, 4=Right
-    if (problem.directionalClues) {
-      for (const clue of Object.values(problem.directionalClues)) {
+    if (directionalNumbers.length > 0) {
+      for (const clue of directionalNumbers) {
         // Use cell index if available, otherwise parse from cellId
         let row: number, col: number;
         if (clue.cell !== undefined) {
@@ -492,7 +496,6 @@ function convertYajilinSolutionToAnswer(
     cages: {},
     specials: {},
     boxLines: {},
-    directionalClues: {},
   };
 
   let lineId = 1;
@@ -661,6 +664,7 @@ function solveHeyawake(grid: GridConfig, problem: PuzzleState['problem']): Solve
     // Set room numbers from problem.numbers
     if (problem.numbers) {
       for (const num of Object.values(problem.numbers)) {
+        if (isDirectionalNumber(num)) continue;
         const index = getCellIndexById(num.cellId, grid);
         if (!index) continue;
         const value = parseInt(num.value, 10);
@@ -764,7 +768,6 @@ function convertHeyawakeSolutionToAnswer(
     cages: {},
     specials: {},
     boxLines: {},
-    directionalClues: {},
   };
 
   let surfaceId = 1;
@@ -808,10 +811,11 @@ function solveNurikabe(grid: GridConfig, problem: PuzzleState['problem']): Solve
     return null;
   };
 
-  // Collect clues from directionalClues, numbers, symbols
+  // Collect clues from directional numbers, numbers, symbols
   const clues: Array<{ row: number; col: number; value: number }> = [];
-  if (problem.directionalClues) {
-    for (const clue of Object.values(problem.directionalClues)) {
+  const directionalNumbers = getDirectionalCluesFromElements(problem);
+  if (directionalNumbers.length > 0) {
+    for (const clue of directionalNumbers) {
       // Use cell index if available, otherwise parse from cellId
       let row: number, col: number;
       if (clue.cell !== undefined) {
@@ -829,6 +833,7 @@ function solveNurikabe(grid: GridConfig, problem: PuzzleState['problem']): Solve
   }
   if (problem.numbers) {
     for (const num of Object.values(problem.numbers)) {
+      if (isDirectionalNumber(num)) continue;
       const index = getCellIndexById(num.cellId, grid);
       if (!index) continue;
       const v = parseClueValue(num.value);
@@ -933,6 +938,159 @@ function solveNurikabe(grid: GridConfig, problem: PuzzleState['problem']): Solve
 }
 
 /**
+ * Solve Nurimisaki puzzle
+ */
+function solveNurimisaki(grid: GridConfig, problem: PuzzleState['problem']): SolveResult {
+  const startTime = performance.now();
+
+  const parseClueValue = (raw: unknown): number | null => {
+    if (raw === undefined || raw === null) return null;
+    const s = String(raw).trim();
+    if (s.length === 0) return null;
+    if (/^-?\d+$/.test(s)) {
+      const v = parseInt(s, 10);
+      return Number.isNaN(v) ? null : v;
+    }
+    if (/^[a-z]$/i.test(s)) {
+      return s.toLowerCase().charCodeAt(0) - 'a'.charCodeAt(0) + 10;
+    }
+    return null;
+  };
+
+  try {
+    const field = new NurimisakiField(grid.rows, grid.cols);
+    const capeMap = new Map<string, { row: number; col: number; num: number | null }>();
+
+    if (problem.numbers) {
+      for (const num of Object.values(problem.numbers)) {
+        if (isDirectionalNumber(num)) continue;
+        const index = getCellIndexById(num.cellId, grid);
+        if (!index) continue;
+        capeMap.set(num.cellId, {
+          row: index.row,
+          col: index.col,
+          num: parseClueValue(num.value),
+        });
+      }
+    }
+
+    if (problem.symbols) {
+      for (const sym of Object.values(problem.symbols)) {
+        if (sym.symbolType !== 'circle' && sym.symbolType !== 'circle-large') continue;
+        const index = getCellIndexById(sym.cellId, grid);
+        if (!index) continue;
+        if (!capeMap.has(sym.cellId)) {
+          capeMap.set(sym.cellId, {
+            row: index.row,
+            col: index.col,
+            num: null,
+          });
+        }
+      }
+    }
+
+    for (const cape of capeMap.values()) {
+      field.setCape(cape.row, cape.col, cape.num);
+    }
+
+    const solver = new NurimisakiSolver(field);
+    const result = solver.solve({ timeout: 30000, maxBranches: 100000 });
+
+    const resolvedState = result.state ?? solver.getField();
+
+    if (result.status === SolveStatus.SOLVED) {
+      const answer = convertNurimisakiSolutionToAnswer(grid, resolvedState);
+      return {
+        success: true,
+        status: 'solved',
+        answer,
+        time: performance.now() - startTime,
+        solutionCount: 1,
+      };
+    }
+
+    if (result.status === SolveStatus.MULTIPLE) {
+      const partialAnswer = resolvedState
+        ? convertNurimisakiSolutionToAnswer(grid, resolvedState)
+        : undefined;
+      return {
+        success: false,
+        status: 'multiple',
+        partialAnswer,
+        time: performance.now() - startTime,
+      };
+    }
+
+    if (result.status === SolveStatus.TIMEOUT) {
+      const partialAnswer = resolvedState
+        ? convertNurimisakiSolutionToAnswer(grid, resolvedState)
+        : undefined;
+      return {
+        success: false,
+        status: 'timeout',
+        partialAnswer,
+        time: performance.now() - startTime,
+      };
+    }
+
+    const partialAnswer = resolvedState
+      ? convertNurimisakiSolutionToAnswer(grid, resolvedState)
+      : undefined;
+    return {
+      success: false,
+      status: 'unsolvable',
+      partialAnswer,
+      time: performance.now() - startTime,
+    };
+  } catch (e) {
+    return {
+      success: false,
+      status: 'error',
+      error: e instanceof Error ? e.message : 'Unknown error',
+      time: performance.now() - startTime,
+    };
+  }
+}
+
+/**
+ * Convert Nurimisaki solver solution to puzzle-kit answer format
+ */
+function convertNurimisakiSolutionToAnswer(
+  grid: GridConfig,
+  state: NurimisakiField
+): PuzzleState['answer'] {
+  const answer: PuzzleState['answer'] = {
+    surfaces: {},
+    lines: {},
+    edges: {},
+    walls: {},
+    numbers: {},
+    symbols: {},
+    cages: {},
+    specials: {},
+    boxLines: {},
+  };
+
+  let surfaceId = 1;
+
+  for (let row = 0; row < grid.rows; row++) {
+    for (let col = 0; col < grid.cols; col++) {
+      if (state.getCell(row, col) === CellState.BLACK) {
+        const cellId = `cell-${row}-${col}`;
+        answer.surfaces[`surface-${surfaceId++}`] = {
+          id: `surface-${surfaceId - 1}`,
+          cellId,
+          color: '#374151',
+          layer: 'answer',
+        };
+      }
+    }
+  }
+
+  return answer;
+}
+
+/**
  * Convert Nurikabe solver solution to puzzle-kit answer format
  * Nurikabe has: black (shaded) cells
  * @param isPartial If true, this is a partial solution (for timeout/unsolvable)
@@ -953,7 +1111,6 @@ function convertNurikabeSolutionToAnswer(
     cages: {},
     specials: {},
     boxLines: {},
-    directionalClues: {},
   };
 
   let surfaceId = 1;
@@ -994,6 +1151,8 @@ function solve(pid: string, grid: GridConfig, problem: PuzzleState['problem']): 
       return solveHeyawake(grid, problem);
     case 'nurikabe':
       return solveNurikabe(grid, problem);
+    case 'nurimisaki':
+      return solveNurimisaki(grid, problem);
     default:
       return {
         success: false,

@@ -10,6 +10,11 @@
 export type ConstraintScope = 'problem' | 'answer' | 'validation';
 
 /**
+ * Highlight scope - when highlight applies
+ */
+export type HighlightScope = 'play';
+
+/**
  * Grid type for the puzzle
  */
 export type GridType = 'square' | 'hex' | 'tri' | 'pyramid' | 'special';
@@ -64,6 +69,26 @@ export interface ConstraintRule {
 }
 
 /**
+ * Highlight rule definition
+ */
+export interface HighlightRule {
+  /** Unique rule ID, e.g. "akari.light-beams" */
+  id: string;
+
+  /** Which scope this rule applies to */
+  scope: HighlightScope;
+
+  /** i18n key for the rule title */
+  title: string;
+
+  /** i18n key for the rule description */
+  description: string;
+
+  /** Whether this highlight rule is on by default */
+  defaultOn?: boolean;
+}
+
+/**
  * Input mode definition (based on pzprjs inputModes)
  * Defines which tools are available in edit/play modes
  */
@@ -71,6 +96,8 @@ export type InputMode =
   | 'auto'
   | 'number'
   | 'number-'  // number with left-right inversion
+  | 'numexist'
+  | 'numblank'
   | 'clear'
   | 'line'
   | 'peke'     // X mark on edges
@@ -185,6 +212,9 @@ export interface ConstraintSchema {
 
   /** Validation constraints */
   validation: ConstraintRule[];
+
+  /** Highlight rules (play-only visual helpers) */
+  highlight?: HighlightRule[];
 
   /** Additional notes */
   notes?: string[];

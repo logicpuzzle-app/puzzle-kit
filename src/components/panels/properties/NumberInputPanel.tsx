@@ -17,15 +17,31 @@
  *   - cells >= 3000: 4 digits
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { usePuzzleStore } from '../../../store/puzzleStore';
+import { usePuzzleStore } from '../../../store/puzzleStoreContext';
+import { constraintCatalog } from '../../../constraints/ConstraintCatalog';
+import { getAutoModeConfig } from '../../../constraints/inputModeMapping';
 import { toDataLayer } from '../../../types';
+import { getEditableDataLayer } from '../../../utils/editPolicy';
+import { toPenpaDirection } from '../../../utils/directionalClue';
+import { appendDigit, getMaxDigitsForGrid } from '../../../hooks/keyboardUtils';
+import { useCellFinder } from '../../../hooks/useCellFinder';
+import {
+  findDirectionalNumberByCellId,
+  findNumberEntry,
+  isNumericString,
+  limitNumericString,
+} from '../../../utils/numberEntries';
 
 // Input mode type: number, alphabet, hiragana, or custom
 type InputPanelMode = 'number' | 'alphabet' | 'hiragana' | 'custom';
 
-export const NumberInputPanel: React.FC = () => {
+type NumberInputPanelProps = {
+  onLayoutChange?: () => void;
+};
+
+export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChange }) => {
   const { t } = useTranslation();
   const [panelMode, setPanelMode] = useState<InputPanelMode>('number');
   const [isUpperCase, setIsUpperCase] = useState(true);
@@ -35,97 +51,59 @@ export const NumberInputPanel: React.FC = () => {
     numberSelection,
     puzzle,
     activeLayer,
+    isPlayerMode,
     addNumber,
     removeNumber,
     addDirectionalClue,
-    removeDirectionalClue,
     toolSettings,
     grid,
     currentSchemaId,
     currentInputMode,
-    useTopology,
-    topology,
+    showConstraintLayer,
   } = usePuzzleStore();
+  const { findCellIdByRowCol } = useCellFinder();
 
-  // Check if we're in directional number mode or constraint number mode
-  // All constraint number modes (number, number-, direc) use directionalClues with direction=0 for no arrow
-  const isDirectionalMode = toolSettings.currentTool === 'number-directional' ||
+  const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
+  const isConstraintEnabled = showConstraintLayer && currentSchemaId !== null;
+  const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
+  const effectiveLayer = editableLayer ?? activeLayer;
+  const isEditMode = editableLayer === 'problem';
+  const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
+  const isAutoNumberMode = currentInputMode === 'auto' &&
+    (autoConfig.type === 'number' || autoConfig.type === 'direc' || autoConfig.type === 'border-number');
+  const isConstraintNumberInput = Boolean(editableLayer) && isConstraintEnabled && (
     currentInputMode === 'direc' ||
     currentInputMode === 'number' ||
-    currentInputMode === 'number-';
+    currentInputMode === 'number-' ||
+    isAutoNumberMode
+  );
+
+  // Directional clue rendering for constraint number input (align with keyboard input)
+  const isDirectionalMode = toolSettings.currentTool === 'number-directional' || isConstraintNumberInput;
 
   // Check if we're in regular number mode (for non-constraint number input)
   const isRegularNumberMode = toolSettings.currentTool.startsWith('number') &&
     toolSettings.currentTool !== 'number-directional' &&
     !isDirectionalMode;
 
-  const dataLayer = toDataLayer(activeLayer);
+  const dataLayer = editableLayer ?? toDataLayer(effectiveLayer);
 
-  // Find the topology cell ID for merged cells (same logic as InputHandlerLayer keyboard handler)
-  const findTopologyCellId = useCallback(
-    (row: number, col: number): string | null => {
-      if (!topology) return null;
-      const targetCellId = `cell-${row}-${col}`;
-
-      // First, check for direct match by row/col
-      const candidates = Array.from(topology.cells.values()).filter(
-        c => c.row === row && c.col === col
-      );
-      if (candidates.length > 0) {
-        const hex = candidates.find(c => c.id.includes('hex'));
-        return (hex ?? candidates[0]).id;
-      }
-
-      // If not found, check for merged cells that contain this cell
-      for (const cell of topology.cells.values()) {
-        if (cell.originalCells && cell.originalCells.includes(targetCellId)) {
-          return cell.id;
-        }
-      }
-
-      return null;
-    },
-    [topology]
-  );
-
-  // Calculate max digits based on puzzle type and grid size
-  const getMaxDigits = (): number => {
-    // For Yajilin arrow numbers (direc mode), use max dimension / 2
-    // Arrow counts shaded cells in one direction, so max is about half the dimension
-    if (currentSchemaId === 'yajilin' || currentInputMode === 'direc') {
-      const maxDimension = Math.max(grid.rows, grid.cols);
-      if (maxDimension <= 20) return 1;
-      if (maxDimension <= 200) return 2;
-      if (maxDimension <= 2000) return 3;
-      return 4;
-    }
-
-    // For other puzzles (nurikabe island size, etc.), use total cells
-    const totalCells = grid.rows * grid.cols;
-    if (totalCells >= 3000) return 4;
-    if (totalCells >= 300) return 3;
-    return 2;
-  };
-
-  const maxDigits = getMaxDigits();
+  const isDirecType = currentInputMode === 'direc' ||
+    (currentInputMode === 'auto' && autoConfig.type === 'direc');
+  const maxDigits = getMaxDigitsForGrid(grid.rows, grid.cols, isDirecType);
 
   // Get the effective cell ID (considering merged cells)
   // Uses the same logic as InputHandlerLayer keyboard handler
   const getEffectiveCellId = (): string | null => {
     if (!numberSelection) return null;
 
-    // Use topology-aware cell ID for merged cells (same as keyboard input)
-    if (useTopology) {
-      return findTopologyCellId(numberSelection.row, numberSelection.col)
-        ?? `cell-${numberSelection.row}-${numberSelection.col}`;
-    }
-
-    return `cell-${numberSelection.row}-${numberSelection.col}`;
+    return findCellIdByRowCol(numberSelection.row, numberSelection.col)
+      ?? `cell-${numberSelection.row}-${numberSelection.col}`;
   };
 
   const effectiveCellId = getEffectiveCellId();
 
-  // Get cell index for directional clues
+  // Get cell index for directional numbers
   const getCellIndex = (): number | null => {
     if (!numberSelection) return null;
     return numberSelection.row * grid.cols + numberSelection.col;
@@ -136,77 +114,58 @@ export const NumberInputPanel: React.FC = () => {
   // Get current number value in selected cell (or merged cell group)
   const getCurrentValue = (): string | null => {
     if (isDirectionalMode) {
-      // For directional mode, get value from directionalClues
-      if (cellIndex === null) return null;
-      const clues = puzzle[dataLayer].directionalClues || {};
-      const existing = Object.values(clues).find((c) => c.cell === cellIndex);
-      return existing?.value !== undefined ? String(existing.value) : null;
+      if (!effectiveCellId) return null;
+      const existingNumber = findDirectionalNumberByCellId(puzzle[dataLayer].numbers, effectiveCellId);
+      return existingNumber?.number.value ?? null;
     }
 
     if (!effectiveCellId) return null;
-    const numbers = puzzle[dataLayer].numbers;
     const position = toolSettings.numberPosition || 'center';
     const cornerIndex = toolSettings.cornerIndex ?? 0;
     const sideIndex = toolSettings.sideIndex ?? 0;
 
     // Find number matching position and index
-    const existing = Object.values(numbers).find((n) => {
-      if (n.cellId !== effectiveCellId) return false;
-      if (position === 'center') {
-        return n.position === 'center';
-      } else if (position === 'corner') {
-        return n.position === 'corner' && n.cornerIndex === cornerIndex;
-      } else if (position === 'side') {
-        return n.position === 'side' && n.sideIndex === sideIndex;
-      }
-      return n.position === position;
+    const existing = findNumberEntry(puzzle[dataLayer].numbers, effectiveCellId, position, {
+      cornerIndex,
+      sideIndex,
     });
-    return existing?.value || null;
+    return existing?.number.value || null;
   };
 
   const currentValue = getCurrentValue();
 
-  // Convert arrowDirection (-1=none, 0=up, 1=left, 2=right, 3=down) to Penpa direction (0=none, 1=up, 2=down, 3=left, 4=right)
-  const directionMap: Record<number, number> = {
-    [-1]: 0, // no direction
-    0: 1, // up
-    1: 3, // left
-    2: 4, // right
-    3: 2, // down
-  };
-
-  // Check if value is a number (for directional clues which only support numbers)
-  const isNumericValue = (value: string): boolean => {
-    return /^\d+$/.test(value);
-  };
-
   // Update number value in cell (or merged cell group)
   const updateNumberValue = (newValue: string) => {
-    // For directional mode, use directionalClue only if value is numeric
-    // Alphabets and special characters are not supported in directional clues
-    const useDirectionalClue = isDirectionalMode && (newValue === '' || isNumericValue(newValue));
+    if (!editableLayer) return;
+    // For directional mode, use directional number only if value is numeric
+    // Alphabets and special characters are not supported in directional numbers
+    const useDirectionalClue = isDirectionalMode && (newValue === '' || isNumericString(newValue));
 
     if (useDirectionalClue) {
       // For directional mode, use directionalClue
       if (cellIndex === null) return;
 
-      // Remove existing directional clue
-      const clues = puzzle[dataLayer].directionalClues || {};
-      const existingEntry = Object.entries(clues).find(([, c]) => c.cell === cellIndex);
-      if (existingEntry) {
-        removeDirectionalClue(existingEntry[0]);
+      // Remove existing directional number
+      const existingNumberEntry = effectiveCellId
+        ? findDirectionalNumberByCellId(puzzle[dataLayer].numbers, effectiveCellId)
+        : null;
+      if (existingNumberEntry?.id) {
+        removeNumber(existingNumberEntry.id);
       }
 
-      // Add new directional clue if value is not empty
+      // Add new directional number if value is not empty
       if (newValue) {
         // Use 0 for no direction (will display as centered number without arrow)
-        const direction = directionMap[toolSettings.arrowDirection] ?? 0;
+        const direction = existingNumberEntry?.number.direction ??
+          toPenpaDirection(toolSettings.arrowDirection);
         addDirectionalClue({
           cellId: effectiveCellId || `cell-${numberSelection!.row}-${numberSelection!.col}`,
           cell: cellIndex,
           direction: direction as 0 | 1 | 2 | 3 | 4,
           value: parseInt(newValue, 10),
           layer: dataLayer,
+          angle: existingNumberEntry?.number.angle ?? null,
+          color: existingNumberEntry?.number.color ?? toolSettings.color,
         });
       }
       return;
@@ -219,21 +178,13 @@ export const NumberInputPanel: React.FC = () => {
     const sideIndex = toolSettings.sideIndex ?? 0;
 
     // Remove existing number at current position
-    const numbers = puzzle[dataLayer].numbers;
-    const existingEntry = Object.entries(numbers).find(([, n]) => {
-      if (n.cellId !== effectiveCellId) return false;
-      if (position === 'center') {
-        return n.position === 'center';
-      } else if (position === 'corner') {
-        return n.position === 'corner' && n.cornerIndex === cornerIndex;
-      } else if (position === 'side') {
-        return n.position === 'side' && n.sideIndex === sideIndex;
-      }
-      return n.position === position;
+    const existingEntry = findNumberEntry(puzzle[dataLayer].numbers, effectiveCellId, position, {
+      cornerIndex,
+      sideIndex,
     });
 
     if (existingEntry) {
-      removeNumber(existingEntry[0]);
+      removeNumber(existingEntry.id);
     }
 
     // Add new number if value is not empty
@@ -256,22 +207,15 @@ export const NumberInputPanel: React.FC = () => {
     if (!numberSelection) return;
 
     // If current value is '?' or null, replace with the new digit
-    if (currentValue === '?' || currentValue === null) {
-      updateNumberValue(String(num));
-    } else if (currentValue.length >= maxDigits) {
-      // At max digits: clear and start with the new digit
-      updateNumberValue(String(num));
-    } else {
-      // Append digit to existing value
-      const newValue = currentValue + String(num);
-      updateNumberValue(newValue);
-    }
+    const normalized = currentValue === '?' ? null : currentValue;
+    const nextValue = appendDigit(normalized, String(num), maxDigits);
+    updateNumberValue(nextValue);
   };
 
   // Handle special button click (? replaces entire value)
   const handleSpecialClick = (value: string) => {
     if (!numberSelection) return;
-    // Special characters like '?' are not valid for directional clues
+    // Non-numeric input is disabled for constraint/directional number inputs
     if (isDirectionalMode) return;
     updateNumberValue(value);
   };
@@ -279,8 +223,8 @@ export const NumberInputPanel: React.FC = () => {
   // Handle alphabet button click - replaces entire value with the letter
   const handleAlphabetClick = (letter: string) => {
     if (!numberSelection) return;
-    // Alphabet is not valid for directional clues (direc mode)
-    if (currentInputMode === 'direc') return;
+    // Non-numeric input is disabled for constraint/directional number inputs
+    if (isDirectionalMode) return;
     // Apply case transformation
     const finalLetter = isUpperCase ? letter.toUpperCase() : letter.toLowerCase();
     updateNumberValue(finalLetter);
@@ -296,7 +240,7 @@ export const NumberInputPanel: React.FC = () => {
   // Handle hiragana/katakana button click - replaces entire value with the character
   const handleHiraganaClick = (char: string) => {
     if (!numberSelection) return;
-    if (currentInputMode === 'direc') return;
+    if (isDirectionalMode) return;
     const finalChar = isKatakana ? toKatakana(char) : char;
     updateNumberValue(finalChar);
   };
@@ -304,8 +248,9 @@ export const NumberInputPanel: React.FC = () => {
   // Handle custom input submission
   const handleCustomSubmit = () => {
     if (!numberSelection || !customInput) return;
-    if (currentInputMode === 'direc' && !isNumericValue(customInput)) return;
-    updateNumberValue(customInput);
+    if (isDirectionalMode && !isNumericString(customInput)) return;
+    const nextValue = limitNumericString(customInput, maxDigits);
+    updateNumberValue(nextValue);
     setCustomInput('');
   };
 
@@ -328,7 +273,7 @@ export const NumberInputPanel: React.FC = () => {
     updateNumberValue('');
   };
 
-  const isDisabled = !numberSelection;
+  const isDisabled = !numberSelection || !editableLayer;
 
   // Alphabet rows for the keyboard layout
   const alphabetRows = [
@@ -352,8 +297,14 @@ export const NumberInputPanel: React.FC = () => {
     ['わ', 'を', 'ん'],
   ];
 
-  // Check if non-numeric modes are disabled (for directional clues)
-  const isNonNumericDisabled = currentInputMode === 'direc';
+  // Check if non-numeric modes are disabled (for constraint/directional inputs)
+  const isNonNumericDisabled = isDirectionalMode;
+
+  useEffect(() => {
+    if (!onLayoutChange) return;
+    const frame = requestAnimationFrame(() => onLayoutChange());
+    return () => cancelAnimationFrame(frame);
+  }, [onLayoutChange, panelMode, isKatakana, isUpperCase, customInput]);
 
   return (
     <div className="space-y-1">
@@ -538,8 +489,8 @@ export const NumberInputPanel: React.FC = () => {
         </>
       ) : panelMode === 'hiragana' ? (
         <>
-          {/* Hiragana/Katakana pad grid - scrollable */}
-          <div className="max-h-48 overflow-y-auto space-y-0.5">
+          {/* Hiragana/Katakana pad grid */}
+          <div className="space-y-0.5">
             {hiraganaRows.map((row, rowIndex) => (
               <div key={rowIndex} className="grid gap-0.5" style={{ gridTemplateColumns: `repeat(5, 1fr)` }}>
                 {row.map((char) => {

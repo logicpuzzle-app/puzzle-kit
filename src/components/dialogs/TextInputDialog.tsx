@@ -42,7 +42,7 @@ export const TextInputDialog: React.FC<TextInputDialogProps> = ({
     if (value.trim()) {
       onSubmit({
         value: value.trim(),
-        textType,
+        textType: normalizedType as TextInputType,
       });
     }
     onClose();
@@ -60,19 +60,34 @@ export const TextInputDialog: React.FC<TextInputDialogProps> = ({
 
   if (!isOpen) return null;
 
-  const isFreeText = textType === 'free';
-  const characters = CHARACTER_SETS[textType] || [];
+  const normalizedType = textType.startsWith('text-') ? textType.slice(5) : textType;
+  const isFreeText = normalizedType === 'free';
+  const isKana = normalizedType === 'hiragana' || normalizedType === 'katakana';
+  const characters = CHARACTER_SETS[normalizedType] || [];
+  const kanaColumns = isKana ? Math.min(12, Math.max(8, Math.ceil(characters.length / 4))) : 10;
+  const characterButtonSizeClass = isKana ? 'flex items-center justify-center' : 'w-7 h-7 text-sm';
+  const kanaButtonStyle = isKana
+    ? {
+        width: 'clamp(20px, 6vw, 28px)',
+        height: 'clamp(20px, 6vw, 28px)',
+        fontSize: 'clamp(12px, 3.5vw, 14px)',
+        lineHeight: 1,
+      }
+    : undefined;
 
   return (
     <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
       <div
-        className="bg-white border border-office-border shadow-lg rounded-sm p-4 min-w-[300px] max-w-[400px]"
+        className={`bg-white border border-office-border shadow-lg rounded-sm p-4 min-w-[300px] ${
+          isKana ? 'max-w-[640px]' : 'max-w-[400px]'
+        }`}
+        style={isKana ? { width: 'min(640px, 96vw)', maxHeight: 'none', overflow: 'visible' } : undefined}
         onKeyDown={handleKeyDown}
       >
         <form onSubmit={handleSubmit}>
           {/* Dialog title */}
           <div className="mb-3 text-sm font-semibold text-office-text">
-            {t(`tool.text.${textType}`)}
+            {t(`tool.text.${normalizedType}`)}
           </div>
 
           {/* Value input */}
@@ -97,16 +112,22 @@ export const TextInputDialog: React.FC<TextInputDialogProps> = ({
               <label className="block text-xs text-office-text-secondary mb-1">
                 {t('tool.text.selectCharacter') || 'Select character'}
               </label>
-              <div className="flex flex-wrap gap-0.5 max-h-[200px] overflow-y-auto p-1 border border-office-border rounded">
+              <div
+                className={`gap-0.5 p-1 border border-office-border rounded ${
+                  isKana ? 'grid overflow-visible' : 'flex flex-wrap max-h-[200px] overflow-y-auto'
+                }`}
+                style={isKana ? { gridTemplateColumns: `repeat(${kanaColumns}, minmax(20px, 1fr))`, maxHeight: 'none', overflow: 'visible' } : undefined}
+              >
                 {characters.map((char, idx) => (
                   <button
                     key={`${char}-${idx}`}
                     type="button"
-                    className={`w-7 h-7 text-sm border rounded-sm transition-colors ${
+                    className={`${characterButtonSizeClass} border rounded-sm transition-colors ${
                       value === char
                         ? 'bg-office-accent text-white border-office-accent'
                         : 'bg-white border-office-border hover:bg-office-ribbon-hover hover:border-office-accent'
                     }`}
+                    style={kanaButtonStyle}
                     onClick={() => handleCharacterClick(char)}
                   >
                     {char}
@@ -117,7 +138,7 @@ export const TextInputDialog: React.FC<TextInputDialogProps> = ({
           )}
 
           {/* Quick lowercase letters for alphabet mode */}
-          {textType === 'alphabet' && (
+          {normalizedType === 'alphabet' && (
             <div className="mb-3">
               <label className="block text-xs text-office-text-secondary mb-1">
                 {t('tool.text.lowercase') || 'Lowercase'}

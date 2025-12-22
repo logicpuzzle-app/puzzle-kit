@@ -8,6 +8,7 @@ import { HeyawakeSolver, HeyawakeRoom } from '@logicpuzzle-app/solver-kit';
 import { CellState, SolveStatus } from '@logicpuzzle-app/solver-kit';
 import type { SolverAdapter, SolveResult } from '../types';
 import type { PuzzleState, GridConfig, RoomMap } from '../../types';
+import { getDirectionalCluesFromElements, isDirectionalNumber } from '../../utils/numberEntries';
 
 /**
  * Heyawake solver adapter implementation
@@ -113,12 +114,13 @@ function buildRoomsFromRoomMap(
     }
   }
 
-  // Get room numbers from directionalClues
+  // Get room numbers from directional numbers (Penpa clue format)
   // The number for a room is typically placed in one of the room's cells
   const roomNumbers = new Map<number, number>();
 
-  if (problem.directionalClues) {
-    for (const clue of Object.values(problem.directionalClues)) {
+  const directionalNumbers = getDirectionalCluesFromElements(problem);
+  if (directionalNumbers.length > 0) {
+    for (const clue of directionalNumbers) {
       // Use cellId directly (already in "cell-row-col" format)
       const roomId = roomMap[clue.cellId];
       if (roomId !== undefined && clue.value >= 0) {
@@ -130,6 +132,7 @@ function buildRoomsFromRoomMap(
   // Also check regular numbers
   if (problem.numbers) {
     for (const num of Object.values(problem.numbers)) {
+      if (isDirectionalNumber(num)) continue;
       const roomId = roomMap[num.cellId];
       if (roomId === undefined) continue;
       const value = parseInt(num.value, 10);
@@ -206,7 +209,6 @@ function convertHeyawakeSolutionToAnswer(
     cages: {},
     specials: {},
     boxLines: {},
-    directionalClues: {},
   };
 
   // Add shaded cells as black surfaces

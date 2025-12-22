@@ -1,8 +1,15 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pipette } from 'lucide-react';
-import { usePuzzleStore } from '../../../store/puzzleStore';
+import { usePuzzleStore } from '../../../store/puzzleStoreContext';
 import { toDataLayer, LineElement } from '../../../types';
+import { getEditableDataLayer } from '../../../utils/editPolicy';
+import {
+  findDirectionalNumberByCellId,
+  findNumberEntry,
+  getCandidateEntries,
+  toPenpaDirectionalClue,
+} from '../../../utils/numberEntries';
 
 // General color palette for tools
 export const COLOR_PALETTE = [
@@ -34,13 +41,15 @@ export const ColorSelector: React.FC<ColorSelectorProps> = ({ compact = false })
     grid,
     puzzle,
     activeLayer,
+    isPlayerMode,
     addNumber,
     addDirectionalClue,
     highlightedLineIds,
     updateLine,
   } = usePuzzleStore();
 
-  const dataLayer = toDataLayer(activeLayer);
+  const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
+  const dataLayer = editableLayer ?? toDataLayer(activeLayer);
   const [customColor, setCustomColor] = useState(toolSettings.color);
   const colorInputRef = useRef<HTMLInputElement>(null);
 
@@ -66,28 +75,23 @@ export const ColorSelector: React.FC<ColorSelectorProps> = ({ compact = false })
   const findExistingNumberAtPosition = () => {
     if (!numberSelection) return null;
     const cellId = `cell-${numberSelection.row}-${numberSelection.col}`;
-    const numbers = puzzle[dataLayer].numbers;
     const position = toolSettings.numberPosition;
     const cornerIndex = toolSettings.cornerIndex;
     const sideIndex = toolSettings.sideIndex;
 
-    return Object.entries(numbers).find(([, n]) => {
-      if (n.cellId !== cellId) return false;
-      if (position === 'center') return n.position === 'center';
-      if (position === 'corner') return n.position === 'corner' && n.cornerIndex === cornerIndex;
-      if (position === 'side') return n.position === 'side' && n.sideIndex === sideIndex;
-      // For candidates, we update all candidates in the cell
-      if (position === 'candidates') return n.position === 'candidates';
-      return false;
+    return findNumberEntry(puzzle[dataLayer].numbers, cellId, position, {
+      cornerIndex,
+      sideIndex,
     });
   };
 
   const handleColorChange = useCallback((newColor: string) => {
     setToolSettings({ color: newColor });
     setCustomColor(newColor);
+    const canEdit = Boolean(editableLayer);
 
     // Update selected lines if any
-    if (hasSelectedLines) {
+    if (canEdit && hasSelectedLines) {
       highlightedLineIds.forEach(id => {
         const line = puzzle[dataLayer].lines[id];
         if (line && !line.isFree) {
@@ -96,19 +100,19 @@ export const ColorSelector: React.FC<ColorSelectorProps> = ({ compact = false })
       });
     }
 
-    // Update existing number/directional clue if cell is selected
-    if (numberSelection && toolSettings.currentTool.startsWith('number')) {
+    // Update existing number/directional number if cell is selected
+    if (canEdit && numberSelection && toolSettings.currentTool.startsWith('number')) {
       const cellId = `cell-${numberSelection.row}-${numberSelection.col}`;
 
       if (toolSettings.currentTool === 'number-directional') {
-        // Update directional clue color (preserve all existing properties)
+        // Update directional number color (preserve all existing properties)
         const cellIndex = numberSelection.row * grid.cols + numberSelection.col;
         const cellId = `cell-${numberSelection.row}-${numberSelection.col}`;
-        const existingEntry = Object.entries(puzzle[dataLayer].directionalClues || {}).find(
-          ([, c]) => c.cellId === cellId || c.cell === cellIndex
-        );
-        if (existingEntry) {
-          const [, existing] = existingEntry;
+        const existingDirectionalEntry = findDirectionalNumberByCellId(puzzle[dataLayer].numbers, cellId);
+        const existing = existingDirectionalEntry
+          ? toPenpaDirectionalClue(existingDirectionalEntry.number)
+          : null;
+        if (existing) {
           addDirectionalClue({
             cellId,
             cell: cellIndex,
@@ -117,7 +121,7 @@ export const ColorSelector: React.FC<ColorSelectorProps> = ({ compact = false })
             char: existing.char,
             angle: existing.angle,
             color: newColor,
-            layer: dataLayer,
+            layer: editableLayer,
           });
         }
       } else {
@@ -126,10 +130,8 @@ export const ColorSelector: React.FC<ColorSelectorProps> = ({ compact = false })
 
         if (position === 'candidates') {
           // Update all candidates in the cell
-          const candidates = Object.entries(puzzle[dataLayer].numbers).filter(
-            ([, n]) => n.cellId === cellId && n.position === 'candidates'
-          );
-          candidates.forEach(([, existing]) => {
+          const candidates = getCandidateEntries(puzzle[dataLayer].numbers, cellId);
+          candidates.forEach(({ number: existing }) => {
             addNumber({
               cellId,
               value: existing.value,
@@ -138,14 +140,14 @@ export const ColorSelector: React.FC<ColorSelectorProps> = ({ compact = false })
               cornerIndex: existing.cornerIndex,
               sideIndex: existing.sideIndex,
               color: newColor,
-              layer: dataLayer,
+              layer: editableLayer,
             });
           });
         } else {
           // Update number at specific position
           const existingEntry = findExistingNumberAtPosition();
           if (existingEntry) {
-            const [, existing] = existingEntry;
+            const existing = existingEntry.number;
             addNumber({
               cellId,
               value: existing.value,
@@ -154,13 +156,13 @@ export const ColorSelector: React.FC<ColorSelectorProps> = ({ compact = false })
               cornerIndex: existing.cornerIndex,
               sideIndex: existing.sideIndex,
               color: newColor,
-              layer: dataLayer,
+              layer: editableLayer,
             });
           }
         }
       }
     }
-  }, [numberSelection, toolSettings, grid, puzzle, dataLayer, addNumber, addDirectionalClue, setToolSettings, hasSelectedLines, highlightedLineIds, updateLine]);
+  }, [numberSelection, toolSettings, grid, puzzle, dataLayer, editableLayer, addNumber, addDirectionalClue, setToolSettings, hasSelectedLines, highlightedLineIds, updateLine]);
 
   const handleCustomColorInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newColor = e.target.value;

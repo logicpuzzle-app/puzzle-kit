@@ -13,6 +13,7 @@ import {
 import type { SolverAdapter, SolveResult } from '../types';
 import type { PuzzleState, GridConfig } from '../../types';
 import { getCellIndexById } from '../../utils/gridUtils';
+import { getDirectionalCluesFromElements, isDirectionalNumber } from '../../utils/numberEntries';
 
 // Parse numeric clue value (supports hex/letters for 10+)
 function parseClueValue(raw: unknown): number | null {
@@ -41,9 +42,10 @@ export const nurikabeSolverAdapter: SolverAdapter = {
       // Collect all clues into a common array
       const clues: Array<{ row: number; col: number; value: number }> = [];
 
-      // directionalClues (direction is ignored for Nurikabe)
-      if (problem.directionalClues) {
-        for (const clue of Object.values(problem.directionalClues)) {
+      // directional numbers (direction is ignored for Nurikabe)
+      const directionalNumbers = getDirectionalCluesFromElements(problem);
+      if (directionalNumbers.length > 0) {
+        for (const clue of directionalNumbers) {
           // Use cell index if available, otherwise parse from cellId
           let row: number, col: number;
           if (clue.cell !== undefined) {
@@ -65,6 +67,7 @@ export const nurikabeSolverAdapter: SolverAdapter = {
       // Regular numbers
       if (problem.numbers) {
         for (const num of Object.values(problem.numbers)) {
+          if (isDirectionalNumber(num)) continue;
           const index = getCellIndexById(num.cellId, grid);
           if (!index) continue;
           const v = parseClueValue(num.value);
@@ -180,7 +183,6 @@ function convertNurikabeSolutionToAnswer(
     cages: {},
     specials: {},
     boxLines: {},
-    directionalClues: {},
   };
 
   // Add shaded cells as black surfaces

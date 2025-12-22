@@ -14,6 +14,7 @@ export { SurfaceLayer } from './SurfaceLayer';
 export { MulticolorSurfaceLayer } from './MulticolorSurfaceLayer';
 export { BoxLineLayer } from './BoxLineLayer';
 export { LineLayer } from './LineLayer';
+export { HighlightLayer } from './HighlightLayer';
 export { NumberLayer } from './NumberLayer';
 export { SymbolLayer } from './SymbolLayer';
 export { SpecialLayer } from './SpecialLayer';

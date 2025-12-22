@@ -16,9 +16,6 @@ import type {
   PuzzleElements,
   LayerType,
   SurfaceElement,
-  LineElement,
-  EdgeElement,
-  WallElement,
   NumberElement,
   SymbolElement,
   CageElement,
@@ -431,10 +428,14 @@ function convertElementsToPenpa(
     }
   }
 
-  // Convert lines
-  if (Object.keys(elements.lines).length > 0) {
+  // Convert lines (cell-to-cell)
+  const cellLines = Object.values(elements.lines).filter(
+    (line) => (line.lineTarget ?? 'cell') === 'cell'
+  );
+  if (cellLines.length > 0) {
     result.line = {};
-    for (const line of Object.values(elements.lines)) {
+    for (const line of cellLines) {
+      if (!line.from || !line.to) continue;
       const from = getCellIndexById(line.from, grid);
       const to = getCellIndexById(line.to, grid);
       if (!from || !to) continue;
@@ -446,34 +447,61 @@ function convertElementsToPenpa(
   }
 
   // Convert edges (lineE in Penpa)
-  if (Object.keys(elements.edges).length > 0) {
+  const edgeLines = [
+    ...Object.values(elements.lines).filter((line) => line.lineTarget === 'edge'),
+    ...Object.values(elements.edges),
+  ];
+  if (edgeLines.length > 0) {
     result.lineE = {};
-    for (const edge of Object.values(elements.edges)) {
-      const from = getVertexIndexById(edge.from, grid);
-      const to = getVertexIndexById(edge.to, grid);
-      if (!from || !to) continue;
-      const idx1 = toPenpaPointIndex(from.row, from.col, grid.rows, grid.cols, 'cell');
-      const idx2 = toPenpaPointIndex(to.row, to.col, grid.rows, grid.cols, 'cell');
+    for (const edge of edgeLines) {
+      let idx1: number | null = null;
+      let idx2: number | null = null;
+
+      if (edge.from && edge.to) {
+        const from = getVertexIndexById(edge.from, grid);
+        const to = getVertexIndexById(edge.to, grid);
+        if (!from || !to) continue;
+        idx1 = toPenpaPointIndex(from.row, from.col, grid.rows, grid.cols, 'vertex');
+        idx2 = toPenpaPointIndex(to.row, to.col, grid.rows, grid.cols, 'vertex');
+      } else if (edge.edgeId) {
+        const edgeIndex = getEdgeIndexById(edge.edgeId, grid);
+        if (!edgeIndex) continue;
+        const v1 = { row: edgeIndex.row, col: edgeIndex.col };
+        const v2 =
+          edgeIndex.type === 'h'
+            ? { row: edgeIndex.row, col: edgeIndex.col + 1 }
+            : { row: edgeIndex.row + 1, col: edgeIndex.col };
+        idx1 = toPenpaPointIndex(v1.row, v1.col, grid.rows, grid.cols, 'vertex');
+        idx2 = toPenpaPointIndex(v2.row, v2.col, grid.rows, grid.cols, 'vertex');
+      }
+
+      if (idx1 === null || idx2 === null) continue;
       const key = toPenpaLineKey(idx1, idx2);
+      if (result.lineE[key] !== undefined) continue;
       result.lineE[key] = 1;
     }
   }
 
   // Convert walls
-  if (Object.keys(elements.walls).length > 0) {
+  const wallLines = [
+    ...Object.values(elements.lines).filter((line) => line.lineTarget === 'wall'),
+    ...Object.values(elements.walls),
+  ];
+  if (wallLines.length > 0) {
     result.wall = {};
-    for (const wall of Object.values(elements.walls)) {
-      const edge = getEdgeIndexById(wall.position, grid);
+    for (const wall of wallLines) {
+      const edgeId = wall.edgeId || wall.position;
+      if (!edgeId) continue;
+      const edge = getEdgeIndexById(edgeId, grid);
       if (!edge) continue;
-      const type = edge.type;
-      const row = edge.row;
-      const col = edge.col;
-      // Walls are drawn between two adjacent vertices; map edge id to those vertices.
-      const v1 = { row, col };
-      const v2 = type === 'h' ? { row, col: col + 1 } : { row: row + 1, col };
+      const v1 = { row: edge.row, col: edge.col };
+      const v2 = edge.type === 'h'
+        ? { row: edge.row, col: edge.col + 1 }
+        : { row: edge.row + 1, col: edge.col };
       const idx1 = toPenpaPointIndex(v1.row, v1.col, grid.rows, grid.cols, 'vertex');
       const idx2 = toPenpaPointIndex(v2.row, v2.col, grid.rows, grid.cols, 'vertex');
       const key = toPenpaLineKey(idx1, idx2);
+      if (result.wall[key] !== undefined) continue;
       result.wall[key] = 1; // style simplified
     }
   }
@@ -664,12 +692,22 @@ function convertPenpaToElements(
       const pos2 = fromPenpaPointIndex(idx2, grid.rows, grid.cols);
 
       if (pos1 && pos2) {
-        const id = `edge_${edgeIndex++}`;
-        elements.edges[id] = {
+        const isHorizontal = pos1.row === pos2.row;
+        const isVertical = pos1.col === pos2.col;
+        let edgeId: string | undefined;
+        if (isHorizontal && Math.abs(pos1.col - pos2.col) === 1) {
+          edgeId = `edge-h-${pos1.row}-${Math.min(pos1.col, pos2.col)}`;
+        } else if (isVertical && Math.abs(pos1.row - pos2.row) === 1) {
+          edgeId = `edge-v-${Math.min(pos1.row, pos2.row)}-${pos1.col}`;
+        }
+        const id = edgeId ? `edge-${edgeId}` : `edge_${edgeIndex++}`;
+        elements.lines[id] = {
           id,
           layer,
           from: `vertex-${pos1.row}-${pos1.col}`,
           to: `vertex-${pos2.row}-${pos2.col}`,
+          edgeId,
+          lineTarget: 'edge',
           style: 'solid',
           color: '#000000',
           thickness: 'normal',
@@ -687,15 +725,16 @@ function convertPenpaToElements(
       const pos2 = fromPenpaPointIndex(idx2, grid.rows, grid.cols);
 
       if (pos1 && pos2) {
-        const id = `wall_${wallIndex++}`;
         const isHorizontal = pos1.row === pos2.row;
         const edgeId = isHorizontal
           ? `edge-h-${pos1.row}-${Math.min(pos1.col, pos2.col)}`
           : `edge-v-${Math.min(pos1.row, pos2.row)}-${pos1.col}`;
-        elements.walls[id] = {
+        const id = `wall-${edgeId ?? wallIndex++}`;
+        elements.lines[id] = {
           id,
           layer,
-          position: edgeId,
+          edgeId,
+          lineTarget: 'wall',
           thickness: 'thick',
           color: '#000000',
           style: 'solid',

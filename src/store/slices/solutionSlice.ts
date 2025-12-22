@@ -3,12 +3,18 @@
  */
 
 import { generateMulticolorId } from '../../utils/idGenerator';
-import { toDataLayer } from '../../types';
 import type { SolutionSlice, SliceCreator } from './types';
+import { canEditDataLayer, getEditableDataLayer } from '../../utils/editPolicy';
 
-export const createSolutionSlice: SliceCreator<SolutionSlice> = (set) => ({
+export const createSolutionSlice: SliceCreator<SolutionSlice> = (set, get) => {
+  const canEditProblem = () => canEditDataLayer('problem', get().isPlayerMode);
+
+  return {
   // Solution Area operations
   setSolutionArea: (cells) => {
+    if (!canEditProblem()) {
+      return;
+    }
     set((state) => ({
       puzzle: {
         ...state.puzzle,
@@ -21,6 +27,9 @@ export const createSolutionSlice: SliceCreator<SolutionSlice> = (set) => ({
   },
 
   toggleSolutionAreaCell: (cellId) => {
+    if (!canEditProblem()) {
+      return;
+    }
     set((state) => {
       const currentCells = state.puzzle.solutionArea?.cells || [];
       const newCells = currentCells.includes(cellId)
@@ -40,6 +49,9 @@ export const createSolutionSlice: SliceCreator<SolutionSlice> = (set) => ({
   },
 
   clearSolutionArea: () => {
+    if (!canEditProblem()) {
+      return;
+    }
     set((state) => ({
       puzzle: {
         ...state.puzzle,
@@ -49,6 +61,9 @@ export const createSolutionSlice: SliceCreator<SolutionSlice> = (set) => ({
   },
 
   enableSolutionArea: (enabled) => {
+    if (!canEditProblem()) {
+      return;
+    }
     set((state) => ({
       puzzle: {
         ...state.puzzle,
@@ -61,6 +76,10 @@ export const createSolutionSlice: SliceCreator<SolutionSlice> = (set) => ({
 
   // Multicolor Surface operations
   setMulticolorSurface: (cellId, colors, pattern = 'cross', customColors) => {
+    const editableLayer = getEditableDataLayer(get().activeLayer, get().isPlayerMode);
+    if (!editableLayer) {
+      return;
+    }
     set((state) => {
       const existing = state.puzzle.multicolorSurfaces || {};
       const existingEntry = Object.values(existing).find((e) => e.cellId === cellId);
@@ -77,7 +96,7 @@ export const createSolutionSlice: SliceCreator<SolutionSlice> = (set) => ({
               colors,
               pattern,
               customColors,
-              layer: toDataLayer(state.activeLayer),
+              layer: editableLayer,
             },
           },
         },
@@ -86,6 +105,10 @@ export const createSolutionSlice: SliceCreator<SolutionSlice> = (set) => ({
   },
 
   removeMulticolorSurface: (cellId) => {
+    const editableLayer = getEditableDataLayer(get().activeLayer, get().isPlayerMode);
+    if (!editableLayer) {
+      return;
+    }
     set((state) => {
       const existing = state.puzzle.multicolorSurfaces || {};
       const newSurfaces = { ...existing };
@@ -106,6 +129,10 @@ export const createSolutionSlice: SliceCreator<SolutionSlice> = (set) => ({
   },
 
   clearMulticolorSurfaces: () => {
+    const editableLayer = getEditableDataLayer(get().activeLayer, get().isPlayerMode);
+    if (!editableLayer) {
+      return;
+    }
     set((state) => ({
       puzzle: {
         ...state.puzzle,
@@ -113,4 +140,5 @@ export const createSolutionSlice: SliceCreator<SolutionSlice> = (set) => ({
       },
     }));
   },
-});
+  };
+};

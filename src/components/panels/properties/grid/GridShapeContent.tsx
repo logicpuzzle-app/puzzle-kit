@@ -4,7 +4,7 @@
 
 import React, { useCallback, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { usePuzzleStore } from '../../../../store/puzzleStore';
+import { usePuzzleStore } from '../../../../store/puzzleStoreContext';
 import type { TopologyPreset } from '../../../../utils/gridTopology';
 import type { GridType, IsometricFace, IsometricView } from '../../../../types';
 

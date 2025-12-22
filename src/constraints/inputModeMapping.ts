@@ -79,6 +79,24 @@ export const inputModeToTool: Record<InputMode, ToolMapping | null> = {
     },
     // Note: number- means mouse buttons are inverted (handled separately)
   },
+  'numexist': {
+    tool: 'symbol-circle',
+    category: 'symbol',
+    target: 'cell',
+    settings: {
+      symbolSize: 'small',
+      color: '#00A000',
+    },
+  },
+  'numblank': {
+    tool: 'symbol-cross',
+    category: 'symbol',
+    target: 'cell',
+    settings: {
+      symbolSize: 'small',
+      color: '#00A000',
+    },
+  },
 
   // Clear mode
   'clear': null, // Clear is handled as an action, not a tool
@@ -246,9 +264,12 @@ export const inputModeToTool: Record<InputMode, ToolMapping | null> = {
 
   // Empty cell marking
   'empty': {
-    tool: 'surface-dot',
+    tool: 'surface-fill',
     category: 'surface',
     target: 'cell',
+    settings: {
+      color: '#000000',
+    },
   },
 
   // Ice cell (pzprjs: icecolor = rgb(192, 224, 255))

@@ -1,7 +1,9 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { usePuzzleStore } from '../../../store/puzzleStore';
+import { usePuzzleStore } from '../../../store/puzzleStoreContext';
 import { toDataLayer } from '../../../types';
+import { getEditableDataLayer } from '../../../utils/editPolicy';
+import { findNumberEntry, getCellCandidates } from '../../../utils/numberEntries';
 
 // Position icons as SVG components
 const PositionIconCenter: React.FC<{ active?: boolean }> = ({ active }) => (
@@ -53,46 +55,28 @@ const CandidatesSelector: React.FC = () => {
     numberSelection,
     puzzle,
     activeLayer,
+    isPlayerMode,
     addNumber,
     removeNumber,
   } = usePuzzleStore();
 
-  const dataLayer = toDataLayer(activeLayer);
+  const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
+  const dataLayer = editableLayer ?? toDataLayer(activeLayer);
 
   // Get existing candidates in selected cell
-  const getCellCandidates = (): Set<number> => {
-    if (!numberSelection) return new Set();
-    const cellId = `cell-${numberSelection.row}-${numberSelection.col}`;
-    const numbers = puzzle[dataLayer].numbers;
-    const candidates = new Set<number>();
-
-    Object.values(numbers).forEach((n) => {
-      if (n.cellId === cellId && n.position === 'candidates' && n.value) {
-        const num = parseInt(n.value, 10);
-        if (num >= 1 && num <= 9) {
-          candidates.add(num);
-        }
-      }
-    });
-
-    return candidates;
-  };
-
-  const cellCandidates = getCellCandidates();
+  const cellId = numberSelection ? `cell-${numberSelection.row}-${numberSelection.col}` : null;
+  const cellCandidates = cellId ? getCellCandidates(puzzle[dataLayer].numbers, cellId) : new Set();
 
   const handleToggleCandidate = (n: number) => {
-    if (!numberSelection) return;
-    const cellId = `cell-${numberSelection.row}-${numberSelection.col}`;
+    if (!cellId || !editableLayer) return;
     const numbers = puzzle[dataLayer].numbers;
 
     // Find existing candidate
-    const existingEntry = Object.entries(numbers).find(
-      ([, num]) => num.cellId === cellId && num.position === 'candidates' && num.value === String(n)
-    );
+    const existingEntry = findNumberEntry(numbers, cellId, 'candidates', { value: String(n) });
 
     if (existingEntry) {
       // Remove existing
-      removeNumber(existingEntry[0]);
+      removeNumber(existingEntry.id);
     } else {
       // Add new candidate
       addNumber({
@@ -103,10 +87,12 @@ const CandidatesSelector: React.FC = () => {
         cornerIndex: 0,
         sideIndex: 0,
         color: toolSettings.color,
-        layer: dataLayer,
+        layer: editableLayer,
       });
     }
   };
+
+  const isDisabled = !numberSelection || !editableLayer;
 
   return (
     <div className="flex flex-col gap-1">
@@ -125,7 +111,7 @@ const CandidatesSelector: React.FC = () => {
                   : 'bg-white border-office-border hover:bg-office-ribbon-hover'
               }`}
               onClick={() => handleToggleCandidate(n)}
-              disabled={!numberSelection}
+              disabled={isDisabled}
             >
               {n}
             </button>
@@ -145,10 +131,12 @@ export const NumberPositionSettings: React.FC = () => {
     numberSelection,
     puzzle,
     activeLayer,
+    isPlayerMode,
     addNumber,
   } = usePuzzleStore();
 
-  const dataLayer = toDataLayer(activeLayer);
+  const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
+  const dataLayer = editableLayer ?? toDataLayer(activeLayer);
 
   const sizes: { value: 'large' | 'medium' | 'small'; labelKey: string }[] = [
     { value: 'large', labelKey: 'size.large' },
@@ -184,27 +172,24 @@ export const NumberPositionSettings: React.FC = () => {
   const findExistingNumber = () => {
     if (!numberSelection) return null;
     const cellId = `cell-${numberSelection.row}-${numberSelection.col}`;
-    const numbers = puzzle[dataLayer].numbers;
     const position = toolSettings.numberPosition;
     const cornerIndex = toolSettings.cornerIndex;
     const sideIndex = toolSettings.sideIndex;
 
-    return Object.entries(numbers).find(([, n]) => {
-      if (n.cellId !== cellId) return false;
-      if (position === 'center') return n.position === 'center';
-      if (position === 'corner') return n.position === 'corner' && n.cornerIndex === cornerIndex;
-      if (position === 'side') return n.position === 'side' && n.sideIndex === sideIndex;
-      return false;
+    return findNumberEntry(puzzle[dataLayer].numbers, cellId, position, {
+      cornerIndex,
+      sideIndex,
     });
   };
 
   // Update existing number size
   const handleSizeChange = (newSize: 'large' | 'medium' | 'small') => {
     setToolSettings({ numberSize: newSize });
+    if (!editableLayer) return;
 
     const existingEntry = findExistingNumber();
     if (existingEntry) {
-      const [, existing] = existingEntry;
+      const existing = existingEntry.number;
       addNumber({
         cellId: existing.cellId,
         value: existing.value,
@@ -213,7 +198,7 @@ export const NumberPositionSettings: React.FC = () => {
         cornerIndex: existing.cornerIndex,
         sideIndex: existing.sideIndex,
         color: existing.color,
-        layer: dataLayer,
+        layer: editableLayer,
       });
     }
   };

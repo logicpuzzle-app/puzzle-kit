@@ -115,7 +115,8 @@ const initialUrlImportModal: UrlImportModalState = {
 // Store
 // ========================================
 
-export const useModalStore = create<ModalStore>((set, get) => ({
+export const createModalStore = () =>
+  create<ModalStore>((set, get) => ({
   // Confirm modal state
   confirmModal: initialConfirmModal,
 
@@ -212,4 +213,6 @@ export const useModalStore = create<ModalStore>((set, get) => ({
     }
     closeUrlImport();
   },
-}));
+  }));
+
+export const useModalStore = createModalStore();

@@ -2,15 +2,10 @@
  * Geometry Helpers - Grid/topology resolution and coordinate helpers
  */
 
-import type { LineElement, EdgeElement, WallElement, GridConfig } from '../../../../types';
+import type { LineElement, GridConfig } from '../../../../types';
 import type { GridTopology } from '../../../../utils/gridTopology';
 import type { LineWithPosition } from '../../../../utils/lineMerge';
 import { resolveEdgeVertices } from '../../../../utils/gridIds';
-
-/**
- * Line-like element that can be converted to LineWithPosition
- */
-export type LineElementLike = LineElement | EdgeElement | WallElement;
 
 /**
  * Context needed for resolving line coordinates
@@ -25,7 +20,7 @@ export interface GeometryContext {
  * Returns LineWithPosition or null if coordinates cannot be resolved
  */
 export function resolveLinePosition(
-  line: LineElementLike,
+  line: LineElement,
   context: GeometryContext
 ): LineWithPosition | null {
   const { grid, topology } = context;
@@ -87,19 +82,17 @@ export function resolveLinePosition(
 
 /**
  * Build LineWithPosition array from line IDs
- * Looks up lines in lines, edges, and walls collections
+ * Looks up lines in lines collection
  */
 export function buildLinesWithPosition(
   lineIds: string[],
   lines: Record<string, LineElement>,
-  edges: Record<string, EdgeElement>,
-  walls: Record<string, WallElement>,
   context: GeometryContext
 ): LineWithPosition[] {
   const result: LineWithPosition[] = [];
 
   for (const lineId of lineIds) {
-    const line = lines[lineId] || edges[lineId] || walls[lineId];
+    const line = lines[lineId];
     if (!line) continue;
 
     const lwp = resolveLinePosition(line, context);

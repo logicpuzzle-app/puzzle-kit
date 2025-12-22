@@ -14,6 +14,11 @@
  */
 
 import type { GridConfig, PuzzleState, PuzzleElements } from '../types';
+import {
+  mergeDirectionalCluesIntoNumbers,
+  type PuzzleElementsWithDirectionalClues,
+  type PuzzleStateWithDirectionalClues,
+} from './legacyDirectionalClues';
 
 /**
  * Result of parsing a pzprv3 string
@@ -34,7 +39,7 @@ export interface Pzprv3ParseResult {
 interface CellData {
   /** Cell value: number, '.' for empty, '#' for shaded, '+' for unshaded mark, '-' for blank */
   value: string;
-  /** For directional clues: direction,value format (e.g., "3,2") */
+  /** For directional numbers: direction,value format (e.g., "3,2") */
   direction?: number;
   dirValue?: number;
 }
@@ -61,7 +66,7 @@ function parseCellValue(str: string): CellData {
 /**
  * Create empty puzzle elements
  */
-function createEmptyElements(): PuzzleElements {
+function createEmptyElements(): PuzzleElementsWithDirectionalClues {
   return {
     surfaces: {},
     lines: {},
@@ -74,6 +79,29 @@ function createEmptyElements(): PuzzleElements {
     boxLines: {},
     directionalClues: {},
   };
+}
+
+function normalizeLineTargets(puzzle: PuzzleState): void {
+  const normalizeLayer = (elements: PuzzleElements) => {
+    const nextLines: PuzzleElements['lines'] = {};
+    for (const [id, line] of Object.entries(elements.lines)) {
+      let lineTarget = line.lineTarget;
+      if (!lineTarget) {
+        if (line.from?.startsWith('cell-')) {
+          lineTarget = 'cell';
+        } else if (line.from?.startsWith('vertex-')) {
+          lineTarget = 'edge';
+        } else if (line.edgeId) {
+          lineTarget = 'edge';
+        }
+      }
+      nextLines[id] = lineTarget ? { ...line, lineTarget } : line;
+    }
+    elements.lines = nextLines;
+  };
+
+  normalizeLayer(puzzle.problem);
+  normalizeLayer(puzzle.answer);
 }
 
 /**
@@ -109,6 +137,9 @@ const gridStyleMap: Record<string, { gridStyle: string; frameStyle: string }> = 
   nurikabe: { gridStyle: 'normal', frameStyle: 'normal' },
   yajirin: { gridStyle: 'normal', frameStyle: 'normal' },
   heyawake: { gridStyle: 'normal', frameStyle: 'normal' },
+  akichi: { gridStyle: 'normal', frameStyle: 'normal' },
+  numlin: { gridStyle: 'normal', frameStyle: 'normal' },
+  simpleloop: { gridStyle: 'dashed', frameStyle: 'normal' },
 };
     const styleConfig = gridStyleMap[pid] || { gridStyle: 'normal', frameStyle: 'normal' };
 
@@ -132,7 +163,7 @@ const gridStyleMap: Record<string, { gridStyle: string; frameStyle: string }> = 
     };
 
     // Initialize puzzle state
-    const puzzle: PuzzleState = {
+    const puzzle: PuzzleStateWithDirectionalClues = {
       problem: createEmptyElements(),
       answer: createEmptyElements(),
     };
@@ -147,6 +178,12 @@ const gridStyleMap: Record<string, { gridStyle: string; frameStyle: string }> = 
       case 'mashu':
         parseMashu(puzzle, rows, cols, remainingParts);
         break;
+      case 'numlin':
+        parseNumlin(puzzle, rows, cols, remainingParts);
+        break;
+      case 'simpleloop':
+        parseSimpleloop(puzzle, rows, cols, remainingParts);
+        break;
       case 'nurikabe':
         parseNurikabe(puzzle, rows, cols, remainingParts);
         break;
@@ -154,19 +191,23 @@ const gridStyleMap: Record<string, { gridStyle: string; frameStyle: string }> = 
         parseYajilin(puzzle, rows, cols, remainingParts);
         break;
       case 'heyawake':
+      case 'akichi':
         parseHeyawake(puzzle, rows, cols, remainingParts);
         break;
       default:
         return { success: false, error: `Unsupported puzzle type: ${pid}` };
     }
 
+    normalizeLineTargets(puzzle);
+
+    const normalizedPuzzle = mergeDirectionalCluesIntoNumbers(puzzle);
     return {
       success: true,
       pid,
       rows,
       cols,
       grid,
-      puzzle,
+      puzzle: normalizedPuzzle,
     };
   } catch (e) {
     return {
@@ -223,10 +264,13 @@ function parseSlitherlink(puzzle: PuzzleState, rows: number, cols: number, parts
         const edgeId = `edge-v-${r}-${c}`;
         const fromVertex = `vertex-${r}-${c}`;
         const toVertex = `vertex-${r + 1}-${c}`;
-        puzzle.answer.edges[edgeId] = {
-          id: edgeId,
+        const id = `edge-${edgeId}`;
+        puzzle.answer.lines[id] = {
+          id,
           from: fromVertex,
           to: toVertex,
+          edgeId,
+          lineTarget: 'edge',
           style: 'solid',
           thickness: 'normal',
           color: '#00A000',
@@ -259,10 +303,13 @@ function parseSlitherlink(puzzle: PuzzleState, rows: number, cols: number, parts
         const edgeId = `edge-h-${r}-${c}`;
         const fromVertex = `vertex-${r}-${c}`;
         const toVertex = `vertex-${r}-${c + 1}`;
-        puzzle.answer.edges[edgeId] = {
-          id: edgeId,
+        const id = `edge-${edgeId}`;
+        puzzle.answer.lines[id] = {
+          id,
           from: fromVertex,
           to: toVertex,
+          edgeId,
+          lineTarget: 'edge',
           style: 'solid',
           thickness: 'normal',
           color: '#00A000',
@@ -398,6 +445,196 @@ function parseMashu(puzzle: PuzzleState, rows: number, cols: number, parts: stri
 }
 
 /**
+ * Parse Numberlink (Numlin) puzzle
+ * Format:
+ *   1. Numbers (rows x cols)
+ *   2. Horizontal lines (rows x (cols-1)): 1=line, -1=X, 0=empty
+ *   3. Vertical lines ((rows-1) x cols): 1=line, -1=X, 0=empty
+ */
+function parseNumlin(puzzle: PuzzleState, rows: number, cols: number, parts: string[]): void {
+  let partIndex = 0;
+
+  // Parse numbers (rows x cols)
+  for (let r = 0; r < rows && partIndex < parts.length; r++) {
+    const rowData = parseRowData(parts[partIndex++]);
+    for (let c = 0; c < cols && c < rowData.length; c++) {
+      const val = rowData[c];
+      if (val !== '.' && val !== '-') {
+        const cellId = `cell-${r}-${c}`;
+        const id = `num-${cellId}`;
+        puzzle.problem.numbers[id] = {
+          id,
+          cellId,
+          value: val,
+          position: 'center',
+          size: 'medium',
+          color: '#000000',
+          layer: 'problem',
+        };
+      }
+    }
+  }
+
+  // Parse horizontal lines between cells (rows rows, cols-1 columns each)
+  for (let r = 0; r < rows && partIndex < parts.length; r++) {
+    const rowData = parseRowData(parts[partIndex++]);
+    for (let c = 0; c < cols - 1 && c < rowData.length; c++) {
+      const val = parseInt(rowData[c], 10);
+      if (val === 1) {
+        const lineId = `line-${r}-${c}-${r}-${c + 1}`;
+        const fromPoint = `cell-${r}-${c}`;
+        const toPoint = `cell-${r}-${c + 1}`;
+        puzzle.answer.lines[lineId] = {
+          id: lineId,
+          from: fromPoint,
+          to: toPoint,
+          style: 'solid',
+          thickness: 'normal',
+          color: '#00A000',
+          layer: 'answer',
+        };
+      } else if (val === -1) {
+        const symId = `sym-line-h-${r}-${c}`;
+        puzzle.answer.symbols[symId] = {
+          id: symId,
+          cellId: `line-h-${r}-${c}`,
+          symbolType: 'cross',
+          size: 'small',
+          color: '#007F00',
+          rotation: 0,
+          layer: 'answer',
+        };
+      }
+    }
+  }
+
+  // Parse vertical lines between cells (rows-1 rows, cols columns each)
+  for (let r = 0; r < rows - 1 && partIndex < parts.length; r++) {
+    const rowData = parseRowData(parts[partIndex++]);
+    for (let c = 0; c < cols && c < rowData.length; c++) {
+      const val = parseInt(rowData[c], 10);
+      if (val === 1) {
+        const lineId = `line-${r}-${c}-${r + 1}-${c}`;
+        const fromPoint = `cell-${r}-${c}`;
+        const toPoint = `cell-${r + 1}-${c}`;
+        puzzle.answer.lines[lineId] = {
+          id: lineId,
+          from: fromPoint,
+          to: toPoint,
+          style: 'solid',
+          thickness: 'normal',
+          color: '#00A000',
+          layer: 'answer',
+        };
+      } else if (val === -1) {
+        const symId = `sym-line-v-${r}-${c}`;
+        puzzle.answer.symbols[symId] = {
+          id: symId,
+          cellId: `line-v-${r}-${c}`,
+          symbolType: 'cross',
+          size: 'small',
+          color: '#007F00',
+          rotation: 0,
+          layer: 'answer',
+        };
+      }
+    }
+  }
+}
+
+/**
+ * Parse Simple Loop puzzle
+ * Format:
+ *   1. Empty cells (rows x cols) with '*' or '.'
+ *   2. Horizontal lines (rows x (cols-1)): 1=line, -1=X, 0=empty
+ *   3. Vertical lines ((rows-1) x cols): 1=line, -1=X, 0=empty
+ */
+function parseSimpleloop(puzzle: PuzzleState, rows: number, cols: number, parts: string[]): void {
+  let partIndex = 0;
+
+  // Parse empty cells (rows x cols)
+  for (let r = 0; r < rows && partIndex < parts.length; r++) {
+    const rowData = parseRowData(parts[partIndex++]);
+    for (let c = 0; c < cols && c < rowData.length; c++) {
+      const val = rowData[c];
+      if (val === '*') {
+        const cellId = `cell-${r}-${c}`;
+        const id = `surface-empty-${cellId}`;
+        puzzle.problem.surfaces[id] = {
+          id,
+          cellId,
+          color: '#000000',
+          displayMode: 'dot',
+          layer: 'problem',
+        };
+      }
+    }
+  }
+
+  // Parse horizontal lines between cells (rows rows, cols-1 columns each)
+  for (let r = 0; r < rows && partIndex < parts.length; r++) {
+    const rowData = parseRowData(parts[partIndex++]);
+    for (let c = 0; c < cols - 1 && c < rowData.length; c++) {
+      const val = parseInt(rowData[c], 10);
+      if (val === 1) {
+        const lineId = `line-${r}-${c}-${r}-${c + 1}`;
+        puzzle.answer.lines[lineId] = {
+          id: lineId,
+          from: `cell-${r}-${c}`,
+          to: `cell-${r}-${c + 1}`,
+          style: 'solid',
+          thickness: 'normal',
+          color: '#00A000',
+          layer: 'answer',
+        };
+      } else if (val === -1) {
+        const symId = `sym-line-h-${r}-${c}`;
+        puzzle.answer.symbols[symId] = {
+          id: symId,
+          cellId: `line-h-${r}-${c}`,
+          symbolType: 'cross',
+          size: 'small',
+          color: '#007F00',
+          rotation: 0,
+          layer: 'answer',
+        };
+      }
+    }
+  }
+
+  // Parse vertical lines between cells (rows-1 rows, cols columns each)
+  for (let r = 0; r < rows - 1 && partIndex < parts.length; r++) {
+    const rowData = parseRowData(parts[partIndex++]);
+    for (let c = 0; c < cols && c < rowData.length; c++) {
+      const val = parseInt(rowData[c], 10);
+      if (val === 1) {
+        const lineId = `line-${r}-${c}-${r + 1}-${c}`;
+        puzzle.answer.lines[lineId] = {
+          id: lineId,
+          from: `cell-${r}-${c}`,
+          to: `cell-${r + 1}-${c}`,
+          style: 'solid',
+          thickness: 'normal',
+          color: '#00A000',
+          layer: 'answer',
+        };
+      } else if (val === -1) {
+        const symId = `sym-line-v-${r}-${c}`;
+        puzzle.answer.symbols[symId] = {
+          id: symId,
+          cellId: `line-v-${r}-${c}`,
+          symbolType: 'cross',
+          size: 'small',
+          color: '#007F00',
+          rotation: 0,
+          layer: 'answer',
+        };
+      }
+    }
+  }
+}
+
+/**
  * Parse Nurikabe puzzle
  * Format: rows of cell data (numbers, '#' for shaded, '+' for unshaded, '.' for empty)
  */
@@ -446,12 +683,17 @@ function parseNurikabe(puzzle: PuzzleState, rows: number, cols: number, parts: s
 /**
  * Parse Yajilin puzzle
  * Format:
- *   1. Clue cells (rows x cols): directional clues "dir,val" or '.' for empty
+ *   1. Clue cells (rows x cols): directional numbers "dir,val" or '.' for empty
  *   2. Cell state (rows x cols): '#' for shaded, '+' for unshaded, '.' for empty
  *   3. Horizontal lines (rows x (cols-1)): 1=line, -1=X, 0=empty
  *   4. Vertical lines ((rows-1) x cols): 1=line, -1=X, 0=empty
  */
-function parseYajilin(puzzle: PuzzleState, rows: number, cols: number, parts: string[]): void {
+function parseYajilin(
+  puzzle: PuzzleStateWithDirectionalClues,
+  rows: number,
+  cols: number,
+  parts: string[]
+): void {
   let partIndex = 0;
 
   // Section 1: Parse clue cells (rows x cols)
@@ -462,7 +704,7 @@ function parseYajilin(puzzle: PuzzleState, rows: number, cols: number, parts: st
       const cellId = `cell-${r}-${c}`;
 
       if (val.includes(',')) {
-        // Directional clue "dir,val"
+        // Directional number "dir,val"
         const cellData = parseCellValue(val);
         if (cellData.direction !== undefined && cellData.dirValue !== undefined) {
           // pzprv3 direction encoding (yajilin.js decodeCellDirecQnum_kanpen):
@@ -471,7 +713,7 @@ function parseYajilin(puzzle: PuzzleState, rows: number, cols: number, parts: st
           // pzprv3 direction encoding (yajilin.js decodeCellDirecQnum_kanpen):
           // 0=UP, 1=LT, 2=DN, 3=RT
           // puzzle-kit: 1=up, 2=down, 3=left, 4=right
-          // Empirical mapping for directional clues (pzprv3 -> puzzle-kit):
+          // Empirical mapping for directional numbers (pzprv3 -> puzzle-kit):
           // 0=UP->DN, 1=LT->UP, 2=DN->RT, 3=RT->LT
           // This matches visual expectations in bundled test cases (2←, 0↑)
           const dirMap: Record<number, 1 | 2 | 3 | 4> = {
@@ -607,6 +849,11 @@ function parseYajilin(puzzle: PuzzleState, rows: number, cols: number, parts: st
 function parseHeyawake(puzzle: PuzzleState, rows: number, cols: number, parts: string[]): void {
   let idx = 0;
 
+  // Skip variant flags (e.g., "x") if present
+  while (idx < parts.length && /^[a-z]+$/i.test(parts[idx].trim())) {
+    idx += 1;
+  }
+
   // Skip room count if present
   if (idx < parts.length && /^\d+$/.test(parts[idx].trim())) {
     idx += 1;
@@ -645,11 +892,14 @@ function parseHeyawake(puzzle: PuzzleState, rows: number, cols: number, parts: s
         const rightRoomId = roomMap[rightCellId];
         if (roomId !== rightRoomId) {
           // Vertical edge between (r, c) and (r, c+1)
-          const edgeId = `edge-room-v-${r}-${c + 1}`;
-          puzzle.problem.edges[edgeId] = {
-            id: edgeId,
+          const edgeId = `edge-v-${r}-${c + 1}`;
+          const id = `edge-${edgeId}`;
+          puzzle.problem.lines[id] = {
+            id,
             from: `vertex-${r}-${c + 1}`,
             to: `vertex-${r + 1}-${c + 1}`,
+            edgeId,
+            lineTarget: 'edge',
             style: 'solid',
             thickness: 'normal',
             color: '#000000',
@@ -664,11 +914,14 @@ function parseHeyawake(puzzle: PuzzleState, rows: number, cols: number, parts: s
         const bottomRoomId = roomMap[bottomCellId];
         if (roomId !== bottomRoomId) {
           // Horizontal edge between (r, c) and (r+1, c)
-          const edgeId = `edge-room-h-${r + 1}-${c}`;
-          puzzle.problem.edges[edgeId] = {
-            id: edgeId,
+          const edgeId = `edge-h-${r + 1}-${c}`;
+          const id = `edge-${edgeId}`;
+          puzzle.problem.lines[id] = {
+            id,
             from: `vertex-${r + 1}-${c}`,
             to: `vertex-${r + 1}-${c + 1}`,
+            edgeId,
+            lineTarget: 'edge',
             style: 'solid',
             thickness: 'normal',
             color: '#000000',

@@ -9,6 +9,7 @@ import { EdgeState, SolveStatus } from '@logicpuzzle-app/solver-kit';
 import type { SolverAdapter, SolveResult } from '../types';
 import type { PuzzleState, GridConfig } from '../../types';
 import { getCellIndexById } from '../../utils/gridUtils';
+import { getDirectionalCluesFromElements, isDirectionalNumber } from '../../utils/numberEntries';
 
 /**
  * Slitherlink solver adapter implementation
@@ -23,10 +24,11 @@ export const slitherlinkSolverAdapter: SolverAdapter = {
       // Create field
       const field = new SlitherField(grid.rows, grid.cols);
 
-      // Extract number clues from directionalClues (used by constraint mode)
-      // Numbers are stored as directionalClues with direction=0
-      if (problem.directionalClues) {
-        for (const clue of Object.values(problem.directionalClues)) {
+      // Extract number clues from directional numbers (used by constraint mode)
+      // Numbers are stored as directional numbers with direction=0
+      const directionalNumbers = getDirectionalCluesFromElements(problem);
+      if (directionalNumbers.length > 0) {
+        for (const clue of directionalNumbers) {
           // Use cell index if available, otherwise parse from cellId
           let row: number, col: number;
           if (clue.cell !== undefined) {
@@ -48,6 +50,7 @@ export const slitherlinkSolverAdapter: SolverAdapter = {
       // Also check regular numbers (for backward compatibility)
       if (problem.numbers) {
         for (const num of Object.values(problem.numbers)) {
+          if (isDirectionalNumber(num)) continue;
           const index = getCellIndexById(num.cellId, grid);
           if (!index) continue;
           const value = parseInt(num.value, 10);
@@ -115,7 +118,6 @@ function convertSlitherSolutionToAnswer(
     cages: {},
     specials: {},
     boxLines: {},
-    directionalClues: {},
   };
 
   // Add horizontal edges (using unified lines with lineTarget='edge')

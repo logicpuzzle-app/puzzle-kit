@@ -152,6 +152,10 @@ export const createConstraintSlice: SliceCreator<ConstraintSlice> = (set, get) =
         }
       }
 
+      if (showConstraintLayer && currentSchemaId && toolMapping.category === 'number') {
+        newSettings.color = isEditMode ? '#000000' : '#00A000';
+      }
+
       setToolSettings(newSettings);
     }
   },
@@ -176,9 +180,31 @@ export const createConstraintSlice: SliceCreator<ConstraintSlice> = (set, get) =
     return defaultOn ?? true;
   },
 
+  // Highlight rule overrides (rule ID → enabled/disabled)
+  highlightOverrides: {},
+  setHighlightOverride: (ruleId, enabled) =>
+    set((state) => ({
+      highlightOverrides: {
+        ...state.highlightOverrides,
+        [ruleId]: enabled,
+      },
+    })),
+  resetHighlightOverrides: () => set({ highlightOverrides: {} }),
+
+  // Is a highlight rule enabled?
+  isHighlightRuleEnabled: (ruleId, defaultOn) => {
+    const overrides = get().highlightOverrides;
+    if (ruleId in overrides) {
+      return overrides[ruleId];
+    }
+    return defaultOn ?? true;
+  },
+
   // Validation state
   lastValidationResult: null,
   isValidationModalOpen: false,
+  showCorrectMessage: false,
+  hasShownCorrectMessage: false,
 
   checkAnswer: () => {
     const { currentSchemaId, puzzle, grid, validationOverrides, topology, isSolverMode, solverResult } = get();
@@ -198,15 +224,19 @@ export const createConstraintSlice: SliceCreator<ConstraintSlice> = (set, get) =
 
     const result = runDataDrivenValidation(puzzleToValidate, grid, schema, validationOverrides, topology);
 
+    const shouldShowCorrectMessage = result.complete && !get().hasShownCorrectMessage;
+
     // Store result and open modal
     set({
       lastValidationResult: result,
       isValidationModalOpen: true,
+      showCorrectMessage: shouldShowCorrectMessage,
+      hasShownCorrectMessage: get().hasShownCorrectMessage || result.complete,
     });
 
     return result;
   },
 
   openValidationModal: () => set({ isValidationModalOpen: true }),
-  closeValidationModal: () => set({ isValidationModalOpen: false }),
+  closeValidationModal: () => set({ isValidationModalOpen: false, showCorrectMessage: false }),
 });

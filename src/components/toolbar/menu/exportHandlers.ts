@@ -2,8 +2,7 @@
  * Export handlers for MenuBar
  * Handles JSON, SVG, and PNG exports
  */
-import { usePuzzleStore } from '../../../store/puzzleStore';
-import { useModalStore } from '../../../store/modalStore';
+import type { StoreApi, UseBoundStore } from 'zustand';
 import {
   downloadAsJson,
   exportToPng,
@@ -13,6 +12,9 @@ import { optimizePuzzleStateForExport } from '../../../utils/puzzleExport';
 import { getDefaultStorageAdapter } from '../../../modules/storage';
 import type { GridConfig, PuzzleState } from '../../../types';
 import type { GridTopology } from '../../../utils/topology/types';
+import type { ModalStore } from '../../../store/modalStore';
+
+type ModalStoreHook = UseBoundStore<StoreApi<ModalStore>>;
 
 /**
  * Convert nested SVG elements to group elements for proper export
@@ -133,6 +135,7 @@ export const prepareSvgForExport = (
 };
 
 interface ExportHandlersOptions {
+  modalStore: ModalStoreHook;
   grid: GridConfig;
   puzzle: PuzzleState;
   topology: GridTopology | null;
@@ -148,6 +151,7 @@ interface ExportHandlersOptions {
  */
 export const createExportHandlers = (options: ExportHandlersOptions) => {
   const {
+    modalStore,
     grid,
     puzzle,
     topology,
@@ -158,7 +162,7 @@ export const createExportHandlers = (options: ExportHandlersOptions) => {
     t,
   } = options;
 
-  const { showAlert } = useModalStore.getState();
+  const { showAlert } = modalStore.getState();
 
   const handleExportJson = () => {
     const topologySettings = {

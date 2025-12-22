@@ -33,7 +33,22 @@ export class CspuzSolverCancelledError extends Error {
 /**
  * Supported puzzle types for cspuz solver
  */
-const CSPUZ_SUPPORTED_TYPES = ['nurikabe', 'slither', 'mashu', 'yajilin', 'heyawake'];
+const CSPUZ_SUPPORTED_TYPES = [
+  'nurikabe',
+  'slither',
+  'mashu',
+  'yajilin',
+  'heyawake',
+  'lightup',
+  'ayeheya',
+  'akichi',
+  'lits',
+  'norinori',
+  'cbanana',
+  'nurimisaki',
+  'simpleloop',
+  'nanro',
+];
 
 /**
  * Cspuz Solver Worker Manager

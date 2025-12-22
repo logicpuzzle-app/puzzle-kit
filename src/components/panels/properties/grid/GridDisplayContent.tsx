@@ -5,8 +5,8 @@
 import React, { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trash2 } from 'lucide-react';
-import { usePuzzleStore } from '../../../../store/puzzleStore';
-import { useModalStore } from '../../../../store/modalStore';
+import { usePuzzleStore } from '../../../../store/puzzleStoreContext';
+import { useModalStore } from '../../../../store/modalStoreContext';
 
 // Background fit mode options
 const fitModes = [

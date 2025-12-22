@@ -6,11 +6,20 @@
  */
 
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStore';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { resolveGridIdToPosition, parseEdgeId } from '../../utils/gridIds';
-import { getCellCorners, getCellIndexById } from '../../utils/gridUtils';
-import type { LineElement, SurfaceElement, Point, GridConfig } from '../../types';
-import type { GridTopology } from '../../utils/gridTopology';
+import {
+  getCellCenter,
+  getCellCorners,
+  getCellIndexById,
+  getEdgeIndexById,
+  getEdgePosition,
+  getVertexIndexById,
+  getVertexPosition,
+} from '../../utils/gridUtils';
+import type { LineElement, SurfaceElement, NumberElement, SymbolElement, Point, GridConfig } from '../../types';
+import type { GridTopology, TopologyVertex } from '../../utils/gridTopology';
+import { renderSymbol } from './symbols';
 
 // Blue color for complete solution
 const SOLVER_LINE_COLOR = '#3B82F6';  // Tailwind blue-500
@@ -21,6 +30,19 @@ const SOLVER_SURFACE_OPACITY = 0.3;
 const PARTIAL_LINE_COLOR = '#F97316';  // Tailwind orange-500
 const PARTIAL_SURFACE_COLOR = '#F97316';
 const PARTIAL_SURFACE_OPACITY = 0.25;
+
+const getFontSize = (size: 'large' | 'medium' | 'small', cellSize: number): number => {
+  switch (size) {
+    case 'large':
+      return cellSize * 0.7;
+    case 'medium':
+      return cellSize * 0.5;
+    case 'small':
+      return cellSize * 0.3;
+    default:
+      return cellSize * 0.5;
+  }
+};
 
 const getStrokeWidth = (thickness: string): number => {
   switch (thickness) {
@@ -256,6 +278,182 @@ export const SolverLayer: React.FC = () => {
     return elements;
   }, [isSolverMode, solverResult, grid, activeTopology, cellSize, outerPadding, lineColor]);
 
+  // Render symbols
+  const symbols = useMemo(() => {
+    if (!isSolverMode || !solverResult) return null;
+
+    const elements: React.ReactElement[] = [];
+
+    Object.values(solverResult.symbols || {}).forEach((symbol: SymbolElement) => {
+      let center: { x: number; y: number } | null = null;
+
+      if (activeTopology) {
+        const cell = activeTopology.cells.get(symbol.cellId);
+        if (cell) {
+          center = cell.center;
+        } else {
+          const vertex = activeTopology.vertices.get(symbol.cellId);
+          if (vertex) {
+            center = vertex.position;
+          } else {
+            const edge = activeTopology.edges.get(symbol.cellId);
+            if (edge) {
+              center = edge.midpoint;
+            }
+          }
+        }
+      } else {
+        if (symbol.cellId.startsWith('vertex-')) {
+          const index = getVertexIndexById(symbol.cellId, grid);
+          if (index) center = getVertexPosition(index.row, index.col, grid);
+        } else if (symbol.cellId.startsWith('edge-h-')) {
+          const index = getEdgeIndexById(symbol.cellId, grid);
+          if (index && index.type === 'h') center = getEdgePosition('h', index.row, index.col, grid);
+        } else if (symbol.cellId.startsWith('edge-v-')) {
+          const index = getEdgeIndexById(symbol.cellId, grid);
+          if (index && index.type === 'v') center = getEdgePosition('v', index.row, index.col, grid);
+        } else {
+          const index = getCellIndexById(symbol.cellId, grid);
+          if (index) center = getCellCenter(index.row, index.col, grid);
+        }
+      }
+
+      if (!center) return;
+
+      const sizeMultiplier =
+        symbol.size === 'largest' ? 1.3 : symbol.size === 'large' ? 1 : symbol.size === 'medium' ? 0.7 : 0.5;
+
+      elements.push(
+        <g key={symbol.id}>
+          {renderSymbol(symbol.symbolType, {
+            x: center.x,
+            y: center.y,
+            size: cellSize * sizeMultiplier,
+            color: lineColor,
+            fillColor: symbol.fillColor,
+            rotation: symbol.rotation,
+            directions: symbol.directions,
+            directionAngles: symbol.directionAngles,
+          })}
+        </g>
+      );
+    });
+
+    return elements;
+  }, [isSolverMode, solverResult, grid, activeTopology, cellSize, lineColor]);
+
+  // Render numbers
+  const numbers = useMemo(() => {
+    if (!isSolverMode || !solverResult) return null;
+
+    const elements: React.ReactElement[] = [];
+
+    Object.values(solverResult.numbers || {}).forEach((num: NumberElement) => {
+      let center: Point;
+      let corners: Point[];
+
+      if (activeTopology) {
+        const cell = activeTopology.cells.get(num.cellId);
+        if (!cell) return;
+
+        center = cell.center;
+        corners = cell.boundaryVertices
+          .map((vId) => activeTopology.vertices.get(vId))
+          .filter((v): v is TopologyVertex => v !== undefined)
+          .map((v) => v.position);
+
+        if (corners.length < 4) {
+          corners = [center, center, center, center];
+        }
+      } else {
+        const index = getCellIndexById(num.cellId, grid);
+        if (!index) return;
+        center = getCellCenter(index.row, index.col, grid);
+        corners = getCellCorners(index.row, index.col, grid);
+      }
+
+      const fontSize = getFontSize(num.size, cellSize);
+      let x = center.x;
+      let y = center.y;
+      let textAnchor: 'start' | 'middle' | 'end' = 'middle';
+      let dominantBaseline: 'auto' | 'middle' | 'hanging' | 'ideographic' = 'middle';
+
+      if (num.position === 'corner' && num.cornerIndex !== undefined) {
+        const cornerOffset = cellSize * 0.2;
+        switch (num.cornerIndex) {
+          case 0:
+            x = corners[0].x + cornerOffset;
+            y = corners[0].y + cornerOffset;
+            textAnchor = 'start';
+            dominantBaseline = 'hanging';
+            break;
+          case 1:
+            x = corners[1].x - cornerOffset;
+            y = corners[1].y + cornerOffset;
+            textAnchor = 'end';
+            dominantBaseline = 'hanging';
+            break;
+          case 2:
+            x = corners[3].x + cornerOffset;
+            y = corners[3].y - cornerOffset;
+            textAnchor = 'start';
+            dominantBaseline = 'ideographic';
+            break;
+          case 3:
+            x = corners[2].x - cornerOffset;
+            y = corners[2].y - cornerOffset;
+            textAnchor = 'end';
+            dominantBaseline = 'ideographic';
+            break;
+          default:
+            break;
+        }
+      } else if (num.position === 'side' && num.sideIndex !== undefined) {
+        switch (num.sideIndex) {
+          case 0:
+            y = corners[0].y + cellSize * 0.15;
+            dominantBaseline = 'hanging';
+            break;
+          case 1:
+            x = corners[1].x - cellSize * 0.15;
+            textAnchor = 'end';
+            break;
+          case 2:
+            y = corners[2].y - cellSize * 0.15;
+            dominantBaseline = 'ideographic';
+            break;
+          case 3:
+            x = corners[0].x + cellSize * 0.15;
+            textAnchor = 'start';
+            break;
+          default:
+            break;
+        }
+      } else {
+        const yOffset = fontSize * 0.05;
+        y += yOffset;
+      }
+
+      elements.push(
+        <text
+          key={num.id}
+          x={x}
+          y={y}
+          fill={lineColor}
+          fontSize={fontSize}
+          fontFamily="Helvetica, Verdana, Arial, sans-serif"
+          fontWeight="normal"
+          textAnchor={textAnchor}
+          dominantBaseline={dominantBaseline}
+        >
+          {num.value}
+        </text>
+      );
+    });
+
+    return elements;
+  }, [isSolverMode, solverResult, grid, activeTopology, cellSize, lineColor]);
+
   if (!isSolverMode || !solverResult) return null;
 
   return (
@@ -264,6 +462,8 @@ export const SolverLayer: React.FC = () => {
       {lines}
       {edges}
       {walls}
+      {symbols}
+      {numbers}
     </g>
   );
 };

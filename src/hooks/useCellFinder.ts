@@ -6,9 +6,8 @@
  */
 
 import { useCallback } from 'react';
-import { usePuzzleStore } from '../store/puzzleStore';
-import { findNearestCell } from '../utils/gridUtils';
-import { findNearestCellInTopology } from '../utils/gridTopology';
+import { usePuzzleStore } from '../store/puzzleStoreContext';
+import { resolveCell } from '../utils/pointResolver';
 import type { Point } from '../types';
 
 export interface CellInfo {
@@ -33,30 +32,15 @@ export function useCellFinder() {
    * Returns CellInfo or null if no cell found
    */
   const findCellAtPoint = useCallback(
-    (point: Point): CellInfo | null => {
-      if (useTopology && topology) {
-        const topoCell = findNearestCellInTopology(topology, point);
-        if (topoCell) {
-          return {
-            cellId: topoCell.id,
-            row: topoCell.row,
-            col: topoCell.col,
-            center: topoCell.center,
-          };
-        }
-        return null;
-      }
-
-      // Standard mode
-      const cell = findNearestCell(point, grid);
-      if (cell) {
-        return {
-          cellId: `cell-${cell.row}-${cell.col}`,
-          row: cell.row,
-          col: cell.col,
-        };
-      }
-      return null;
+    (point: Point, options?: { allowOutboard?: boolean }): CellInfo | null => {
+      const cell = resolveCell(point, { grid, useTopology, topology }, { allowOutboard: options?.allowOutboard });
+      if (!cell) return null;
+      return {
+        cellId: cell.cellId,
+        row: cell.row,
+        col: cell.col,
+        center: cell.center,
+      };
     },
     [grid, useTopology, topology]
   );

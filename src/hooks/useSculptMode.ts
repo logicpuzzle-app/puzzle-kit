@@ -10,9 +10,10 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { usePuzzleStore } from '../store/puzzleStore';
+import { usePuzzleStore } from '../store/puzzleStoreContext';
 import type { Point, GridConfig } from '../types';
 import type { GridTopology, TopologyCell, TopologyVertex } from '../utils/gridTopology';
+import { resolveVertex } from '../utils/pointResolver';
 
 interface UseSculptModeOptions {
   grid: GridConfig;
@@ -71,9 +72,25 @@ export function useSculptMode({ grid, topology }: UseSculptModeOptions) {
   const findNearestVertex = useCallback(
     (point: Point): SculptHover | null => {
       if (grid.gridType !== 'iso' || !topology) return null;
-      let nearest: SculptHover | null = null;
-      let nearestDist = grid.cellSize * 0.6;
+      const maxDistance = grid.cellSize * 0.6;
+      const resolved = resolveVertex(
+        point,
+        { grid, useTopology: true, topology },
+        { maxDistance }
+      );
+      if (!resolved) return null;
 
+      const candidateMap = new Map<string, string[]>();
+      candidates.forEach(({ vertex, cellIds }) => {
+        candidateMap.set(vertex.id, cellIds);
+      });
+      const resolvedCandidate = candidateMap.get(resolved.id);
+      if (resolvedCandidate) {
+        return { vertexId: resolved.id, cellIds: resolvedCandidate };
+      }
+
+      let nearest: SculptHover | null = null;
+      let nearestDist = maxDistance;
       candidates.forEach(({ vertex, cellIds }) => {
         const dist = Math.hypot(point.x - vertex.position.x, point.y - vertex.position.y);
         if (dist < nearestDist) {

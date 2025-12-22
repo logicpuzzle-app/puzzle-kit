@@ -9,11 +9,12 @@
  */
 
 import React from 'react';
-import { usePuzzleStore } from '../../store/puzzleStore';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { getCellCenter, getCellIndexById, getEdgeIndexById, getEdgePosition, getVertexIndexById, getVertexPosition } from '../../utils/gridUtils';
-import type { PuzzleElements, SurfaceElement, EdgeElement, LineElement, SymbolElement, NumberElement } from '../../types';
+import type { PuzzleElements, SurfaceElement, LineElement, SymbolElement, NumberElement } from '../../types';
 import type { TopologyVertex } from '../../utils/gridTopology';
 import { getEdgeLineDrawInfo } from '../../utils/gridTopology';
+import { isDirectionalNumber } from '../../utils/numberEntries';
 
 interface TrialStackLayerProps {
   /** The saved elements to render */
@@ -75,92 +76,6 @@ const TrialLayer: React.FC<TrialStackLayerProps> = ({ elements, opacity, layerIn
         );
       })}
 
-      {/* Edges */}
-      {Object.values(elements.edges).map((edge: EdgeElement) => {
-        if (useTopology && topology) {
-          if (edge.edgeId) {
-            const drawInfo = getEdgeLineDrawInfo(topology, edge.edgeId);
-            if (!drawInfo) return null;
-            return (
-              <line
-                key={`trial-${layerIndex}-edge-${edge.id}`}
-                x1={drawInfo.startVertex.x}
-                y1={drawInfo.startVertex.y}
-                x2={drawInfo.endVertex.x}
-                y2={drawInfo.endVertex.y}
-                stroke={edge.color}
-                strokeWidth={edge.thickness === 'thick' ? 4 : 2}
-                strokeLinecap="round"
-              />
-            );
-          }
-
-          if (!edge.from || !edge.to) return null;
-
-          const fromVertex = topology.vertices.get(edge.from);
-          const toVertex = topology.vertices.get(edge.to);
-          if (!fromVertex || !toVertex) return null;
-
-          return (
-            <line
-              key={`trial-${layerIndex}-edge-${edge.id}`}
-              x1={fromVertex.position.x}
-              y1={fromVertex.position.y}
-              x2={toVertex.position.x}
-              y2={toVertex.position.y}
-              stroke={edge.color}
-              strokeWidth={edge.thickness === 'thick' ? 4 : 2}
-              strokeLinecap="round"
-            />
-          );
-        }
-
-        if (edge.edgeId) {
-          const edgeIndex = getEdgeIndexById(edge.edgeId, grid);
-          if (!edgeIndex) return null;
-          const fromVertex = getVertexPosition(edgeIndex.row, edgeIndex.col, grid);
-          const toVertex =
-            edgeIndex.type === 'h'
-              ? getVertexPosition(edgeIndex.row, edgeIndex.col + 1, grid)
-              : getVertexPosition(edgeIndex.row + 1, edgeIndex.col, grid);
-
-          return (
-            <line
-              key={`trial-${layerIndex}-edge-${edge.id}`}
-              x1={fromVertex.x}
-              y1={fromVertex.y}
-              x2={toVertex.x}
-              y2={toVertex.y}
-              stroke={edge.color}
-              strokeWidth={edge.thickness === 'thick' ? 4 : 2}
-              strokeLinecap="round"
-            />
-          );
-        }
-
-        if (!edge.from || !edge.to) return null;
-
-        const fromIndex = getVertexIndexById(edge.from, grid);
-        const toIndex = getVertexIndexById(edge.to, grid);
-        if (!fromIndex || !toIndex) return null;
-
-        const fromVertex = getVertexPosition(fromIndex.row, fromIndex.col, grid);
-        const toVertex = getVertexPosition(toIndex.row, toIndex.col, grid);
-
-        return (
-          <line
-            key={`trial-${layerIndex}-edge-${edge.id}`}
-            x1={fromVertex.x}
-            y1={fromVertex.y}
-            x2={toVertex.x}
-            y2={toVertex.y}
-            stroke={edge.color}
-            strokeWidth={edge.thickness === 'thick' ? 4 : 2}
-            strokeLinecap="round"
-          />
-        );
-      })}
-
       {/* Lines */}
       {Object.values(elements.lines).map((line: LineElement) => {
         if (line.edgeId) {
@@ -197,7 +112,28 @@ const TrialLayer: React.FC<TrialStackLayerProps> = ({ elements, opacity, layerIn
           const edgeIndex = getEdgeIndexById(line.edgeId, grid);
           if (!edgeIndex) return null;
 
-          // Default to cell-center rendering in grid mode.
+          const lineTarget = line.lineTarget ?? 'cell';
+          if (lineTarget === 'edge' || lineTarget === 'wall') {
+            const fromVertex = getVertexPosition(edgeIndex.row, edgeIndex.col, grid);
+            const toVertex =
+              edgeIndex.type === 'h'
+                ? getVertexPosition(edgeIndex.row, edgeIndex.col + 1, grid)
+                : getVertexPosition(edgeIndex.row + 1, edgeIndex.col, grid);
+
+            return (
+              <line
+                key={`trial-${layerIndex}-line-${line.id}`}
+                x1={fromVertex.x}
+                y1={fromVertex.y}
+                x2={toVertex.x}
+                y2={toVertex.y}
+                stroke={line.color}
+                strokeWidth={line.thickness === 'thick' ? 4 : 2}
+                strokeLinecap="round"
+              />
+            );
+          }
+
           const fromCellId =
             edgeIndex.type === 'h'
               ? `cell-${edgeIndex.row - 1}-${edgeIndex.col}`
@@ -332,7 +268,9 @@ const TrialLayer: React.FC<TrialStackLayerProps> = ({ elements, opacity, layerIn
       })}
 
       {/* Numbers */}
-      {Object.values(elements.numbers).map((num: NumberElement) => {
+      {Object.values(elements.numbers)
+        .filter((num) => !isDirectionalNumber(num))
+        .map((num: NumberElement) => {
         const center = (() => {
           if (useTopology && topology) {
             return topology.cells.get(num.cellId)?.center ?? null;

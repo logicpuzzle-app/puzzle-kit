@@ -17,7 +17,6 @@ export const createEmptyElements = (): PuzzleElements => ({
   cages: {},
   specials: {},
   boxLines: {},
-  directionalClues: {},
 });
 
 /**

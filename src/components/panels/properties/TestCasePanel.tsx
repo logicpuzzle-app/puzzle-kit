@@ -4,14 +4,16 @@
 
 import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { usePuzzleStore } from '../../../store/puzzleStore';
+import { usePuzzleStore, usePuzzleStoreApi } from '../../../store/puzzleStoreContext';
 import { testCaseRegistry, type FailCheckCase } from '../../../constraints';
 import { parsePzprv3 } from '../../../utils/pzprv3Parser';
+import { getDirectionalCluesFromElements } from '../../../utils/numberEntries';
 import { FiPlay, FiCheckCircle, FiXCircle, FiAlertCircle, FiCheck } from 'react-icons/fi';
 
 export const TestCasePanel: React.FC = () => {
   const { t } = useTranslation();
-  const { currentSchemaId, checkAnswer } = usePuzzleStore();
+  const { currentSchemaId, checkAnswer, isPlayerMode } = usePuzzleStore();
+  const storeApi = usePuzzleStoreApi();
   const [selectedCase, setSelectedCase] = useState<number | null>(null);
   const [loadResult, setLoadResult] = useState<{ success: boolean; message: string } | null>(null);
 
@@ -20,6 +22,9 @@ export const TestCasePanel: React.FC = () => {
 
   // Load a test case into the puzzle
   const loadTestCase = useCallback((testCase: FailCheckCase, index: number) => {
+    if (isPlayerMode) {
+      return;
+    }
     setSelectedCase(index);
     setLoadResult(null);
 
@@ -31,7 +36,7 @@ export const TestCasePanel: React.FC = () => {
     }
 
     // Update the store with parsed puzzle
-    const store = usePuzzleStore.getState();
+    const store = storeApi.getState();
 
     // Save current active layer to restore later
     const currentLayer = store.activeLayer;
@@ -60,13 +65,14 @@ export const TestCasePanel: React.FC = () => {
       for (const [, sym] of Object.entries(problem.symbols)) {
         store.addSymbol(sym);
       }
-      for (const [, edge] of Object.entries(problem.edges)) {
-        store.addEdge(edge);
+      for (const [, line] of Object.entries(problem.lines)) {
+        store.addLine(line);
       }
-      if (problem.directionalClues) {
-        for (const [, clue] of Object.entries(problem.directionalClues)) {
+      const directionalNumbers = getDirectionalCluesFromElements(problem);
+      if (directionalNumbers.length > 0) {
+        directionalNumbers.forEach((clue) => {
           store.addDirectionalClue(clue);
-        }
+        });
       }
       // Import room map if present (for Heyawake, etc.)
       if (problem.roomMap) {
@@ -81,9 +87,6 @@ export const TestCasePanel: React.FC = () => {
       }
       for (const [, line] of Object.entries(answer.lines)) {
         store.addLine(line);
-      }
-      for (const [, edge] of Object.entries(answer.edges)) {
-        store.addEdge(edge);
       }
       for (const [, sym] of Object.entries(answer.symbols)) {
         store.addSymbol(sym);
@@ -103,7 +106,7 @@ export const TestCasePanel: React.FC = () => {
         ? `Expected: ${testCase.failcode}`
         : 'Expected: Complete',
     });
-  }, []);
+  }, [isPlayerMode]);
 
   if (!testData) {
     return (

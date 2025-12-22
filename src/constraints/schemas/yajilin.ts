@@ -175,6 +175,16 @@ export const yajilinSchema: ConstraintSchema = {
     },
   ],
 
+  highlight: [
+    {
+      id: 'yajilin.clue-satisfied',
+      scope: 'play',
+      title: 'constraint.yajilin.clueSatisfied.title',
+      description: 'constraint.yajilin.clueSatisfied.description',
+      defaultOn: true,
+    },
+  ],
+
   notes: [
     'Arrow numbers indicate shaded cells in that direction',
     'Shaded cells cannot be adjacent',

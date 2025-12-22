@@ -6,13 +6,14 @@ import type { GridConfig, GridType, IsometricFace, IsometricView } from '../../t
 import type { PuzzleIOSlice, SliceCreator } from './types';
 import { createEmptyState, DEFAULT_TOOL_SETTINGS } from './types';
 import { gridConfigToTopology, applyTopologyPreset } from '../../utils/gridTopology';
-import { historyManager } from '../historyManager';
+import { remapLineEdgeIdsForTopology } from '../../utils/lineTopology';
 import {
   optimizePuzzleStateForExport,
   restorePuzzleStateFromExport,
 } from '../../utils/puzzleExport';
 import { PUZZLE_EXPORT_VERSION } from '../../constants/version';
 import { migrationRegistry } from '../../migrations';
+import { mergeDirectionalCluesIntoNumbers } from '../../utils/legacyDirectionalClues';
 
 export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
   newPuzzle: (options = {}) => {
@@ -81,7 +82,7 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
       currentInputMode: 'auto',
       validationOverrides: {},
     });
-    historyManager.clear();
+    get().historyManager.clear();
   },
 
   exportPuzzle: () => {
@@ -101,6 +102,7 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
         currentSchemaId: state.currentSchemaId,
         currentInputMode: state.currentInputMode,
         validationOverrides: state.validationOverrides,
+        highlightOverrides: state.highlightOverrides,
       },
       metadata: {
         created: new Date().toISOString(),
@@ -136,6 +138,7 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
         const currentSchemaId = data.constraintSettings?.currentSchemaId ?? null;
         const currentInputMode = data.constraintSettings?.currentInputMode ?? 'auto';
         const validationOverrides = data.constraintSettings?.validationOverrides ?? {};
+        const highlightOverrides = data.constraintSettings?.highlightOverrides ?? {};
 
         // Regenerate topology from grid config
         const base = gridConfigToTopology(data.grid);
@@ -145,10 +148,24 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
 
         // Restore layer field to elements (v1.1.0+ strips layer, older versions include it)
         const puzzleState = restorePuzzleStateFromExport(data.state);
+        const remappedState = useTopology
+          ? {
+              ...puzzleState,
+              problem: {
+                ...puzzleState.problem,
+                lines: remapLineEdgeIdsForTopology(puzzleState.problem.lines, topology, data.grid),
+              },
+              answer: {
+                ...puzzleState.answer,
+                lines: remapLineEdgeIdsForTopology(puzzleState.answer.lines, topology, data.grid),
+              },
+            }
+          : puzzleState;
+        const normalizedState = mergeDirectionalCluesIntoNumbers(remappedState);
 
         set({
           grid: data.grid,
-          puzzle: puzzleState,
+          puzzle: normalizedState,
           useTopology,
           topologyPreset,
           topologyIntensity,
@@ -156,8 +173,9 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
           currentSchemaId,
           currentInputMode,
           validationOverrides,
+          highlightOverrides,
         } as any);
-        historyManager.clear();
+        get().historyManager.clear();
         return true;
       }
       return false;

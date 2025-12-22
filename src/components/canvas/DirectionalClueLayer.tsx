@@ -1,8 +1,10 @@
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStore';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { getCellCenter, getCellIndexById } from '../../utils/gridUtils';
 import type { LayerType, PuzzleElements } from '../../types';
-import { getClueDisplayValue } from '../../types/penpaElements';
+import { useHighlightOutput } from '../../hooks/useHighlightOutput';
+import type { HighlightTextStyle } from '../../constraints/highlights';
+import { isDirectionalNumber } from '../../utils/numberEntries';
 
 // Direction constants (matches pzprjs/Penpa)
 // NDIR = 0 (not used - direction type is 1|2|3|4)
@@ -138,25 +140,50 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
   arrowStyle = 'polygon'
 }) => {
   const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology } = usePuzzleStore();
+  const highlightOutput = useHighlightOutput();
   const isVisible = (layer === 'problem' && showProblemLayer) || (layer === 'answer' && showAnswerLayer);
+
+  const textStyleMap = useMemo(() => {
+    const styles = highlightOutput?.textStyles ?? [];
+    const map = new Map<string, HighlightTextStyle>();
+    styles.forEach((style) => {
+      if (style.target === 'directional') {
+        map.set(style.cellId, style);
+      }
+    });
+    return map;
+  }, [highlightOutput]);
 
   const elements = useMemo(() => {
     if (!isVisible) return null;
     const layerData: PuzzleElements = puzzle[layer];
-    if (!layerData.directionalClues) return null;
+    const directionalNumbers = Object.values(layerData.numbers).filter(isDirectionalNumber);
+    if (directionalNumbers.length === 0) return null;
+
+    const entries = new Map<string, {
+      cellId: string;
+      value: string;
+      direction: number;
+      angle?: number | null;
+      color?: string;
+    }>();
+    directionalNumbers.forEach((num) => {
+      entries.set(num.cellId, {
+        cellId: num.cellId,
+        value: num.value ?? '',
+        direction: num.direction ?? 0,
+        angle: num.angle ?? null,
+        color: num.color,
+      });
+    });
 
     const nodes: React.ReactElement[] = [];
-    Object.values(layerData.directionalClues).forEach((clue) => {
-      // Use cellId directly (supports complex topologies like Cairo)
-      // Generate cellId from cell index if not provided
-      let cellId: string;
-      if (clue.cellId) {
-        cellId = clue.cellId;
-      } else if (clue.cell !== undefined) {
-        cellId = `cell-${Math.floor(clue.cell / grid.cols)}-${clue.cell % grid.cols}`;
-      } else {
-        return; // Skip if no cellId or cell
-      }
+    const baseFontSize = grid.cellSize * 0.5;
+    const numberYOffset = baseFontSize * 0.05;
+    const numberFontFamily = 'Helvetica, Verdana, Arial, sans-serif';
+    const baseFontWeight = layer === 'problem' ? 'bold' : 'normal';
+    entries.forEach((clue) => {
+      const cellId = clue.cellId;
 
       // Get cell center position - use topology if available
       let center: { x: number; y: number };
@@ -175,19 +202,18 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
         if (index.row < 0 || index.col < 0 || index.row >= grid.rows || index.col >= grid.cols) return;
         center = getCellCenter(index.row, index.col, grid);
       }
-      // Get display value using helper (handles char and -2 = "?")
-      const displayValue = getClueDisplayValue(clue);
-      const digitCount = displayValue.length;
-      const hasDirection = clue.direction >= UP && clue.direction <= RT;
+      const displayValue = clue.value ?? '';
+      const direction = clue.direction ?? 0;
+      const hasDirection = direction >= UP && direction <= RT;
       const hasArbitraryAngle = clue.angle !== null && clue.angle !== undefined;
-      const fontSize = grid.cellSize * 0.5;
-
-      // Use color from clue if specified, otherwise default to black
-      const clueColor = clue.color || '#000';
+      const highlightStyle = textStyleMap.get(cellId);
+      // Use highlight override if present, then clue color, otherwise default to black
+      const clueColor = highlightStyle?.color || clue.color || '#000';
+      const numberFontWeight = highlightStyle?.fontWeight || baseFontWeight;
 
       if (hasArbitraryAngle || hasDirection) {
         // Use generalized arrow rendering for both arbitrary angles and preset directions
-        const angle = hasArbitraryAngle ? clue.angle! : directionToAngle(clue.direction);
+        const angle = hasArbitraryAngle ? clue.angle! : directionToAngle(direction);
         const arrowPath = getArrowPathForAngle(grid.cellSize);
         const arrowPos = getArrowPositionForAngle(angle, grid.cellSize);
         const numberOffset = getNumberOffsetForAngle(angle, grid.cellSize);
@@ -197,13 +223,13 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
             {/* Number offset based on arrow position */}
             <text
               x={numberOffset.x}
-              y={numberOffset.y}
+              y={numberOffset.y + numberYOffset}
               fill={clueColor}
-              fontSize={fontSize * 0.85}
-              fontFamily="Helvetica, Verdana, Arial, sans-serif"
-              fontWeight="bold"
+              fontSize={baseFontSize}
+              fontFamily={numberFontFamily}
+              fontWeight={numberFontWeight}
               textAnchor="middle"
-              dominantBaseline="central"
+              dominantBaseline="middle"
             >
               {displayValue}
             </text>
@@ -221,13 +247,13 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
           <g key={`dirclue-${cellId}`} transform={`translate(${center.x},${center.y})`}>
             <text
               x={0}
-              y={0}
+              y={numberYOffset}
               fill={clueColor}
-              fontSize={fontSize}
-              fontFamily="Helvetica, Verdana, Arial, sans-serif"
-              fontWeight="bold"
+              fontSize={baseFontSize}
+              fontFamily={numberFontFamily}
+              fontWeight={numberFontWeight}
               textAnchor="middle"
-              dominantBaseline="central"
+              dominantBaseline="middle"
             >
               {displayValue}
             </text>
@@ -236,7 +262,7 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
       }
     });
     return nodes;
-  }, [isVisible, puzzle, layer, grid, arrowStyle, useTopology, topology]);
+  }, [isVisible, puzzle, layer, grid, arrowStyle, useTopology, topology, textStyleMap]);
 
   if (!elements) return null;
   return <g className={`directional-clue-layer ${layer}`}>{elements}</g>;

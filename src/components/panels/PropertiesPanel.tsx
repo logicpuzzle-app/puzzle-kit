@@ -4,7 +4,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { usePuzzleStore } from '../../store/puzzleStore';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { SymbolPanel } from './SymbolPanel';
 import { DirectionPanel } from './DirectionPanel';
 import { constraintCatalog } from '../../constraints';

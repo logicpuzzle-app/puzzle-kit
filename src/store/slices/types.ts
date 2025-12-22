@@ -42,7 +42,6 @@ export const createEmptyElements = (): PuzzleElements => ({
   cages: {},
   specials: {},
   boxLines: {},
-  directionalClues: {},
 });
 
 export const createEmptyState = (): PuzzleState => ({
@@ -254,6 +253,10 @@ export interface LayerSlice {
   activeLayer: LayerType;
   setActiveLayer: (layer: LayerType) => void;
 
+  // Player mode (restrict edits to answer layer)
+  isPlayerMode: boolean;
+  setPlayerMode: (enabled: boolean) => void;
+
   // Layer visibility
   showProblemLayer: boolean;
   showAnswerLayer: boolean;
@@ -263,8 +266,8 @@ export interface LayerSlice {
   toggleConstraintLayer: () => void;
 }
 
-// Constraint layer sub-categories: common (共通), edit (編集設定), play (プレイ設定), check (チェック設定)
-export type ConstraintSubCategory = 'common' | 'edit' | 'play' | 'check';
+// Constraint layer sub-categories: common (共通), edit (編集設定), play (プレイ設定), check (チェック設定), highlight (ハイライト)
+export type ConstraintSubCategory = 'common' | 'edit' | 'play' | 'check' | 'highlight';
 
 // pzprjs-style input modes
 export type InputModeType =
@@ -331,9 +334,19 @@ export interface ConstraintSlice {
   // Is a validation rule enabled?
   isRuleEnabled: (ruleId: string, defaultOn?: boolean) => boolean;
 
+  // Highlight rule overrides (rule ID → enabled/disabled)
+  highlightOverrides: Record<string, boolean>;
+  setHighlightOverride: (ruleId: string, enabled: boolean) => void;
+  resetHighlightOverrides: () => void;
+
+  // Is a highlight rule enabled?
+  isHighlightRuleEnabled: (ruleId: string, defaultOn?: boolean) => boolean;
+
   // Validation state
   lastValidationResult: ValidationResultState | null;
   isValidationModalOpen: boolean;
+  showCorrectMessage: boolean;
+  hasShownCorrectMessage: boolean;
   checkAnswer: () => ValidationResultState | null;
   openValidationModal: () => void;
   closeValidationModal: () => void;
@@ -411,6 +424,15 @@ export type { CursorSlice, CssCursorClass, CursorOverlay, CursorConfig } from '.
 // Import CursorSlice for combined type
 import type { CursorSlice } from './cursorSlice';
 import type { SolverSlice } from './solverSlice';
+import type { ActionExecutor } from '../actionExecutor';
+import type { HistoryManager } from '../historyManager';
+import type { PersistenceManager } from '../persistence';
+
+export interface ManagerSlice {
+  actionExecutor: ActionExecutor;
+  historyManager: HistoryManager;
+  persistenceManager: PersistenceManager;
+}
 
 // Combined store type
 export type PuzzleStore = GridSlice &
@@ -424,7 +446,8 @@ export type PuzzleStore = GridSlice &
   TrialSlice &
   PuzzleIOSlice &
   CursorSlice &
-  SolverSlice;
+  SolverSlice &
+  ManagerSlice;
 
 // Slice creator type
 export type SliceCreator<T> = StateCreator<PuzzleStore, [], [], T>;

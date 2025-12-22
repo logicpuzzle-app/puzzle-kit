@@ -101,7 +101,6 @@ function convertMashuSolutionToAnswer(
     cages: {},
     specials: {},
     boxLines: {},
-    directionalClues: {},
   };
 
   // Add lines (cell center to cell center)

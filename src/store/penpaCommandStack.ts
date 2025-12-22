@@ -357,7 +357,7 @@ export const penpaCommandStack = new PenpaCommandStack();
 // Integration with HistoryManager
 // ========================================
 
-import { historyManager } from './historyManager';
+import { historyManager, type HistoryManager } from './historyManager';
 import type { PuzzleAction } from './actions';
 
 /**
@@ -436,15 +436,18 @@ export function actionToPenpaCommand(action: PuzzleAction): PenpaCommand | null 
 /**
  * Sync HistoryManager entries to PenpaCommandStack
  */
-export function syncHistoryToCommandStack(): void {
-  const historyState = historyManager.getState();
-  penpaCommandStack.clear();
+export function syncHistoryToCommandStack(
+  history: HistoryManager = historyManager,
+  stack: PenpaCommandStack = penpaCommandStack
+): void {
+  const historyState = history.getState();
+  stack.clear();
 
   for (let i = 0; i <= historyState.currentIndex; i++) {
     const entry = historyState.entries[i];
     const penpaCmd = actionToPenpaCommand(entry.action);
     if (penpaCmd) {
-      penpaCommandStack.push(penpaCmd);
+      stack.push(penpaCmd);
     }
   }
 }

@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { usePuzzleStore } from '../../store/puzzleStore';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
 
 export const CheckAnswerModal: React.FC = () => {
   const { t } = useTranslation();
@@ -12,6 +12,7 @@ export const CheckAnswerModal: React.FC = () => {
     lastValidationResult,
     isValidationModalOpen,
     closeValidationModal,
+    showCorrectMessage,
   } = usePuzzleStore();
 
   if (!isValidationModalOpen || !lastValidationResult) {
@@ -100,9 +101,9 @@ export const CheckAnswerModal: React.FC = () => {
           )}
 
           {/* Complete message */}
-          {complete && (
+          {complete && showCorrectMessage && (
             <div className="text-xs text-green-600 text-center">
-              {t('validation.congratulations')}
+              {t('validation.correctOnce')}
             </div>
           )}
         </div>

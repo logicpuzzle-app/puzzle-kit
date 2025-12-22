@@ -10,10 +10,12 @@
 // Types
 export type {
   ConstraintScope,
+  HighlightScope,
   GridType,
   ConstraintTarget,
   ToolId,
   ConstraintRule,
+  HighlightRule,
   ConstraintSchema,
   ConstraintCatalog,
   ValidationResult,
@@ -42,6 +44,20 @@ export {
   getConstraintsByScope,
   getDefaultValidationRules,
 } from './ConstraintCatalog';
+
+// Highlights
+export {
+  type HighlightOutput,
+  type HighlightContext,
+  type HighlightFill,
+  type HighlightTextStyle,
+  type HighlightOverlaySymbol,
+  type HighlightLayerHint,
+  type HighlightProvider,
+  registerHighlightProvider,
+  getHighlightProvider,
+  mergeHighlightOutputs,
+} from './highlights';
 
 // Individual schemas (for direct import if needed)
 export * from './schemas';

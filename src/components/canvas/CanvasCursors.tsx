@@ -79,7 +79,7 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
       {/* Cell cursor for number tools (Excel-like highlight) */}
       {cellCursorPath && (
         <g data-cursor="true" transform={`translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom})`}>
-          <path d={cellCursorPath} fill="none" stroke="#0078d4" strokeWidth={2 / canvas.zoom} />
+          <path d={cellCursorPath} fill="none" stroke="#2563eb" strokeWidth={3 / canvas.zoom} />
         </g>
       )}
 
@@ -89,9 +89,9 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
         {cursorCellPolygon && (
           <polygon
             points={cursorCellPolygon}
-            fill="rgba(255, 152, 0, 0.15)"
-            stroke="rgba(255, 152, 0, 0.8)"
-            strokeWidth={2 / canvas.zoom}
+            fill="rgba(255, 140, 0, 0.25)"
+            stroke="rgba(255, 140, 0, 0.95)"
+            strokeWidth={3 / canvas.zoom}
             pointerEvents="none"
           />
         )}
@@ -102,9 +102,9 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
             y={cursorCellRect.y}
             width={cursorCellRect.size}
             height={cursorCellRect.size}
-            fill="rgba(255, 152, 0, 0.15)"
-            stroke="rgba(255, 152, 0, 0.8)"
-            strokeWidth={2 / canvas.zoom}
+            fill="rgba(255, 140, 0, 0.25)"
+            stroke="rgba(255, 140, 0, 0.95)"
+            strokeWidth={3 / canvas.zoom}
             pointerEvents="none"
           />
         )}

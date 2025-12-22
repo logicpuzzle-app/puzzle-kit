@@ -5,7 +5,7 @@
  * Uses puzz.link URL format for communication with the wasm solver.
  */
 
-import type { PuzzleState, GridConfig } from '../types';
+import type { PuzzleState, GridConfig, NumberElement } from '../types';
 import type { SolveResult, SolverStatus } from './types';
 import { generatePuzzlinkUrl, type PuzzlinkType } from '../utils/puzzlinkExporter';
 
@@ -38,6 +38,22 @@ const CSPUZ_SUPPORTED_TYPES: Record<string, PuzzlinkType> = {
   mashu: 'masyu',
   yajilin: 'yajilin',
   heyawake: 'heyawake',
+  lightup: 'akari',
+  ayeheya: 'ayeheya',
+  akichi: 'akichi',
+  lits: 'lits',
+  norinori: 'norinori',
+  cbanana: 'cbanana',
+  nurimisaki: 'nurimisaki',
+  simpleloop: 'simpleloop',
+  nanro: 'nanro',
+};
+
+const SOLUTION_COLORS = new Set(['green', '#339933', '#cccccc']);
+
+const isSolutionColor = (color: string | undefined): boolean => {
+  if (!color) return false;
+  return SOLUTION_COLORS.has(color);
 };
 
 let solver: CspuzModule | null = null;
@@ -127,11 +143,14 @@ function convertCspuzResultToAnswer(
       y: number;
       x: number;
       color: string;
-      item: string | { kind: string; data?: string };
+      item: string | { kind: string; data?: string; pos?: string };
     }>;
     isUnique?: boolean;
   }
 ): PuzzleState['answer'] {
+  const cellLinePids = new Set(['yajilin', 'mashu', 'simpleloop']);
+  const edgeLinePids = new Set(['slither']);
+
   const answer: PuzzleState['answer'] = {
     surfaces: {},
     lines: {},
@@ -142,19 +161,21 @@ function convertCspuzResultToAnswer(
     cages: {},
     specials: {},
     boxLines: {},
-    directionalClues: {},
   };
 
   let surfaceId = 1;
   let lineId = 1;
+  let symbolId = 1;
+  let numberId = 1;
 
   for (const item of description.data) {
     // cspuz coordinates: y and x are doubled (cell center = (2*row+1, 2*col+1))
     const row = Math.floor((item.y - 1) / 2);
     const col = Math.floor((item.x - 1) / 2);
+    const isSolution = isSolutionColor(item.color);
 
     // Block (shaded cell) - for nurikabe, heyawake, yajilin
-    if (item.item === 'block' || item.item === 'fill') {
+    if (isSolution && (item.item === 'block' || item.item === 'fill')) {
       const cellId = `cell-${row}-${col}`;
       answer.surfaces[`surface-${surfaceId++}`] = {
         id: `surface-${surfaceId - 1}`,
@@ -169,7 +190,10 @@ function convertCspuzResultToAnswer(
 
     // Lines - handling differs by puzzle type
     // cspuz uses 'line' for yajilin/masyu and 'wall' for slitherlink
-    if (item.item === 'line' || item.item === 'wall') {
+    if (isSolution && (item.item === 'line' || item.item === 'wall')) {
+      if (!cellLinePids.has(pid) && !edgeLinePids.has(pid)) {
+        continue;
+      }
       // cspuz coordinates:
       // - Cell center at (row, col) = (y=2*row+1, x=2*col+1)
       // - Line on horizontal edge (y even): connects cells above and below = VERTICAL connection
@@ -177,8 +201,8 @@ function convertCspuzResultToAnswer(
       const isOnHorizontalEdge = item.y % 2 === 0; // y even = on horizontal edge = vertical line
       const isOnVerticalEdge = item.x % 2 === 0; // x even = on vertical edge = horizontal line
 
-      if (pid === 'yajilin' || pid === 'mashu') {
-        // For yajilin/masyu: lines connect cell centers
+      if (cellLinePids.has(pid)) {
+        // For yajilin/masyu/simpleloop: lines connect cell centers
         if (isOnVerticalEdge && !isOnHorizontalEdge) {
           // Vertical edge at x=2k: connects cells (row, k-1) and (row, k) - HORIZONTAL line
           // y is odd = 2*row+1, so row = (y-1)/2
@@ -260,6 +284,66 @@ function convertCspuzResultToAnswer(
           };
         }
       }
+    }
+
+    if (!isSolution) {
+      continue;
+    }
+
+    if (typeof item.item === 'string') {
+      if (item.item === 'circle' || item.item === 'filledCircle' || item.item === 'dot') {
+        const cellId = `cell-${row}-${col}`;
+        const symbolType = item.item === 'filledCircle' ? 'circle-filled' : item.item;
+        const size = item.item === 'dot' ? 'small' : 'large';
+        const id = `solver-symbol-${symbolId++}`;
+        answer.symbols[id] = {
+          id,
+          cellId,
+          symbolType,
+          size,
+          rotation: 0,
+          color: '#000000',
+          layer: 'answer',
+        };
+      }
+      continue;
+    }
+
+    if (typeof item.item === 'object' && item.item.kind === 'text' && item.item.data !== undefined) {
+      const cellId = `cell-${row}-${col}`;
+      const id = `solver-number-${numberId++}`;
+      const num: NumberElement = {
+        id,
+        cellId,
+        value: item.item.data,
+        size: 'medium',
+        position: 'center',
+        color: '#000000',
+        layer: 'answer',
+      };
+
+      switch (item.item.pos) {
+        case 'upperLeft':
+          num.position = 'corner';
+          num.cornerIndex = 0;
+          break;
+        case 'upperRight':
+          num.position = 'corner';
+          num.cornerIndex = 1;
+          break;
+        case 'lowerLeft':
+          num.position = 'corner';
+          num.cornerIndex = 2;
+          break;
+        case 'lowerRight':
+          num.position = 'corner';
+          num.cornerIndex = 3;
+          break;
+        default:
+          break;
+      }
+
+      answer.numbers[id] = num;
     }
   }
 

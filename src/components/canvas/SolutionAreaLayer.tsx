@@ -7,7 +7,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStore';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import type { TopologyVertex } from '../../utils/gridTopology';
 import { getCellCorners, getCellId, getCellIndexById } from '../../utils/gridUtils';
 

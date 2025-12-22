@@ -10,7 +10,7 @@ import {
   applyTopologyPreset,
   resizeTopology,
 } from '../../utils/gridTopology';
-import { historyManager } from '../historyManager';
+import { remapLineEdgeIdsForTopology } from '../../utils/lineTopology';
 import {
   sculptRotateCluster,
   sculptCutCluster,
@@ -58,16 +58,31 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       const nextUseTopology = forceTopology ? true : state.useTopology;
 
       let newTopology = state.topology;
+      let nextPuzzle = state.puzzle;
       if (nextUseTopology) {
         const base = gridConfigToTopology(newGrid);
         newTopology = applyTopologyPreset(base, {
           preset: state.topologyPreset,
           intensity: state.topologyIntensity,
         });
+        if (newTopology) {
+          nextPuzzle = {
+            ...state.puzzle,
+            problem: {
+              ...state.puzzle.problem,
+              lines: remapLineEdgeIdsForTopology(state.puzzle.problem.lines, newTopology, newGrid),
+            },
+            answer: {
+              ...state.puzzle.answer,
+              lines: remapLineEdgeIdsForTopology(state.puzzle.answer.lines, newTopology, newGrid),
+            },
+          };
+        }
       }
       return {
         grid: newGrid,
         topology: newTopology,
+        puzzle: nextPuzzle,
         ...(forceTopology ? { useTopology: true } : {}),
       };
     }),
@@ -106,7 +121,20 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       preset: state.topologyPreset,
       intensity: state.topologyIntensity,
     });
-    set({ topology: transformedTopology });
+    set({
+      topology: transformedTopology,
+      puzzle: {
+        ...state.puzzle,
+        problem: {
+          ...state.puzzle.problem,
+          lines: remapLineEdgeIdsForTopology(state.puzzle.problem.lines, transformedTopology, state.grid),
+        },
+        answer: {
+          ...state.puzzle.answer,
+          lines: remapLineEdgeIdsForTopology(state.puzzle.answer.lines, transformedTopology, state.grid),
+        },
+      },
+    });
   },
 
   // Preview topology
@@ -268,6 +296,12 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
             }
           }
 
+          if ('edgeId' in elem && typeof elem.edgeId === 'string') {
+            if (isEdgeInRemovedCell(elem.edgeId)) {
+              shouldKeep = false;
+            }
+          }
+
           if ('position' in elem && typeof elem.position === 'string') {
             const posId = elem.position;
             if (posId.startsWith('edge-') && isEdgeInRemovedCell(posId)) {
@@ -293,7 +327,6 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
           cages: state.puzzle.problem.cages || {},
           specials: state.puzzle.problem.specials || {},
           boxLines: state.puzzle.problem.boxLines || {},
-          directionalClues: filterElements(state.puzzle.problem.directionalClues || {}),
         },
         answer: {
           surfaces: filterElements(state.puzzle.answer.surfaces || {}),
@@ -305,7 +338,6 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
           cages: state.puzzle.answer.cages || {},
           specials: state.puzzle.answer.specials || {},
           boxLines: state.puzzle.answer.boxLines || {},
-          directionalClues: filterElements(state.puzzle.answer.directionalClues || {}),
         },
         multicolorSurfaces: filterElements(state.puzzle.multicolorSurfaces || {}),
       };
@@ -350,6 +382,6 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       set({ grid: newConfig });
     }
 
-    historyManager.clear();
+    get().historyManager.clear();
   },
 });

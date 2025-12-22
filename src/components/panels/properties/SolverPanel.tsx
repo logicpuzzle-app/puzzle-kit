@@ -4,8 +4,8 @@
 
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { usePuzzleStore } from '../../../store/puzzleStore';
-import { solverWorkerManager } from '../../../solver';
+import { usePuzzleStore } from '../../../store/puzzleStoreContext';
+import { solverWorkerManager, cspuzWorkerManager } from '../../../solver';
 
 export const SolverPanel: React.FC = () => {
   const { t } = useTranslation();
@@ -16,14 +16,19 @@ export const SolverPanel: React.FC = () => {
     solverStatus,
     solverTime,
     solverError,
+    solverBackend,
     exitSolverMode,
     cancelSolver,
   } = usePuzzleStore();
 
   const handleCancelSolver = useCallback(() => {
-    solverWorkerManager.cancelAll();
+    if (solverBackend === 'cspuz') {
+      cspuzWorkerManager.cancelAll();
+    } else {
+      solverWorkerManager.cancelAll();
+    }
     cancelSolver();
-  }, [cancelSolver]);
+  }, [cancelSolver, solverBackend]);
 
   // Don't render if not in solver mode
   if (!isSolving && !isSolverMode && !solverStatus) {

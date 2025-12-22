@@ -174,7 +174,7 @@ export type ToolType =
   | 'number-corner'
   | 'number-side'
   | 'number-candidates'
-  | 'number-directional' // Yajilin-style directional clue
+  | 'number-directional' // Yajilin-style directional number
   // Text tools
   | 'text-alphabet'
   | 'text-hiragana'
@@ -346,6 +346,10 @@ export interface NumberElement {
   cornerIndex?: number;  // 0-3 for corners (TL, TR, BL, BR)
   sideIndex?: number;    // 0-3 for sides (T, R, B, L)
   candidates?: number[]; // For candidates mode (1-9 for Sudoku)
+  /** Optional direction for directional numbers (0=None,1=Up,2=Down,3=Left,4=Right). */
+  direction?: 0 | 1 | 2 | 3 | 4;
+  /** Optional arbitrary angle in degrees for directional numbers. */
+  angle?: number | null;
   color: string;
   layer: DataLayerType;
   /** Logical uniqueness key per cell (same key cannot be placed twice on one cell) */
@@ -561,7 +565,6 @@ export interface PuzzleElements {
   boxLines: Record<string, BoxLineElement>;
   /** Line groups for merged rendering (e.g., arrow chains) */
   lineGroups?: Record<string, LineGroup>;
-  directionalClues?: Record<string, import('./penpaElements').PenpaDirectionalClue>;
   roomMap?: RoomMap; // Optional room map for region-based puzzles
   // Optional fields for specific puzzle types
   borders?: Record<string, unknown>;

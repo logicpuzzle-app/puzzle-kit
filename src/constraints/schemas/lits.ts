@@ -105,6 +105,16 @@ export const litsSchema: ConstraintSchema = {
     },
   ],
 
+  highlight: [
+    {
+      id: 'lits.tetromino-region',
+      scope: 'play',
+      title: 'constraint.lits.tetrominoRegion.title',
+      description: 'constraint.lits.tetrominoRegion.description',
+      defaultOn: true,
+    },
+  ],
+
   notes: [
     'Shade exactly 4 cells (a tetromino) in each room',
     'All shaded cells must be connected',

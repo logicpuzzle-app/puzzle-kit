@@ -5,8 +5,19 @@
  */
 
 // Main puzzle store
-export { usePuzzleStore } from './puzzleStore';
+export { usePuzzleStore, createPuzzleStore } from './puzzleStore';
 export type { PuzzleStore } from './puzzleStore';
+
+// Modal store
+export {
+  useModalStore,
+  createModalStore,
+  type ModalStore,
+  type ConfirmModalState,
+  type AlertModalState,
+  type ShortcutsModalState,
+  type UrlImportModalState,
+} from './modalStore';
 
 // Store slices (for advanced usage)
 export {

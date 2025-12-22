@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react';
-import { usePuzzleStore } from '../store/puzzleStore';
-import { toDataLayer } from '../types';
+import { usePuzzleStore } from '../store/puzzleStoreContext';
+import { getEditableDataLayer } from '../utils/editPolicy';
 import { getCellId, getCellIndexById } from '../utils/gridUtils';
 
 type Shortcut = {
@@ -20,13 +20,18 @@ const isTextInputTarget = (target: EventTarget | null): boolean => {
   return false;
 };
 
-export function useKeyboardShortcuts() {
+type KeyboardShortcutOptions = {
+  allowLayerToggle?: boolean;
+};
+
+export function useKeyboardShortcuts(options: KeyboardShortcutOptions = {}) {
   const {
     undo,
     redo,
     setToolSettings,
     toolSettings,
     activeLayer,
+    isPlayerMode,
     setActiveLayer,
     setZoom,
     setPan,
@@ -38,8 +43,12 @@ export function useKeyboardShortcuts() {
     topology,
     useTopology,
     puzzle,
+    addSymbol,
     removeSymbol,
   } = usePuzzleStore();
+
+  const allowLayerToggle = options.allowLayerToggle !== false;
+  const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
 
   const moveCursorByDelta = useCallback(
     (dRow: number, dCol: number) => {
@@ -103,14 +112,28 @@ export function useKeyboardShortcuts() {
   );
 
   const deleteSymbolAtCursor = useCallback(() => {
+    if (!editableLayer) return;
     if (!cursorCell) return;
-    const dataLayer = toDataLayer(activeLayer);
+    const dataLayer = editableLayer;
     const layerData = puzzle[dataLayer];
     const symbolEntry = Object.entries(layerData.symbols).find(([, s]) => s.cellId === cursorCell);
     if (symbolEntry) {
       removeSymbol(symbolEntry[0]);
     }
-  }, [activeLayer, cursorCell, puzzle, removeSymbol]);
+  }, [cursorCell, puzzle, removeSymbol, editableLayer]);
+
+  const addTextSymbolAtCursor = useCallback((text: string) => {
+    if (!editableLayer) return;
+    if (!cursorCell) return;
+    addSymbol({
+      cellId: cursorCell,
+      symbolType: `text-free:${text}`,
+      size: toolSettings.symbolSize,
+      rotation: 0,
+      color: toolSettings.color,
+      layer: editableLayer,
+    });
+  }, [addSymbol, cursorCell, toolSettings.color, toolSettings.symbolSize, editableLayer]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -158,6 +181,7 @@ export function useKeyboardShortcuts() {
         {
           keys: ['tab'],
           preventDefault: true,
+          when: () => allowLayerToggle,
           run: () => setActiveLayer(activeLayer === 'problem' ? 'answer' : 'problem'),
         },
         {
@@ -200,6 +224,18 @@ export function useKeyboardShortcuts() {
           run: () => deleteSymbolAtCursor(),
         },
         {
+          keys: ['.'],
+          preventDefault: true,
+          when: () => toolSettings.currentTool.startsWith('symbol') && Boolean(cursorCell),
+          run: () => addTextSymbolAtCursor('.'),
+        },
+        {
+          keys: ['?'],
+          preventDefault: true,
+          when: () => toolSettings.currentTool.startsWith('symbol') && Boolean(cursorCell),
+          run: () => addTextSymbolAtCursor('?'),
+        },
+        {
           keys: ['escape'],
           preventDefault: true,
           run: () => {
@@ -228,9 +264,11 @@ export function useKeyboardShortcuts() {
     },
     [
       activeLayer,
+      allowLayerToggle,
       canvas.panMode,
       canvas.zoom,
       cursorCell,
+      addTextSymbolAtCursor,
       deleteSymbolAtCursor,
       moveCursorByDelta,
       redo,
@@ -241,6 +279,7 @@ export function useKeyboardShortcuts() {
       setZoom,
       toolSettings.color,
       toolSettings.secondaryColor,
+      toolSettings.currentTool,
       toolSettings.symbolSubMode,
       undo,
     ]

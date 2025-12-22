@@ -1,5 +1,5 @@
 import React from 'react';
-import { usePuzzleStore } from '../../store/puzzleStore';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { HexGrid, TriangleGrid, PyramidGrid } from './HexGrid';
 import { SquareGrid, SquareGridBackground, SquareGridLines } from './SquareGrid';
 import { TopologyGrid, TopologyGridBackground, TopologyGridLines } from './TopologyGrid';

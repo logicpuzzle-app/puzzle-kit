@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStore';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { getCellCenter, getCellCorners, getCellIndexById } from '../../utils/gridUtils';
 import type { NumberElement, LayerType, Point } from '../../types';
 import type { TopologyVertex } from '../../utils/gridTopology';
+import { isDirectionalNumber } from '../../utils/numberEntries';
 
 interface NumberLayerProps {
   layer: LayerType;
@@ -24,7 +25,7 @@ const getFontSize = (size: 'large' | 'medium' | 'small', cellSize: number): numb
 type DominantBaseline = 'auto' | 'middle' | 'hanging' | 'ideographic';
 
 export const NumberLayer: React.FC<NumberLayerProps> = ({ layer }) => {
-  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology } = usePuzzleStore();
+  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology, currentSchemaId } = usePuzzleStore();
   const { cellSize } = grid;
 
   const isVisible =
@@ -37,7 +38,12 @@ export const NumberLayer: React.FC<NumberLayerProps> = ({ layer }) => {
     const layerData = puzzle[layer];
     const elements: React.ReactElement[] = [];
 
+    const showNurimisakiCircles = currentSchemaId === 'nurimisaki' && layer === 'problem';
+
     Object.values(layerData.numbers).forEach((num: NumberElement) => {
+      if (isDirectionalNumber(num)) {
+        return;
+      }
       let center: Point;
       let corners: Point[];
 
@@ -217,6 +223,21 @@ export const NumberLayer: React.FC<NumberLayerProps> = ({ layer }) => {
       } else {
         // Center position - add small vertical offset to visually center the number
         const yOffset = fontSize * 0.05;
+        if (showNurimisakiCircles && num.position === 'center') {
+          const circleRadius = cellSize * 0.425;
+          const strokeWidth = Math.max(1, cellSize * 0.05);
+          elements.push(
+            <circle
+              key={`${num.id}-circle`}
+              cx={x}
+              cy={y}
+              r={circleRadius}
+              fill="none"
+              stroke={num.color}
+              strokeWidth={strokeWidth}
+            />
+          );
+        }
         elements.push(
           <text
             key={num.id}
@@ -236,7 +257,7 @@ export const NumberLayer: React.FC<NumberLayerProps> = ({ layer }) => {
     });
 
     return elements;
-  }, [puzzle, layer, grid, cellSize, isVisible, useTopology, topology]);
+  }, [puzzle, layer, grid, cellSize, isVisible, useTopology, topology, currentSchemaId]);
 
   if (!isVisible) return null;
 
