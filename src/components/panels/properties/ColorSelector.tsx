@@ -88,10 +88,9 @@ export const ColorSelector: React.FC<ColorSelectorProps> = ({ compact = false })
   const handleColorChange = useCallback((newColor: string) => {
     setToolSettings({ color: newColor });
     setCustomColor(newColor);
-    const canEdit = Boolean(editableLayer);
 
     // Update selected lines if any
-    if (canEdit && hasSelectedLines) {
+    if (editableLayer && hasSelectedLines) {
       highlightedLineIds.forEach(id => {
         const line = puzzle[dataLayer].lines[id];
         if (line && !line.isFree) {
@@ -101,7 +100,7 @@ export const ColorSelector: React.FC<ColorSelectorProps> = ({ compact = false })
     }
 
     // Update existing number/directional number if cell is selected
-    if (canEdit && numberSelection && toolSettings.currentTool.startsWith('number')) {
+    if (editableLayer && numberSelection && toolSettings.currentTool.startsWith('number')) {
       const cellId = `cell-${numberSelection.row}-${numberSelection.col}`;
 
       if (toolSettings.currentTool === 'number-directional') {

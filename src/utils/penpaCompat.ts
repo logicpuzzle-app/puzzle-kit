@@ -3,7 +3,7 @@ import type { GridConfig, PuzzleState, PuzzleElements } from '../types';
 import type { GridTopology } from './topology/types';
 import { SurfaceColorPalette, LineColorPalette, SymbolColorPalette, PenpaColors } from '../constants/colors';
 import { penroseP3FromPenpa, penpaIndexToCellId } from './topology/special/penroseP3';
-import { COMPRESS_SUBSTITUTIONS } from './penpaSerializer';
+import { COMPRESS_SUBSTITUTIONS } from './penpaCompression';
 import { getCellIndexById, getEdgeIndexById, getVertexIndexById } from './gridUtils';
 import { getDirectionalCluesFromElements, isDirectionalNumber } from './numberEntries';
 import {

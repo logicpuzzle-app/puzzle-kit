@@ -245,7 +245,7 @@ export const IconToolbar: React.FC = () => {
           });
         } else {
           // Use store APIs so topology stays in sync with the imported grid.
-          store.setGrid(result.grid);
+          store.getState().setGrid(result.grid);
           store.setState({ puzzle: result.state });
         }
 

@@ -2,6 +2,7 @@ import { useCallback, useRef, useState, useEffect } from 'react';
 import { usePuzzleStore } from '../store/puzzleStoreContext';
 import { resolveCell } from '../utils/pointResolver';
 import { shouldAllowOutboardForTool } from '../utils/outboardPolicy';
+import { getCellId } from '../utils/gridUtils';
 import type { Point } from '../types';
 import { toDataLayer } from '../types';
 

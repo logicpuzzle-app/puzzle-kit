@@ -9,6 +9,9 @@
  */
 
 import pako from 'pako';
+import { COMPRESS_SUBSTITUTIONS } from './penpaCompression';
+
+export { COMPRESS_SUBSTITUTIONS };
 
 // ========================================
 // Constants
@@ -19,44 +22,6 @@ import pako from 'pako';
  */
 export const MAX_EXPORT_LENGTH = 7360;
 
-/**
- * Compression substitution pairs for puzzle data.
- * The first entry escapes 'z' characters to prevent spurious substitutions.
- * Order matters: 'z' must be escaped first, and unescaped last.
- */
-export const COMPRESS_SUBSTITUTIONS: [string, string][] = [
-  ['z', 'zZ'],
-  ['"qa"', 'z9'],
-  ['"pu_q"', 'zQ'],
-  ['"pu_a"', 'zA'],
-  ['"grid"', 'zG'],
-  ['"edit_mode"', 'zM'],
-  ['"surface"', 'zS'],
-  ['"line"', 'zL'],
-  ['"lineE"', 'zE'],
-  ['"wall"', 'zW'],
-  ['"cage"', 'zC'],
-  ['"number"', 'zN'],
-  ['"symbol"', 'zY'],
-  ['"special"', 'zP'],
-  ['"board"', 'zB'],
-  ['"command_redo"', 'zR'],
-  ['"command_undo"', 'zU'],
-  ['"command_replay"', 'z8'],
-  ['"numberS"', 'z1'],
-  ['"freeline"', 'zF'],
-  ['"freelineE"', 'z2'],
-  ['"thermo"', 'zT'],
-  ['"arrows"', 'z3'],
-  ['"direction"', 'zD'],
-  ['"squareframe"', 'z0'],
-  ['"polygon"', 'z5'],
-  ['"deletelineE"', 'z4'],
-  ['"killercages"', 'z6'],
-  ['"nobulbthermo"', 'z7'],
-  ['"__a"', 'z_'],
-  ['null', 'zO'],
-];
 
 // ========================================
 // Types

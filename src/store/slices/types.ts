@@ -5,6 +5,7 @@
 import type { StateCreator } from 'zustand';
 import type {
   LayerType,
+  DataLayerType,
   ToolType,
   ToolCategory,
   GridConfig,
@@ -188,7 +189,7 @@ export interface ElementsSlice {
   clearRoomMap: () => void;
 
   // Clear operations
-  clearLayer: (layer: LayerType) => void;
+  clearLayer: (layer: DataLayerType) => void;
   clearAll: () => void;
 }
 
@@ -274,6 +275,8 @@ export type InputModeType =
   | 'auto'
   | 'number'
   | 'number-'
+  | 'numexist'
+  | 'numblank'
   | 'clear'
   | 'line'
   | 'peke'

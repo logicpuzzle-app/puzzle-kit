@@ -21,12 +21,11 @@ export const ModalStoreProvider = ({ store, children }: ModalStoreProviderProps)
 );
 
 export function useModalStore<T = ModalStore>(
-  selector?: (state: ModalStore) => T,
-  equality?: (a: T, b: T) => boolean
+  selector?: (state: ModalStore) => T
 ): T {
   const store = useContext(ModalStoreContext) ?? defaultStore;
   if (selector) {
-    return store(selector, equality);
+    return store(selector);
   }
   return store((state) => state as unknown as T);
 }

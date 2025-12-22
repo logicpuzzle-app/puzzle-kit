@@ -11,6 +11,8 @@ This is exposed as **entrypoints** under `src/lib` (logical split, no package pu
 
 - `src/lib/core.ts`
   - Pure logic/types: `types`, `constraints`, `solver`, and key utilities.
+  - Topology helpers are under the `topology` namespace.
+  - Grid adjacency is exposed as `getAdjacentCellsFromGrid` (to avoid topology name collisions).
 - `src/lib/compat.ts`
   - Import/export formats and legacy conversions:
     - Penpa, puzz.link, pzprv3, legacy directionalClues merge.
@@ -72,6 +74,7 @@ See:
 
 - Directional numbers are stored in `numbers` with `direction`/`angle`.
 - Legacy `directionalClues` exists only in compat import/export paths.
+- For topology queries, use `topology.getAdjacentCells(...)` etc.
 - UI components use the store from `PuzzleStoreProvider` when supplied.
 - Modal state can be isolated per embed with `ModalStoreProvider`.
 - Build library artifacts with `npm run build:lib` (outputs to `puzzle-kit/dist`).

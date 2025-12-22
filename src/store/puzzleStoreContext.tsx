@@ -21,12 +21,11 @@ export const PuzzleStoreProvider = ({ store, children }: PuzzleStoreProviderProp
 );
 
 export function usePuzzleStore<T = PuzzleStore>(
-  selector?: (state: PuzzleStore) => T,
-  equality?: (a: T, b: T) => boolean
+  selector?: (state: PuzzleStore) => T
 ): T {
   const store = useContext(PuzzleStoreContext) ?? defaultStore;
   if (selector) {
-    return store(selector, equality);
+    return store(selector);
   }
   return store((state) => state as unknown as T);
 }

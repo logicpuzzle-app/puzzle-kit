@@ -5,7 +5,7 @@
  */
 
 import { getCellIndexById } from '../../utils/gridUtils';
-import { registerHighlightProvider, type HighlightContext, type HighlightOutput } from './core';
+import { registerHighlightProvider, type HighlightContext, type HighlightOutput, type HighlightFill } from './core';
 
 const WALL_COLORS = new Set(['#000000', '#444444']);
 const LIGHT_COLOR = '#ffe08a';
@@ -72,7 +72,7 @@ registerHighlightProvider('akari.light-beams', (ctx): HighlightOutput => {
     getVisibleCells(ctx, cellId).forEach((visibleId) => litCells.add(visibleId));
   });
 
-  const fills = Array.from(litCells).map((cellId) => ({
+  const fills: HighlightFill[] = Array.from(litCells).map((cellId) => ({
     cellId,
     color: LIGHT_COLOR,
     opacity: LIGHT_OPACITY,

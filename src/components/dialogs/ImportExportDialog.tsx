@@ -9,12 +9,7 @@
  */
 
 import React, { useState, useCallback, useRef } from 'react';
-import {
-  parsePenpaUrl,
-  generatePenpaUrl,
-  isPenpaUrl,
-  type PenpaExportData,
-} from '../../utils/penpaSerializer';
+import type { PenpaExportData } from '../../utils/penpaSerializer';
 import { parsePuzzlinkUrl, isPuzsqUrl, fetchPuzsqPuzzle, type PuzzlinkData } from '../../utils/penpaCompat';
 import {
   exportToJson,
@@ -164,19 +159,22 @@ export const ImportExportDialog: React.FC<ImportExportDialogProps> = ({
         } else {
           setError('Failed to parse puzz.link URL');
         }
-      } else if (isPenpaUrl(input) || input.includes('penpa')) {
-        // Penpa URL
-        const data = parsePenpaUrl(input);
-        if (data) {
-          onImport?.(data);
-          setSuccess('Puzzle imported from Penpa!');
-        } else {
-          setError('Failed to parse Penpa URL');
-        }
       } else {
+        const { isPenpaUrl, parsePenpaUrl, deserializePenpa } = await import('../../utils/penpaSerializer');
+        if (isPenpaUrl(input) || input.includes('penpa')) {
+          // Penpa URL
+          const data = parsePenpaUrl(input);
+          if (data) {
+            onImport?.(data);
+            setSuccess('Puzzle imported from Penpa!');
+          } else {
+            setError('Failed to parse Penpa URL');
+          }
+          return;
+        }
+
         // Try as raw Penpa data
         try {
-          const { deserializePenpa } = await import('../../utils/penpaSerializer');
           const data = deserializePenpa(input);
           onImport?.(data);
           setSuccess('Puzzle imported successfully!');
@@ -228,6 +226,7 @@ export const ImportExportDialog: React.FC<ImportExportDialogProps> = ({
             pu_a: convertStateToPenpa(puzzleState.answer),
           };
 
+          const { generatePenpaUrl } = await import('../../utils/penpaSerializer');
           const url = generatePenpaUrl('https://swaroopg92.github.io/penpa-edit/', penpaData);
           setExportUrl(url);
           onExport?.('penpa', url);

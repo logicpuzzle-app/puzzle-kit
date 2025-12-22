@@ -273,11 +273,7 @@ export function useNumberKeyboard() {
 
     if (isDelete) {
       if (existingId) {
-        if (existingEntry) {
-          removeDirectionalClue(existingId);
-        } else {
-          removeNumber(existingId);
-        }
+        removeDirectionalClue(existingId);
       }
       return;
     }

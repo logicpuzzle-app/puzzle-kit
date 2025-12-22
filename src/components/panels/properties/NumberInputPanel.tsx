@@ -17,7 +17,7 @@
  *   - cells >= 3000: 4 digits
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../../store/puzzleStoreContext';
 import { constraintCatalog } from '../../../constraints/ConstraintCatalog';
@@ -38,10 +38,11 @@ import {
 type InputPanelMode = 'number' | 'alphabet' | 'hiragana' | 'custom';
 
 type NumberInputPanelProps = {
-  onLayoutChange?: () => void;
+  onLayoutChange?: (height: number) => void;
 };
 
 export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChange }) => {
+  const panelRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
   const [panelMode, setPanelMode] = useState<InputPanelMode>('number');
   const [isUpperCase, setIsUpperCase] = useState(true);
@@ -302,12 +303,15 @@ export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChan
 
   useEffect(() => {
     if (!onLayoutChange) return;
-    const frame = requestAnimationFrame(() => onLayoutChange());
+    const frame = requestAnimationFrame(() => {
+      const height = panelRef.current?.offsetHeight ?? 0;
+      onLayoutChange(height);
+    });
     return () => cancelAnimationFrame(frame);
   }, [onLayoutChange, panelMode, isKatakana, isUpperCase, customInput]);
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-1" ref={panelRef}>
       {/* Mode toggle tabs - 2 rows */}
       <div className="flex gap-0.5">
         <button
