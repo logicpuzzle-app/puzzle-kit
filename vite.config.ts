@@ -19,6 +19,8 @@ export default defineConfig({
             if (id.includes('lucide-react') || id.includes('react-icons')) return 'icons';
             return 'vendor';
           }
+          if (id.includes('/src/types/')) return 'types';
+          if (id.includes('/src/constants/')) return 'types';
           if (id.includes('/src/solver/')) return 'solver';
           if (id.includes('/src/constraints/')) return 'constraints';
           if (id.includes('/src/components/dialogs/')) return 'dialogs';
