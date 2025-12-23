@@ -8,6 +8,7 @@
 import type { SolveResult } from './types';
 import type { PuzzleState, GridConfig } from '../types';
 import type { SolverWorkerRequest, SolverWorkerResponse } from './solver.worker';
+import { solverKitAvailable } from './solverKit';
 
 // Import worker using Vite's worker import syntax
 import SolverWorker from './solver.worker?worker';
@@ -95,6 +96,10 @@ class SolverWorkerManager {
     grid: GridConfig,
     problem: PuzzleState['problem']
   ): Promise<SolveResult> {
+    if (!solverKitAvailable) {
+      throw new Error('solver-kit is not available');
+    }
+
     const worker = this.ensureWorker();
     const id = `solve-${++this.requestId}`;
     this.currentRequestId = id;
@@ -122,6 +127,10 @@ class SolverWorkerManager {
    * Check if solver is available for a puzzle type
    */
   hasSolver(pid: string): boolean {
+    if (!solverKitAvailable) {
+      return false;
+    }
+
     // List of supported solvers in the worker
     const supportedSolvers = ['slither', 'mashu', 'yajilin', 'heyawake', 'nurikabe', 'nurimisaki'];
     return supportedSolvers.includes(pid);

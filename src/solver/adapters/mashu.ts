@@ -4,8 +4,7 @@
  * Bridges puzzle-kit's data model to solver-kit's MasyuSolver
  */
 
-import { MasyuField, MasyuSolver, PearlType } from '@logicpuzzle-app/solver-kit';
-import { EdgeState, Direction, SolveStatus } from '@logicpuzzle-app/solver-kit';
+import { MasyuField, MasyuSolver, PearlType, EdgeState, Direction, SolveStatus } from '../solverKit';
 import type { SolverAdapter, SolveResult } from '../types';
 import type { PuzzleState, GridConfig } from '../../types';
 import { getCellIndexById } from '../../utils/gridUtils';

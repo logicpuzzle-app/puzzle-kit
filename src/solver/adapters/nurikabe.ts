@@ -4,12 +4,7 @@
  * Bridges puzzle-kit's data model to solver-kit's NurikabeSolver
  */
 
-import {
-  NurikabeField,
-  NurikabeSolver,
-  CellState,
-  SolveStatus,
-} from '@logicpuzzle-app/solver-kit';
+import { NurikabeField, NurikabeSolver, CellState, SolveStatus } from '../solverKit';
 import type { SolverAdapter, SolveResult } from '../types';
 import type { PuzzleState, GridConfig } from '../../types';
 import { getCellIndexById } from '../../utils/gridUtils';

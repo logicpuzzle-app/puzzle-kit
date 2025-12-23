@@ -4,8 +4,7 @@
  * Bridges puzzle-kit's data model to solver-kit's HeyawakeSolver
  */
 
-import { HeyawakeSolver, HeyawakeRoom } from '@logicpuzzle-app/solver-kit';
-import { CellState, SolveStatus } from '@logicpuzzle-app/solver-kit';
+import { HeyawakeSolver, CellState, SolveStatus, type HeyawakeRoom } from '../solverKit';
 import type { SolverAdapter, SolveResult } from '../types';
 import type { PuzzleState, GridConfig, RoomMap } from '../../types';
 import { getDirectionalCluesFromElements, isDirectionalNumber } from '../../utils/numberEntries';

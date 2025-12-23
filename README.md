@@ -34,6 +34,25 @@ npm run build
 npm run build:lib
 ```
 
+## Optional: solver-kit
+
+Solver features that rely on `@logicpuzzle-app/solver-kit` are optional. If the package
+is not installed, the app still builds and runs, but solver-kit backends are disabled.
+
+If you have access to GitHub Packages:
+
+```bash
+npm config set @logicpuzzle-app:registry https://npm.pkg.github.com
+npm config set //npm.pkg.github.com/:_authToken <YOUR_TOKEN>
+npm install @logicpuzzle-app/solver-kit
+```
+
+If you have a local checkout:
+
+```bash
+npm install ../solver-kit
+```
+
 ## Library Usage
 
 Headless and embedded-UI usage entrypoints are documented here:

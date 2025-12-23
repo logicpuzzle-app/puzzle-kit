@@ -1,10 +1,26 @@
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
+import { createRequire } from 'module'
 import { resolve } from 'path'
+
+const require = createRequire(import.meta.url);
+const solverKitModuleId = '@logicpuzzle-app/solver-kit';
+const solverKitStub = resolve(__dirname, 'src/solver/solverKitStub.ts');
+const solverKitAlias = (() => {
+  try {
+    require.resolve(solverKitModuleId);
+    return [];
+  } catch {
+    return [{ find: solverKitModuleId, replacement: solverKitStub }];
+  }
+})();
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: solverKitAlias,
+  },
   build: {
     rollupOptions: {
       input: {

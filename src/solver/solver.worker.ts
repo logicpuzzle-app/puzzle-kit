@@ -19,12 +19,13 @@ import {
   CellState,
   HeyawakeField,
   HeyawakeSolver,
-  HeyawakeRoom,
   NurikabeField,
   NurikabeSolver,
   NurimisakiField,
   NurimisakiSolver,
-} from '@logicpuzzle-app/solver-kit';
+  solverKitAvailable,
+  type HeyawakeRoom,
+} from './solverKit';
 import type { PuzzleState, GridConfig } from '../types';
 import type { SolveResult } from './types';
 import { getCellIndexById, getEdgeIndexById } from '../utils/gridUtils';
@@ -1140,6 +1141,15 @@ function convertNurikabeSolutionToAnswer(
  * Main solver dispatch
  */
 function solve(pid: string, grid: GridConfig, problem: PuzzleState['problem']): SolveResult {
+  if (!solverKitAvailable) {
+    return {
+      success: false,
+      status: 'error',
+      error: 'solver-kit is not available',
+      time: 0,
+    };
+  }
+
   switch (pid) {
     case 'slither':
       return solveSlitherlink(grid, problem);

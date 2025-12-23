@@ -4,8 +4,7 @@
  * Bridges puzzle-kit's data model to solver-kit's SlitherSolver
  */
 
-import { SlitherField, SlitherSolver } from '@logicpuzzle-app/solver-kit';
-import { EdgeState, SolveStatus } from '@logicpuzzle-app/solver-kit';
+import { SlitherField, SlitherSolver, EdgeState, SolveStatus } from '../solverKit';
 import type { SolverAdapter, SolveResult } from '../types';
 import type { PuzzleState, GridConfig } from '../../types';
 import { getCellIndexById } from '../../utils/gridUtils';
