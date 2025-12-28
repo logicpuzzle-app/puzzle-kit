@@ -1,4 +1,4 @@
-import * as solverKit from '@logicpuzzle-app/solver-kit';
+import * as solverKit from '../../solver/index.js';
 
 type SolverKitModule = typeof solverKit & { SOLVER_KIT_AVAILABLE?: boolean };
 
@@ -24,6 +24,6 @@ export {
   NurikabeSolver,
   NurimisakiField,
   NurimisakiSolver,
-} from '@logicpuzzle-app/solver-kit';
+} from '../../solver/index.js';
 
-export type { HeyawakeRoom } from '@logicpuzzle-app/solver-kit';
+export type { HeyawakeRoom } from '../../solver/index.js';

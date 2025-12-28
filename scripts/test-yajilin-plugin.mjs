@@ -1,10 +1,10 @@
 // Test the yajilin-plugin solver directly
-import { Direction, CellState } from '@logicpuzzle-app/solver-kit';
+import { Direction, CellState } from '../solver/index.js';
 import {
   createYajilinState,
   solveYajilin,
   EdgeState,
-} from '@logicpuzzle-app/solver-kit/examples/yajilin-plugin';
+} from '../solver/examples/yajilin-plugin.js';
 
 // Test with the 10x10 puzzle from puzz.link
 // https://puzz.link/p?yajilin/10/10/b41e2121e21o41a41b41g41b41g30d41a41b40a40r31a31d30f

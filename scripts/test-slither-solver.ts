@@ -2,7 +2,7 @@
  * Test Slitherlink Solver in puzzle-kit context
  */
 
-import { SlitherField, SlitherSolver, SolveStatus, EdgeState } from '@logicpuzzle-app/solver-kit';
+import { SlitherField, SlitherSolver, SolveStatus, EdgeState } from '../solver/index.js';
 
 // Test 1: Simple 2x2 all 2s
 console.log('=== Test 1: 2x2 all 2s ===');

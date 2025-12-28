@@ -1,10 +1,10 @@
 // Test the yajilin-plugin solver with very simple cases
-import { Direction, CellState } from '@logicpuzzle-app/solver-kit';
+import { Direction, CellState } from '../solver/index.js';
 import {
   createYajilinState,
   solveYajilin,
   EdgeState,
-} from '@logicpuzzle-app/solver-kit/examples/yajilin-plugin';
+} from '../solver/examples/yajilin-plugin.js';
 
 // Test 1: 2x2 grid, no arrows, should form a simple loop
 console.log("=== Test 1: 2x2 no arrows ===");
