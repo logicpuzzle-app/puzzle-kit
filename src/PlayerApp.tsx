@@ -1,21 +1,23 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import './i18n';
-import { PuzzleCanvas, type TextClickInfo } from './components/canvas';
+import { PuzzleCanvas } from './components/canvas';
 import { ToolModeSelector } from './components/toolbar/ToolModeSelector';
-import { NumberInputPanel } from './components/panels/properties/NumberInputPanel';
-import { TextInputDialog, type TextInputType, StorageErrorDialog } from './components/dialogs';
+import { FloatingNumberPad } from './components/panels/FloatingNumberPad';
+import { TextInputDialog, StorageErrorDialog } from './components/dialogs';
 import { CheckAnswerModal, ConfirmModal, AlertModal, ShortcutsModal, UrlImportModal } from './components/modals';
 import { usePuzzleStore, usePuzzleStoreApi } from './store/puzzleStoreContext';
 import { useModalStore, useModalStoreApi } from './store/modalStoreContext';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useStorageErrorHandler } from './hooks/useStorageErrorHandler';
 import { useStoragePersistence } from './hooks/useStoragePersistence';
-import { constraintCatalog } from './constraints/ConstraintCatalog';
+import { useBoardCentering } from './hooks/useBoardCentering';
+import { useMenuState } from './hooks/useMenuState';
+import { useTextSymbolDialog } from './hooks/useTextSymbolDialog';
+import { useImportFromUrl } from './hooks/useImportFromUrl';
+import { useConstraintPresetOptions } from './hooks/useConstraintPresetOptions';
+import { useNumberPadVisibility } from './hooks/useNumberPadVisibility';
 import type { InputMode } from './constraints/types';
-import { createImportHandlers, loadFromUrlOrAutoSave } from './components/toolbar/menu';
-import { toDataLayer } from './types';
-import { getGridDimensions } from './utils/gridUtils';
 
 type PlayerMenuItem = {
   labelKey: string;
@@ -69,21 +71,6 @@ function PlayerApp() {
   const modalStore = useModalStoreApi();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const canvasWrapperRef = useRef<HTMLDivElement | null>(null);
-  const panelPositionRef = useRef<{ x: number; y: number } | null>(null);
-  const panelSizeRef = useRef<{ width: number; height: number }>({ width: 260, height: 280 });
-  const panelHeaderRef = useRef<HTMLDivElement | null>(null);
-  const panelBodyRef = useRef<HTMLDivElement | null>(null);
-  const panelContentRef = useRef<HTMLDivElement | null>(null);
-  const panelContentHeightRef = useRef(0);
-  const dragStateRef = useRef<{
-    type: 'drag' | 'resize';
-    startX: number;
-    startY: number;
-    originX: number;
-    originY: number;
-    originWidth: number;
-    originHeight: number;
-  } | null>(null);
 
   // Player-only keyboard shortcuts (no layer toggle)
   useKeyboardShortcuts({ allowLayerToggle: false });
@@ -94,15 +81,11 @@ function PlayerApp() {
   // Storage error handling
   const { error: storageError, clearError: clearStorageError, isErrorOpen: isStorageErrorOpen } = useStorageErrorHandler();
 
-  // Text dialog state
-  const [textDialogOpen, setTextDialogOpen] = useState(false);
-  const [textDialogCellId, setTextDialogCellId] = useState('');
-  const [textDialogInitialValue, setTextDialogInitialValue] = useState('');
-  const [textDialogType, setTextDialogType] = useState<TextInputType>('alphabet');
-
-  useEffect(() => {
-    void loadFromUrlOrAutoSave(store);
-  }, [store]);
+  const { handleTextClick, dialogProps: textDialogProps } = useTextSymbolDialog({
+    addSymbol,
+    toolSettings,
+    activeLayer,
+  });
 
   useEffect(() => {
     setPlayerMode(true);
@@ -110,299 +93,50 @@ function PlayerApp() {
     setConstraintSubCategory('play');
   }, [setActiveLayer, setConstraintSubCategory, setPlayerMode]);
 
-  const handleTextClick = useCallback((info: TextClickInfo) => {
-    setTextDialogCellId(info.cellId);
-    const existingValue = info.existingText?.symbolType?.replace('text-', '').split(':')[1] || '';
-    setTextDialogInitialValue(existingValue);
-    setTextDialogType(info.textType as TextInputType);
-    setTextDialogOpen(true);
-  }, []);
-
-  const handleTextSubmit = useCallback(
-    (data: { value: string; textType: TextInputType }) => {
-      if (textDialogCellId && data.value) {
-        addSymbol({
-          cellId: textDialogCellId,
-          symbolType: `text-${data.textType}:${data.value}`,
-          size: toolSettings.symbolSize,
-          rotation: 0,
-          color: toolSettings.color,
-          layer: toDataLayer(activeLayer),
-        });
-      }
-    },
-    [textDialogCellId, addSymbol, toolSettings, activeLayer]
-  );
-
   const { showShortcuts } = useModalStore();
-  const menuRef = useRef<HTMLDivElement | null>(null);
-  const [activeMenu, setActiveMenu] = useState<string | null>(null);
-  const closeMenu = useCallback(() => setActiveMenu(null), []);
-
-  const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
-  const playModes = currentSchema?.inputModes.play ?? [];
-  const isConstraintAvailable = currentSchemaId !== null && currentSchemaId !== '__custom__';
-  const isConstraintEnabled = isConstraintAvailable && showConstraintLayer;
-  const presetOptions = useMemo(
-    () =>
-      constraintCatalog
-        .getAllSchemas()
-        .map((schema) => ({
-          id: schema.pid,
-          label: schema.nameKey ? t(schema.nameKey) : schema.name,
-        }))
-        .sort((a, b) => a.label.localeCompare(b.label)),
-    [t]
-  );
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setActiveMenu(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-
-  const getBoardDimensions = useCallback(() => {
-    const topologyPreferred =
-      useTopology ||
-      grid.gridType === 'pyramid' ||
-      grid.gridType === 'iso' ||
-      grid.gridType === 'penrose_P3';
-
-    if (topologyPreferred && topology) {
-      const exportPaddingLeft = grid.exportPaddingLeft ?? 0;
-      const exportPaddingRight = grid.exportPaddingRight ?? 0;
-      const exportPaddingTop = grid.exportPaddingTop ?? 0;
-      const exportPaddingBottom = grid.exportPaddingBottom ?? 0;
-      return {
-        width: topology.bounds.width + exportPaddingLeft + exportPaddingRight,
-        height: topology.bounds.height + exportPaddingTop + exportPaddingBottom,
-      };
-    }
-
-    return getGridDimensions(grid);
-  }, [grid, topology, useTopology]);
-
-  const centerBoard = useCallback(
-    (forceFit: boolean) => {
-      const container = canvasWrapperRef.current;
-      if (!container) return;
-      const rect = container.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return;
-
-      const { width, height } = getBoardDimensions();
-      if (width === 0 || height === 0) return;
-
-      const currentZoom = store.getState().canvas.zoom;
-      let nextZoom = currentZoom;
-
-      if (forceFit) {
-        const fitZoom = Math.min(1, rect.width / width, rect.height / height);
-        nextZoom = Math.max(0.1, Math.min(5, fitZoom));
-        if (Math.abs(nextZoom - currentZoom) > 0.001) {
-          setZoom(nextZoom);
-        }
-      }
-
-      const zoomForPan = forceFit ? nextZoom : currentZoom;
-      const panX = (rect.width - width * zoomForPan) / 2;
-      const panY = (rect.height - height * zoomForPan) / 2;
-      setPan(panX, panY);
-    },
-    [getBoardDimensions, setPan, setZoom]
-  );
-
-  useEffect(() => {
-    centerBoard(true);
-  }, [centerBoard, getBoardDimensions]);
-
-  const showNumberPad = useMemo(() => {
-    const isNumberInputMode = currentInputMode === 'number' || currentInputMode === 'number-' || currentInputMode === 'direc';
-    return toolSettings.currentTool.startsWith('number') || isNumberInputMode;
-  }, [toolSettings.currentTool, currentInputMode]);
-
-  const [panelPosition, setPanelPosition] = useState<{ x: number; y: number } | null>(null);
-  const [panelSize, setPanelSize] = useState<{ width: number; height: number }>({
-    width: panelSizeRef.current.width,
-    height: panelSizeRef.current.height,
+  const { menuRef, activeMenu, setActiveMenu, closeMenu } = useMenuState();
+  const { handleImportFromUrl } = useImportFromUrl({
+    store,
+    modalStore,
+    t,
+    setActiveMenu,
+  });
+  const {
+    presetOptions,
+    isConstraintAvailable,
+    isConstraintEnabled,
+    playModes,
+  } = useConstraintPresetOptions({
+    currentSchemaId,
+    showConstraintLayer,
+    t,
+  });
+  const { centerBoard } = useBoardCentering({
+    canvasWrapperRef,
+    grid,
+    topology,
+    useTopology,
+    setPan,
+    setZoom,
+    getCurrentZoom: () => store.getState().canvas.zoom,
   });
 
   useEffect(() => {
-    panelPositionRef.current = panelPosition;
-  }, [panelPosition]);
+    centerBoard(true);
+  }, [centerBoard]);
 
-  useEffect(() => {
-    panelSizeRef.current = panelSize;
-  }, [panelSize]);
-
-  const clampPanelWithinBounds = useCallback((pos: { x: number; y: number }, size: { width: number; height: number }) => {
-    const container = rootRef.current;
-    if (!container) return { position: pos, size };
-    const rect = container.getBoundingClientRect();
-    const margin = 12;
-    const minWidth = 200;
-    const minHeight = 220;
-    const maxWidth = Math.max(minWidth, rect.width - margin * 2);
-    const maxHeight = Math.max(minHeight, rect.height - margin * 2);
-
-    const width = Math.min(Math.max(size.width, minWidth), maxWidth);
-    const height = Math.min(Math.max(size.height, minHeight), maxHeight);
-    const x = Math.min(Math.max(pos.x, margin), rect.width - width - margin);
-    const y = Math.min(Math.max(pos.y, margin), rect.height - height - margin);
-    return { position: { x, y }, size: { width, height } };
-  }, []);
-
-  const initializePanelLayout = useCallback(() => {
-    const root = rootRef.current;
-    if (!root) return;
-    const rootRect = root.getBoundingClientRect();
-    if (rootRect.width === 0 || rootRect.height === 0) return;
-
-    const canvasRect = canvasWrapperRef.current?.getBoundingClientRect();
-    const anchorRect = canvasRect ?? rootRect;
-    const margin = 12;
-    const maxWidth = rootRect.width - margin * 2;
-    const maxHeight = rootRect.height - margin * 2;
-    const width = Math.min(280, Math.max(200, maxWidth));
-    const height = Math.min(280, Math.max(220, maxHeight));
-    const anchorX = anchorRect.left - rootRect.left + (anchorRect.width - width) / 2;
-    const anchorY = anchorRect.top - rootRect.top + anchorRect.height - height - margin;
-
-    const { position, size } = clampPanelWithinBounds({ x: anchorX, y: anchorY }, { width, height });
-    setPanelSize(size);
-    setPanelPosition(position);
-  }, [clampPanelWithinBounds]);
-
-  useEffect(() => {
-    if (!showNumberPad) return;
-    if (!panelPositionRef.current) {
-      initializePanelLayout();
-      return;
-    }
-    const { position, size } = clampPanelWithinBounds(panelPositionRef.current, panelSizeRef.current);
-    setPanelPosition(position);
-    setPanelSize(size);
-  }, [showNumberPad, clampPanelWithinBounds, initializePanelLayout]);
-
-  const updatePanelHeight = useCallback(() => {
-    if (!showNumberPad) return;
-    const headerEl = panelHeaderRef.current;
-    const contentEl = panelContentRef.current;
-    if (!headerEl || !contentEl) return;
-    const container = rootRef.current;
-    if (!container) return;
-    const rect = container.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) return;
-
-    const margin = 12;
-    const minHeight = 220;
-    const maxHeight = Math.max(minHeight, rect.height - margin * 2);
-    const autoMaxHeight = Math.min(maxHeight, Math.round(rect.height * 0.8));
-    const headerHeight = headerEl.getBoundingClientRect().height;
-    const extraHeight = 8;
-    const bodyPadding = 16;
-    const contentHeight = contentEl.scrollHeight;
-    const previousContentHeight = panelContentHeightRef.current;
-    panelContentHeightRef.current = contentHeight;
-    if (contentHeight <= previousContentHeight + 1) return;
-    const desiredHeight = Math.min(
-      autoMaxHeight,
-      Math.max(minHeight, headerHeight + bodyPadding + contentHeight + extraHeight)
-    );
-
-    if (desiredHeight <= panelSizeRef.current.height + 1) return;
-    const origin = panelPositionRef.current ?? { x: margin, y: margin };
-    const { position, size } = clampPanelWithinBounds(origin, {
-      width: panelSizeRef.current.width,
-      height: desiredHeight,
-    });
-    setPanelPosition(position);
-    setPanelSize(size);
-  }, [showNumberPad, clampPanelWithinBounds]);
-
-  useEffect(() => {
-    if (showNumberPad) {
-      panelContentHeightRef.current = 0;
-    }
-  }, [showNumberPad]);
-
-  useEffect(() => {
-    if (!showNumberPad) return;
-    const frame = requestAnimationFrame(updatePanelHeight);
-    return () => cancelAnimationFrame(frame);
-  }, [showNumberPad, updatePanelHeight]);
-
-  useEffect(() => {
-    const handlePointerMove = (event: PointerEvent) => {
-      const dragState = dragStateRef.current;
-      if (!dragState) return;
-      const container = rootRef.current;
-      if (!container) return;
-      const rect = container.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return;
-
-      const dx = event.clientX - dragState.startX;
-      const dy = event.clientY - dragState.startY;
-      const margin = 12;
-
-      if (dragState.type === 'drag') {
-        const nextX = Math.min(Math.max(dragState.originX + dx, margin), rect.width - panelSizeRef.current.width - margin);
-        const nextY = Math.min(Math.max(dragState.originY + dy, margin), rect.height - panelSizeRef.current.height - margin);
-        setPanelPosition({ x: nextX, y: nextY });
-        return;
-      }
-
-      const minWidth = 240;
-      const minHeight = 220;
-      const maxWidth = Math.max(minWidth, rect.width - dragState.originX - margin);
-      const maxHeight = Math.max(minHeight, rect.height - dragState.originY - margin);
-      const nextWidth = Math.min(Math.max(dragState.originWidth + dx, minWidth), maxWidth);
-      const nextHeight = Math.min(Math.max(dragState.originHeight + dy, minHeight), maxHeight);
-      setPanelSize({ width: nextWidth, height: nextHeight });
-    };
-
-    const handlePointerUp = () => {
-      dragStateRef.current = null;
-    };
-
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerUp);
-    return () => {
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerUp);
-    };
-  }, []);
+  const showNumberPad = useNumberPadVisibility({
+    currentTool: toolSettings.currentTool,
+    currentInputMode,
+  });
 
   useEffect(() => {
     const handleResize = () => {
       centerBoard(false);
-      if (panelPositionRef.current) {
-        const { position, size } = clampPanelWithinBounds(panelPositionRef.current, panelSizeRef.current);
-        setPanelPosition(position);
-        setPanelSize(size);
-      }
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [centerBoard, clampPanelWithinBounds]);
-
-  const handleImportFromUrl = useCallback(() => {
-    const storeState = store.getState();
-    const handlers = createImportHandlers({
-      store,
-      modalStore,
-      grid: storeState.grid,
-      puzzle: storeState.puzzle,
-      setActiveMenu: () => {},
-      setCurrentSchemaId: storeState.setCurrentSchemaId,
-      t,
-    });
-    handlers.handleImportPenpaUrl();
-  }, [store, modalStore, t]);
+  }, [centerBoard]);
 
   const playerMenus = useMemo<PlayerMenu[]>(() => [
     {
@@ -551,36 +285,6 @@ function PlayerApp() {
     trialStage,
     undo,
   ]);
-
-  const handlePanelDragStart = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!panelPositionRef.current) return;
-    event.preventDefault();
-    event.stopPropagation();
-    dragStateRef.current = {
-      type: 'drag',
-      startX: event.clientX,
-      startY: event.clientY,
-      originX: panelPositionRef.current.x,
-      originY: panelPositionRef.current.y,
-      originWidth: panelSizeRef.current.width,
-      originHeight: panelSizeRef.current.height,
-    };
-  };
-
-  const handlePanelResizeStart = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!panelPositionRef.current) return;
-    event.preventDefault();
-    event.stopPropagation();
-    dragStateRef.current = {
-      type: 'resize',
-      startX: event.clientX,
-      startY: event.clientY,
-      originX: panelPositionRef.current.x,
-      originY: panelPositionRef.current.y,
-      originWidth: panelSizeRef.current.width,
-      originHeight: panelSizeRef.current.height,
-    };
-  };
 
   return (
     <div ref={rootRef} className="flex flex-col h-screen bg-office-bg font-segoe relative">
@@ -732,45 +436,14 @@ function PlayerApp() {
           )}
         </footer>
       </div>
-      {showNumberPad && panelPosition && (
-        <div
-          className="absolute z-20 rounded-sm border border-office-border bg-white shadow-md flex flex-col"
-          style={{
-            left: panelPosition.x,
-            top: panelPosition.y,
-            width: panelSize.width,
-            height: panelSize.height,
-          }}
-        >
-          <div
-            className="flex items-center justify-between gap-2 px-2 py-1 text-[11px] text-office-text-secondary bg-office-bg border-b border-office-border cursor-move touch-none select-none"
-            ref={panelHeaderRef}
-            onPointerDown={handlePanelDragStart}
-          >
-            <span>123</span>
-            <span>{t('tool.number', 'Number')}</span>
-          </div>
-          <div className="flex-1 overflow-auto p-2" ref={panelBodyRef}>
-            <div ref={panelContentRef}>
-              <NumberInputPanel onLayoutChange={updatePanelHeight} />
-            </div>
-          </div>
-          <div
-            className="absolute bottom-1 right-1 h-3 w-3 border-b border-r border-office-border cursor-se-resize touch-none"
-            onPointerDown={handlePanelResizeStart}
-            role="presentation"
-          />
-        </div>
-      )}
-
-      <TextInputDialog
-        isOpen={textDialogOpen}
-        onClose={() => setTextDialogOpen(false)}
-        cellId={textDialogCellId}
-        initialValue={textDialogInitialValue}
-        textType={textDialogType}
-        onSubmit={handleTextSubmit}
+      <FloatingNumberPad
+        show={showNumberPad}
+        rootRef={rootRef}
+        anchorRef={canvasWrapperRef}
+        title={t('tool.number', 'Number')}
       />
+
+      <TextInputDialog {...textDialogProps} />
 
       <StorageErrorDialog
         isOpen={isStorageErrorOpen}
