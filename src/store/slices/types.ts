@@ -63,6 +63,10 @@ export const DEFAULT_TOOL_SETTINGS: ToolSettings = {
   numberPosition: 'center',
   cornerIndex: 0,
   sideIndex: 0,
+  numberInputMode: 'number',
+  numberInputCase: 'upper',
+  numberInputKana: 'hiragana',
+  numberWordDirection: 'horizontal',
   selectedCandidates: [],
   arrowDirection: -1, // -1 = no direction (default), 0=up, 1=left, 2=right, 3=down
   arrowAngle: null as number | null, // Arbitrary angle in degrees (null = use arrowDirection)

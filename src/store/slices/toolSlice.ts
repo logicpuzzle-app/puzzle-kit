@@ -43,6 +43,9 @@ export const createToolSlice: SliceCreator<ToolSlice> = (set, get) => ({
                 ? 'icon'
                 : state.toolSettings.symbolSubMode
           : state.toolSettings.symbolSubMode;
+      const nextSymbolGridPoints = tool.startsWith('symbol-arrow')
+        ? ['cell']
+        : state.toolSettings.symbolGridPoints;
 
       // Save tool per-layer for normal mode (problem/answer), so layer switches restore correctly.
       const activeLayer = get().activeLayer;
@@ -57,6 +60,7 @@ export const createToolSlice: SliceCreator<ToolSlice> = (set, get) => ({
           ...state.toolSettings,
           currentTool: tool,
           currentCategory: category,
+          ...(nextSymbolGridPoints !== state.toolSettings.symbolGridPoints ? { symbolGridPoints: nextSymbolGridPoints } : {}),
           ...(nextSymbolSubMode !== state.toolSettings.symbolSubMode ? { symbolSubMode: nextSymbolSubMode } : {}),
         },
         numberSelection: newNumberSelection,

@@ -17,7 +17,7 @@
  *   - cells >= 3000: 4 digits
  */
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../../store/puzzleStoreContext';
 import { constraintCatalog } from '../../../constraints/ConstraintCatalog';
@@ -25,8 +25,9 @@ import { getAutoModeConfig } from '../../../constraints/inputModeMapping';
 import { toDataLayer } from '../../../types';
 import { getEditableDataLayer } from '../../../utils/editPolicy';
 import { toPenpaDirection } from '../../../utils/directionalClue';
-import { appendDigit, getMaxDigitsForGrid } from '../../../hooks/keyboardUtils';
+import { appendDigit, getMaxDigitsForGrid, calculateNextPosition } from '../../../hooks/keyboardUtils';
 import { useCellFinder } from '../../../hooks/useCellFinder';
+import { SegmentedToggle } from '../../common';
 import {
   findDirectionalNumberByCellId,
   findNumberEntry,
@@ -44,9 +45,6 @@ type NumberInputPanelProps = {
 export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChange }) => {
   const panelRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
-  const [panelMode, setPanelMode] = useState<InputPanelMode>('number');
-  const [isUpperCase, setIsUpperCase] = useState(true);
-  const [isKatakana, setIsKatakana] = useState(false);
   const [customInput, setCustomInput] = useState('');
   const {
     numberSelection,
@@ -57,6 +55,8 @@ export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChan
     removeNumber,
     addDirectionalClue,
     toolSettings,
+    setToolSettings,
+    setNumberSelection,
     grid,
     currentSchemaId,
     currentInputMode,
@@ -65,6 +65,7 @@ export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChan
   const { findCellIdByRowCol } = useCellFinder();
 
   const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
+  const isPaintSchema = currentSchemaId === 'paint';
   const isConstraintEnabled = showConstraintLayer && currentSchemaId !== null;
   const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
   const effectiveLayer = editableLayer ?? activeLayer;
@@ -72,7 +73,7 @@ export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChan
   const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
   const isAutoNumberMode = currentInputMode === 'auto' &&
     (autoConfig.type === 'number' || autoConfig.type === 'direc' || autoConfig.type === 'border-number');
-  const isConstraintNumberInput = Boolean(editableLayer) && isConstraintEnabled && (
+  const isConstraintNumberInput = !isPaintSchema && Boolean(editableLayer) && isConstraintEnabled && (
     currentInputMode === 'direc' ||
     currentInputMode === 'number' ||
     currentInputMode === 'number-' ||
@@ -159,6 +160,9 @@ export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChan
         // Use 0 for no direction (will display as centered number without arrow)
         const direction = existingNumberEntry?.number.direction ??
           toPenpaDirection(toolSettings.arrowDirection);
+        const nextColor = isPaintSchema
+          ? toolSettings.color
+          : existingNumberEntry?.number.color ?? toolSettings.color;
         addDirectionalClue({
           cellId: effectiveCellId || `cell-${numberSelection!.row}-${numberSelection!.col}`,
           cell: cellIndex,
@@ -166,7 +170,7 @@ export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChan
           value: parseInt(newValue, 10),
           layer: dataLayer,
           angle: existingNumberEntry?.number.angle ?? null,
-          color: existingNumberEntry?.number.color ?? toolSettings.color,
+          color: nextColor,
         });
       }
       return;
@@ -229,6 +233,7 @@ export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChan
     // Apply case transformation
     const finalLetter = isUpperCase ? letter.toUpperCase() : letter.toLowerCase();
     updateNumberValue(finalLetter);
+    advanceWordSelection();
   };
 
   // Convert hiragana to katakana
@@ -244,6 +249,7 @@ export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChan
     if (isDirectionalMode) return;
     const finalChar = isKatakana ? toKatakana(char) : char;
     updateNumberValue(finalChar);
+    advanceWordSelection();
   };
 
   // Handle custom input submission
@@ -300,6 +306,34 @@ export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChan
 
   // Check if non-numeric modes are disabled (for constraint/directional inputs)
   const isNonNumericDisabled = isDirectionalMode;
+  const panelMode = toolSettings.numberInputMode ?? 'number';
+  const isUpperCase = toolSettings.numberInputCase !== 'lower';
+  const isKatakana = toolSettings.numberInputKana === 'katakana';
+  const wordDirection = toolSettings.numberWordDirection ?? 'horizontal';
+
+  const setPanelMode = useCallback(
+    (mode: InputPanelMode) => {
+      setToolSettings({ numberInputMode: mode });
+    },
+    [setToolSettings]
+  );
+
+  const advanceWordSelection = useCallback(() => {
+    if (!numberSelection) return;
+    if (panelMode === 'number' || isNonNumericDisabled) return;
+    const delta =
+      wordDirection === 'vertical'
+        ? { dr: 1, dc: 0 }
+        : { dr: 0, dc: 1 };
+    const next = calculateNextPosition(
+      numberSelection,
+      delta,
+      grid.rows,
+      grid.cols
+    );
+    if (next.row === numberSelection.row && next.col === numberSelection.col) return;
+    setNumberSelection(next);
+  }, [grid.cols, grid.rows, isNonNumericDisabled, numberSelection, panelMode, setNumberSelection, wordDirection]);
 
   useEffect(() => {
     if (!onLayoutChange) return;
@@ -310,57 +344,72 @@ export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChan
     return () => cancelAnimationFrame(frame);
   }, [onLayoutChange, panelMode, isKatakana, isUpperCase, customInput]);
 
+  useEffect(() => {
+    if (!isNonNumericDisabled) return;
+    if (panelMode !== 'number') {
+      setToolSettings({ numberInputMode: 'number' });
+    }
+  }, [isNonNumericDisabled, panelMode, setToolSettings]);
+
   return (
     <div className="space-y-1" ref={panelRef}>
-      {/* Mode toggle tabs - 2 rows */}
-      <div className="flex gap-0.5">
-        <button
-          className={`flex-1 h-6 text-xs font-medium border rounded-sm transition-colors ${
-            panelMode === 'number'
-              ? 'bg-office-accent text-white border-office-accent'
-              : 'bg-white border-office-border hover:bg-office-ribbon-hover'
-          }`}
-          onClick={() => setPanelMode('number')}
-        >
-          123
-        </button>
-        <button
-          className={`flex-1 h-6 text-xs font-medium border rounded-sm transition-colors ${
-            isNonNumericDisabled
-              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-              : panelMode === 'alphabet'
-                ? 'bg-office-accent text-white border-office-accent'
-                : 'bg-white border-office-border hover:bg-office-ribbon-hover'
-          }`}
-          onClick={() => !isNonNumericDisabled && setPanelMode('alphabet')}
-          disabled={isNonNumericDisabled}
-        >
-          ABC
-        </button>
-        <button
-          className={`flex-1 h-6 text-xs font-medium border rounded-sm transition-colors ${
-            isNonNumericDisabled
-              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-              : panelMode === 'hiragana'
-                ? 'bg-office-accent text-white border-office-accent'
-                : 'bg-white border-office-border hover:bg-office-ribbon-hover'
-          }`}
-          onClick={() => !isNonNumericDisabled && setPanelMode('hiragana')}
-          disabled={isNonNumericDisabled}
-        >
-          あ
-        </button>
-        <button
-          className={`flex-1 h-6 text-xs font-medium border rounded-sm transition-colors ${
-            panelMode === 'custom'
-              ? 'bg-office-accent text-white border-office-accent'
-              : 'bg-white border-office-border hover:bg-office-ribbon-hover'
-          }`}
-          onClick={() => setPanelMode('custom')}
-        >
-          ...
-        </button>
-      </div>
+      {panelMode !== 'number' && (
+        <>
+          <div className="flex items-center gap-1">
+            <div className="flex gap-0.5">
+              <button
+                className={`flex-1 h-6 px-2 text-xs font-medium border rounded-sm transition-colors ${
+                  panelMode === 'alphabet'
+                    ? 'bg-office-accent text-white border-office-accent'
+                    : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+                }`}
+                onClick={() => setPanelMode('alphabet')}
+              >
+                ABC
+              </button>
+              <button
+                className={`flex-1 h-6 px-2 text-xs font-medium border rounded-sm transition-colors ${
+                  panelMode === 'hiragana'
+                    ? 'bg-office-accent text-white border-office-accent'
+                    : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+                }`}
+                onClick={() => setPanelMode('hiragana')}
+              >
+                あ
+              </button>
+              <button
+                className={`flex-1 h-6 px-2 text-xs font-medium border rounded-sm transition-colors ${
+                  panelMode === 'custom'
+                    ? 'bg-office-accent text-white border-office-accent'
+                    : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+                }`}
+                onClick={() => setPanelMode('custom')}
+              >
+                ...
+              </button>
+            </div>
+            {!isNonNumericDisabled && !isPaintSchema && (
+              <div className="ml-auto">
+                <SegmentedToggle
+                  value={wordDirection}
+                  options={[
+                    {
+                      value: 'horizontal',
+                      label: t('panel.wordDirection.horizontal', 'Across'),
+                    },
+                    {
+                      value: 'vertical',
+                      label: t('panel.wordDirection.vertical', 'Down'),
+                    },
+                  ]}
+                  onChange={(direction) => setToolSettings({ numberWordDirection: direction })}
+                  buttonClassName="h-6 px-2 text-xs"
+                />
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       {panelMode === 'number' ? (
         <>
@@ -458,7 +507,9 @@ export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChan
                   ? 'bg-office-accent text-white border-office-accent'
                   : 'bg-white border-office-border hover:bg-office-ribbon-hover'
               }`}
-              onClick={() => setIsUpperCase(!isUpperCase)}
+              onClick={() =>
+                setToolSettings({ numberInputCase: isUpperCase ? 'lower' : 'upper' })
+              }
               title={isUpperCase ? 'Uppercase' : 'Lowercase'}
             >
               ⇧
@@ -532,7 +583,9 @@ export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChan
                   ? 'bg-office-accent text-white border-office-accent'
                   : 'bg-white border-office-border hover:bg-office-ribbon-hover'
               }`}
-              onClick={() => setIsKatakana(!isKatakana)}
+              onClick={() =>
+                setToolSettings({ numberInputKana: isKatakana ? 'hiragana' : 'katakana' })
+              }
               title={isKatakana ? 'Katakana' : 'Hiragana'}
             >
               {isKatakana ? 'ア' : 'あ'}

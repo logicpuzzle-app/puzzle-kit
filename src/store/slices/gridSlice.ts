@@ -56,10 +56,32 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       const newGrid = { ...state.grid, ...gridUpdate };
       const forceTopology = newGrid.gridType === 'penrose_P3';
       const nextUseTopology = forceTopology ? true : state.useTopology;
+      const topologyKeys = new Set([
+        'rows',
+        'cols',
+        'level',
+        'isometricFaces',
+        'isometricView',
+        'penroseSide',
+        'penroseOrder',
+        'penroseRotational',
+        'penroseVariation',
+        'cellSize',
+        'outerPadding',
+        'gridType',
+        'marginTop',
+        'marginBottom',
+        'marginLeft',
+        'marginRight',
+        'mergedCells',
+        'splitLines',
+        'sculptOperations',
+      ]);
+      const hasTopologyChange = Object.keys(gridUpdate).some((key) => topologyKeys.has(key));
 
       let newTopology = state.topology;
       let nextPuzzle = state.puzzle;
-      if (nextUseTopology) {
+      if (nextUseTopology && hasTopologyChange) {
         const base = gridConfigToTopology(newGrid);
         newTopology = applyTopologyPreset(base, {
           preset: state.topologyPreset,

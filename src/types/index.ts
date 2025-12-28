@@ -493,6 +493,7 @@ export interface GridConfig {
   backgroundTile?: boolean;  // Whether to tile the image
   backgroundOffsetX?: number;  // X offset in pixels
   backgroundOffsetY?: number;  // Y offset in pixels
+  backgroundClip?: boolean;  // Clip background image to grid bounds (default: true)
   // Export padding (extra space around the entire grid)
   exportPaddingTop?: number;  // pixels
   exportPaddingBottom?: number;  // pixels
@@ -635,6 +636,10 @@ export interface ToolSettings {
   numberPosition: NumberPosition;
   cornerIndex: number; // 0-3 for corners (TL, TR, BL, BR)
   sideIndex: number;   // 0-3 for sides (T, R, B, L)
+  numberInputMode: 'number' | 'alphabet' | 'hiragana' | 'custom';
+  numberInputCase: 'upper' | 'lower';
+  numberInputKana: 'hiragana' | 'katakana';
+  numberWordDirection: 'horizontal' | 'vertical';
   selectedCandidates: number[]; // For candidates mode (1-9)
   arrowDirection: number; // 0=up, 1=left, 2=right, 3=down for directional numbers
   arrowAngle: number | null; // Arbitrary angle in degrees (null = use arrowDirection)

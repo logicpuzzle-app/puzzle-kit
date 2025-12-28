@@ -229,14 +229,4 @@ export const getLineRenderParams = (
   };
 };
 
-/**
- * Line categories that support line highlighting
- */
-export const LINE_TOOL_CATEGORIES = ['line', 'edge', 'wall'] as const;
-
-/**
- * Check if a tool category is a line-related category
- */
-export const isLineToolCategory = (category: string): boolean => {
-  return LINE_TOOL_CATEGORIES.includes(category as typeof LINE_TOOL_CATEGORIES[number]);
-};
+export { LINE_TOOL_CATEGORIES, isLineToolCategory } from './toolCategory';

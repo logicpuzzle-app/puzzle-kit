@@ -45,6 +45,9 @@ export function useKeyboardShortcuts(options: KeyboardShortcutOptions = {}) {
     puzzle,
     addSymbol,
     removeSymbol,
+    highlightedLineIds,
+    setHighlightedLineIds,
+    removeLine,
   } = usePuzzleStore();
 
   const allowLayerToggle = options.allowLayerToggle !== false;
@@ -121,6 +124,13 @@ export function useKeyboardShortcuts(options: KeyboardShortcutOptions = {}) {
       removeSymbol(symbolEntry[0]);
     }
   }, [cursorCell, puzzle, removeSymbol, editableLayer]);
+
+  const deleteHighlightedLines = useCallback(() => {
+    if (!editableLayer) return;
+    if (highlightedLineIds.length === 0) return;
+    highlightedLineIds.forEach((id) => removeLine(id));
+    setHighlightedLineIds([]);
+  }, [editableLayer, highlightedLineIds, removeLine, setHighlightedLineIds]);
 
   const addTextSymbolAtCursor = useCallback((text: string) => {
     if (!editableLayer) return;
@@ -220,8 +230,14 @@ export function useKeyboardShortcuts(options: KeyboardShortcutOptions = {}) {
         {
           keys: ['delete', 'backspace'],
           preventDefault: true,
-          when: () => Boolean(cursorCell),
-          run: () => deleteSymbolAtCursor(),
+          when: () => highlightedLineIds.length > 0 || Boolean(cursorCell),
+          run: () => {
+            if (highlightedLineIds.length > 0) {
+              deleteHighlightedLines();
+            } else {
+              deleteSymbolAtCursor();
+            }
+          },
         },
         {
           keys: ['.'],
@@ -269,7 +285,9 @@ export function useKeyboardShortcuts(options: KeyboardShortcutOptions = {}) {
       canvas.zoom,
       cursorCell,
       addTextSymbolAtCursor,
+      deleteHighlightedLines,
       deleteSymbolAtCursor,
+      highlightedLineIds.length,
       moveCursorByDelta,
       redo,
       setActiveLayer,

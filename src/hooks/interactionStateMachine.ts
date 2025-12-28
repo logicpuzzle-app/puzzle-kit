@@ -6,6 +6,7 @@
  */
 
 import type { Point } from '../types';
+import { getToolCategory, type ToolCategory } from '../utils/toolCategory';
 
 // ============================================================================
 // State Types
@@ -348,49 +349,6 @@ function handleSelectingState(
 // ============================================================================
 
 /**
- * Tool categories for routing
- */
-export type ToolCategory =
-  | 'surface'
-  | 'surface-cycle'
-  | 'line'
-  | 'edge'
-  | 'wall'
-  | 'symbol'
-  | 'special-thermo'
-  | 'special-arrow'
-  | 'special-cage'
-  | 'special-boxline'
-  | 'multicolor-surface'
-  | 'solution-area'
-  | 'number'
-  | 'text'
-  | 'select'
-  | 'unknown';
-
-/**
- * Get tool category from tool name
- */
-export function getToolCategory(tool: string): ToolCategory {
-  if (tool === 'surface-cycle') return 'surface-cycle';
-  if (tool.startsWith('surface')) return 'surface';
-  if (tool.startsWith('line')) return 'line';
-  if (tool.startsWith('edge')) return 'edge';
-  if (tool.startsWith('wall')) return 'wall';
-  if (tool.startsWith('symbol')) return 'symbol';
-  if (tool === 'special-thermo') return 'special-thermo';
-  if (tool === 'special-arrow') return 'special-arrow';
-  if (tool === 'special-cage') return 'special-cage';
-  if (tool === 'special-boxline') return 'special-boxline';
-  if (tool === 'multicolor-surface') return 'multicolor-surface';
-  if (tool === 'solution-area') return 'solution-area';
-  if (tool.startsWith('number')) return 'number';
-  if (tool.startsWith('text')) return 'text';
-  if (tool === 'select') return 'select';
-  return 'unknown';
-}
-
-/**
  * Tool category behavior configuration (map-based instead of switch)
  */
 const TOOL_CATEGORY_CONFIG: Record<ToolCategory, { supportsDrag: boolean; needsCompletion: boolean }> = {
@@ -425,3 +383,6 @@ export function toolSupportsDrag(category: ToolCategory): boolean {
 export function toolNeedsCompletion(category: ToolCategory): boolean {
   return TOOL_CATEGORY_CONFIG[category]?.needsCompletion ?? false;
 }
+
+export { getToolCategory };
+export type { ToolCategory };

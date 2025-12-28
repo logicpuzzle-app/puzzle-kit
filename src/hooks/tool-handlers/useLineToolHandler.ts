@@ -10,7 +10,6 @@ import {
   determineSegmentAction,
   determineLineAction,
   getClickColor,
-  areVerticesOrthogonallyAdjacent,
   pointDistance,
   executeLineAction,
   calculateArrowDirection,
@@ -19,7 +18,9 @@ import {
 import { normalizeSegmentEndpoints } from '../../utils/lineNormalization';
 import { useGridPointUtils } from '../useGridPointUtils';
 import type { Point, LineTargetType, LineElement } from '../../types';
-import { resolveEdge, resolveVertex } from '../../utils/pointResolver';
+import { resolveEdge } from '../../utils/pointResolver';
+import { getVertexId, getVertexIndexById } from '../../utils/gridUtils';
+import { resolveGridIdToPosition } from '../../utils/gridIds';
 import { getEditableDataLayer } from '../../utils/editPolicy';
 
 interface UseLineToolHandlerOptions {
@@ -87,13 +88,11 @@ export function useLineToolHandler({
 
   // Helper to find vertex ID considering topology mode
   const findVertexId = useCallback((point: Point): string | null => {
-    const vertex = resolveVertex(
-      point,
-      { grid, useTopology, topology },
-      { maxDistance: grid.cellSize * 0.3 }
-    );
+    const vertex = findNearestGridPoint(point, ['vertex'], false, {
+      maxDistance: grid.cellSize * 0.85,
+    });
     return vertex ? vertex.id : null;
-  }, [grid, useTopology, topology]);
+  }, [findNearestGridPoint, grid.cellSize]);
 
   // Helper to find edge ID considering topology mode
   const findEdgeId = useCallback((point: Point): string | null => {
@@ -123,6 +122,99 @@ export function useLineToolHandler({
   const resetLineFillMode = useCallback(() => {
     lineFillModeRef.current = null;
   }, []);
+
+  const getVertexPath = useCallback(
+    (startId: string, endId: string, allowedDirections: string[]): string[] | null => {
+      if (grid.gridType && grid.gridType !== 'square') return null;
+      const start = getVertexIndexById(startId, grid);
+      const end = getVertexIndexById(endId, grid);
+      if (!start || !end) return null;
+
+      const allowOrth = allowedDirections.includes('orthogonal');
+      const allowDiag = allowedDirections.includes('diagonal');
+      if (!allowOrth && !allowDiag) return null;
+
+      const { rows, cols, marginTop = 0, marginBottom = 0, marginLeft = 0, marginRight = 0 } = grid;
+      const maxRow = rows + marginTop + marginBottom;
+      const maxCol = cols + marginLeft + marginRight;
+      const totalCols = maxCol + 1;
+
+      const dr = Math.sign(end.row - start.row);
+      const dc = Math.sign(end.col - start.col);
+      const primaryDirs: Array<[number, number]> = [];
+
+      if (allowDiag && dr !== 0 && dc !== 0) {
+        primaryDirs.push([dr, dc]);
+      }
+      if (allowOrth) {
+        const prioritizeHorizontal = Math.abs(end.col - start.col) >= Math.abs(end.row - start.row);
+        if (prioritizeHorizontal) {
+          if (dc !== 0) primaryDirs.push([0, dc]);
+          if (dr !== 0) primaryDirs.push([dr, 0]);
+        } else {
+          if (dr !== 0) primaryDirs.push([dr, 0]);
+          if (dc !== 0) primaryDirs.push([0, dc]);
+        }
+      }
+
+      const baseDirs: Array<[number, number]> = [];
+      if (allowOrth) {
+        baseDirs.push([1, 0], [-1, 0], [0, 1], [0, -1]);
+      }
+      if (allowDiag) {
+        baseDirs.push([1, 1], [1, -1], [-1, 1], [-1, -1]);
+      }
+
+      const toKey = (row: number, col: number) => row * totalCols + col;
+      const preferredKeys = new Set(primaryDirs.map(([r, c]) => `${r},${c}`));
+      const directions = [
+        ...primaryDirs,
+        ...baseDirs.filter(([r, c]) => !preferredKeys.has(`${r},${c}`)),
+      ];
+
+      const startKey = toKey(start.row, start.col);
+      const endKey = toKey(end.row, end.col);
+      const queue: number[] = [startKey];
+      const visited = new Set<number>([startKey]);
+      const parent = new Map<number, number>();
+
+      while (queue.length > 0) {
+        const current = queue.shift();
+        if (current === undefined) break;
+        if (current === endKey) break;
+        const row = Math.floor(current / totalCols);
+        const col = current % totalCols;
+
+        for (const [stepR, stepC] of directions) {
+          const nextRow = row + stepR;
+          const nextCol = col + stepC;
+          if (nextRow < 0 || nextRow > maxRow || nextCol < 0 || nextCol > maxCol) continue;
+          const nextKey = toKey(nextRow, nextCol);
+          if (visited.has(nextKey)) continue;
+          visited.add(nextKey);
+          parent.set(nextKey, current);
+          queue.push(nextKey);
+        }
+      }
+
+      if (!visited.has(endKey)) return null;
+
+      const path: string[] = [];
+      let currentKey = endKey;
+      while (currentKey !== startKey) {
+        const row = Math.floor(currentKey / totalCols);
+        const col = currentKey % totalCols;
+        path.push(getVertexId(row, col));
+        const nextKey = parent.get(currentKey);
+        if (nextKey === undefined) return null;
+        currentKey = nextKey;
+      }
+
+      path.reverse();
+      return path;
+    },
+    [grid]
+  );
 
   // Finalize line selection (call on mouse up/touch end)
   // Also resets addedLineIdsRef for the next drag operation
@@ -384,83 +476,112 @@ export function useLineToolHandler({
       if (!vertexId) return;
 
       const colorToUse = isRightClick ? toolSettings.secondaryColor : toolSettings.color;
+      const allowedDirections = (toolSettings.lineDirections || ['orthogonal']).filter(
+        (dir) => dir === 'orthogonal' || dir === 'diagonal'
+      );
+      const effectiveDirections = allowedDirections.length > 0 ? allowedDirections : ['orthogonal'];
 
       if (isStart) {
         setDrawStartPoint(vertexId);
       } else if (drawStartPoint && drawStartPoint !== vertexId) {
-        // Check if vertices are orthogonally adjacent (no diagonal edges)
-        if (!areVerticesOrthogonallyAdjacent(drawStartPoint, vertexId)) {
-          // Not adjacent orthogonally - update start point and skip
-          setDrawStartPoint(vertexId);
+        let targetVertexId = vertexId;
+        let interpolatedPath = getInterpolatedPath(drawStartPoint, targetVertexId, effectiveDirections, false);
+
+        if (!interpolatedPath && effectiveDirections.includes('orthogonal')) {
+          const startIndex = getVertexIndexById(drawStartPoint, grid);
+          const endIndex = getVertexIndexById(targetVertexId, grid);
+          if (startIndex && endIndex && startIndex.row !== endIndex.row && startIndex.col !== endIndex.col) {
+            const startPos = resolveGridIdToPosition(drawStartPoint, grid, topology);
+            if (startPos) {
+              const dx = point.x - startPos.x;
+              const dy = point.y - startPos.y;
+              const snapHorizontal = Math.abs(dx) >= Math.abs(dy);
+              const snappedRow = snapHorizontal ? startIndex.row : endIndex.row;
+              const snappedCol = snapHorizontal ? endIndex.col : startIndex.col;
+              const snappedId = getVertexId(snappedRow, snappedCol);
+              const snappedPath = getInterpolatedPath(drawStartPoint, snappedId, ['orthogonal'], false);
+              if (snappedPath) {
+                targetVertexId = snappedId;
+                interpolatedPath = snappedPath;
+              }
+            }
+          }
+        }
+
+        if (!interpolatedPath && !useTopology) {
+          interpolatedPath = getVertexPath(drawStartPoint, targetVertexId, effectiveDirections);
+        }
+
+        if (!interpolatedPath) {
+          setDrawStartPoint(targetVertexId);
           return;
         }
 
-        // Get edgeId from topology if available
-        const edgeId = topology
-          ? getEdgeBetweenVertices(topology, drawStartPoint, vertexId) ?? undefined
-          : undefined;
-
-        // Check if edge already exists (in lines with lineTarget='edge')
         const dataLayer = editableLayer;
         const layerData = puzzle[dataLayer];
+        let currentFrom = drawStartPoint;
 
-        // Look in unified lines collection for existing element
-        const existing = findExistingLine(layerData.lines, {
-          lineTarget: 'edge',
-          edgeId,
-          from: drawStartPoint,
-          to: vertexId,
-        });
+        for (const toPoint of interpolatedPath) {
+          const edgeId = topology
+            ? getEdgeBetweenVertices(topology, currentFrom, toPoint) ?? undefined
+            : undefined;
 
-        const existingColor = existing?.color ?? null;
-        if (lineFillModeRef.current === null) {
-          lineFillModeRef.current = determineFillMode(isShiftKey, existingColor, colorToUse);
-        }
-        const action = determineSegmentAction(
-          lineFillModeRef.current,
-          isShiftKey,
-          existingColor,
-          colorToUse
-        );
-
-        // Calculate effective arrow direction based on draw order
-        const [normalizedFrom, normalizedTo] = normalizeSegmentEndpoints(drawStartPoint, vertexId);
-        const effectiveArrowDirection = toolSettings.lineDirected
-          ? calculateArrowDirection(
-              drawStartPoint,
-              vertexId,
-              normalizedFrom,
-              normalizedTo,
-              toolSettings.lineArrowDirection || 'forward'
-            )
-          : undefined;
-
-        // Use addLine with lineTarget='edge' for new unified representation
-        const addedId = executeLineAction(
-          action,
-          addLine,
-          removeLine,
-          existing?.id,
-          {
-            from: drawStartPoint,
-            to: vertexId,
+          const existing = findExistingLine(layerData.lines, {
+            lineTarget: 'edge',
             edgeId,
-            lineTarget: 'edge' as LineTargetType,
-            style: toolSettings.lineStyle,
-            thickness: toolSettings.lineThickness,
-            color: colorToUse,
-            layer: editableLayer,
-            directed: toolSettings.lineDirected,
-            arrowDirection: effectiveArrowDirection,
-          }
-        );
+            from: currentFrom,
+            to: toPoint,
+          });
 
-        // Accumulate added line ID for selection on drag end
-        if (addedId) {
-          addDrawingLineId(addedId);
+          const existingColor = existing?.color ?? null;
+          if (lineFillModeRef.current === null) {
+            lineFillModeRef.current = determineFillMode(isShiftKey, existingColor, colorToUse);
+          }
+          const action = determineSegmentAction(
+            lineFillModeRef.current,
+            isShiftKey,
+            existingColor,
+            colorToUse
+          );
+
+          const [normalizedFrom, normalizedTo] = normalizeSegmentEndpoints(currentFrom, toPoint);
+          const effectiveArrowDirection = toolSettings.lineDirected
+            ? calculateArrowDirection(
+                currentFrom,
+                toPoint,
+                normalizedFrom,
+                normalizedTo,
+                toolSettings.lineArrowDirection || 'forward'
+              )
+            : undefined;
+
+          const addedId = executeLineAction(
+            action,
+            addLine,
+            removeLine,
+            existing?.id,
+            {
+              from: currentFrom,
+              to: toPoint,
+              edgeId,
+              lineTarget: 'edge' as LineTargetType,
+              style: toolSettings.lineStyle,
+              thickness: toolSettings.lineThickness,
+              color: colorToUse,
+              layer: editableLayer,
+              directed: toolSettings.lineDirected,
+              arrowDirection: effectiveArrowDirection,
+            }
+          );
+
+          if (addedId) {
+            addDrawingLineId(addedId);
+          }
+
+          currentFrom = toPoint;
         }
 
-        setDrawStartPoint(vertexId);
+        setDrawStartPoint(targetVertexId);
       }
     },
     [
@@ -469,6 +590,9 @@ export function useLineToolHandler({
       puzzle,
       activeLayer,
       editableLayer,
+      useTopology,
+      getInterpolatedPath,
+      getVertexPath,
       toolSettings,
       addLine,
       addDrawingLineId,

@@ -17,6 +17,8 @@ interface SpecialToolPreviewProps {
     panX: number;
     panY: number;
   };
+  offsetX?: number;
+  offsetY?: number;
   specialToolType: 'thermo' | 'arrow' | 'cage' | 'boxline' | null;
   specialPreviewPoints: Point[];
   specialPreviewCells: SpecialPreviewCell[];
@@ -25,6 +27,8 @@ interface SpecialToolPreviewProps {
 
 export const SpecialToolPreview: React.FC<SpecialToolPreviewProps> = ({
   canvas,
+  offsetX = 0,
+  offsetY = 0,
   specialToolType,
   specialPreviewPoints,
   specialPreviewCells,
@@ -34,8 +38,10 @@ export const SpecialToolPreview: React.FC<SpecialToolPreviewProps> = ({
     return null;
   }
 
+  const transform = `translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom}) translate(${offsetX}, ${offsetY})`;
+
   return (
-    <g data-preview="true" transform={`translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom})`}>
+    <g data-preview="true" transform={transform}>
       <g opacity={0.5} pointerEvents="none">
         {specialToolType === 'thermo' && (
           <>
