@@ -355,7 +355,7 @@ export const Ribbon: React.FC = () => {
               {showAnswerLayer ? <EyeIcon size={14} /> : <EyeOffIcon size={14} />}
             </button>
           </div>
-          {/* Trial mode (仮置き) - always available */}
+          {/* Trial mode - always available */}
           <div className="flex items-center">
             {trialStage === 0 ? (
               /* Enter trial button - disabled when not in answer mode */
@@ -400,7 +400,7 @@ export const Ribbon: React.FC = () => {
           </div>
         </div>
 
-        {/* Grid mode subtabs - 盤面形状 / 盤面スタイル (Type / Style) */}
+        {/* Grid mode subtabs - Type / Style */}
         {isGridMode && (
           <div className="flex items-center gap-1">
             <button

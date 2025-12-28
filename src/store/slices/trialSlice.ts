@@ -1,5 +1,5 @@
 /**
- * Trial Slice - Trial mode (仮置き) state management
+ * Trial Slice - Trial mode state management
  *
  * Based on pzprjs trial mode implementation.
  * Allows speculative input that can be accepted or rejected.

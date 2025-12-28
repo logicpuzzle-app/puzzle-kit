@@ -115,7 +115,7 @@ export const inputModeToTool: Record<InputMode, ToolMapping | null> = {
     },
   },
 
-  // X mark on edges (peke = バツ) (pzprjs: rgb(0, 127, 0))
+  // X mark on edges (peke = X) (pzprjs: rgb(0, 127, 0))
   'peke': {
     tool: 'symbol-cross',
     category: 'symbol',

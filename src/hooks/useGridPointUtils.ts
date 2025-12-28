@@ -109,8 +109,8 @@ export function useGridPointUtils(grid: GridConfig) {
       const to = parsePointId(toId);
 
       // For topology mode with non-standard IDs, use adjacency-based direction checking
-      // - Orthogonal (縦横): Edge adjacency (cells sharing an edge / vertices connected by edge)
-      // - Diagonal (斜め): Vertex/Cell adjacency (cells sharing a vertex / vertices sharing a cell)
+      // - Orthogonal: Edge adjacency (cells sharing an edge / vertices connected by edge)
+      // - Diagonal: Vertex/Cell adjacency (cells sharing a vertex / vertices sharing a cell)
       if (!from || !to) {
         if (useTopology && topology) {
           // For cell-to-cell connections
@@ -125,7 +125,7 @@ export function useGridPointUtils(grid: GridConfig) {
               return [toId];
             }
 
-            // Check vertex adjacency (diagonal) - shares a vertex but not an edge (頂点隣接)
+            // Check vertex adjacency (diagonal) - shares a vertex but not an edge
             if (allowedDirections.includes('diagonal')) {
               const sharedVertices = fromCell.boundaryVertices.filter(
                 v => toCell.boundaryVertices.includes(v)
@@ -151,7 +151,7 @@ export function useGridPointUtils(grid: GridConfig) {
               return [toId];
             }
 
-            // Check cell adjacency (diagonal) - share a cell but not an edge (セル隣接)
+            // Check cell adjacency (diagonal) - share a cell but not an edge
             if (allowedDirections.includes('diagonal')) {
               const sharedCells = fromVertex.adjacentCells.filter(
                 c => toVertex.adjacentCells.includes(c)

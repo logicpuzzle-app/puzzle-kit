@@ -25,7 +25,7 @@ export interface SolverSlice {
   isSolving: boolean;
   /** Solver result - the solution displayed in solver layer */
   solverResult: PuzzleElements | null;
-  /** Partial result when solver times out or puzzle is unsolvable (途中経過) */
+  /** Partial result when solver times out or puzzle is unsolvable */
   partialResult: PuzzleElements | null;
   /** Whether the result is partial (for different rendering style) */
   isPartialResult: boolean;

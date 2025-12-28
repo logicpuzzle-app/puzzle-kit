@@ -271,7 +271,7 @@ export interface LayerSlice {
   toggleConstraintLayer: () => void;
 }
 
-// Constraint layer sub-categories: common (共通), edit (編集設定), play (プレイ設定), check (チェック設定), highlight (ハイライト)
+// Constraint layer sub-categories: common, edit, play, check, highlight
 export type ConstraintSubCategory = 'common' | 'edit' | 'play' | 'check' | 'highlight';
 
 // pzprjs-style input modes
@@ -382,7 +382,7 @@ export interface HistorySlice {
 }
 
 /**
- * Trial mode (仮置き) state management
+ * Trial mode state management
  * Based on pzprjs trial mode implementation
  */
 export interface TrialSlice {

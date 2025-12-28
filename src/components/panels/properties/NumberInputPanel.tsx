@@ -290,7 +290,7 @@ export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChan
     ['V', 'W', 'X', 'Y', 'Z'],
   ];
 
-  // Hiragana rows (あ行〜わ行)
+  // Hiragana rows (a to wa)
   const hiraganaRows = [
     ['あ', 'い', 'う', 'え', 'お'],
     ['か', 'き', 'く', 'け', 'こ'],

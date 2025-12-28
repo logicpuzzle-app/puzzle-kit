@@ -102,7 +102,7 @@ function solveSlitherlink(grid: GridConfig, problem: PuzzleState['problem']): So
         solutionCount: 1,
       };
     } else if (result.status === SolveStatus.MULTIPLE) {
-      // Return partial progress showing confirmed parts (確定部分を表示)
+      // Return partial progress showing confirmed parts
       const partialAnswer = result.state
         ? convertSlitherSolutionToAnswer(grid, result.state, true)
         : undefined;
@@ -113,7 +113,7 @@ function solveSlitherlink(grid: GridConfig, problem: PuzzleState['problem']): So
         time: performance.now() - startTime,
       };
     } else if (result.status === SolveStatus.TIMEOUT) {
-      // Return partial progress when timed out (途中経過を返す)
+      // Return partial progress when timed out
       const partialAnswer = result.state
         ? convertSlitherSolutionToAnswer(grid, result.state, true)
         : undefined;
@@ -257,7 +257,7 @@ function solveMasyu(grid: GridConfig, problem: PuzzleState['problem']): SolveRes
         solutionCount: 1,
       };
     } else if (result.status === SolveStatus.MULTIPLE) {
-      // Return partial progress showing confirmed parts (確定部分を表示)
+      // Return partial progress showing confirmed parts
       const partialAnswer = result.state
         ? convertMasyuSolutionToAnswer(grid, result.state, true)
         : undefined;
@@ -268,7 +268,7 @@ function solveMasyu(grid: GridConfig, problem: PuzzleState['problem']): SolveRes
         time: performance.now() - startTime,
       };
     } else if (result.status === SolveStatus.TIMEOUT) {
-      // Return partial progress when timed out (途中経過を返す)
+      // Return partial progress when timed out
       const partialAnswer = result.state
         ? convertMasyuSolutionToAnswer(grid, result.state, true)
         : undefined;
@@ -434,7 +434,7 @@ function solveYajilin(grid: GridConfig, problem: PuzzleState['problem']): SolveR
         solutionCount: 1,
       };
     } else if (result.status === SolveStatus.MULTIPLE) {
-      // Return partial progress showing confirmed parts (確定部分を表示)
+      // Return partial progress showing confirmed parts
       const partialAnswer = result.state
         ? convertYajilinSolutionToAnswer(grid, result.state, true)
         : undefined;
@@ -445,7 +445,7 @@ function solveYajilin(grid: GridConfig, problem: PuzzleState['problem']): SolveR
         time: performance.now() - startTime,
       };
     } else if (result.status === SolveStatus.TIMEOUT) {
-      // Return partial progress when timed out (途中経過を返す)
+      // Return partial progress when timed out
       const partialAnswer = result.state
         ? convertYajilinSolutionToAnswer(grid, result.state, true)
         : undefined;
@@ -708,7 +708,7 @@ function solveHeyawake(grid: GridConfig, problem: PuzzleState['problem']): Solve
         solutionCount: 1,
       };
     } else if (result.status === SolveStatus.MULTIPLE) {
-      // Return partial progress showing confirmed parts (確定部分を表示)
+      // Return partial progress showing confirmed parts
       const partialAnswer = result.state
         ? convertHeyawakeSolutionToAnswer(grid, result.state, true)
         : undefined;

@@ -26,7 +26,7 @@ const SOLVER_LINE_COLOR = '#3B82F6';  // Tailwind blue-500
 const SOLVER_SURFACE_COLOR = '#3B82F6';
 const SOLVER_SURFACE_OPACITY = 0.3;
 
-// Orange color for partial solution (途中経過)
+// Orange color for partial solution
 const PARTIAL_LINE_COLOR = '#F97316';  // Tailwind orange-500
 const PARTIAL_SURFACE_COLOR = '#F97316';
 const PARTIAL_SURFACE_OPACITY = 0.25;
