@@ -5,6 +5,7 @@ import App from './App.tsx'
 import PlayerApp from './PlayerApp.tsx'
 import EditApp from './EditApp.tsx'
 import HomeApp from './HomeApp.tsx'
+import PaintApp from './PaintApp.tsx'
 import './firebase' // Initialize Firebase
 import { initializeStorage } from './modules/storage' // Initialize storage adapters
 
@@ -15,6 +16,8 @@ const path = window.location.pathname;
 let RootApp = HomeApp;
 if (path.startsWith('/play')) {
   RootApp = PlayerApp;
+} else if (path.startsWith('/paint')) {
+  RootApp = PaintApp;
 } else if (path.startsWith('/edit')) {
   RootApp = EditApp;
 } else if (path.startsWith('/master')) {
