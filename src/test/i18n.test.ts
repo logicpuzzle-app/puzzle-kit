@@ -73,4 +73,42 @@ describe('translations', () => {
       expect(ja[key as keyof typeof ja]).not.toBe('');
     }
   });
+
+  it('uses standard NPGenerator technique names', () => {
+    expect({
+      localization: en['npgen.technique.localization'],
+      nakedPair: en['npgen.technique.naked-pair'],
+      hiddenPair: en['npgen.technique.hidden-pair'],
+      nakedTriple: en['npgen.technique.naked-triple'],
+      hiddenTriple: en['npgen.technique.hidden-triple'],
+      xWing: en['npgen.technique.x-wing'],
+      swordfish: en['npgen.technique.swordfish'],
+    }).toEqual({
+      localization: 'Locked Candidates',
+      nakedPair: 'Naked Pair',
+      hiddenPair: 'Hidden Pair',
+      nakedTriple: 'Naked Triple',
+      hiddenTriple: 'Hidden Triple',
+      xWing: 'X-Wing',
+      swordfish: 'Swordfish',
+    });
+
+    expect({
+      localization: ja['npgen.technique.localization'],
+      nakedPair: ja['npgen.technique.naked-pair'],
+      hiddenPair: ja['npgen.technique.hidden-pair'],
+      nakedTriple: ja['npgen.technique.naked-triple'],
+      hiddenTriple: ja['npgen.technique.hidden-triple'],
+      xWing: ja['npgen.technique.x-wing'],
+      swordfish: ja['npgen.technique.swordfish'],
+    }).toEqual({
+      localization: 'ロック候補（ブロック・ライン）',
+      nakedPair: 'ネイキッドペア（二国同盟）',
+      hiddenPair: '隠れペア',
+      nakedTriple: 'ネイキッドトリプル（三国同盟）',
+      hiddenTriple: '隠れトリプル',
+      xWing: 'X-Wing（井桁）',
+      swordfish: 'Swordfish（ソードフィッシュ）',
+    });
+  });
 });
