@@ -1,0 +1,17 @@
+{
+  "name": "npgen",
+  "type": "module",
+  "description": "Rust rewrite of NPGenerator V2.0.2",
+  "version": "2.0.2",
+  "license": "GPL-3.0-or-later",
+  "files": [
+    "npgen_bg.wasm",
+    "npgen.js",
+    "npgen.d.ts"
+  ],
+  "main": "npgen.js",
+  "types": "npgen.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
