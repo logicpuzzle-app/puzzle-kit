@@ -416,10 +416,13 @@ export function useNumberKeyboard() {
       },
     },
     // Delete/Backspace
+    // Note: allowNonNumeric gates *non-numeric character* entry only. Deletion must stay
+    // available for constraint number input and the directional number tool as well,
+    // otherwise entered numbers can only be removed via the number pad panel.
     {
       keys: ['Backspace', 'Delete'],
       preventDefault: true,
-      when: (ctx) => (ctx.isNumberTool || ctx.isConstraintNumberInput) && ctx.allowNonNumeric && ctx.target !== null,
+      when: (ctx) => (ctx.isNumberTool || ctx.isConstraintNumberInput) && ctx.target !== null,
       run: (ctx, key) => {
         if (!ctx.target) return;
         const { isConstraintNumberInput, isNumberTool } = ctx;
