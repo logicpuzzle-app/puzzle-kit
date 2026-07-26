@@ -68,6 +68,8 @@ i18n
     resources,
     lng: detectDefaultLanguage(),
     fallbackLng: 'en',
+    supportedLngs: ['en', 'ja'],
+    keySeparator: false,
     interpolation: {
       escapeValue: false,
     },
