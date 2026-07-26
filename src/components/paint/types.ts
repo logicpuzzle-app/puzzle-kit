@@ -1,19 +1,11 @@
+import type { MenuDefinition, MenuItem } from '../toolbar/menu';
+
 export type TranslateFn = (key: string, ...args: Array<string | number | Record<string, unknown>>) => string;
 
 export type PaintCategory = 'surface' | 'number' | 'word' | 'symbol' | 'line' | 'freehand';
 
-export type PaintMenuItem = {
-  labelKey: string;
-  action?: () => void;
-  divider?: boolean;
-  disabled?: boolean;
-  checked?: boolean;
-};
-
-export type PaintMenu = {
-  labelKey: string;
-  items: PaintMenuItem[];
-};
+export type PaintMenuItem = MenuItem;
+export type PaintMenu = MenuDefinition;
 
 export type PaintAdjustMode = 'answer' | 'board' | 'image';
 

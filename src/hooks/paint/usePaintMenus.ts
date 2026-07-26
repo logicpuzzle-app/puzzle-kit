@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import type React from 'react';
 import type { GridConfig } from '../../types';
 import type { TranslateFn, PaintMenu } from '../../components/paint/types';
 import type { DataLayerType } from '../../types';
+import { useMenuState } from '../useMenuState';
 
 type UsePaintMenusArgs = {
   t: TranslateFn;
@@ -41,19 +42,7 @@ export const usePaintMenus = ({
   centerBoard,
   showShortcuts,
 }: UsePaintMenusArgs) => {
-  const menuRef = useRef<HTMLDivElement | null>(null);
-  const [activeMenu, setActiveMenu] = useState<string | null>(null);
-  const closeMenu = useCallback(() => setActiveMenu(null), []);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setActiveMenu(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const { menuRef, activeMenu, setActiveMenu, closeMenu } = useMenuState<string>();
 
   const paintMenus = useMemo<PaintMenu[]>(() => [
     {

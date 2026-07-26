@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { shallow } from 'zustand/shallow';
 import './i18n';
 import { PuzzleCanvas, type TextClickInfo } from './components/canvas';
 import { MenuBar, IconToolbar, Ribbon } from './components/toolbar';
 import { PropertiesPanel, StatusBar } from './components/panels';
 import { TextInputDialog, type TextInputType, StorageErrorDialog } from './components/dialogs';
-import { CheckAnswerModal, ConfirmModal, AlertModal, ShortcutsModal, UrlImportModal } from './components/modals';
+import { CheckAnswerModal, BaseModals } from './components/modals';
 import { usePuzzleStore } from './store/puzzleStoreContext';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useStorageErrorHandler } from './hooks/useStorageErrorHandler';
@@ -12,7 +13,15 @@ import { useStoragePersistence } from './hooks/useStoragePersistence';
 import { toDataLayer } from './types';
 
 function App() {
-  const { addSymbol, activeLayer, toolSettings, setPlayerMode } = usePuzzleStore();
+  const { addSymbol, activeLayer, toolSettings, setPlayerMode } = usePuzzleStore(
+    (state) => ({
+      addSymbol: state.addSymbol,
+      activeLayer: state.activeLayer,
+      toolSettings: state.toolSettings,
+      setPlayerMode: state.setPlayerMode,
+    }),
+    shallow
+  );
 
   // Global keyboard shortcuts
   useKeyboardShortcuts();
@@ -104,12 +113,7 @@ function App() {
 
       {/* Check Answer Modal */}
       <CheckAnswerModal />
-
-      {/* Global Modals */}
-      <ConfirmModal />
-      <AlertModal />
-      <ShortcutsModal />
-      <UrlImportModal />
+      <BaseModals />
     </div>
   );
 }

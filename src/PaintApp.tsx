@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { shallow } from 'zustand/shallow';
 import { useTranslation } from 'react-i18next';
 import './i18n';
-import { NumberInputPanel } from './components/panels/properties/NumberInputPanel';
+import { FloatingNumberPad } from './components/panels/FloatingNumberPad';
 import { StorageErrorDialog } from './components/dialogs';
-import { AlertModal, ConfirmModal, ShortcutsModal } from './components/modals';
+import { BaseModals } from './components/modals';
 import { usePuzzleStore, usePuzzleStoreApi } from './store/puzzleStoreContext';
 import { useModalStore } from './store/modalStoreContext';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -16,12 +17,11 @@ import { usePaintMenus } from './hooks/paint/usePaintMenus';
 import { usePaintModes } from './hooks/paint/usePaintModes';
 import { usePaintMedia } from './hooks/paint/usePaintMedia';
 import { usePaintAdjustments } from './hooks/paint/usePaintAdjustments';
-import { usePaintNumberPadPanel } from './hooks/paint/usePaintNumberPadPanel';
+import { useNumberPadVisibility } from './hooks/useNumberPadVisibility';
 
 function PaintApp() {
   const { t, i18n } = useTranslation();
   const isJa = i18n.language?.toLowerCase().startsWith('ja');
-  const isEn = i18n.language?.toLowerCase().startsWith('en');
   const {
     toolSettings,
     currentInputMode,
@@ -49,9 +49,45 @@ function PaintApp() {
     rejectTrial,
     rejectCurrentTrial,
     getCurrentTrialColor,
-  } = usePuzzleStore();
+  } = usePuzzleStore(
+    (state) => ({
+      toolSettings: state.toolSettings,
+      currentInputMode: state.currentInputMode,
+      setInputMode: state.setInputMode,
+      setCurrentSchemaId: state.setCurrentSchemaId,
+      setPlayerMode: state.setPlayerMode,
+      setConstraintSubCategory: state.setConstraintSubCategory,
+      setToolSettings: state.setToolSettings,
+      grid: state.grid,
+      setGrid: state.setGrid,
+      resizeGrid: state.resizeGrid,
+      undo: state.undo,
+      redo: state.redo,
+      canUndo: state.canUndo,
+      canRedo: state.canRedo,
+      clearLayer: state.clearLayer,
+      canvas: state.canvas,
+      topology: state.topology,
+      useTopology: state.useTopology,
+      setPan: state.setPan,
+      setZoom: state.setZoom,
+      trialStage: state.trialStage,
+      enterTrial: state.enterTrial,
+      acceptTrial: state.acceptTrial,
+      rejectTrial: state.rejectTrial,
+      rejectCurrentTrial: state.rejectCurrentTrial,
+      getCurrentTrialColor: state.getCurrentTrialColor,
+    }),
+    shallow
+  );
   const store = usePuzzleStoreApi();
-  const { showAlert, showShortcuts } = useModalStore();
+  const { showAlert, showShortcuts } = useModalStore(
+    (state) => ({
+      showAlert: state.showAlert,
+      showShortcuts: state.showShortcuts,
+    }),
+    shallow
+  );
   const rootRef = useRef<HTMLDivElement | null>(null);
   const canvasWrapperRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -177,22 +213,18 @@ function PaintApp() {
     centerBoard,
   });
 
-  const {
-    showNumberPad,
-    panelPosition,
-    panelSize,
-    panelHeaderRef,
-    panelContentRef,
-    handlePanelDragStart,
-    handlePanelResizeStart,
-    updatePanelHeight,
-  } = usePaintNumberPadPanel({
-    rootRef,
-    canvasWrapperRef,
-    toolSettings,
-    currentInputMode,
-    onWindowResize: () => centerBoard(false),
+  const showNumberPad = useNumberPadVisibility({
+    currentTool: toolSettings.currentTool,
+    currentInputMode: currentInputMode ?? '',
   });
+
+  useEffect(() => {
+    const handleResize = () => {
+      centerBoard(false);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [centerBoard]);
 
   useEffect(() => {
     if (paintInitRef.current) return;
@@ -237,7 +269,6 @@ function PaintApp() {
     setActiveMenu,
     menuRef,
     isJa,
-    isEn,
     onLanguageChange: (lang: 'ja' | 'en') => {
       void i18n.changeLanguage(lang);
     },
@@ -364,36 +395,12 @@ function PaintApp() {
           genreToolbarProps={genreToolbarProps}
         />
       )}
-      {showNumberPad && panelPosition && (
-        <div
-          className="absolute z-20 rounded-sm border border-office-border bg-white shadow-md flex flex-col"
-          style={{
-            left: panelPosition.x,
-            top: panelPosition.y,
-            width: panelSize.width,
-            height: panelSize.height,
-          }}
-        >
-          <div
-            className="flex items-center justify-between gap-2 px-2 py-1 text-[11px] text-office-text-secondary bg-office-bg border-b border-office-border cursor-move touch-none select-none"
-            ref={panelHeaderRef}
-            onPointerDown={handlePanelDragStart}
-          >
-            <span>123</span>
-            <span>{t('tool.number', 'Number')}</span>
-          </div>
-          <div className="flex-1 overflow-auto p-2">
-            <div ref={panelContentRef}>
-              <NumberInputPanel onLayoutChange={updatePanelHeight} />
-            </div>
-          </div>
-          <div
-            className="absolute bottom-1 right-1 h-3 w-3 border-b border-r border-office-border cursor-se-resize touch-none"
-            onPointerDown={handlePanelResizeStart}
-            role="presentation"
-          />
-        </div>
-      )}
+      <FloatingNumberPad
+        show={showNumberPad}
+        rootRef={rootRef}
+        anchorRef={canvasWrapperRef}
+        title={t('tool.number', 'Number')}
+      />
 
       <StorageErrorDialog
         isOpen={isStorageErrorOpen}
@@ -402,9 +409,7 @@ function PaintApp() {
         errorType={storageError?.errorType ?? 'general'}
       />
 
-      <ConfirmModal />
-      <AlertModal />
-      <ShortcutsModal />
+      <BaseModals />
 
       {pdfImportOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">

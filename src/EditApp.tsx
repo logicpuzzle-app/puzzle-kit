@@ -1,11 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { shallow } from 'zustand/shallow';
 import { useTranslation } from 'react-i18next';
 import './i18n';
 import { PuzzleCanvas } from './components/canvas';
 import { ToolModeSelector } from './components/toolbar/ToolModeSelector';
+import { ConstraintPresetSelect, OfficeMenuBar } from './components/toolbar';
+import { WorkspaceLayout } from './components/layouts/WorkspaceLayout';
 import { FloatingNumberPad } from './components/panels/FloatingNumberPad';
 import { GridSettingsDialog, TextInputDialog, StorageErrorDialog } from './components/dialogs';
-import { ConfirmModal, AlertModal, ShortcutsModal, UrlImportModal } from './components/modals';
+import { BaseModals } from './components/modals';
 import { SolverPanel } from './components/panels/properties/SolverPanel';
 import { usePuzzleStore, usePuzzleStoreApi } from './store/puzzleStoreContext';
 import { useModalStore, useModalStoreApi } from './store/modalStoreContext';
@@ -23,19 +26,7 @@ import { copyToClipboard } from './utils/export';
 import { generatePuzzlinkUrl, type PuzzlinkType } from './utils/puzzlinkExporter';
 import { cspuzWorkerManager, CspuzSolverCancelledError, solverWorkerManager, SolverCancelledError } from './solver';
 import { EyeIcon, EyeOffIcon } from './components/toolbar/RibbonIcons';
-
-type EditMenuItem = {
-  labelKey: string;
-  action?: () => void;
-  divider?: boolean;
-  disabled?: boolean;
-  checked?: boolean;
-};
-
-type EditMenu = {
-  labelKey: string;
-  items: EditMenuItem[];
-};
+import type { MenuDefinition } from './components/toolbar/menu';
 
 const UndoIcon: React.FC<{ size?: number }> = ({ size = 16 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -122,7 +113,50 @@ function EditApp() {
     solverBackend,
     setSolverBackend,
     cancelSolver,
-  } = usePuzzleStore();
+  } = usePuzzleStore(
+    (state) => ({
+      addSymbol: state.addSymbol,
+      activeLayer: state.activeLayer,
+      toolSettings: state.toolSettings,
+      setActiveLayer: state.setActiveLayer,
+      setPlayerMode: state.setPlayerMode,
+      setConstraintSubCategory: state.setConstraintSubCategory,
+      setCurrentSchemaId: state.setCurrentSchemaId,
+      currentSchemaId: state.currentSchemaId,
+      showConstraintLayer: state.showConstraintLayer,
+      toggleConstraintLayer: state.toggleConstraintLayer,
+      currentInputMode: state.currentInputMode,
+      setInputMode: state.setInputMode,
+      undo: state.undo,
+      redo: state.redo,
+      canUndo: state.canUndo,
+      canRedo: state.canRedo,
+      clearLayer: state.clearLayer,
+      grid: state.grid,
+      showAdjacency: state.showAdjacency,
+      setShowAdjacency: state.setShowAdjacency,
+      setGrid: state.setGrid,
+      puzzle: state.puzzle,
+      topology: state.topology,
+      useTopology: state.useTopology,
+      setPan: state.setPan,
+      setZoom: state.setZoom,
+      showAnswerLayer: state.showAnswerLayer,
+      toggleAnswerLayer: state.toggleAnswerLayer,
+      showProblemLayer: state.showProblemLayer,
+      toggleProblemLayer: state.toggleProblemLayer,
+      isSolverMode: state.isSolverMode,
+      isSolving: state.isSolving,
+      solverStatus: state.solverStatus,
+      setSolving: state.setSolving,
+      enterSolverMode: state.enterSolverMode,
+      setSolverError: state.setSolverError,
+      solverBackend: state.solverBackend,
+      setSolverBackend: state.setSolverBackend,
+      cancelSolver: state.cancelSolver,
+    }),
+    shallow
+  );
   const store = usePuzzleStoreApi();
   const modalStore = useModalStoreApi();
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -146,7 +180,13 @@ function EditApp() {
     setConstraintSubCategory('edit');
   }, [setActiveLayer, setConstraintSubCategory, setPlayerMode]);
 
-  const { showShortcuts, showAlert } = useModalStore();
+  const { showShortcuts, showAlert } = useModalStore(
+    (state) => ({
+      showShortcuts: state.showShortcuts,
+      showAlert: state.showAlert,
+    }),
+    shallow
+  );
   const { menuRef, activeMenu, setActiveMenu, closeMenu } = useMenuState();
   const { handleImportFromUrl } = useImportFromUrl({
     store,
@@ -306,7 +346,7 @@ function EditApp() {
     return () => window.removeEventListener('resize', handleResize);
   }, [centerBoard, showNumberPad]);
 
-  const editMenus = useMemo<EditMenu[]>(() => [
+  const editMenus = useMemo<MenuDefinition[]>(() => [
     {
       labelKey: 'menu.file',
       items: [
@@ -458,215 +498,168 @@ function EditApp() {
 
   return (
     <div ref={rootRef} className="flex flex-col h-screen bg-office-bg font-segoe relative">
-      <div className="flex flex-col flex-1 min-h-0 w-full max-w-[1024px] mx-auto">
-        <header className="sticky top-0 z-30 border-b border-office-border bg-white px-3 pb-2 pt-0 space-y-2">
-          <div
-            ref={menuRef}
-            className="flex items-center bg-office-ribbon border border-office-border h-7 px-1 -mx-3"
-          >
-            <div className="flex items-center px-2 mr-2">
-              <span className="font-semibold text-sm text-office-accent">
-                {t('app.editTitle', 'PuzzleKit Editor')}
-              </span>
-            </div>
-            {editMenus.map((menu) => (
-              <div key={menu.labelKey} className="relative">
-                <button
-                  className={`px-2 py-1 text-sm rounded hover:bg-office-ribbon-hover ${
-                    activeMenu === menu.labelKey ? 'bg-office-ribbon-hover' : ''
-                  }`}
-                  onClick={() =>
-                    setActiveMenu(activeMenu === menu.labelKey ? null : menu.labelKey)
-                  }
-                >
-                  {t(menu.labelKey)}
-                </button>
-                {activeMenu === menu.labelKey && (
-                  <div className="absolute left-0 mt-1 w-52 bg-white border border-office-border shadow-lg z-50">
-                    {menu.items.map((item, idx) =>
-                      item.divider ? (
-                        <div key={`${item.labelKey}-${idx}`} className="border-t border-office-border my-1" />
-                      ) : (
-                        <button
-                          key={item.labelKey}
-                          className={`w-full text-left px-4 py-1.5 text-sm flex justify-between items-center ${
-                            item.disabled
-                              ? 'text-gray-400 cursor-not-allowed'
-                              : 'hover:bg-office-ribbon-hover'
-                          }`}
-                          onClick={() => !item.disabled && item.action?.()}
-                          disabled={item.disabled}
-                        >
-                          <span className="flex items-center gap-2">
-                            {item.checked !== undefined && (
-                              <span className="w-4 text-center">
-                                {item.checked ? '✓' : ''}
-                              </span>
-                            )}
-                            {t(item.labelKey)}
-                          </span>
-                        </button>
-                      )
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-office-text-secondary">{t('constraint.preset')}</span>
-            <select
-              className="select-office text-xs"
-              value={currentSchemaId && currentSchemaId !== '__custom__' ? currentSchemaId : ''}
-              onChange={(event) => {
-                const value = event.target.value;
-                setCurrentSchemaId(value ? value : null);
-              }}
-            >
-              <option value="">{t('constraint.noPreset')}</option>
-              {presetOptions.map((preset) => (
-                <option key={preset.id} value={preset.id}>
-                  {preset.label}
-                </option>
-                ))}
-            </select>
-            <button className="btn-office" onClick={() => setGridDialogOpen(true)}>
-              {t('grid.settings')}
-            </button>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1">
-              <div className="flex items-center">
-                <button
-                  className={`h-7 px-2 text-xs rounded-l-sm border border-r-0 transition-colors ${
-                    activeLayer === 'problem'
-                      ? 'bg-office-accent text-white border-office-accent'
-                      : 'bg-white border-office-border hover:bg-office-ribbon-hover'
-                  }`}
-                  onClick={() => {
-                    if (!showProblemLayer) {
-                      toggleProblemLayer();
-                    }
-                    setActiveLayer('problem');
-                  }}
-                  aria-pressed={activeLayer === 'problem'}
-                >
-                  {t('layer.problem')}
-                </button>
-                <button
-                  className={`h-7 w-7 flex items-center justify-center rounded-r-sm border-t border-b border-r transition-colors ${
-                    showProblemLayer
-                      ? activeLayer === 'problem'
-                        ? 'bg-office-accent text-white border-office-accent'
-                        : 'bg-white border-office-border text-office-text hover:bg-office-ribbon-hover'
-                      : 'bg-white border-office-border text-gray-400 hover:bg-office-ribbon-hover'
-                  }`}
-                  onClick={toggleProblemLayer}
-                  title={t('view.showProblem')}
-                >
-                  {showProblemLayer ? <EyeIcon size={14} /> : <EyeOffIcon size={14} />}
-                </button>
-              </div>
-              <div className="flex items-center">
-                <button
-                  className={`h-7 px-2 text-xs rounded-l-sm border border-r-0 transition-colors ${
-                    activeLayer === 'answer'
-                      ? 'bg-office-accent text-white border-office-accent'
-                      : 'bg-white border-office-border hover:bg-office-ribbon-hover'
-                  }`}
-                  onClick={() => {
-                    if (!showAnswerLayer) {
-                      toggleAnswerLayer();
-                    }
-                    setActiveLayer('answer');
-                  }}
-                  aria-pressed={activeLayer === 'answer'}
-                >
-                  {t('layer.answer')}
-                </button>
-                <button
-                  className={`h-7 w-7 flex items-center justify-center rounded-r-sm border-t border-b border-r transition-colors ${
-                    showAnswerLayer
-                      ? activeLayer === 'answer'
-                        ? 'bg-office-accent text-white border-office-accent'
-                        : 'bg-white border-office-border text-office-text hover:bg-office-ribbon-hover'
-                      : 'bg-white border-office-border text-gray-400 hover:bg-office-ribbon-hover'
-                  }`}
-                  onClick={toggleAnswerLayer}
-                  title={t('view.showAnswer')}
-                >
-                  {showAnswerLayer ? <EyeIcon size={14} /> : <EyeOffIcon size={14} />}
-                </button>
-              </div>
-            </div>
-            <IconButton title={t('edit.undo')} onClick={() => undo()} disabled={!canUndo()}>
-              <UndoIcon size={16} />
-            </IconButton>
-            <IconButton title={t('edit.redo')} onClick={() => redo()} disabled={!canRedo()}>
-              <RedoIcon size={16} />
-            </IconButton>
-            <IconButton title={t('edit.clearProblem', 'Clear problem')} onClick={() => clearLayer('problem')}>
-              <TrashIcon size={16} />
-            </IconButton>
-            <button
-              className={`btn-office ${isConstraintEnabled ? 'bg-office-accent text-white border-office-accent' : ''}`}
-              onClick={() => toggleConstraintLayer()}
-              disabled={!isConstraintAvailable}
-              aria-pressed={isConstraintEnabled}
-            >
-              {isConstraintAvailable
-                ? (isConstraintEnabled ? t('constraint.enabled') : t('constraint.disabled'))
-                : t('constraint.noPreset')}
-            </button>
-            {hasSolver && (activeLayer === 'problem' || isSolving) && (
-              isSolving ? (
-                <button
-                  className="h-7 px-2 text-xs border rounded-sm transition-colors bg-red-500 text-white border-red-600 hover:bg-red-600"
-                  onClick={handleCancelSolver}
-                  title={t('solver.cancel')}
-                >
-                  {t('solver.cancel')}
-                </button>
-              ) : (
-                <button
-                  className="h-7 px-2 text-xs border rounded-sm transition-colors bg-blue-600 text-white border-blue-700 hover:bg-blue-700"
-                  onClick={handleSolve}
-                  title={t('solver.solve')}
-                  disabled={!currentSchemaId}
-                >
-                  {t('solver.solve')}
-                </button>
-              )
-            )}
-          </div>
-          {(isSolving || isSolverMode || solverStatus) && (
-            <div className="rounded-sm border border-office-border bg-white px-3 py-2">
-              <SolverPanel />
-            </div>
-          )}
-      </header>
-
-        <div ref={canvasWrapperRef} className="flex-1 min-h-0 flex flex-col">
-          <PuzzleCanvas onTextClick={handleTextClick} allowMultiTouchPanZoom={false} />
-        </div>
-
-        <footer className="border-t border-office-border bg-white px-3 py-2">
-          {activeModes.length > 0 ? (
-            <div className="flex flex-col gap-2">
-              <ToolModeSelector
-                modes={activeModes as InputMode[]}
-                currentMode={currentInputMode as InputMode}
-                onModeChange={(mode) => setInputMode(mode)}
+      <WorkspaceLayout
+        canvasWrapperRef={canvasWrapperRef}
+        header={(
+          <header className="sticky top-0 z-30 border-b border-office-border bg-white px-3 pb-2 pt-0 space-y-2">
+            <OfficeMenuBar
+              menuRef={menuRef}
+              menus={editMenus}
+              activeMenu={activeMenu}
+              setActiveMenu={setActiveMenu}
+              className="border border-office-border -mx-3"
+              menuButtonClassName="px-2 py-1 text-sm rounded hover:bg-office-ribbon-hover"
+              dropdownClassName="absolute left-0 mt-1 w-52 bg-white border border-office-border shadow-lg z-50"
+              enableHoverOpen={false}
+              title={(
+                <span className="font-semibold text-sm text-office-accent">
+                  {t('app.editTitle', 'PuzzleKit Editor')}
+                </span>
+              )}
+            />
+            <div className="flex items-center gap-2">
+              <ConstraintPresetSelect
+                currentSchemaId={currentSchemaId}
+                presetOptions={presetOptions}
+                onChange={setCurrentSchemaId}
               />
+              <button className="btn-office" onClick={() => setGridDialogOpen(true)}>
+                {t('grid.settings')}
+              </button>
             </div>
-          ) : (
-            <div className="text-xs text-office-text-secondary">
-              {t('constraint.noPreset')}
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1">
+                <div className="flex items-center">
+                  <button
+                    className={`h-7 px-2 text-xs rounded-l-sm border border-r-0 transition-colors ${
+                      activeLayer === 'problem'
+                        ? 'bg-office-accent text-white border-office-accent'
+                        : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+                    }`}
+                    onClick={() => {
+                      if (!showProblemLayer) {
+                        toggleProblemLayer();
+                      }
+                      setActiveLayer('problem');
+                    }}
+                    aria-pressed={activeLayer === 'problem'}
+                  >
+                    {t('layer.problem')}
+                  </button>
+                  <button
+                    className={`h-7 w-7 flex items-center justify-center rounded-r-sm border-t border-b border-r transition-colors ${
+                      showProblemLayer
+                        ? activeLayer === 'problem'
+                          ? 'bg-office-accent text-white border-office-accent'
+                          : 'bg-white border-office-border text-office-text hover:bg-office-ribbon-hover'
+                        : 'bg-white border-office-border text-gray-400 hover:bg-office-ribbon-hover'
+                    }`}
+                    onClick={toggleProblemLayer}
+                    title={t('view.showProblem')}
+                  >
+                    {showProblemLayer ? <EyeIcon size={14} /> : <EyeOffIcon size={14} />}
+                  </button>
+                </div>
+                <div className="flex items-center">
+                  <button
+                    className={`h-7 px-2 text-xs rounded-l-sm border border-r-0 transition-colors ${
+                      activeLayer === 'answer'
+                        ? 'bg-office-accent text-white border-office-accent'
+                        : 'bg-white border-office-border hover:bg-office-ribbon-hover'
+                    }`}
+                    onClick={() => {
+                      if (!showAnswerLayer) {
+                        toggleAnswerLayer();
+                      }
+                      setActiveLayer('answer');
+                    }}
+                    aria-pressed={activeLayer === 'answer'}
+                  >
+                    {t('layer.answer')}
+                  </button>
+                  <button
+                    className={`h-7 w-7 flex items-center justify-center rounded-r-sm border-t border-b border-r transition-colors ${
+                      showAnswerLayer
+                        ? activeLayer === 'answer'
+                          ? 'bg-office-accent text-white border-office-accent'
+                          : 'bg-white border-office-border text-office-text hover:bg-office-ribbon-hover'
+                        : 'bg-white border-office-border text-gray-400 hover:bg-office-ribbon-hover'
+                    }`}
+                    onClick={toggleAnswerLayer}
+                    title={t('view.showAnswer')}
+                  >
+                    {showAnswerLayer ? <EyeIcon size={14} /> : <EyeOffIcon size={14} />}
+                  </button>
+                </div>
+              </div>
+              <IconButton title={t('edit.undo')} onClick={() => undo()} disabled={!canUndo()}>
+                <UndoIcon size={16} />
+              </IconButton>
+              <IconButton title={t('edit.redo')} onClick={() => redo()} disabled={!canRedo()}>
+                <RedoIcon size={16} />
+              </IconButton>
+              <IconButton title={t('edit.clearProblem', 'Clear problem')} onClick={() => clearLayer('problem')}>
+                <TrashIcon size={16} />
+              </IconButton>
+              <button
+                className={`btn-office ${isConstraintEnabled ? 'bg-office-accent text-white border-office-accent' : ''}`}
+                onClick={() => toggleConstraintLayer()}
+                disabled={!isConstraintAvailable}
+                aria-pressed={isConstraintEnabled}
+              >
+                {isConstraintAvailable
+                  ? (isConstraintEnabled ? t('constraint.enabled') : t('constraint.disabled'))
+                  : t('constraint.noPreset')}
+              </button>
+              {hasSolver && (activeLayer === 'problem' || isSolving) && (
+                isSolving ? (
+                  <button
+                    className="h-7 px-2 text-xs border rounded-sm transition-colors bg-red-500 text-white border-red-600 hover:bg-red-600"
+                    onClick={handleCancelSolver}
+                    title={t('solver.cancel')}
+                  >
+                    {t('solver.cancel')}
+                  </button>
+                ) : (
+                  <button
+                    className="h-7 px-2 text-xs border rounded-sm transition-colors bg-blue-600 text-white border-blue-700 hover:bg-blue-700"
+                    onClick={handleSolve}
+                    title={t('solver.solve')}
+                    disabled={!currentSchemaId}
+                  >
+                    {t('solver.solve')}
+                  </button>
+                )
+              )}
             </div>
-          )}
-        </footer>
-      </div>
+            {(isSolving || isSolverMode || solverStatus) && (
+              <div className="rounded-sm border border-office-border bg-white px-3 py-2">
+                <SolverPanel />
+              </div>
+            )}
+        </header>
+        )}
+        footer={(
+          <footer className="border-t border-office-border bg-white px-3 py-2">
+            {activeModes.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                <ToolModeSelector
+                  modes={activeModes as InputMode[]}
+                  currentMode={currentInputMode as InputMode}
+                  onModeChange={(mode) => setInputMode(mode)}
+                />
+              </div>
+            ) : (
+              <div className="text-xs text-office-text-secondary">
+                {t('constraint.noPreset')}
+              </div>
+            )}
+          </footer>
+        )}
+      >
+        <PuzzleCanvas onTextClick={handleTextClick} allowMultiTouchPanZoom={false} />
+      </WorkspaceLayout>
 
       <FloatingNumberPad
         show={showNumberPad}
@@ -690,10 +683,7 @@ function EditApp() {
         errorType={storageError?.errorType ?? 'general'}
       />
 
-      <ConfirmModal />
-      <AlertModal />
-      <ShortcutsModal />
-      <UrlImportModal />
+      <BaseModals />
     </div>
   );
 }

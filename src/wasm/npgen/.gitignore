@@ -1,0 +1,11 @@
+# wasm-pack defaults to ignoring the whole package. PuzzleKit intentionally
+# checks in the browser artifact so production builds do not require Rust.
+*
+!.gitignore
+!LICENSE
+!README.md
+!package.json
+!npgen.js
+!npgen.d.ts
+!npgen_bg.wasm
+!npgen_bg.wasm.d.ts

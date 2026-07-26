@@ -7,3 +7,4 @@ export { ConfirmModal } from './ConfirmModal';
 export { AlertModal } from './AlertModal';
 export { ShortcutsModal } from './ShortcutsModal';
 export { UrlImportModal } from './UrlImportModal';
+export { BaseModals } from './BaseModals';

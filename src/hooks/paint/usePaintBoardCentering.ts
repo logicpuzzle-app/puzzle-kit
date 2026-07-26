@@ -11,7 +11,7 @@ type UsePaintBoardCenteringArgs = {
   grid: GridConfig;
   topology: GridTopology | null;
   useTopology: boolean;
-  canvasWrapperRef: React.RefObject<HTMLDivElement>;
+  canvasWrapperRef: React.RefObject<HTMLDivElement | null>;
   setPan: (x: number, y: number) => void;
   setZoom: (zoom: number) => void;
   store: PuzzleStoreApi;

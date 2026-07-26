@@ -39,6 +39,32 @@ npm run build:lib
 Solver features are bundled in this repo under `puzzle-kit/solver`, so no extra install
 steps are required for solver functionality.
 
+## NPGenerator WebAssembly
+
+Choose **New → NPGenerator…** to open the Number Place generator. The dialog
+exposes solve/evaluate, pattern generation, symmetric random generation,
+benchmarking, all solver-method and uniqueness switches, difficulty bounds,
+forbidden numbers, sizes 2–25, rectangular/random/custom blocks, diagonal
+constraints, deterministic seeds, and NPGenerator XML import/export.
+
+The checked-in Wasm artifact is rebuilt from the verified Rust port with:
+
+```bash
+pnpm build:npgen-wasm
+```
+
+Generation runs in a Web Worker so the editor UI remains responsive.
+
+### Browser test
+
+Install the Playwright-managed Chromium binary once, then run the NPGenerator
+end-to-end test:
+
+```bash
+pnpm exec playwright install chromium
+pnpm test:e2e
+```
+
 ## Library Usage
 
 Headless and embedded-UI usage entrypoints are documented here:
@@ -77,4 +103,7 @@ This project is inspired by these wonderful tools:
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+The pre-existing Puzzle Kit source is MIT-licensed; see [LICENSE](LICENSE).
+The bundled NPGenerator Wasm component is GPL-3.0-or-later. See
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) before distributing the
+combined application.

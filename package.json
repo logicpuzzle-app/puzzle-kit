@@ -34,6 +34,7 @@
   ],
   "scripts": {
     "dev": "vite",
+    "build:npgen-wasm": "node scripts/build-npgen-wasm.mjs",
     "build": "tsc -b && vite build",
     "build:lib": "tsc -p tsconfig.lib.json",
     "lint": "eslint .",
@@ -41,14 +42,16 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "deploy": "npm run build && firebase deploy --only hosting"
   },
   "dependencies": {
     "firebase": "^12.6.0",
     "i18next": "^25.6.3",
     "lucide-react": "^0.556.0",
-    "pdfjs-dist": "^4.10.38",
     "pako": "^2.1.0",
+    "pdfjs-dist": "^4.10.38",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-i18next": "^16.3.5",
@@ -58,6 +61,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.62.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@types/node": "^24.10.1",

@@ -9,3 +9,4 @@ export type { DialogMode, ImportFormat, ExportFormat } from './ImportExportDialo
 export { PerformanceTestDialog } from './PerformanceTestDialog';
 export { StorageErrorDialog } from './StorageErrorDialog';
 export { ShareUrlDialog } from './ShareUrlDialog';
+export { NPGeneratorDialog } from './NPGeneratorDialog';
