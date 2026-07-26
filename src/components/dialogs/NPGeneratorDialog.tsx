@@ -19,6 +19,7 @@ import {
   type NpgenOptions,
   type NpgenXmlPuzzle,
 } from '../../npgen/types';
+import { NPGeneratorGridEditor } from './NPGeneratorGridEditor';
 
 interface NPGeneratorDialogProps {
   isOpen: boolean;
@@ -39,8 +40,8 @@ const BLOCK_KEYS: Array<{ value: NpgenBlockKind; label: string }> = [
   { value: 'custom', label: 'npgen.blocks.custom' },
 ];
 
-function emptyGrid(size: number, pattern = false): string {
-  return formatNpgenGrid(new Array(size * size).fill(0), size, pattern);
+function emptyGrid(size: number): number[] {
+  return new Array(size * size).fill(0);
 }
 
 function factorPair(size: number): [number, number] {
@@ -76,9 +77,10 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
   const [options, setOptions] = useState<NpgenOptions>(DEFAULT_NPGEN_OPTIONS);
   const [hints, setHints] = useState(20);
   const [benchmarkCount, setBenchmarkCount] = useState(1);
-  const [problemText, setProblemText] = useState(() => emptyGrid(9));
-  const [patternText, setPatternText] = useState(() => emptyGrid(9, true));
-  const [hiddenText, setHiddenText] = useState(() => emptyGrid(9));
+  const [problemGrid, setProblemGrid] = useState(() => emptyGrid(9));
+  const [patternGrid, setPatternGrid] = useState(() => emptyGrid(9));
+  const [hiddenGrid, setHiddenGrid] = useState(() => emptyGrid(9));
+  const [generateGridMode, setGenerateGridMode] = useState<'pattern' | 'hidden'>('pattern');
   const [blocksText, setBlocksText] = useState('');
   const [result, setResult] = useState<NpgenEngineResult | null>(null);
   const [benchmarkResult, setBenchmarkResult] = useState<{
@@ -102,9 +104,9 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
     const values = puzzleNumbersToGrid(state.puzzle, size);
     const [blockWidth, blockHeight] = factorPair(size);
     updateOptions({ size, blockWidth, blockHeight });
-    setProblemText(formatNpgenGrid(values, size));
-    setPatternText(formatNpgenGrid(values.map((value) => Number(value > 0)), size, true));
-    setHiddenText(emptyGrid(size));
+    setProblemGrid(values);
+    setPatternGrid(values.map((value) => Number(value > 0)));
+    setHiddenGrid(emptyGrid(size));
     setResult(null);
     setError('');
   };
@@ -117,9 +119,9 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
     const bounded = Math.max(2, Math.min(25, size));
     const [blockWidth, blockHeight] = factorPair(bounded);
     updateOptions({ size: bounded, blockWidth, blockHeight, blockLabels: [] });
-    setProblemText(emptyGrid(bounded));
-    setPatternText(emptyGrid(bounded, true));
-    setHiddenText(emptyGrid(bounded));
+    setProblemGrid(emptyGrid(bounded));
+    setPatternGrid(emptyGrid(bounded));
+    setHiddenGrid(emptyGrid(bounded));
     setBlocksText('');
     setResult(null);
   };
@@ -158,7 +160,7 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
                 {
                   type: 'solve',
                   options: prepared,
-                  problem: parseNpgenGrid(problemText, options.size),
+                  problem: problemGrid,
                 },
                 controller.signal,
               )
@@ -167,8 +169,8 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
                   {
                     type: 'generate',
                     options: prepared,
-                    pattern: parseNpgenGrid(patternText, options.size, true),
-                    hidden: parseNpgenGrid(hiddenText, options.size),
+                    pattern: patternGrid,
+                    hidden: hiddenGrid,
                   },
                   controller.signal,
                 )
@@ -228,9 +230,9 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
         blockLabels: parsed.blockLabels,
         diagonal: parsed.diagonal,
       });
-      setProblemText(formatNpgenGrid(parsed.problem, parsed.size));
-      setPatternText(formatNpgenGrid(parsed.pattern, parsed.size, true));
-      setHiddenText(formatNpgenGrid(parsed.hidden, parsed.size));
+      setProblemGrid(parsed.problem);
+      setPatternGrid(parsed.pattern);
+      setHiddenGrid(parsed.hidden);
       setBlocksText(
         parsed.defaultBlock ? '' : formatNpgenGrid(parsed.blockLabels, parsed.size),
       );
@@ -273,7 +275,7 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
           pattern: result.pattern,
           hidden:
             operation === 'generate'
-              ? parseNpgenGrid(hiddenText, options.size)
+              ? hiddenGrid
               : new Array(options.size * options.size).fill(0),
           problem: result.problem,
           solution: result.solution,
@@ -296,10 +298,31 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
     }
   };
 
-  const preview = useMemo(
-    () => (result ? formatNpgenGrid(result.problem, options.size) : ''),
-    [result, options.size],
-  );
+  const editorBlockLabels = useMemo(() => {
+    if (options.blockKind === 'random') return [];
+    if (options.blockKind === 'custom') {
+      try {
+        return parseNpgenGrid(blocksText, options.size);
+      } catch {
+        return [];
+      }
+    }
+    const width = options.blockWidth;
+    const height = options.blockHeight;
+    if (width < 1 || height < 1 || width * height !== options.size) return [];
+    const blocksPerRow = options.size / width;
+    return Array.from({ length: options.size * options.size }, (_, index) => {
+      const row = Math.floor(index / options.size);
+      const col = index % options.size;
+      return Math.floor(row / height) * blocksPerRow + Math.floor(col / width) + 1;
+    });
+  }, [
+    blocksText,
+    options.blockHeight,
+    options.blockKind,
+    options.blockWidth,
+    options.size,
+  ]);
 
   if (!isOpen) return null;
 
@@ -482,26 +505,83 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
                   : t('npgen.output', 'Output')}
             </h3>
             {operation === 'solve' && (
-              <textarea
-                className="input-office w-full h-64 font-mono text-xs whitespace-pre"
-                value={problemText}
-                onChange={(event) => setProblemText(event.target.value)}
+              <NPGeneratorGridEditor
+                size={options.size}
+                values={problemGrid}
+                mode="numbers"
+                label={t('npgen.problemGrid', 'Problem grid')}
+                instructions={t(
+                  'npgen.editor.numberInstructions',
+                  'Select a cell, then use the keyboard or number pad.',
+                )}
+                clearLabel={t('npgen.editor.clear', 'Clear board')}
+                emptyLabel={t('npgen.editor.empty', 'Empty')}
+                numberPadLabel={t('npgen.editor.numberPad', 'Number pad')}
+                blockLabels={editorBlockLabels}
+                diagonal={options.diagonal}
+                onChange={setProblemGrid}
               />
             )}
             {operation === 'generate' && (
               <>
-                <textarea
-                  className="input-office w-full h-48 font-mono text-xs whitespace-pre"
-                  value={patternText}
-                  onChange={(event) => setPatternText(event.target.value)}
-                />
-                <Field label={t('npgen.hiddenGrid', 'Fixed/hidden numbers (optional)')}>
-                  <textarea
-                    className="input-office w-full h-36 font-mono text-xs whitespace-pre"
-                    value={hiddenText}
-                    onChange={(event) => setHiddenText(event.target.value)}
+                <div className="flex gap-1 border-b border-office-border">
+                  <button
+                    type="button"
+                    className={`px-3 py-2 text-sm border-b-2 ${
+                      generateGridMode === 'pattern'
+                        ? 'border-office-accent text-office-accent font-medium'
+                        : 'border-transparent text-office-text-secondary'
+                    }`}
+                    onClick={() => setGenerateGridMode('pattern')}
+                  >
+                    {t('npgen.patternGrid', 'Hint pattern')}
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-3 py-2 text-sm border-b-2 ${
+                      generateGridMode === 'hidden'
+                        ? 'border-office-accent text-office-accent font-medium'
+                        : 'border-transparent text-office-text-secondary'
+                    }`}
+                    onClick={() => setGenerateGridMode('hidden')}
+                  >
+                    {t('npgen.hiddenGrid', 'Fixed/hidden numbers (optional)')}
+                  </button>
+                </div>
+                {generateGridMode === 'pattern' ? (
+                  <NPGeneratorGridEditor
+                    size={options.size}
+                    values={patternGrid}
+                    mode="pattern"
+                    label={t('npgen.patternGrid', 'Hint pattern')}
+                    instructions={t(
+                      'npgen.editor.patternInstructions',
+                      'Click cells to toggle hint positions.',
+                    )}
+                    clearLabel={t('npgen.editor.clear', 'Clear board')}
+                    emptyLabel={t('npgen.editor.empty', 'Empty')}
+                    blockLabels={editorBlockLabels}
+                    diagonal={options.diagonal}
+                    onChange={setPatternGrid}
                   />
-                </Field>
+                ) : (
+                  <NPGeneratorGridEditor
+                    size={options.size}
+                    values={hiddenGrid}
+                    mode="numbers"
+                    label={t('npgen.hiddenGrid', 'Fixed/hidden numbers (optional)')}
+                    instructions={t(
+                      'npgen.editor.numberInstructions',
+                      'Select a cell, then use the keyboard or number pad.',
+                    )}
+                    clearLabel={t('npgen.editor.clear', 'Clear board')}
+                    emptyLabel={t('npgen.editor.empty', 'Empty')}
+                    numberPadLabel={t('npgen.editor.numberPad', 'Number pad')}
+                    blockLabels={editorBlockLabels}
+                    diagonal={options.diagonal}
+                    onChange={setHiddenGrid}
+                  />
+                )}
               </>
             )}
             {operation === 'random' && !result && (
@@ -526,7 +606,7 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
               </div>
             )}
             {result && operation !== 'benchmark' && (
-              <div>
+              <div className="space-y-2">
                 <div className="grid grid-cols-2 gap-2 mb-2 text-sm">
                   <div className="bg-gray-50 border p-2">
                     {t('npgen.difficulty', 'Difficulty')}: {Number.isNaN(result.difficulty) ? '—' : result.difficulty}
@@ -535,10 +615,13 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
                     {t('npgen.answerKind', 'Result')}: {t(`npgen.answer.${result.answerKind}`, result.answerKind)}
                   </div>
                 </div>
-                <textarea
-                  readOnly
-                  className="input-office w-full h-64 font-mono text-xs whitespace-pre bg-gray-50"
-                  value={preview}
+                <NPGeneratorGridEditor
+                  size={options.size}
+                  values={result.problem}
+                  mode="readonly"
+                  label={t('npgen.resultGrid', 'Generated problem')}
+                  blockLabels={result.blockLabels}
+                  diagonal={result.diagonal}
                 />
               </div>
             )}
