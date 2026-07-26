@@ -19,17 +19,23 @@ export const toggleCellDisabled = (
   const excludeMode = state.grid.excludeMode ?? 'void';
   const currentVoid = state.grid.voidCells || [];
   const currentOutboard = state.grid.outboardCells || [];
+  // Legacy puzzles store exclusions in disabledCells; they are rendered as void cells,
+  // so they have to be cleared here too or the cell can never be re-enabled individually.
+  const currentLegacy = state.grid.disabledCells || [];
 
   const isVoid = currentVoid.includes(cellId);
   const isOutboard = currentOutboard.includes(cellId);
+  const isLegacy = currentLegacy.includes(cellId);
 
   let newVoidCells = currentVoid;
   let newOutboardCells = currentOutboard;
+  let newLegacyCells = currentLegacy;
 
-  if (isVoid || isOutboard) {
-    // Cell is already excluded -> enable it (remove from both lists)
+  if (isVoid || isOutboard || isLegacy) {
+    // Cell is already excluded -> enable it (remove from all lists)
     newVoidCells = currentVoid.filter((id) => id !== cellId);
     newOutboardCells = currentOutboard.filter((id) => id !== cellId);
+    newLegacyCells = currentLegacy.filter((id) => id !== cellId);
   } else {
     // Cell is enabled -> exclude it based on current mode
     if (excludeMode === 'void') {
@@ -43,6 +49,7 @@ export const toggleCellDisabled = (
     ...state.grid,
     voidCells: newVoidCells.length > 0 ? newVoidCells : undefined,
     outboardCells: newOutboardCells.length > 0 ? newOutboardCells : undefined,
+    disabledCells: newLegacyCells.length > 0 ? newLegacyCells : undefined,
   };
 
   // Regenerate topology if in topology mode
@@ -70,13 +77,18 @@ export const setCellDisabled = (
   const excludeMode = state.grid.excludeMode ?? 'void';
   const currentVoid = state.grid.voidCells || [];
   const currentOutboard = state.grid.outboardCells || [];
+  // Legacy puzzles store exclusions in disabledCells; they are rendered as void cells,
+  // so they have to be cleared here too or the cell can never be re-enabled individually.
+  const currentLegacy = state.grid.disabledCells || [];
 
   const isVoid = currentVoid.includes(cellId);
   const isOutboard = currentOutboard.includes(cellId);
-  const isCurrentlyDisabled = isVoid || isOutboard;
+  const isLegacy = currentLegacy.includes(cellId);
+  const isCurrentlyDisabled = isVoid || isOutboard || isLegacy;
 
   let newVoidCells = currentVoid;
   let newOutboardCells = currentOutboard;
+  let newLegacyCells = currentLegacy;
 
   if (disabled && !isCurrentlyDisabled) {
     // Enable -> Disable: add to appropriate list based on excludeMode
@@ -86,9 +98,10 @@ export const setCellDisabled = (
       newOutboardCells = [...currentOutboard, cellId];
     }
   } else if (!disabled && isCurrentlyDisabled) {
-    // Disable -> Enable: remove from both lists
+    // Disable -> Enable: remove from all lists
     newVoidCells = currentVoid.filter((id) => id !== cellId);
     newOutboardCells = currentOutboard.filter((id) => id !== cellId);
+    newLegacyCells = currentLegacy.filter((id) => id !== cellId);
   } else {
     return state;
   }
@@ -97,6 +110,7 @@ export const setCellDisabled = (
     ...state.grid,
     voidCells: newVoidCells.length > 0 ? newVoidCells : undefined,
     outboardCells: newOutboardCells.length > 0 ? newOutboardCells : undefined,
+    disabledCells: newLegacyCells.length > 0 ? newLegacyCells : undefined,
   };
 
   // Regenerate topology if in topology mode (unless skipped for batch operations)
