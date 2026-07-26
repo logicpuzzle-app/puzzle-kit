@@ -35,6 +35,7 @@ test('generates a seeded Number Place puzzle through the Wasm worker', async ({ 
   page.on('pageerror', (error) => pageErrors.push(error.stack ?? error.message));
   await openNPGenerator(page);
   await expect(page.getByRole('button', { name: 'Random Generate' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Benchmark' })).toHaveCount(0);
   await page.getByRole('checkbox', { name: 'Change / specify seed' }).check();
   await page.getByRole('textbox', { name: 'Seed' }).fill('1');
   await page.getByRole('button', { name: 'Generate', exact: true }).click();

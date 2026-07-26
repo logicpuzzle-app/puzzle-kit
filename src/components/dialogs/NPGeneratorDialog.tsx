@@ -32,7 +32,6 @@ const OPERATION_KEYS: Array<{ value: NpgenOperation; label: string }> = [
   { value: 'solve', label: 'npgen.operation.solve' },
   { value: 'generate', label: 'npgen.operation.generate' },
   { value: 'random', label: 'npgen.operation.random' },
-  { value: 'benchmark', label: 'npgen.operation.benchmark' },
 ];
 
 const BLOCK_KEYS: Array<{ value: NpgenBlockKind; label: string }> = [
@@ -87,7 +86,6 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
   const [options, setOptions] = useState<NpgenOptions>(DEFAULT_NPGEN_OPTIONS);
   const [manualSeed, setManualSeed] = useState(false);
   const [hints, setHints] = useState(20);
-  const [benchmarkCount, setBenchmarkCount] = useState(1);
   const [problemGrid, setProblemGrid] = useState(() => emptyGrid(9));
   const [patternGrid, setPatternGrid] = useState(() => emptyGrid(9));
   const [hiddenGrid, setHiddenGrid] = useState(() => emptyGrid(9));
@@ -98,11 +96,6 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
   const [additionalGroupTexts, setAdditionalGroupTexts] = useState<string[]>([]);
   const [xmlComment, setXmlComment] = useState('');
   const [result, setResult] = useState<NpgenEngineResult | null>(null);
-  const [benchmarkResult, setBenchmarkResult] = useState<{
-    count: number;
-    succeeded: number;
-    elapsedMs: number;
-  } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -166,7 +159,6 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
     setBusy(true);
     setError('');
     setResult(null);
-    setBenchmarkResult(null);
     const controller = new AbortController();
     abortRef.current = controller;
     try {
@@ -174,47 +166,35 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
       if (!manualSeed) {
         updateOptions({ seed: runSeed });
       }
-      if (operation === 'benchmark') {
-        const value = await runNpgenWorker<{
-          count: number;
-          succeeded: number;
-          elapsedMs: number;
-        }>(
-          { type: 'benchmark', count: benchmarkCount, seed: runSeed },
-          controller.signal,
-        );
-        setBenchmarkResult(value);
-      } else {
-        const prepared = effectiveOptions(runSeed);
-        const value =
-          operation === 'solve'
+      const prepared = effectiveOptions(runSeed);
+      const value =
+        operation === 'solve'
+          ? await runNpgenWorker<NpgenEngineResult>(
+              {
+                type: 'solve',
+                options: prepared,
+                problem: problemGrid,
+              },
+              controller.signal,
+            )
+          : operation === 'generate'
             ? await runNpgenWorker<NpgenEngineResult>(
                 {
-                  type: 'solve',
+                  type: 'generate',
                   options: prepared,
-                  problem: problemGrid,
+                  pattern: patternGrid,
+                  hidden: hiddenGrid,
+                  initialSeed: initialSeedGrid.every((value) => value === 0)
+                    ? []
+                    : initialSeedGrid,
                 },
                 controller.signal,
               )
-            : operation === 'generate'
-              ? await runNpgenWorker<NpgenEngineResult>(
-                  {
-                    type: 'generate',
-                    options: prepared,
-                    pattern: patternGrid,
-                    hidden: hiddenGrid,
-                    initialSeed: initialSeedGrid.every((value) => value === 0)
-                      ? []
-                      : initialSeedGrid,
-                  },
-                  controller.signal,
-                )
-              : await runNpgenWorker<NpgenEngineResult>(
-                  { type: 'random', options: prepared, hints },
-                  controller.signal,
-                );
-        setResult(value);
-      }
+            : await runNpgenWorker<NpgenEngineResult>(
+                { type: 'random', options: prepared, hints },
+                controller.signal,
+              );
+      setResult(value);
     } catch (reason) {
       if (!(reason instanceof DOMException && reason.name === 'AbortError')) {
         setError(reason instanceof Error ? reason.message : String(reason));
@@ -594,7 +574,7 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
               {t('npgen.readBoard', 'Read current puzzle-kit board')}
             </button>
 
-            {operation !== 'solve' && operation !== 'benchmark' && (
+            {operation !== 'solve' && (
               <>
                 <h3 className="font-medium text-sm border-b pb-1 pt-2">
                   {t('npgen.generation', 'Generation')}
@@ -801,23 +781,7 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
                 {t('npgen.randomHint', 'Run the generator to create a symmetric hint pattern.')}
               </div>
             )}
-            {operation === 'benchmark' && (
-              <div className="space-y-3">
-                <Field label={t('npgen.benchmarkCount', 'Puzzle count')}>
-                  <input
-                    type="number"
-                    min={1}
-                    className="input-office w-full"
-                    value={benchmarkCount}
-                    onChange={(event) => setBenchmarkCount(Number(event.target.value))}
-                  />
-                </Field>
-                <p className="text-xs text-office-text-secondary">
-                  {t('npgen.benchmarkHint', 'Runs the original 9×9 / 20-hint benchmark with one continuous random stream.')}
-                </p>
-              </div>
-            )}
-            {result && operation !== 'benchmark' && (
+            {result && (
               <div className="space-y-2">
                 <div className="grid grid-cols-2 gap-2 mb-2 text-sm">
                   <div className="bg-gray-50 border p-2">
@@ -835,13 +799,6 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
                   blockLabels={result.blockLabels}
                   diagonal={result.diagonal}
                 />
-              </div>
-            )}
-            {benchmarkResult && (
-              <div className="border bg-gray-50 p-4 text-sm space-y-1">
-                <div>{t('npgen.succeeded', 'Succeeded')}: {benchmarkResult.succeeded}/{benchmarkResult.count}</div>
-                <div>{t('npgen.elapsed', 'Elapsed')}: {benchmarkResult.elapsedMs.toFixed(1)} ms</div>
-                <div>{t('npgen.perPuzzle', 'Per puzzle')}: {(benchmarkResult.elapsedMs / benchmarkResult.count).toFixed(1)} ms</div>
               </div>
             )}
             {error && (
@@ -936,7 +893,7 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
 
         <div className="border-t border-office-border p-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex gap-2">
-            {result && operation !== 'benchmark' && (
+            {result && (
               <>
                 <button type="button" className="btn-office" onClick={() => applyResult(false)}>
                   {t('npgen.applyProblem', 'Apply problem to puzzle-kit')}
@@ -956,9 +913,7 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
               <button type="button" className="btn-office-primary min-w-28" onClick={() => void run()}>
                 {operation === 'solve'
                   ? t('npgen.runSolve', 'Solve / evaluate')
-                  : operation === 'benchmark'
-                    ? t('npgen.runBenchmark', 'Run benchmark')
-                    : t('npgen.runGenerate', 'Generate')}
+                  : t('npgen.runGenerate', 'Generate')}
               </button>
             )}
           </div>

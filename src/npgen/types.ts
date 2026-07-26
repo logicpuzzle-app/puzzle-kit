@@ -10,7 +10,7 @@ export const NPGEN_TECHNIQUES = [
 
 export const NPGEN_UNIQUENESS = ['vh', 'cell', 'block'] as const;
 
-export type NpgenOperation = 'solve' | 'generate' | 'random' | 'benchmark';
+export type NpgenOperation = 'solve' | 'generate' | 'random';
 export type NpgenBlockKind = 'default' | 'rectangle' | 'random' | 'custom';
 export type NpgenSymmetry = 'rot4' | 'rot2' | 'mirror-h' | 'mirror-v' | 'none';
 export type NpgenAnswerKind =
