@@ -20,6 +20,7 @@ import {
   type NpgenSymmetry,
   type NpgenXmlPuzzle,
 } from '../../npgen/types';
+import { createRandomNpgenSeed } from '../../npgen/seed';
 import { NPGeneratorGridEditor } from './NPGeneratorGridEditor';
 
 interface NPGeneratorDialogProps {
@@ -84,6 +85,7 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
   const abortRef = useRef<AbortController | null>(null);
   const [operation, setOperation] = useState<NpgenOperation>('random');
   const [options, setOptions] = useState<NpgenOptions>(DEFAULT_NPGEN_OPTIONS);
+  const [manualSeed, setManualSeed] = useState(false);
   const [hints, setHints] = useState(20);
   const [benchmarkCount, setBenchmarkCount] = useState(1);
   const [problemGrid, setProblemGrid] = useState(() => emptyGrid(9));
@@ -148,8 +150,9 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
     setResult(null);
   };
 
-  const effectiveOptions = (): NpgenOptions => ({
+  const effectiveOptions = (seed: string): NpgenOptions => ({
     ...options,
+    seed,
     blockLabels:
       options.blockKind === 'custom'
         ? parseNpgenGrid(blocksText, options.size)
@@ -167,18 +170,22 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
     const controller = new AbortController();
     abortRef.current = controller;
     try {
+      const runSeed = manualSeed ? options.seed : createRandomNpgenSeed();
+      if (!manualSeed) {
+        updateOptions({ seed: runSeed });
+      }
       if (operation === 'benchmark') {
         const value = await runNpgenWorker<{
           count: number;
           succeeded: number;
           elapsedMs: number;
         }>(
-          { type: 'benchmark', count: benchmarkCount, seed: options.seed },
+          { type: 'benchmark', count: benchmarkCount, seed: runSeed },
           controller.signal,
         );
         setBenchmarkResult(value);
       } else {
-        const prepared = effectiveOptions();
+        const prepared = effectiveOptions(runSeed);
         const value =
           operation === 'solve'
             ? await runNpgenWorker<NpgenEngineResult>(
@@ -430,10 +437,24 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
                 <input
                   className="input-office w-full"
                   value={options.seed}
+                  disabled={!manualSeed}
                   onChange={(event) => updateOptions({ seed: event.target.value })}
                 />
               </Field>
             </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={manualSeed}
+                onChange={(event) => setManualSeed(event.target.checked)}
+              />
+              {t('npgen.manualSeed', 'Change / specify seed')}
+            </label>
+            {!manualSeed && (
+              <p className="text-[11px] text-office-text-secondary">
+                {t('npgen.randomSeedHint', 'A new random seed is used for every run.')}
+              </p>
+            )}
             <Field label={t('npgen.blocks', 'Blocks')}>
               <select
                 className="input-office w-full"
@@ -642,6 +663,18 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
                       <option key={value} value={value}>{value}</option>
                     ))}
                   </select>
+                </Field>
+                <Field label={t('npgen.retryLimit', 'Retry limit')}>
+                  <input
+                    type="number"
+                    min={1}
+                    max={100000}
+                    className="input-office w-full"
+                    value={options.retryLimit}
+                    onChange={(event) =>
+                      updateOptions({ retryLimit: Number(event.target.value) })
+                    }
+                  />
                 </Field>
               </>
             )}

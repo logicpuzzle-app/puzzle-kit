@@ -51,9 +51,9 @@ export function benchmark(count: number, seed: bigint): number;
 
 export function format_npgen_xml(size: number, pattern: Int32Array, hidden: Int32Array, problem: Int32Array, solution: Int32Array, block_labels: Int32Array, vertical: boolean, horizontal: boolean, diagonal: boolean, default_block: boolean, difficulty: number, comment: string): string;
 
-export function generate_puzzle(size: number, pattern: Int32Array, hidden: Int32Array, initial_seed: Int32Array, block_kind: number, block_width: number, block_height: number, block_labels: Int32Array, additional_group_labels: Int32Array, vertical: boolean, horizontal: boolean, diagonal: boolean, diagonal_last: boolean, seed: bigint, technique_mask: number, uniqueness_mask: number, dp_min: number, dp_max: number, forbidden: number): WasmEngineResult;
+export function generate_puzzle(size: number, pattern: Int32Array, hidden: Int32Array, initial_seed: Int32Array, block_kind: number, block_width: number, block_height: number, block_labels: Int32Array, additional_group_labels: Int32Array, vertical: boolean, horizontal: boolean, diagonal: boolean, diagonal_last: boolean, seed: bigint, technique_mask: number, uniqueness_mask: number, dp_min: number, dp_max: number, forbidden: number, retry_limit: number): WasmEngineResult;
 
-export function generate_random_puzzle(size: number, hints: number, symmetry: number, block_kind: number, block_width: number, block_height: number, block_labels: Int32Array, additional_group_labels: Int32Array, vertical: boolean, horizontal: boolean, diagonal: boolean, diagonal_last: boolean, seed: bigint, technique_mask: number, uniqueness_mask: number, dp_min: number, dp_max: number, forbidden: number): WasmEngineResult;
+export function generate_random_puzzle(size: number, hints: number, symmetry: number, block_kind: number, block_width: number, block_height: number, block_labels: Int32Array, additional_group_labels: Int32Array, vertical: boolean, horizontal: boolean, diagonal: boolean, diagonal_last: boolean, seed: bigint, technique_mask: number, uniqueness_mask: number, dp_min: number, dp_max: number, forbidden: number, retry_limit: number): WasmEngineResult;
 
 export function parse_npgen_xml(xml: string): WasmXmlPuzzle;
 
@@ -76,8 +76,8 @@ export interface InitOutput {
     readonly wasmengineresult_block_labels: (a: number) => [number, number];
     readonly wasmengineresult_group_labels: (a: number) => [number, number];
     readonly solve_puzzle: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number, m: number, n: number, o: bigint, p: number, q: number) => [number, number, number];
-    readonly generate_puzzle: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number, m: number, n: number, o: number, p: number, q: number, r: number, s: bigint, t: number, u: number, v: number, w: number, x: number) => [number, number, number];
-    readonly generate_random_puzzle: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number, m: number, n: number, o: bigint, p: number, q: number, r: number, s: number, t: number) => [number, number, number];
+    readonly generate_puzzle: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number, m: number, n: number, o: number, p: number, q: number, r: number, s: bigint, t: number, u: number, v: number, w: number, x: number, y: number) => [number, number, number];
+    readonly generate_random_puzzle: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number, m: number, n: number, o: bigint, p: number, q: number, r: number, s: number, t: number, u: number) => [number, number, number];
     readonly benchmark: (a: number, b: bigint) => [number, number, number];
     readonly __wbg_wasmxmlpuzzle_free: (a: number, b: number) => void;
     readonly wasmxmlpuzzle_size: (a: number) => number;

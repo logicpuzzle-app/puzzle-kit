@@ -35,6 +35,7 @@ test('generates a seeded Number Place puzzle through the Wasm worker', async ({ 
   page.on('pageerror', (error) => pageErrors.push(error.stack ?? error.message));
   await openNPGenerator(page);
   await expect(page.getByRole('button', { name: 'Random Generate' })).toBeVisible();
+  await page.getByRole('checkbox', { name: 'Change / specify seed' }).check();
   await page.getByRole('textbox', { name: 'Seed' }).fill('1');
   await page.getByRole('button', { name: 'Generate', exact: true }).click();
 
@@ -51,16 +52,28 @@ test('generates a seeded Number Place puzzle through the Wasm worker', async ({ 
 
 test('generates with the updated rotational symmetry modes', async ({ page }) => {
   await openNPGenerator(page);
+  const seed = page.getByRole('textbox', { name: 'Seed' });
+  await expect(seed).toBeDisabled();
+  const initialSeed = await seed.inputValue();
   await page.getByRole('combobox', { name: 'Symmetry' }).selectOption('rot2');
-  await page.getByRole('textbox', { name: 'Seed' }).fill('1');
   await page.getByRole('button', { name: 'Generate', exact: true }).click();
+  await expect.poll(() => seed.inputValue()).not.toBe(initialSeed);
   await expect(page.getByText(/Result: Unique solution/)).toBeVisible({
+    timeout: 30_000,
+  });
+  const firstRunSeed = await seed.inputValue();
+  await page.getByRole('button', { name: 'Generate', exact: true }).click();
+  await expect.poll(() => seed.inputValue()).not.toBe(firstRunSeed);
+  await expect(page.getByRole('button', { name: 'Generate', exact: true })).toBeVisible({
     timeout: 30_000,
   });
 });
 
 test('edits problems, hint patterns, and fixed numbers on the GUI board', async ({ page }) => {
   await openNPGenerator(page);
+  await expect(page.getByRole('spinbutton', { name: 'Retry limit' })).toHaveValue('100');
+  await page.getByRole('spinbutton', { name: 'Retry limit' }).fill('25');
+  await expect(page.getByRole('spinbutton', { name: 'Retry limit' })).toHaveValue('25');
 
   await page.getByRole('button', { name: 'Solve / Evaluate' }).click();
   const problemGrid = page.getByRole('grid', { name: 'Problem grid' });

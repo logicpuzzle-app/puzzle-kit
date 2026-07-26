@@ -155,6 +155,7 @@ scope.onmessage = async (event: MessageEvent<NpgenWorkerRequest>) => {
           request.options.difficultyMin,
           request.options.difficultyMax,
           request.options.forbidden,
+          request.options.retryLimit,
         ),
       );
     } else if (request.type === 'random') {
@@ -179,6 +180,7 @@ scope.onmessage = async (event: MessageEvent<NpgenWorkerRequest>) => {
           request.options.difficultyMin,
           request.options.difficultyMax,
           request.options.forbidden,
+          request.options.retryLimit,
         ),
       );
     } else if (request.type === 'benchmark') {

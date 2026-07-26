@@ -359,9 +359,10 @@ export function format_npgen_xml(size, pattern, hidden, problem, solution, block
  * @param {number} dp_min
  * @param {number} dp_max
  * @param {number} forbidden
+ * @param {number} retry_limit
  * @returns {WasmEngineResult}
  */
-export function generate_puzzle(size, pattern, hidden, initial_seed, block_kind, block_width, block_height, block_labels, additional_group_labels, vertical, horizontal, diagonal, diagonal_last, seed, technique_mask, uniqueness_mask, dp_min, dp_max, forbidden) {
+export function generate_puzzle(size, pattern, hidden, initial_seed, block_kind, block_width, block_height, block_labels, additional_group_labels, vertical, horizontal, diagonal, diagonal_last, seed, technique_mask, uniqueness_mask, dp_min, dp_max, forbidden, retry_limit) {
     const ptr0 = passArray32ToWasm0(pattern, wasm.__wbindgen_malloc);
     const len0 = WASM_VECTOR_LEN;
     const ptr1 = passArray32ToWasm0(hidden, wasm.__wbindgen_malloc);
@@ -372,7 +373,7 @@ export function generate_puzzle(size, pattern, hidden, initial_seed, block_kind,
     const len3 = WASM_VECTOR_LEN;
     const ptr4 = passArray32ToWasm0(additional_group_labels, wasm.__wbindgen_malloc);
     const len4 = WASM_VECTOR_LEN;
-    const ret = wasm.generate_puzzle(size, ptr0, len0, ptr1, len1, ptr2, len2, block_kind, block_width, block_height, ptr3, len3, ptr4, len4, vertical, horizontal, diagonal, diagonal_last, seed, technique_mask, uniqueness_mask, dp_min, dp_max, forbidden);
+    const ret = wasm.generate_puzzle(size, ptr0, len0, ptr1, len1, ptr2, len2, block_kind, block_width, block_height, ptr3, len3, ptr4, len4, vertical, horizontal, diagonal, diagonal_last, seed, technique_mask, uniqueness_mask, dp_min, dp_max, forbidden, retry_limit);
     if (ret[2]) {
         throw takeFromExternrefTable0(ret[1]);
     }
@@ -398,14 +399,15 @@ export function generate_puzzle(size, pattern, hidden, initial_seed, block_kind,
  * @param {number} dp_min
  * @param {number} dp_max
  * @param {number} forbidden
+ * @param {number} retry_limit
  * @returns {WasmEngineResult}
  */
-export function generate_random_puzzle(size, hints, symmetry, block_kind, block_width, block_height, block_labels, additional_group_labels, vertical, horizontal, diagonal, diagonal_last, seed, technique_mask, uniqueness_mask, dp_min, dp_max, forbidden) {
+export function generate_random_puzzle(size, hints, symmetry, block_kind, block_width, block_height, block_labels, additional_group_labels, vertical, horizontal, diagonal, diagonal_last, seed, technique_mask, uniqueness_mask, dp_min, dp_max, forbidden, retry_limit) {
     const ptr0 = passArray32ToWasm0(block_labels, wasm.__wbindgen_malloc);
     const len0 = WASM_VECTOR_LEN;
     const ptr1 = passArray32ToWasm0(additional_group_labels, wasm.__wbindgen_malloc);
     const len1 = WASM_VECTOR_LEN;
-    const ret = wasm.generate_random_puzzle(size, hints, symmetry, block_kind, block_width, block_height, ptr0, len0, ptr1, len1, vertical, horizontal, diagonal, diagonal_last, seed, technique_mask, uniqueness_mask, dp_min, dp_max, forbidden);
+    const ret = wasm.generate_random_puzzle(size, hints, symmetry, block_kind, block_width, block_height, ptr0, len0, ptr1, len1, vertical, horizontal, diagonal, diagonal_last, seed, technique_mask, uniqueness_mask, dp_min, dp_max, forbidden, retry_limit);
     if (ret[2]) {
         throw takeFromExternrefTable0(ret[1]);
     }

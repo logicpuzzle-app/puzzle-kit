@@ -38,6 +38,7 @@ export interface NpgenOptions {
   difficultyMin: number;
   difficultyMax: number;
   forbidden: number;
+  retryLimit: number;
 }
 
 export interface NpgenEngineResult {
@@ -139,4 +140,5 @@ export const DEFAULT_NPGEN_OPTIONS: NpgenOptions = {
   difficultyMin: 0,
   difficultyMax: -1,
   forbidden: -1,
+  retryLimit: 100,
 };

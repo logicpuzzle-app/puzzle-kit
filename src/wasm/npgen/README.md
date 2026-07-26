@@ -37,7 +37,8 @@ The JavaScript caller supplies flat `Int32Array` grids, block mode/dimensions
 or custom labels, additional constraint groups, vertical/horizontal switches,
 diagonal mode and ordering, an optional initial solution seed, the
 Java-compatible random seed, solver/uniqueness bitmasks, difficulty bounds,
-and the forbidden number. Long-running calls should be made from a Web Worker.
+the forbidden number, and the generation retry limit. Long-running calls
+should be made from a Web Worker.
 
 `solve`, `generate`, and `random` accept `--use <list>` and `--unique <list>`.
 `generate` and `random` additionally accept `--dp-min N` and `--dp-max N`;
