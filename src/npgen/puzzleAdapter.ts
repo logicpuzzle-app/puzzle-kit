@@ -68,7 +68,15 @@ function blockBoundaries(
 }
 
 export function isStandardNineByNine(result: NpgenEngineResult): boolean {
-  if (result.problem.length !== 81 || result.diagonal) return false;
+  if (
+    result.problem.length !== 81 ||
+    !result.vertical ||
+    !result.horizontal ||
+    result.diagonal ||
+    result.groupLabels.length > 0
+  ) {
+    return false;
+  }
   return result.blockLabels.every((label, index) => {
     const row = Math.floor(index / 9);
     const col = index % 9;

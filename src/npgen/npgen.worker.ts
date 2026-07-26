@@ -36,6 +36,13 @@ const answerKinds: NpgenAnswerKind[] = [
   'irregular',
   'not-judged',
 ];
+const symmetries = {
+  rot4: 0,
+  rot2: 1,
+  'mirror-h': 2,
+  'mirror-v': 3,
+  none: 4,
+} as const;
 
 function engineResult(result: WasmEngineResult): NpgenEngineResult {
   try {
@@ -44,8 +51,11 @@ function engineResult(result: WasmEngineResult): NpgenEngineResult {
       problem: Array.from(result.problem()),
       solution: Array.from(result.solution()),
       blockLabels: Array.from(result.block_labels()),
+      groupLabels: Array.from(result.group_labels()),
       difficulty: result.difficulty,
       answerKind: answerKinds[result.answer_kind] ?? 'not-judged',
+      vertical: result.vertical,
+      horizontal: result.horizontal,
       diagonal: result.diagonal,
       defaultBlock: result.default_block,
     };
@@ -63,8 +73,15 @@ function xmlPuzzle(result: WasmXmlPuzzle): NpgenXmlPuzzle {
       problem: Array.from(result.problem()),
       solution: Array.from(result.solution()),
       blockLabels: Array.from(result.block_labels()),
+      groupLabels: Array.from(result.group_labels()),
+      groupCount: result.group_count,
+      initialSeed: Array.from(result.seed()),
       difficulty: result.difficulty,
+      vertical: result.vertical,
+      horizontal: result.horizontal,
       diagonal: result.diagonal,
+      hasHint: result.has_hint,
+      comment: result.comment,
       defaultBlock: result.default_block,
     };
   } finally {
@@ -79,7 +96,11 @@ function common(options: NpgenOptions) {
     options.blockWidth,
     options.blockHeight,
     new Int32Array(options.blockLabels),
+    new Int32Array(options.additionalGroupLabels),
+    options.vertical,
+    options.horizontal,
     options.diagonal,
+    options.diagonalLast,
     BigInt(options.seed),
     options.techniqueMask,
     options.uniquenessMask,
@@ -105,6 +126,10 @@ scope.onmessage = async (event: MessageEvent<NpgenWorkerRequest>) => {
           args[6],
           args[7],
           args[8],
+          args[9],
+          args[10],
+          args[11],
+          args[12],
         ),
       );
     } else if (request.type === 'generate') {
@@ -114,6 +139,7 @@ scope.onmessage = async (event: MessageEvent<NpgenWorkerRequest>) => {
           args[0],
           new Int32Array(request.pattern),
           new Int32Array(request.hidden),
+          new Int32Array(request.initialSeed),
           args[1],
           args[2],
           args[3],
@@ -122,6 +148,10 @@ scope.onmessage = async (event: MessageEvent<NpgenWorkerRequest>) => {
           args[6],
           args[7],
           args[8],
+          args[9],
+          args[10],
+          args[11],
+          args[12],
           request.options.difficultyMin,
           request.options.difficultyMax,
           request.options.forbidden,
@@ -133,6 +163,7 @@ scope.onmessage = async (event: MessageEvent<NpgenWorkerRequest>) => {
         generate_random_puzzle(
           args[0],
           request.hints,
+          symmetries[request.options.symmetry],
           args[1],
           args[2],
           args[3],
@@ -141,6 +172,10 @@ scope.onmessage = async (event: MessageEvent<NpgenWorkerRequest>) => {
           args[6],
           args[7],
           args[8],
+          args[9],
+          args[10],
+          args[11],
+          args[12],
           request.options.difficultyMin,
           request.options.difficultyMax,
           request.options.forbidden,
@@ -166,9 +201,12 @@ scope.onmessage = async (event: MessageEvent<NpgenWorkerRequest>) => {
           new Int32Array(value.problem),
           new Int32Array(value.solution),
           new Int32Array(value.blockLabels),
+          value.vertical,
+          value.horizontal,
           value.diagonal,
           value.defaultBlock,
           value.difficulty,
+          value.comment,
         ),
       };
     }

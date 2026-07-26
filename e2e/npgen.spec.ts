@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { resolve } from 'node:path';
 
 async function openNPGenerator(page: Page) {
   await page.addInitScript(() => {
@@ -48,6 +49,16 @@ test('generates a seeded Number Place puzzle through the Wasm worker', async ({ 
   await expect(page.getByText(/Ready/)).toBeVisible();
 });
 
+test('generates with the updated rotational symmetry modes', async ({ page }) => {
+  await openNPGenerator(page);
+  await page.getByRole('combobox', { name: 'Symmetry' }).selectOption('rot2');
+  await page.getByRole('textbox', { name: 'Seed' }).fill('1');
+  await page.getByRole('button', { name: 'Generate', exact: true }).click();
+  await expect(page.getByText(/Result: Unique solution/)).toBeVisible({
+    timeout: 30_000,
+  });
+});
+
 test('edits problems, hint patterns, and fixed numbers on the GUI board', async ({ page }) => {
   await openNPGenerator(page);
 
@@ -91,4 +102,50 @@ test('edits problems, hint patterns, and fixed numbers on the GUI board', async 
       name: 'Fixed / hidden numbers (optional): 1, 1, 7',
     }),
   ).toBeVisible();
+});
+
+test('imports updated XML constraints and uses an initial solution seed', async ({ page }) => {
+  await openNPGenerator(page);
+  const fixture = resolve(
+    process.cwd(),
+    '../../Puzzle/npgenerator/java/testdata/xml-seed.xml',
+  );
+  await page.locator('input[type="file"][accept*="xml"]').setInputFiles(fixture);
+
+  await expect(
+    page.getByRole('button', { name: 'Solve / Evaluate', exact: true }),
+  ).toHaveClass(/border-office-accent/);
+  await expect(page.getByRole('checkbox', { name: 'Column constraints' })).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: 'Row constraints' })).toBeChecked();
+
+  await page.getByRole('button', { name: 'Pattern Generate' }).click();
+  await page.getByRole('button', { name: 'Initial solution seed (optional)' }).click();
+  await expect(
+    page.getByRole('gridcell', {
+      name: 'Initial solution seed (optional): 1, 1, 2',
+    }),
+  ).toBeVisible();
+
+  await page.getByRole('button', { name: 'Generate', exact: true }).click();
+  await expect(page.getByText(/Result: Unique solution/)).toBeVisible({
+    timeout: 30_000,
+  });
+});
+
+test('imports every XML constraint group in declaration order', async ({ page }) => {
+  await openNPGenerator(page);
+  const fixture = resolve(
+    process.cwd(),
+    '../../Puzzle/npgenerator/java/testdata/xml-multiple-groups.xml',
+  );
+  await page.locator('input[type="file"][accept*="xml"]').setInputFiles(fixture);
+
+  await expect(page.getByRole('checkbox', { name: 'Column constraints' })).not.toBeChecked();
+  await expect(page.getByRole('checkbox', { name: 'Row constraints' })).not.toBeChecked();
+  await expect(page.getByRole('textbox', { name: /Constraint group/ })).toHaveCount(2);
+
+  await page.getByRole('button', { name: 'Solve / evaluate', exact: true }).click();
+  await expect(page.getByText(/Result: Unique solution/)).toBeVisible({
+    timeout: 30_000,
+  });
 });
