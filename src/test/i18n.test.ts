@@ -108,7 +108,7 @@ describe('translations', () => {
       nakedTriple: 'ネイキッドトリプル（三国同盟）',
       hiddenTriple: '隠れトリプル',
       xWing: 'X-Wing（井桁）',
-      swordfish: 'Swordfish（ソードフィッシュ）',
+      swordfish: 'Swordfish',
     });
   });
 });

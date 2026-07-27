@@ -1402,7 +1402,7 @@ export const ja = {
   'npgen.technique.naked-triple': 'ネイキッドトリプル（三国同盟）',
   'npgen.technique.hidden-triple': '隠れトリプル',
   'npgen.technique.x-wing': 'X-Wing（井桁）',
-  'npgen.technique.swordfish': 'Swordfish（ソードフィッシュ）',
+  'npgen.technique.swordfish': 'Swordfish',
   'npgen.uniqueness': '一意性判定',
   'npgen.unique.vh': '縦・横',
   'npgen.unique.cell': 'セル',
