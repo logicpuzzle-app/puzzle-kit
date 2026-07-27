@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig, configDefaults } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 
@@ -37,5 +37,9 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
+    // e2e/ holds Playwright specs. vitest picks them up by default and they fail with
+    // "Playwright Test did not expect test() to be called here"; they run via
+    // `playwright test` instead.
+    exclude: [...configDefaults.exclude, 'e2e/**'],
   },
 })
