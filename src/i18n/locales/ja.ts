@@ -836,6 +836,8 @@ export const ja = {
   'grid.gridColor': 'グリッド色',
   'grid.backgroundColor': '背景色',
   'grid.disabledCellColor': '無効セルの色',
+  'grid.cursorCellColor': '選択カーソルの色',
+  'grid.cursorCellThickness': '選択カーソルの太さ',
 
   // Common
   'common.apply': '適用',

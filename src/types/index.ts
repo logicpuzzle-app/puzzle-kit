@@ -626,6 +626,10 @@ export interface ToolSettings {
   currentCategory: ToolCategory;
   color: string;
   secondaryColor: string;
+  /** Outline colour of the selected-cell cursor. */
+  cursorCellColor: string;
+  /** Outline width of the selected-cell cursor, in SVG units before zoom. */
+  cursorCellThickness: number;
   lineStyle: LineStyle;
   lineThickness: LineThickness;
   symbolSize: 'largest' | 'large' | 'medium' | 'small';

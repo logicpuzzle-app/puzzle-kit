@@ -14,6 +14,7 @@
 
 import React from 'react';
 import type { Point } from '../../types';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
 
 interface CanvasCursorsProps {
   canvas: {
@@ -53,6 +54,14 @@ interface CanvasCursorsProps {
   sculptHoverPolygons: { id: string; points: string }[] | null;
 }
 
+/** Apply an alpha channel to a #rrggbb colour so the cursor keeps its translucent fill. */
+function withAlpha(hex: string, alpha: number): string {
+  const m = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(hex.trim());
+  if (!m) return hex;
+  const [r, g, b] = [m[1], m[2], m[3]].map((h) => parseInt(h, 16));
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
   canvas,
   hoverCellPolygon,
@@ -74,6 +83,12 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
   splitHoverVertexPos,
   sculptHoverPolygons,
 }) => {
+  const { toolSettings } = usePuzzleStore();
+  const cursorColor = toolSettings.cursorCellColor ?? '#ff8c00';
+  const cursorThickness = toolSettings.cursorCellThickness ?? 3;
+  const cursorFill = withAlpha(cursorColor, 0.25);
+  const cursorStroke = withAlpha(cursorColor, 0.95);
+
   return (
     <>
       {/* Cell cursor for number tools (Excel-like highlight) */}
@@ -89,9 +104,9 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
         {cursorCellPolygon && (
           <polygon
             points={cursorCellPolygon}
-            fill="rgba(255, 140, 0, 0.25)"
-            stroke="rgba(255, 140, 0, 0.95)"
-            strokeWidth={3 / canvas.zoom}
+            fill={cursorFill}
+            stroke={cursorStroke}
+            strokeWidth={cursorThickness / canvas.zoom}
             pointerEvents="none"
           />
         )}
@@ -102,9 +117,9 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
             y={cursorCellRect.y}
             width={cursorCellRect.size}
             height={cursorCellRect.size}
-            fill="rgba(255, 140, 0, 0.25)"
-            stroke="rgba(255, 140, 0, 0.95)"
-            strokeWidth={3 / canvas.zoom}
+            fill={cursorFill}
+            stroke={cursorStroke}
+            strokeWidth={cursorThickness / canvas.zoom}
             pointerEvents="none"
           />
         )}
