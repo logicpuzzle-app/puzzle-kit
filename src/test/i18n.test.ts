@@ -104,7 +104,7 @@ describe('translations', () => {
     }).toEqual({
       localization: 'ロック候補（ブロック・ライン）',
       nakedPair: 'ネイキッドペア（二国同盟）',
-      hiddenPair: '隠れペア',
+      hiddenPair: '隠れペア(予約)',
       nakedTriple: 'ネイキッドトリプル（三国同盟）',
       hiddenTriple: '隠れトリプル',
       xWing: 'X-Wing（井桁）',

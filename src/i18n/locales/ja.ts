@@ -1398,7 +1398,7 @@ export const ja = {
   'npgen.solverOptions': '使用手筋',
   'npgen.technique.localization': 'ロック候補（ブロック・ライン）',
   'npgen.technique.naked-pair': 'ネイキッドペア（二国同盟）',
-  'npgen.technique.hidden-pair': '隠れペア',
+  'npgen.technique.hidden-pair': '隠れペア(予約)',
   'npgen.technique.naked-triple': 'ネイキッドトリプル（三国同盟）',
   'npgen.technique.hidden-triple': '隠れトリプル',
   'npgen.technique.x-wing': 'X-Wing（井桁）',
