@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePuzzleStoreApi } from '../../store/puzzleStoreContext';
 import { runNpgenWorker } from '../../npgen/client';
+import { formatDifficulty } from '../../npgen/difficulty';
 import {
   detectRectangularBlocks,
   formatNpgenGrid,
@@ -796,7 +797,10 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
               <div className="space-y-2">
                 <div className="grid grid-cols-2 gap-2 mb-2 text-sm">
                   <div className="bg-gray-50 border p-2">
-                    {t('npgen.difficulty', 'Difficulty')}: {Number.isNaN(result.difficulty) ? '—' : result.difficulty}
+                    {t('npgen.difficulty', 'Difficulty')}:{' '}
+                    {Number.isNaN(result.difficulty)
+                      ? '—'
+                      : formatDifficulty(result.difficulty, t)}
                   </div>
                   <div className="bg-gray-50 border p-2">
                     {t('npgen.answerKind', 'Result')}: {t(`npgen.answer.${result.answerKind}`, result.answerKind)}
