@@ -1,5 +1,6 @@
 import React from 'react';
 import { PaintMenuBar, type PaintMenuBarProps } from './PaintMenuBar';
+import { WorkspaceLayout } from '../layouts/WorkspaceLayout';
 import { PaintCanvasArea, type PaintCanvasAreaProps } from './PaintCanvasArea';
 import {
   PaintPrimaryToolbar,
@@ -54,14 +55,21 @@ export const PaintAppDesktopLayout: React.FC<PaintAppDesktopLayoutProps> = ({
           : 'flex flex-col min-h-[420px] sm:min-h-[520px] h-[70vh] max-h-[820px] bg-white border border-office-border rounded-lg shadow-lg overflow-hidden'
       }
     >
-      <header className="flex flex-col border-b border-office-border bg-white">
-        <PaintMenuBar {...menuBarProps} />
-        <PaintPrimaryToolbar {...primaryToolbarProps} />
-        {imageAdjustToolbarProps && <PaintImageAdjustToolbar {...imageAdjustToolbarProps} />}
-        {gridSettingsToolbarProps && <PaintGridSettingsToolbar {...gridSettingsToolbarProps} />}
-      </header>
-      <PaintCanvasArea {...canvasAreaProps} />
-      <PaintGenreToolbarDesktop {...genreToolbarProps} />
+      <WorkspaceLayout
+        maxWidthClassName="max-w-none"
+        centered={false}
+        header={(
+          <header className="flex flex-col border-b border-office-border bg-white">
+            <PaintMenuBar {...menuBarProps} />
+            <PaintPrimaryToolbar {...primaryToolbarProps} />
+            {imageAdjustToolbarProps && <PaintImageAdjustToolbar {...imageAdjustToolbarProps} />}
+            {gridSettingsToolbarProps && <PaintGridSettingsToolbar {...gridSettingsToolbarProps} />}
+          </header>
+        )}
+        footer={<PaintGenreToolbarDesktop {...genreToolbarProps} />}
+      >
+        <PaintCanvasArea {...canvasAreaProps} />
+      </WorkspaceLayout>
     </div>
   </div>
 );
@@ -105,23 +113,34 @@ export const PaintAppMobileLayout: React.FC<PaintAppMobileLayoutProps> = ({
           : 'flex flex-col min-h-[520px] h-[78vh] bg-white border border-office-border rounded-lg shadow-lg overflow-hidden'
       }
     >
-      <header className="flex flex-col border-b border-office-border bg-white">
-        <PaintMenuBar {...menuBarProps} />
-        <div className="flex flex-wrap items-center gap-2 px-2 py-2 border-t border-office-border bg-white">
-          <PaintMediaControls {...mediaControlsProps} />
-          <PaintTrialControls {...trialControlsProps} />
-        </div>
-        {imageAdjustToolbarProps && <PaintImageAdjustToolbar {...imageAdjustToolbarProps} />}
-        {gridSettingsToolbarProps && <PaintGridSettingsToolbar {...gridSettingsToolbarProps} />}
-      </header>
-      <PaintCanvasArea {...canvasAreaProps} />
-      <div className="border-t border-office-border bg-white px-2 py-2">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <PaintAdjustModeControls {...adjustModeControlsProps} size="lg" />
-          <PaintHistoryControls {...historyControlsProps} size="lg" />
-        </div>
-      </div>
-      <PaintGenreToolbarMobile {...genreToolbarProps} />
+      <WorkspaceLayout
+        maxWidthClassName="max-w-none"
+        centered={false}
+        header={(
+          <header className="flex flex-col border-b border-office-border bg-white">
+            <PaintMenuBar {...menuBarProps} />
+            <div className="flex flex-wrap items-center gap-2 px-2 py-2 border-t border-office-border bg-white">
+              <PaintMediaControls {...mediaControlsProps} />
+              <PaintTrialControls {...trialControlsProps} />
+            </div>
+            {imageAdjustToolbarProps && <PaintImageAdjustToolbar {...imageAdjustToolbarProps} />}
+            {gridSettingsToolbarProps && <PaintGridSettingsToolbar {...gridSettingsToolbarProps} />}
+          </header>
+        )}
+        footer={(
+          <>
+            <div className="border-t border-office-border bg-white px-2 py-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <PaintAdjustModeControls {...adjustModeControlsProps} size="lg" />
+                <PaintHistoryControls {...historyControlsProps} size="lg" />
+              </div>
+            </div>
+            <PaintGenreToolbarMobile {...genreToolbarProps} />
+          </>
+        )}
+      >
+        <PaintCanvasArea {...canvasAreaProps} />
+      </WorkspaceLayout>
     </div>
   </div>
 );

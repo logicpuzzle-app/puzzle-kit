@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react';
 import type { ReactNode } from 'react';
 import type { StoreApi, UseBoundStore } from 'zustand';
+import { useStoreWithEqualityFn } from 'zustand/traditional';
 
 import type { PuzzleStore } from './slices/types';
 import { usePuzzleStore as defaultStore } from './puzzleStore';
@@ -21,13 +22,14 @@ export const PuzzleStoreProvider = ({ store, children }: PuzzleStoreProviderProp
 );
 
 export function usePuzzleStore<T = PuzzleStore>(
-  selector?: (state: PuzzleStore) => T
+  selector?: (state: PuzzleStore) => T,
+  equalityFn?: (a: T, b: T) => boolean
 ): T {
   const store = useContext(PuzzleStoreContext) ?? defaultStore;
   if (selector) {
-    return store(selector);
+    return useStoreWithEqualityFn(store, selector, equalityFn);
   }
-  return store((state) => state as unknown as T);
+  return useStoreWithEqualityFn(store, (state) => state as unknown as T);
 }
 
 export function usePuzzleStoreApi(): PuzzleStoreHook {

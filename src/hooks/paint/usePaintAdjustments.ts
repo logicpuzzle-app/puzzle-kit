@@ -20,7 +20,7 @@ type UsePaintAdjustmentsArgs = {
   resizeGrid: (updates: Partial<GridConfig>) => void;
   canvas: { panX: number; panY: number; zoom: number };
   store: PuzzleStoreApi;
-  canvasWrapperRef: React.RefObject<HTMLDivElement>;
+  canvasWrapperRef: React.RefObject<HTMLDivElement | null>;
   getBoardDimensions: () => { width: number; height: number };
   centerBoard: (forceFit: boolean) => void;
 };

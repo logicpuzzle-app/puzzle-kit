@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react';
 import type { ReactNode } from 'react';
 import type { StoreApi, UseBoundStore } from 'zustand';
+import { useStoreWithEqualityFn } from 'zustand/traditional';
 
 import type { ModalStore } from './modalStore';
 import { useModalStore as defaultStore } from './modalStore';
@@ -21,13 +22,14 @@ export const ModalStoreProvider = ({ store, children }: ModalStoreProviderProps)
 );
 
 export function useModalStore<T = ModalStore>(
-  selector?: (state: ModalStore) => T
+  selector?: (state: ModalStore) => T,
+  equalityFn?: (a: T, b: T) => boolean
 ): T {
   const store = useContext(ModalStoreContext) ?? defaultStore;
   if (selector) {
-    return store(selector);
+    return useStoreWithEqualityFn(store, selector, equalityFn);
   }
-  return store((state) => state as unknown as T);
+  return useStoreWithEqualityFn(store, (state) => state as unknown as T);
 }
 
 export function useModalStoreApi(): ModalStoreHook {

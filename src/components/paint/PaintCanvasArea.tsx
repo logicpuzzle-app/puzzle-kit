@@ -12,7 +12,7 @@ type Bounds = {
 
 export type PaintCanvasAreaProps = {
   t: TranslateFn;
-  canvasWrapperRef: React.RefObject<HTMLDivElement>;
+  canvasWrapperRef: React.RefObject<HTMLDivElement | null>;
   boardAdjustMode: boolean;
   hasImage: boolean;
   boardBounds: Bounds;

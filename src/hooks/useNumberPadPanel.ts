@@ -126,8 +126,12 @@ export function useNumberPadPanel({
       return;
     }
     const { position, size } = clampPanelWithinBounds(panelPositionRef.current, panelSizeRef.current);
-    setPanelPosition(position);
-    setPanelSize(size);
+    if (position.x !== panelPositionRef.current.x || position.y !== panelPositionRef.current.y) {
+      setPanelPosition(position);
+    }
+    if (size.width !== panelSizeRef.current.width || size.height !== panelSizeRef.current.height) {
+      setPanelSize(size);
+    }
   }, [show, clampPanelWithinBounds, initializePanelLayout]);
 
   useEffect(() => {
@@ -218,8 +222,12 @@ export function useNumberPadPanel({
   const clampPanel = useCallback(() => {
     if (!panelPositionRef.current) return;
     const { position, size } = clampPanelWithinBounds(panelPositionRef.current, panelSizeRef.current);
-    setPanelPosition(position);
-    setPanelSize(size);
+    if (position.x !== panelPositionRef.current.x || position.y !== panelPositionRef.current.y) {
+      setPanelPosition(position);
+    }
+    if (size.width !== panelSizeRef.current.width || size.height !== panelSizeRef.current.height) {
+      setPanelSize(size);
+    }
   }, [clampPanelWithinBounds]);
 
   return {

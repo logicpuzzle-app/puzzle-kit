@@ -1,12 +1,15 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { shallow } from 'zustand/shallow';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
 import { usePuzzleStore, usePuzzleStoreApi } from '../../store/puzzleStoreContext';
 import { useModalStore, useModalStoreApi } from '../../store/modalStoreContext';
 import { autoSave } from '../../utils/serialization';
+import { useMenuState } from '../../hooks/useMenuState';
 import { NewPuzzleDialog } from '../dialogs/NewPuzzleDialog';
 import { PerformanceTestDialog } from '../dialogs/PerformanceTestDialog';
 import { ShareUrlDialog } from '../dialogs/ShareUrlDialog';
+import { OfficeMenuBar } from './OfficeMenuBar';
 import {
   createExportHandlers,
   createImportHandlers,
@@ -17,12 +20,11 @@ import type { MenuDefinition } from './menu';
 
 export const MenuBar: React.FC = () => {
   const { t } = useTranslation();
-  const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [isNewPuzzleOpen, setIsNewPuzzleOpen] = useState(false);
   const [isPerformanceTestOpen, setIsPerformanceTestOpen] = useState(false);
   const [shareUrlDialogOpen, setShareUrlDialogOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
-  const menuRef = useRef<HTMLDivElement>(null);
+  const { menuRef, activeMenu, setActiveMenu, closeMenu } = useMenuState();
 
   const {
     grid,
@@ -46,14 +48,42 @@ export const MenuBar: React.FC = () => {
     showAnswerLayer,
     toggleProblemLayer,
     toggleAnswerLayer,
-  } = usePuzzleStore();
+  } = usePuzzleStore(
+    (state) => ({
+      grid: state.grid,
+      setGrid: state.setGrid,
+      puzzle: state.puzzle,
+      undo: state.undo,
+      redo: state.redo,
+      clearLayer: state.clearLayer,
+      clearAll: state.clearAll,
+      topology: state.topology,
+      useTopology: state.useTopology,
+      topologyPreset: state.topologyPreset,
+      topologyIntensity: state.topologyIntensity,
+      showConstraintLayer: state.showConstraintLayer,
+      toggleConstraintLayer: state.toggleConstraintLayer,
+      currentSchemaId: state.currentSchemaId,
+      setCurrentSchemaId: state.setCurrentSchemaId,
+      showAdjacency: state.showAdjacency,
+      setShowAdjacency: state.setShowAdjacency,
+      showProblemLayer: state.showProblemLayer,
+      showAnswerLayer: state.showAnswerLayer,
+      toggleProblemLayer: state.toggleProblemLayer,
+      toggleAnswerLayer: state.toggleAnswerLayer,
+    }),
+    shallow
+  );
   const store = usePuzzleStoreApi();
   const modalStore = useModalStoreApi();
 
   // Check if constraint mode is enabled
   const isConstraintEnabled = showConstraintLayer && currentSchemaId !== null && currentSchemaId !== '__custom__';
 
-  const { showShortcuts } = useModalStore();
+  const { showShortcuts } = useModalStore(
+    (state) => ({ showShortcuts: state.showShortcuts }),
+    shallow
+  );
 
   // Auto-save on changes
   useEffect(() => {
@@ -100,7 +130,7 @@ export const MenuBar: React.FC = () => {
   // Create menu definitions
   const menus: MenuDefinition[] = createMenuDefinitions({
     // File menu
-    onNew: () => { setIsNewPuzzleOpen(true); setActiveMenu(null); },
+    onNew: () => { setIsNewPuzzleOpen(true); closeMenu(); },
     onOpen: importHandlers.handleImportJson,
     onSave: exportHandlers.handleExportJson,
     onImportPenpa: importHandlers.handleImportPenpaUrl,
@@ -111,26 +141,26 @@ export const MenuBar: React.FC = () => {
     onExportPng4x: () => exportHandlers.handleExportPngHQ(4),
     onExportSvg: exportHandlers.handleExportSvg,
     onExitToHome: () => {
-      setActiveMenu(null);
+      closeMenu();
       window.location.href = '/';
     },
     // Edit menu
-    onUndo: () => { undo(); setActiveMenu(null); },
-    onRedo: () => { redo(); setActiveMenu(null); },
-    onToggleConstraintMode: () => { toggleConstraintLayer(); setActiveMenu(null); },
-    onClearProblem: () => { clearLayer('problem'); setActiveMenu(null); },
-    onClearAnswer: () => { clearLayer('answer'); setActiveMenu(null); },
-    onClearAll: () => { clearAll(); setActiveMenu(null); },
+    onUndo: () => { undo(); closeMenu(); },
+    onRedo: () => { redo(); closeMenu(); },
+    onToggleConstraintMode: () => { toggleConstraintLayer(); closeMenu(); },
+    onClearProblem: () => { clearLayer('problem'); closeMenu(); },
+    onClearAnswer: () => { clearLayer('answer'); closeMenu(); },
+    onClearAll: () => { clearAll(); closeMenu(); },
     // View menu
-    onToggleGrid: () => { setGrid({ showGrid: !grid.showGrid }); setActiveMenu(null); },
-    onToggleAdjacency: () => { setShowAdjacency(!showAdjacency); setActiveMenu(null); },
-    onToggleProblem: () => { toggleProblemLayer(); setActiveMenu(null); },
-    onToggleAnswer: () => { toggleAnswerLayer(); setActiveMenu(null); },
+    onToggleGrid: () => { setGrid({ showGrid: !grid.showGrid }); closeMenu(); },
+    onToggleAdjacency: () => { setShowAdjacency(!showAdjacency); closeMenu(); },
+    onToggleProblem: () => { toggleProblemLayer(); closeMenu(); },
+    onToggleAnswer: () => { toggleAnswerLayer(); closeMenu(); },
     // Help menu
-    onLanguageJa: () => { i18n.changeLanguage('ja'); setActiveMenu(null); },
-    onLanguageEn: () => { i18n.changeLanguage('en'); setActiveMenu(null); },
-    onShowShortcuts: () => { showShortcuts(); setActiveMenu(null); },
-    onPerformanceTest: () => { setIsPerformanceTestOpen(true); setActiveMenu(null); },
+    onLanguageJa: () => { i18n.changeLanguage('ja'); closeMenu(); },
+    onLanguageEn: () => { i18n.changeLanguage('en'); closeMenu(); },
+    onShowShortcuts: () => { showShortcuts(); closeMenu(); },
+    onPerformanceTest: () => { setIsPerformanceTestOpen(true); closeMenu(); },
     // State for checkmarks
     showConstraintLayer,
     showGrid: grid.showGrid,
@@ -138,18 +168,6 @@ export const MenuBar: React.FC = () => {
     showProblemLayer,
     showAnswerLayer,
   });
-
-  // Click outside to close menu
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setActiveMenu(null);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -181,87 +199,30 @@ export const MenuBar: React.FC = () => {
   }, [undo, redo, grid, puzzle, exportHandlers, importHandlers]);
 
   return (
-    <div
-      ref={menuRef}
-      className="flex items-center bg-office-ribbon border-b border-office-border h-7 px-1"
-    >
-      {/* App icon/title */}
-      <div className="flex items-center px-2 mr-2">
-        <span className={`font-semibold text-sm ${isConstraintEnabled ? 'text-purple-600' : 'text-office-accent'}`}>
-          {t('app.title')}
-        </span>
-      </div>
+    <>
+      <OfficeMenuBar
+        menuRef={menuRef}
+        menus={menus}
+        activeMenu={activeMenu}
+        setActiveMenu={setActiveMenu}
+        className="border-b border-office-border"
+        title={(
+          <span className={`font-semibold text-sm ${isConstraintEnabled ? 'text-purple-600' : 'text-office-accent'}`}>
+            {t('app.title')}
+          </span>
+        )}
+        rightSlot={(
+          <span className="text-xs text-office-text-secondary">
+            {i18n.language === 'ja' ? '日本語' : 'English'}
+          </span>
+        )}
+      />
 
-      {/* Menu items */}
-      {menus.map((menu) => (
-        <div key={menu.labelKey} className="relative">
-          <button
-            className={`px-3 py-1 text-sm hover:bg-office-ribbon-hover transition-colors ${
-              activeMenu === menu.labelKey ? 'bg-office-ribbon-hover' : ''
-            }`}
-            onClick={() =>
-              setActiveMenu(activeMenu === menu.labelKey ? null : menu.labelKey)
-            }
-            onMouseEnter={() => activeMenu && setActiveMenu(menu.labelKey)}
-          >
-            {t(menu.labelKey)}
-          </button>
-
-          {/* Dropdown */}
-          {activeMenu === menu.labelKey && (
-            <div className="absolute top-full left-0 bg-white border border-office-border shadow-lg min-w-[200px] py-1 z-50">
-              {menu.items.map((item, index) =>
-                item.divider ? (
-                  <div
-                    key={index}
-                    className="border-t border-office-border my-1"
-                  />
-                ) : (
-                  <button
-                    key={item.labelKey}
-                    className={`w-full text-left px-4 py-1.5 text-sm flex justify-between items-center ${
-                      item.disabled
-                        ? 'text-gray-400 cursor-not-allowed'
-                        : 'hover:bg-office-ribbon-hover'
-                    }`}
-                    onClick={() => !item.disabled && item.action?.()}
-                    disabled={item.disabled}
-                  >
-                    <span className={`flex items-center gap-2 ${item.strikethrough ? 'line-through' : ''}`}>
-                      {item.checked !== undefined && (
-                        <span className="w-4 text-center">
-                          {item.checked ? '✓' : ''}
-                        </span>
-                      )}
-                      {t(item.labelKey)}{item.suffix ? ` ${item.suffix}` : ''}
-                    </span>
-                    {item.shortcut && (
-                      <span className="text-office-text-secondary text-xs ml-4">
-                        {item.shortcut}
-                      </span>
-                    )}
-                  </button>
-                )
-              )}
-            </div>
-          )}
-        </div>
-      ))}
-
-      {/* Right side - language indicator */}
-      <div className="ml-auto flex items-center gap-2 px-2">
-        <span className="text-xs text-office-text-secondary">
-          {i18n.language === 'ja' ? '日本語' : 'English'}
-        </span>
-      </div>
-
-      {/* New Puzzle Dialog */}
       <NewPuzzleDialog
         isOpen={isNewPuzzleOpen}
         onClose={() => setIsNewPuzzleOpen(false)}
       />
 
-      {/* Performance Test Dialog */}
       <PerformanceTestDialog
         isOpen={isPerformanceTestOpen}
         onClose={() => setIsPerformanceTestOpen(false)}
@@ -272,6 +233,6 @@ export const MenuBar: React.FC = () => {
         onClose={() => setShareUrlDialogOpen(false)}
         url={shareUrl}
       />
-    </div>
+    </>
   );
 };
