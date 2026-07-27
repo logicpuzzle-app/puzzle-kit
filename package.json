@@ -50,6 +50,7 @@
     "firebase": "^12.6.0",
     "i18next": "^25.6.3",
     "lucide-react": "^0.556.0",
+    "lz-string": "^1.5.0",
     "pako": "^2.1.0",
     "pdfjs-dist": "^4.10.38",
     "react": "^19.2.0",
