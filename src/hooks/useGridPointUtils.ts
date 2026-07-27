@@ -3,6 +3,7 @@ import { getCellIndexById, getEdgeIndexById, getVertexIndexById } from '../utils
 import type { Point, LineGridPoint, LineDirection, GridConfig } from '../types';
 import { usePuzzleStore } from '../store/puzzleStoreContext';
 import { resolveGridPoint, type ResolveOptions } from '../utils/pointResolver';
+import { resolveTopologyPath } from '../utils/topologyPath';
 
 /**
  * Hook providing grid point utilities for line/edge tools
@@ -113,60 +114,7 @@ export function useGridPointUtils(grid: GridConfig) {
       // - Diagonal (斜め): Vertex/Cell adjacency (cells sharing a vertex / vertices sharing a cell)
       if (!from || !to) {
         if (useTopology && topology) {
-          // For cell-to-cell connections
-          if (fromId.startsWith('cell-') && toId.startsWith('cell-')) {
-            const fromCell = topology.cells.get(fromId);
-            const toCell = topology.cells.get(toId);
-            if (!fromCell || !toCell) return null;
-
-            // Check edge adjacency (orthogonal)
-            const isEdgeAdjacent = fromCell.adjacentCells.includes(toId);
-            if (isEdgeAdjacent && allowedDirections.includes('orthogonal')) {
-              return [toId];
-            }
-
-            // Check vertex adjacency (diagonal) - shares a vertex but not an edge (頂点隣接)
-            if (allowedDirections.includes('diagonal')) {
-              const sharedVertices = fromCell.boundaryVertices.filter(
-                v => toCell.boundaryVertices.includes(v)
-              );
-              const isVertexAdjacent = sharedVertices.length > 0 && !isEdgeAdjacent;
-              if (isVertexAdjacent) {
-                return [toId];
-              }
-            }
-
-            return null;
-          }
-
-          // For vertex-to-vertex connections
-          if (fromId.startsWith('vertex-') && toId.startsWith('vertex-')) {
-            const fromVertex = topology.vertices.get(fromId);
-            const toVertex = topology.vertices.get(toId);
-            if (!fromVertex || !toVertex) return null;
-
-            // Check edge adjacency (orthogonal) - connected by an edge
-            const isEdgeConnected = fromVertex.adjacentVertices.includes(toId);
-            if (isEdgeConnected && allowedDirections.includes('orthogonal')) {
-              return [toId];
-            }
-
-            // Check cell adjacency (diagonal) - share a cell but not an edge (セル隣接)
-            if (allowedDirections.includes('diagonal')) {
-              const sharedCells = fromVertex.adjacentCells.filter(
-                c => toVertex.adjacentCells.includes(c)
-              );
-              const isVertexAdjacent = sharedCells.length > 0 && !isEdgeConnected;
-              if (isVertexAdjacent) {
-                return [toId];
-              }
-            }
-
-            return null;
-          }
-
-          // For edge-to-edge connections (not yet supported in topology mode)
-          // Not adjacent in topology mode - no connection allowed
+          return resolveTopologyPath(topology, fromId, toId, allowedDirections, halfMode);
         }
         return null;
       }
