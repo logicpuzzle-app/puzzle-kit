@@ -19,6 +19,11 @@ import type {
   NpgenWorkerResponse,
   NpgenXmlPuzzle,
 } from './types';
+import {
+  deriveGenerationChunkSeed,
+  isGenerationRetryFailure,
+  planGenerationChunk,
+} from './progress';
 
 const scope = self as unknown as DedicatedWorkerGlobalScope;
 const ready = init();
@@ -89,7 +94,7 @@ function xmlPuzzle(result: WasmXmlPuzzle): NpgenXmlPuzzle {
   }
 }
 
-function common(options: NpgenOptions) {
+function common(options: NpgenOptions, seed = BigInt(options.seed)) {
   return [
     options.size,
     blockKinds[options.blockKind],
@@ -101,10 +106,127 @@ function common(options: NpgenOptions) {
     options.horizontal,
     options.diagonal,
     options.diagonalLast,
-    BigInt(options.seed),
+    seed,
     options.techniqueMask,
     options.uniquenessMask,
   ] as const;
+}
+
+type GenerateRequest = Extract<
+  NpgenWorkerRequest,
+  { type: 'generate' | 'random' }
+>;
+
+function generateOnce(
+  request: GenerateRequest,
+  seed: bigint,
+  retryLimit: number,
+): NpgenEngineResult {
+  const args = common(request.options, seed);
+  if (request.type === 'generate') {
+    return engineResult(
+      generate_puzzle(
+        args[0],
+        new Int32Array(request.pattern),
+        new Int32Array(request.hidden),
+        new Int32Array(request.initialSeed),
+        args[1],
+        args[2],
+        args[3],
+        args[4],
+        args[5],
+        args[6],
+        args[7],
+        args[8],
+        args[9],
+        args[10],
+        args[11],
+        args[12],
+        request.options.difficultyMin,
+        request.options.difficultyMax,
+        request.options.forbidden,
+        retryLimit,
+      ),
+    );
+  }
+  return engineResult(
+    generate_random_puzzle(
+      args[0],
+      request.hints,
+      symmetries[request.options.symmetry],
+      args[1],
+      args[2],
+      args[3],
+      args[4],
+      args[5],
+      args[6],
+      args[7],
+      args[8],
+      args[9],
+      args[10],
+      args[11],
+      args[12],
+      request.options.difficultyMin,
+      request.options.difficultyMax,
+      request.options.forbidden,
+      retryLimit,
+    ),
+  );
+}
+
+function generateWithProgress(request: GenerateRequest): NpgenEngineResult {
+  if (request.progressChunk === undefined) {
+    // Preserve the original single Wasm call, seed, and output when progress
+    // was not requested.
+    return generateOnce(
+      request,
+      BigInt(request.options.seed),
+      request.options.retryLimit,
+    );
+  }
+
+  const started = performance.now();
+  const baseSeed = BigInt(request.options.seed);
+  let attempts = 0;
+  let chunkIndex = 0;
+
+  while (true) {
+    const chunk = planGenerationChunk(
+      request.options.retryLimit,
+      request.progressChunk,
+      attempts,
+    );
+    if (!chunk) {
+      throw new Error(`generation failed after ${attempts} attempts`);
+    }
+
+    try {
+      // Chunk mode intentionally derives a new seed after every failed chunk.
+      // Its generated output can therefore differ from the single-call mode.
+      return generateOnce(
+        request,
+        deriveGenerationChunkSeed(baseSeed, chunkIndex),
+        chunk.retryLimit,
+      );
+    } catch (error) {
+      if (!isGenerationRetryFailure(error, chunk.retryLimit)) throw error;
+      attempts = chunk.attemptsAfter;
+      scope.postMessage({
+        id: request.id,
+        type: 'progress',
+        attempts,
+        elapsedMs: performance.now() - started,
+      } satisfies NpgenWorkerResponse);
+      chunkIndex += 1;
+
+      if (
+        request.options.retryLimit !== 0 &&
+        attempts >= request.options.retryLimit
+      ) {
+        throw new Error(`generation failed after ${attempts} attempts`);
+      }
+    }
+  }
 }
 
 scope.onmessage = async (event: MessageEvent<NpgenWorkerRequest>) => {
@@ -133,56 +255,9 @@ scope.onmessage = async (event: MessageEvent<NpgenWorkerRequest>) => {
         ),
       );
     } else if (request.type === 'generate') {
-      const args = common(request.options);
-      result = engineResult(
-        generate_puzzle(
-          args[0],
-          new Int32Array(request.pattern),
-          new Int32Array(request.hidden),
-          new Int32Array(request.initialSeed),
-          args[1],
-          args[2],
-          args[3],
-          args[4],
-          args[5],
-          args[6],
-          args[7],
-          args[8],
-          args[9],
-          args[10],
-          args[11],
-          args[12],
-          request.options.difficultyMin,
-          request.options.difficultyMax,
-          request.options.forbidden,
-          request.options.retryLimit,
-        ),
-      );
+      result = generateWithProgress(request);
     } else if (request.type === 'random') {
-      const args = common(request.options);
-      result = engineResult(
-        generate_random_puzzle(
-          args[0],
-          request.hints,
-          symmetries[request.options.symmetry],
-          args[1],
-          args[2],
-          args[3],
-          args[4],
-          args[5],
-          args[6],
-          args[7],
-          args[8],
-          args[9],
-          args[10],
-          args[11],
-          args[12],
-          request.options.difficultyMin,
-          request.options.difficultyMax,
-          request.options.forbidden,
-          request.options.retryLimit,
-        ),
-      );
+      result = generateWithProgress(request);
     } else if (request.type === 'benchmark') {
       const started = performance.now();
       const succeeded = benchmark(request.count, BigInt(request.seed));

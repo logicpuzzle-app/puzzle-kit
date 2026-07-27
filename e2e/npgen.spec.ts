@@ -43,7 +43,11 @@ test('generates a seeded Number Place puzzle through the Wasm worker', async ({ 
   await expect(page.getByText(/Result: Unique solution/)).toBeVisible({
     timeout: 30_000,
   });
-  await expect(page.getByText(/Difficulty: 4393\.2790081336525/)).toBeVisible();
+  await expect(
+    page.getByText(
+      /Difficulty: (Intro|Easy|Medium|Hard|Expert|Fiendish)\(\d+\)/,
+    ),
+  ).toBeVisible();
 
   await page.getByRole('button', { name: 'Apply problem to puzzle-kit' }).click();
   await expect(page.getByRole('heading', { name: 'NPGenerator 2007' })).toBeHidden();

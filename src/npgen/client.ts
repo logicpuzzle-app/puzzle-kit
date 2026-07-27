@@ -1,4 +1,5 @@
 import type {
+  NpgenProgress,
   NpgenWorkerRequest,
   NpgenWorkerResponse,
   NpgenWorkerResult,
@@ -16,6 +17,7 @@ type NpgenWorkerRequestWithoutId =
 export function runNpgenWorker<T extends NpgenWorkerResult>(
   request: NpgenWorkerRequestWithoutId,
   signal?: AbortSignal,
+  onProgress?: (progress: NpgenProgress) => void,
 ): Promise<T> {
   return new Promise((resolve, reject) => {
     const worker = new Worker(new URL('./npgen.worker.ts', import.meta.url), {
@@ -29,13 +31,21 @@ export function runNpgenWorker<T extends NpgenWorkerResult>(
     };
     signal?.addEventListener('abort', abort, { once: true });
     worker.onmessage = (event: MessageEvent<NpgenWorkerResponse>) => {
-      if (event.data.id !== id) return;
+      const response = event.data;
+      if (response.id !== id) return;
+      if ('type' in response) {
+        onProgress?.({
+          attempts: response.attempts,
+          elapsedMs: response.elapsedMs,
+        });
+        return;
+      }
       signal?.removeEventListener('abort', abort);
       stop();
-      if (event.data.ok) {
-        resolve(event.data.result as T);
+      if (response.ok) {
+        resolve(response.result as T);
       } else {
-        reject(new Error(event.data.error));
+        reject(new Error(response.error));
       }
     };
     worker.onerror = (event) => {

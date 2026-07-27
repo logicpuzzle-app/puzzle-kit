@@ -19,10 +19,16 @@ import {
   type NpgenEngineResult,
   type NpgenOperation,
   type NpgenOptions,
+  type NpgenProgress,
   type NpgenSymmetry,
   type NpgenXmlPuzzle,
 } from '../../npgen/types';
 import { createRandomNpgenSeed } from '../../npgen/seed';
+import {
+  createSudokuPadUrl,
+  getSudokuPadExportDisabledReasons,
+  type SudokuPadExportDisabledReason,
+} from '../../npgen/sudokupad';
 import { NPGeneratorGridEditor } from './NPGeneratorGridEditor';
 
 interface NPGeneratorDialogProps {
@@ -50,6 +56,18 @@ const SYMMETRY_KEYS: Array<{ value: NpgenSymmetry; label: string }> = [
   { value: 'mirror-v', label: 'npgen.symmetry.mirror-v' },
   { value: 'none', label: 'npgen.symmetry.none' },
 ];
+
+const NPGEN_PROGRESS_CHUNK = 5;
+
+const SUDOKUPAD_DISABLED_REASON_KEYS: Record<
+  SudokuPadExportDisabledReason,
+  string
+> = {
+  size: 'npgen.sudokupad.disabled.size',
+  groups: 'npgen.sudokupad.disabled.groups',
+  'row-column-constraints':
+    'npgen.sudokupad.disabled.row-column-constraints',
+};
 
 function emptyGrid(size: number): number[] {
   return new Array(size * size).fill(0);
@@ -98,8 +116,19 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
   const [additionalGroupTexts, setAdditionalGroupTexts] = useState<string[]>([]);
   const [xmlComment, setXmlComment] = useState('');
   const [result, setResult] = useState<NpgenEngineResult | null>(null);
+  const [includeSudokuPadSolution, setIncludeSudokuPadSolution] =
+    useState(false);
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<NpgenProgress | null>(null);
   const [error, setError] = useState('');
+
+  const sudokuPadDisabledReasons = useMemo(
+    () => (result ? getSudokuPadExportDisabledReasons(result) : []),
+    [result],
+  );
+  const sudokuPadDisabledTitle = sudokuPadDisabledReasons
+    .map((reason) => t(SUDOKUPAD_DISABLED_REASON_KEYS[reason]))
+    .join('\n');
 
   const updateOptions = (patch: Partial<NpgenOptions>) =>
     setOptions((current) => ({ ...current, ...patch }));
@@ -159,6 +188,9 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
 
   const run = async () => {
     setBusy(true);
+    setProgress(
+      operation === 'solve' ? null : { attempts: 0, elapsedMs: 0 },
+    );
     setError('');
     setResult(null);
     const controller = new AbortController();
@@ -189,12 +221,20 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
                   initialSeed: initialSeedGrid.every((value) => value === 0)
                     ? []
                     : initialSeedGrid,
+                  progressChunk: NPGEN_PROGRESS_CHUNK,
                 },
                 controller.signal,
+                setProgress,
               )
             : await runNpgenWorker<NpgenEngineResult>(
-                { type: 'random', options: prepared, hints },
+                {
+                  type: 'random',
+                  options: prepared,
+                  hints,
+                  progressChunk: NPGEN_PROGRESS_CHUNK,
+                },
                 controller.signal,
+                setProgress,
               );
       setResult(value);
     } catch (reason) {
@@ -237,6 +277,34 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
     store.getState().setActiveLayer(includeSolution ? 'answer' : 'problem');
     store.getState().historyManager.clear();
     onClose();
+  };
+
+  const openSudokuPad = () => {
+    if (!result || sudokuPadDisabledReasons.length > 0) return;
+    try {
+      window.open(
+        createSudokuPadUrl(result, includeSudokuPadSolution),
+        '_blank',
+      );
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+    }
+  };
+
+  const copySudokuPadUrl = async () => {
+    if (!result || sudokuPadDisabledReasons.length > 0) return;
+    try {
+      await navigator.clipboard.writeText(
+        createSudokuPadUrl(result, includeSudokuPadSolution),
+      );
+    } catch {
+      setError(
+        t(
+          'npgen.sudokupad.copyError',
+          'Failed to copy the SudokuPad URL.',
+        ),
+      );
+    }
   };
 
   const importXml = async (file: File) => {
@@ -659,7 +727,7 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
                 <Field label={t('npgen.retryLimit', 'Retry limit')}>
                   <input
                     type="number"
-                    min={1}
+                    min={0}
                     max={100000}
                     className="input-office w-full"
                     value={options.retryLimit}
@@ -907,7 +975,7 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
         </div>
 
         <div className="border-t border-office-border p-3 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {result && (
               <>
                 <button type="button" className="btn-office" onClick={() => applyResult(false)}>
@@ -916,10 +984,62 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
                 <button type="button" className="btn-office" onClick={() => applyResult(true)}>
                   {t('npgen.applySolution', 'Apply problem + solution')}
                 </button>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={includeSudokuPadSolution}
+                    onChange={(event) =>
+                      setIncludeSudokuPadSolution(event.target.checked)
+                    }
+                  />
+                  {t('npgen.sudokupad.includeSolution', 'Include solution')}
+                </label>
+                <span
+                  className="inline-flex"
+                  title={sudokuPadDisabledTitle || undefined}
+                >
+                  <button
+                    type="button"
+                    className="btn-office"
+                    disabled={sudokuPadDisabledReasons.length > 0}
+                    onClick={openSudokuPad}
+                  >
+                    {t('npgen.sudokupad.open', 'Open in SudokuPad')}
+                  </button>
+                </span>
+                <span
+                  className="inline-flex"
+                  title={sudokuPadDisabledTitle || undefined}
+                >
+                  <button
+                    type="button"
+                    className="btn-office"
+                    disabled={sudokuPadDisabledReasons.length > 0}
+                    onClick={() => void copySudokuPadUrl()}
+                  >
+                    {t('npgen.sudokupad.copy', 'Copy SudokuPad URL')}
+                  </button>
+                </span>
               </>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            {busy && progress && (
+              <span
+                className="text-sm text-office-text-secondary tabular-nums"
+                role="status"
+                aria-live="polite"
+                title={t(
+                  'npgen.progressNote',
+                  'Progress mode derives a new seed for each chunk, so its result can differ from generation without progress.',
+                )}
+              >
+                {t('npgen.progress', {
+                  attempts: progress.attempts,
+                  elapsed: Math.round(progress.elapsedMs),
+                })}
+              </span>
+            )}
             {busy ? (
               <button type="button" className="btn-office" onClick={cancel}>
                 {t('solver.cancel', 'Cancel')}

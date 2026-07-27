@@ -55,6 +55,11 @@ export interface NpgenEngineResult {
   defaultBlock: boolean;
 }
 
+export interface NpgenProgress {
+  attempts: number;
+  elapsedMs: number;
+}
+
 export interface NpgenXmlPuzzle {
   size: number;
   pattern: number[];
@@ -88,12 +93,14 @@ export type NpgenWorkerRequest =
       pattern: number[];
       hidden: number[];
       initialSeed: number[];
+      progressChunk?: number;
     }
   | {
       id: number;
       type: 'random';
       options: NpgenOptions;
       hints: number;
+      progressChunk?: number;
     }
   | {
       id: number;
@@ -119,6 +126,7 @@ export type NpgenWorkerResult =
   | { xml: string };
 
 export type NpgenWorkerResponse =
+  | ({ id: number; type: 'progress' } & NpgenProgress)
   | { id: number; ok: true; result: NpgenWorkerResult }
   | { id: number; ok: false; error: string };
 

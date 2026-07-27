@@ -1426,6 +1426,8 @@ export const en = {
   'npgen.sudokupad.disabled.size': 'SudokuPad supports grids up to 16×16.',
   'npgen.sudokupad.disabled.groups': 'SudokuPad cannot represent additional constraint groups.',
   'npgen.sudokupad.disabled.row-column-constraints': 'SudokuPad cannot represent puzzles with row or column constraints disabled.',
+  'npgen.progress': '{{attempts}} attempts / {{elapsed}} ms',
+  'npgen.progressNote': 'Progress mode derives a new seed for each chunk, so its result can differ from generation without progress.',
   'npgen.runSolve': 'Solve / evaluate',
   'npgen.runGenerate': 'Generate',
   'npgen.error.size': 'NPGenerator supports square grids from size 2 to 25.',

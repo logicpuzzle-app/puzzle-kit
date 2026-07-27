@@ -1426,6 +1426,8 @@ export const ja = {
   'npgen.sudokupad.disabled.size': 'SudokuPad は16×16までの盤面に対応しています。',
   'npgen.sudokupad.disabled.groups': '追加の制約グループは SudokuPad で表現できません。',
   'npgen.sudokupad.disabled.row-column-constraints': '縦または横の制約が無効な問題は SudokuPad で表現できません。',
+  'npgen.progress': '試行 {{attempts}} 回 / {{elapsed}} ms',
+  'npgen.progressNote': '進捗モードではチャンクごとに新しいシードを派生させるため、進捗なしの生成とは結果が異なる場合があります。',
   'npgen.runSolve': '解答・評価を実行',
   'npgen.runGenerate': '生成する',
   'npgen.error.size': 'NPGeneratorは2〜25の正方形盤に対応しています。',
