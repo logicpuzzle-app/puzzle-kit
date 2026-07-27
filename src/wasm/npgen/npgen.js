@@ -60,6 +60,22 @@ export class WasmEngineResult {
     /**
      * @returns {Int32Array}
      */
+    group_labels() {
+        const ret = wasm.wasmengineresult_group_labels(this.__wbg_ptr);
+        var v1 = getArrayI32FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+    /**
+     * @returns {boolean}
+     */
+    get horizontal() {
+        const ret = wasm.wasmengineresult_horizontal(this.__wbg_ptr);
+        return ret !== 0;
+    }
+    /**
+     * @returns {Int32Array}
+     */
     pattern() {
         const ret = wasm.wasmengineresult_pattern(this.__wbg_ptr);
         var v1 = getArrayI32FromWasm0(ret[0], ret[1]).slice();
@@ -83,6 +99,13 @@ export class WasmEngineResult {
         var v1 = getArrayI32FromWasm0(ret[0], ret[1]).slice();
         wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
         return v1;
+    }
+    /**
+     * @returns {boolean}
+     */
+    get vertical() {
+        const ret = wasm.wasmengineresult_vertical(this.__wbg_ptr);
+        return ret !== 0;
     }
 }
 if (Symbol.dispose) WasmEngineResult.prototype[Symbol.dispose] = WasmEngineResult.prototype.free;
@@ -114,6 +137,21 @@ export class WasmXmlPuzzle {
         return v1;
     }
     /**
+     * @returns {string}
+     */
+    get comment() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.wasmxmlpuzzle_comment(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
      * @returns {boolean}
      */
     get default_block() {
@@ -135,6 +173,29 @@ export class WasmXmlPuzzle {
         return ret;
     }
     /**
+     * @returns {number}
+     */
+    get group_count() {
+        const ret = wasm.wasmxmlpuzzle_group_count(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {Int32Array}
+     */
+    group_labels() {
+        const ret = wasm.wasmxmlpuzzle_group_labels(this.__wbg_ptr);
+        var v1 = getArrayI32FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+    /**
+     * @returns {boolean}
+     */
+    get has_hint() {
+        const ret = wasm.wasmxmlpuzzle_has_hint(this.__wbg_ptr);
+        return ret !== 0;
+    }
+    /**
      * @returns {Int32Array}
      */
     hidden() {
@@ -142,6 +203,13 @@ export class WasmXmlPuzzle {
         var v1 = getArrayI32FromWasm0(ret[0], ret[1]).slice();
         wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
         return v1;
+    }
+    /**
+     * @returns {boolean}
+     */
+    get horizontal() {
+        const ret = wasm.wasmxmlpuzzle_horizontal(this.__wbg_ptr);
+        return ret !== 0;
     }
     /**
      * @returns {Int32Array}
@@ -162,6 +230,15 @@ export class WasmXmlPuzzle {
         return v1;
     }
     /**
+     * @returns {Int32Array}
+     */
+    seed() {
+        const ret = wasm.wasmxmlpuzzle_seed(this.__wbg_ptr);
+        var v1 = getArrayI32FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+    /**
      * @returns {number}
      */
     get size() {
@@ -176,6 +253,13 @@ export class WasmXmlPuzzle {
         var v1 = getArrayI32FromWasm0(ret[0], ret[1]).slice();
         wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
         return v1;
+    }
+    /**
+     * @returns {boolean}
+     */
+    get vertical() {
+        const ret = wasm.wasmxmlpuzzle_vertical(this.__wbg_ptr);
+        return ret !== 0;
     }
 }
 if (Symbol.dispose) WasmXmlPuzzle.prototype[Symbol.dispose] = WasmXmlPuzzle.prototype.free;
@@ -216,14 +300,17 @@ export function benchmark(count, seed) {
  * @param {Int32Array} problem
  * @param {Int32Array} solution
  * @param {Int32Array} block_labels
+ * @param {boolean} vertical
+ * @param {boolean} horizontal
  * @param {boolean} diagonal
  * @param {boolean} default_block
  * @param {number} difficulty
+ * @param {string} comment
  * @returns {string}
  */
-export function format_npgen_xml(size, pattern, hidden, problem, solution, block_labels, diagonal, default_block, difficulty) {
-    let deferred7_0;
-    let deferred7_1;
+export function format_npgen_xml(size, pattern, hidden, problem, solution, block_labels, vertical, horizontal, diagonal, default_block, difficulty, comment) {
+    let deferred8_0;
+    let deferred8_1;
     try {
         const ptr0 = passArray32ToWasm0(pattern, wasm.__wbindgen_malloc);
         const len0 = WASM_VECTOR_LEN;
@@ -235,18 +322,20 @@ export function format_npgen_xml(size, pattern, hidden, problem, solution, block
         const len3 = WASM_VECTOR_LEN;
         const ptr4 = passArray32ToWasm0(block_labels, wasm.__wbindgen_malloc);
         const len4 = WASM_VECTOR_LEN;
-        const ret = wasm.format_npgen_xml(size, ptr0, len0, ptr1, len1, ptr2, len2, ptr3, len3, ptr4, len4, diagonal, default_block, difficulty);
-        var ptr6 = ret[0];
-        var len6 = ret[1];
+        const ptr5 = passStringToWasm0(comment, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len5 = WASM_VECTOR_LEN;
+        const ret = wasm.format_npgen_xml(size, ptr0, len0, ptr1, len1, ptr2, len2, ptr3, len3, ptr4, len4, vertical, horizontal, diagonal, default_block, difficulty, ptr5, len5);
+        var ptr7 = ret[0];
+        var len7 = ret[1];
         if (ret[3]) {
-            ptr6 = 0; len6 = 0;
+            ptr7 = 0; len7 = 0;
             throw takeFromExternrefTable0(ret[2]);
         }
-        deferred7_0 = ptr6;
-        deferred7_1 = len6;
-        return getStringFromWasm0(ptr6, len6);
+        deferred8_0 = ptr7;
+        deferred8_1 = len7;
+        return getStringFromWasm0(ptr7, len7);
     } finally {
-        wasm.__wbindgen_free(deferred7_0, deferred7_1, 1);
+        wasm.__wbindgen_free(deferred8_0, deferred8_1, 1);
     }
 }
 
@@ -254,27 +343,37 @@ export function format_npgen_xml(size, pattern, hidden, problem, solution, block
  * @param {number} size
  * @param {Int32Array} pattern
  * @param {Int32Array} hidden
+ * @param {Int32Array} initial_seed
  * @param {number} block_kind
  * @param {number} block_width
  * @param {number} block_height
  * @param {Int32Array} block_labels
+ * @param {Int32Array} additional_group_labels
+ * @param {boolean} vertical
+ * @param {boolean} horizontal
  * @param {boolean} diagonal
+ * @param {boolean} diagonal_last
  * @param {bigint} seed
  * @param {number} technique_mask
  * @param {number} uniqueness_mask
  * @param {number} dp_min
  * @param {number} dp_max
  * @param {number} forbidden
+ * @param {number} retry_limit
  * @returns {WasmEngineResult}
  */
-export function generate_puzzle(size, pattern, hidden, block_kind, block_width, block_height, block_labels, diagonal, seed, technique_mask, uniqueness_mask, dp_min, dp_max, forbidden) {
+export function generate_puzzle(size, pattern, hidden, initial_seed, block_kind, block_width, block_height, block_labels, additional_group_labels, vertical, horizontal, diagonal, diagonal_last, seed, technique_mask, uniqueness_mask, dp_min, dp_max, forbidden, retry_limit) {
     const ptr0 = passArray32ToWasm0(pattern, wasm.__wbindgen_malloc);
     const len0 = WASM_VECTOR_LEN;
     const ptr1 = passArray32ToWasm0(hidden, wasm.__wbindgen_malloc);
     const len1 = WASM_VECTOR_LEN;
-    const ptr2 = passArray32ToWasm0(block_labels, wasm.__wbindgen_malloc);
+    const ptr2 = passArray32ToWasm0(initial_seed, wasm.__wbindgen_malloc);
     const len2 = WASM_VECTOR_LEN;
-    const ret = wasm.generate_puzzle(size, ptr0, len0, ptr1, len1, block_kind, block_width, block_height, ptr2, len2, diagonal, seed, technique_mask, uniqueness_mask, dp_min, dp_max, forbidden);
+    const ptr3 = passArray32ToWasm0(block_labels, wasm.__wbindgen_malloc);
+    const len3 = WASM_VECTOR_LEN;
+    const ptr4 = passArray32ToWasm0(additional_group_labels, wasm.__wbindgen_malloc);
+    const len4 = WASM_VECTOR_LEN;
+    const ret = wasm.generate_puzzle(size, ptr0, len0, ptr1, len1, ptr2, len2, block_kind, block_width, block_height, ptr3, len3, ptr4, len4, vertical, horizontal, diagonal, diagonal_last, seed, technique_mask, uniqueness_mask, dp_min, dp_max, forbidden, retry_limit);
     if (ret[2]) {
         throw takeFromExternrefTable0(ret[1]);
     }
@@ -284,23 +383,31 @@ export function generate_puzzle(size, pattern, hidden, block_kind, block_width, 
 /**
  * @param {number} size
  * @param {number} hints
+ * @param {number} symmetry
  * @param {number} block_kind
  * @param {number} block_width
  * @param {number} block_height
  * @param {Int32Array} block_labels
+ * @param {Int32Array} additional_group_labels
+ * @param {boolean} vertical
+ * @param {boolean} horizontal
  * @param {boolean} diagonal
+ * @param {boolean} diagonal_last
  * @param {bigint} seed
  * @param {number} technique_mask
  * @param {number} uniqueness_mask
  * @param {number} dp_min
  * @param {number} dp_max
  * @param {number} forbidden
+ * @param {number} retry_limit
  * @returns {WasmEngineResult}
  */
-export function generate_random_puzzle(size, hints, block_kind, block_width, block_height, block_labels, diagonal, seed, technique_mask, uniqueness_mask, dp_min, dp_max, forbidden) {
+export function generate_random_puzzle(size, hints, symmetry, block_kind, block_width, block_height, block_labels, additional_group_labels, vertical, horizontal, diagonal, diagonal_last, seed, technique_mask, uniqueness_mask, dp_min, dp_max, forbidden, retry_limit) {
     const ptr0 = passArray32ToWasm0(block_labels, wasm.__wbindgen_malloc);
     const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.generate_random_puzzle(size, hints, block_kind, block_width, block_height, ptr0, len0, diagonal, seed, technique_mask, uniqueness_mask, dp_min, dp_max, forbidden);
+    const ptr1 = passArray32ToWasm0(additional_group_labels, wasm.__wbindgen_malloc);
+    const len1 = WASM_VECTOR_LEN;
+    const ret = wasm.generate_random_puzzle(size, hints, symmetry, block_kind, block_width, block_height, ptr0, len0, ptr1, len1, vertical, horizontal, diagonal, diagonal_last, seed, technique_mask, uniqueness_mask, dp_min, dp_max, forbidden, retry_limit);
     if (ret[2]) {
         throw takeFromExternrefTable0(ret[1]);
     }
@@ -328,18 +435,24 @@ export function parse_npgen_xml(xml) {
  * @param {number} block_width
  * @param {number} block_height
  * @param {Int32Array} block_labels
+ * @param {Int32Array} additional_group_labels
+ * @param {boolean} vertical
+ * @param {boolean} horizontal
  * @param {boolean} diagonal
+ * @param {boolean} diagonal_last
  * @param {bigint} seed
  * @param {number} technique_mask
  * @param {number} uniqueness_mask
  * @returns {WasmEngineResult}
  */
-export function solve_puzzle(size, problem, block_kind, block_width, block_height, block_labels, diagonal, seed, technique_mask, uniqueness_mask) {
+export function solve_puzzle(size, problem, block_kind, block_width, block_height, block_labels, additional_group_labels, vertical, horizontal, diagonal, diagonal_last, seed, technique_mask, uniqueness_mask) {
     const ptr0 = passArray32ToWasm0(problem, wasm.__wbindgen_malloc);
     const len0 = WASM_VECTOR_LEN;
     const ptr1 = passArray32ToWasm0(block_labels, wasm.__wbindgen_malloc);
     const len1 = WASM_VECTOR_LEN;
-    const ret = wasm.solve_puzzle(size, ptr0, len0, block_kind, block_width, block_height, ptr1, len1, diagonal, seed, technique_mask, uniqueness_mask);
+    const ptr2 = passArray32ToWasm0(additional_group_labels, wasm.__wbindgen_malloc);
+    const len2 = WASM_VECTOR_LEN;
+    const ret = wasm.solve_puzzle(size, ptr0, len0, block_kind, block_width, block_height, ptr1, len1, ptr2, len2, vertical, horizontal, diagonal, diagonal_last, seed, technique_mask, uniqueness_mask);
     if (ret[2]) {
         throw takeFromExternrefTable0(ret[1]);
     }

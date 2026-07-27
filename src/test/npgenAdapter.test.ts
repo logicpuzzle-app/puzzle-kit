@@ -23,8 +23,11 @@ function standardResult(): NpgenEngineResult {
     problem,
     solution,
     blockLabels,
+    groupLabels: [],
     difficulty: 42,
     answerKind: 'unique',
+    vertical: true,
+    horizontal: true,
     diagonal: false,
     defaultBlock: true,
   };
@@ -77,6 +80,10 @@ describe('NPGenerator puzzle adapter', () => {
     expect(detectRectangularBlocks(standardResult())).toEqual({ width: 3, height: 3 });
     expect(isStandardNineByNine(standardResult())).toBe(true);
     expect(isStandardNineByNine({ ...standardResult(), diagonal: true })).toBe(false);
+    expect(isStandardNineByNine({ ...standardResult(), vertical: false })).toBe(false);
+    expect(
+      isStandardNineByNine({ ...standardResult(), groupLabels: new Array(81).fill(1) }),
+    ).toBe(false);
   });
 
   it('recognizes rectangular 3x2 blocks on a 6x6 grid', () => {

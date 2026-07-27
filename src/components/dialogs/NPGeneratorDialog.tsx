@@ -19,8 +19,17 @@ import {
   type NpgenEngineResult,
   type NpgenOperation,
   type NpgenOptions,
+  type NpgenProgress,
+  type NpgenSymmetry,
   type NpgenXmlPuzzle,
 } from '../../npgen/types';
+import { createRandomNpgenSeed } from '../../npgen/seed';
+import {
+  createSudokuPadUrl,
+  getSudokuPadExportDisabledReasons,
+  type SudokuPadExportDisabledReason,
+} from '../../npgen/sudokupad';
+import { NPGeneratorGridEditor } from './NPGeneratorGridEditor';
 
 interface NPGeneratorDialogProps {
   isOpen: boolean;
@@ -31,7 +40,6 @@ const OPERATION_KEYS: Array<{ value: NpgenOperation; label: string }> = [
   { value: 'solve', label: 'npgen.operation.solve' },
   { value: 'generate', label: 'npgen.operation.generate' },
   { value: 'random', label: 'npgen.operation.random' },
-  { value: 'benchmark', label: 'npgen.operation.benchmark' },
 ];
 
 const BLOCK_KEYS: Array<{ value: NpgenBlockKind; label: string }> = [
@@ -41,8 +49,28 @@ const BLOCK_KEYS: Array<{ value: NpgenBlockKind; label: string }> = [
   { value: 'custom', label: 'npgen.blocks.custom' },
 ];
 
-function emptyGrid(size: number, pattern = false): string {
-  return formatNpgenGrid(new Array(size * size).fill(0), size, pattern);
+const SYMMETRY_KEYS: Array<{ value: NpgenSymmetry; label: string }> = [
+  { value: 'rot4', label: 'npgen.symmetry.rot4' },
+  { value: 'rot2', label: 'npgen.symmetry.rot2' },
+  { value: 'mirror-h', label: 'npgen.symmetry.mirror-h' },
+  { value: 'mirror-v', label: 'npgen.symmetry.mirror-v' },
+  { value: 'none', label: 'npgen.symmetry.none' },
+];
+
+const NPGEN_PROGRESS_CHUNK = 5;
+
+const SUDOKUPAD_DISABLED_REASON_KEYS: Record<
+  SudokuPadExportDisabledReason,
+  string
+> = {
+  size: 'npgen.sudokupad.disabled.size',
+  groups: 'npgen.sudokupad.disabled.groups',
+  'row-column-constraints':
+    'npgen.sudokupad.disabled.row-column-constraints',
+};
+
+function emptyGrid(size: number): number[] {
+  return new Array(size * size).fill(0);
 }
 
 function factorPair(size: number): [number, number] {
@@ -76,20 +104,31 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
   const abortRef = useRef<AbortController | null>(null);
   const [operation, setOperation] = useState<NpgenOperation>('random');
   const [options, setOptions] = useState<NpgenOptions>(DEFAULT_NPGEN_OPTIONS);
+  const [manualSeed, setManualSeed] = useState(false);
   const [hints, setHints] = useState(20);
-  const [benchmarkCount, setBenchmarkCount] = useState(1);
-  const [problemText, setProblemText] = useState(() => emptyGrid(9));
-  const [patternText, setPatternText] = useState(() => emptyGrid(9, true));
-  const [hiddenText, setHiddenText] = useState(() => emptyGrid(9));
+  const [problemGrid, setProblemGrid] = useState(() => emptyGrid(9));
+  const [patternGrid, setPatternGrid] = useState(() => emptyGrid(9));
+  const [hiddenGrid, setHiddenGrid] = useState(() => emptyGrid(9));
+  const [initialSeedGrid, setInitialSeedGrid] = useState(() => emptyGrid(9));
+  const [generateGridMode, setGenerateGridMode] =
+    useState<'pattern' | 'hidden' | 'seed'>('pattern');
   const [blocksText, setBlocksText] = useState('');
+  const [additionalGroupTexts, setAdditionalGroupTexts] = useState<string[]>([]);
+  const [xmlComment, setXmlComment] = useState('');
   const [result, setResult] = useState<NpgenEngineResult | null>(null);
-  const [benchmarkResult, setBenchmarkResult] = useState<{
-    count: number;
-    succeeded: number;
-    elapsedMs: number;
-  } | null>(null);
+  const [includeSudokuPadSolution, setIncludeSudokuPadSolution] =
+    useState(false);
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<NpgenProgress | null>(null);
   const [error, setError] = useState('');
+
+  const sudokuPadDisabledReasons = useMemo(
+    () => (result ? getSudokuPadExportDisabledReasons(result) : []),
+    [result],
+  );
+  const sudokuPadDisabledTitle = sudokuPadDisabledReasons
+    .map((reason) => t(SUDOKUPAD_DISABLED_REASON_KEYS[reason]))
+    .join('\n');
 
   const updateOptions = (patch: Partial<NpgenOptions>) =>
     setOptions((current) => ({ ...current, ...patch }));
@@ -104,9 +143,10 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
     const values = puzzleNumbersToGrid(state.puzzle, size);
     const [blockWidth, blockHeight] = factorPair(size);
     updateOptions({ size, blockWidth, blockHeight });
-    setProblemText(formatNpgenGrid(values, size));
-    setPatternText(formatNpgenGrid(values.map((value) => Number(value > 0)), size, true));
-    setHiddenText(emptyGrid(size));
+    setProblemGrid(values);
+    setPatternGrid(values.map((value) => Number(value > 0)));
+    setHiddenGrid(emptyGrid(size));
+    setInitialSeedGrid(emptyGrid(size));
     setResult(null);
     setError('');
   };
@@ -118,68 +158,85 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
   const resize = (size: number) => {
     const bounded = Math.max(2, Math.min(25, size));
     const [blockWidth, blockHeight] = factorPair(bounded);
-    updateOptions({ size: bounded, blockWidth, blockHeight, blockLabels: [] });
-    setProblemText(emptyGrid(bounded));
-    setPatternText(emptyGrid(bounded, true));
-    setHiddenText(emptyGrid(bounded));
+    updateOptions({
+      size: bounded,
+      blockWidth,
+      blockHeight,
+      blockLabels: [],
+      additionalGroupLabels: [],
+    });
+    setProblemGrid(emptyGrid(bounded));
+    setPatternGrid(emptyGrid(bounded));
+    setHiddenGrid(emptyGrid(bounded));
+    setInitialSeedGrid(emptyGrid(bounded));
     setBlocksText('');
+    setAdditionalGroupTexts([]);
     setResult(null);
   };
 
-  const effectiveOptions = (): NpgenOptions => ({
+  const effectiveOptions = (seed: string): NpgenOptions => ({
     ...options,
+    seed,
     blockLabels:
       options.blockKind === 'custom'
         ? parseNpgenGrid(blocksText, options.size)
         : [],
+    additionalGroupLabels: additionalGroupTexts.flatMap((text) =>
+      parseNpgenGrid(text, options.size),
+    ),
   });
 
   const run = async () => {
     setBusy(true);
+    setProgress(
+      operation === 'solve' ? null : { attempts: 0, elapsedMs: 0 },
+    );
     setError('');
     setResult(null);
-    setBenchmarkResult(null);
     const controller = new AbortController();
     abortRef.current = controller;
     try {
-      if (operation === 'benchmark') {
-        const value = await runNpgenWorker<{
-          count: number;
-          succeeded: number;
-          elapsedMs: number;
-        }>(
-          { type: 'benchmark', count: benchmarkCount, seed: options.seed },
-          controller.signal,
-        );
-        setBenchmarkResult(value);
-      } else {
-        const prepared = effectiveOptions();
-        const value =
-          operation === 'solve'
+      const runSeed = manualSeed ? options.seed : createRandomNpgenSeed();
+      if (!manualSeed) {
+        updateOptions({ seed: runSeed });
+      }
+      const prepared = effectiveOptions(runSeed);
+      const value =
+        operation === 'solve'
+          ? await runNpgenWorker<NpgenEngineResult>(
+              {
+                type: 'solve',
+                options: prepared,
+                problem: problemGrid,
+              },
+              controller.signal,
+            )
+          : operation === 'generate'
             ? await runNpgenWorker<NpgenEngineResult>(
                 {
-                  type: 'solve',
+                  type: 'generate',
                   options: prepared,
-                  problem: parseNpgenGrid(problemText, options.size),
+                  pattern: patternGrid,
+                  hidden: hiddenGrid,
+                  initialSeed: initialSeedGrid.every((value) => value === 0)
+                    ? []
+                    : initialSeedGrid,
+                  progressChunk: NPGEN_PROGRESS_CHUNK,
                 },
                 controller.signal,
+                setProgress,
               )
-            : operation === 'generate'
-              ? await runNpgenWorker<NpgenEngineResult>(
-                  {
-                    type: 'generate',
-                    options: prepared,
-                    pattern: parseNpgenGrid(patternText, options.size, true),
-                    hidden: parseNpgenGrid(hiddenText, options.size),
-                  },
-                  controller.signal,
-                )
-              : await runNpgenWorker<NpgenEngineResult>(
-                  { type: 'random', options: prepared, hints },
-                  controller.signal,
-                );
-        setResult(value);
-      }
+            : await runNpgenWorker<NpgenEngineResult>(
+                {
+                  type: 'random',
+                  options: prepared,
+                  hints,
+                  progressChunk: NPGEN_PROGRESS_CHUNK,
+                },
+                controller.signal,
+                setProgress,
+              );
+      setResult(value);
     } catch (reason) {
       if (!(reason instanceof DOMException && reason.name === 'AbortError')) {
         setError(reason instanceof Error ? reason.message : String(reason));
@@ -222,6 +279,34 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
     onClose();
   };
 
+  const openSudokuPad = () => {
+    if (!result || sudokuPadDisabledReasons.length > 0) return;
+    try {
+      window.open(
+        createSudokuPadUrl(result, includeSudokuPadSolution),
+        '_blank',
+      );
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+    }
+  };
+
+  const copySudokuPadUrl = async () => {
+    if (!result || sudokuPadDisabledReasons.length > 0) return;
+    try {
+      await navigator.clipboard.writeText(
+        createSudokuPadUrl(result, includeSudokuPadSolution),
+      );
+    } catch {
+      setError(
+        t(
+          'npgen.sudokupad.copyError',
+          'Failed to copy the SudokuPad URL.',
+        ),
+      );
+    }
+  };
+
   const importXml = async (file: File) => {
     setBusy(true);
     setError('');
@@ -231,6 +316,11 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
         xml: await file.text(),
       });
       const [blockWidth, blockHeight] = factorPair(parsed.size);
+      const cells = parsed.size * parsed.size;
+      const groups = Array.from({ length: parsed.groupCount }, (_, index) =>
+        parsed.groupLabels.slice(index * cells, (index + 1) * cells),
+      );
+      const additionalGroups = parsed.defaultBlock ? groups : groups.slice(1);
       setOptions({
         ...options,
         size: parsed.size,
@@ -238,11 +328,22 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
         blockWidth,
         blockHeight,
         blockLabels: parsed.blockLabels,
+        additionalGroupLabels: additionalGroups.flat(),
+        vertical: parsed.vertical,
+        horizontal: parsed.horizontal,
         diagonal: parsed.diagonal,
+        diagonalLast: true,
       });
-      setProblemText(formatNpgenGrid(parsed.problem, parsed.size));
-      setPatternText(formatNpgenGrid(parsed.pattern, parsed.size, true));
-      setHiddenText(formatNpgenGrid(parsed.hidden, parsed.size));
+      setProblemGrid(parsed.problem);
+      setPatternGrid(parsed.pattern);
+      setHiddenGrid(parsed.hidden);
+      setInitialSeedGrid(
+        parsed.initialSeed.length === cells ? parsed.initialSeed : emptyGrid(parsed.size),
+      );
+      setAdditionalGroupTexts(
+        additionalGroups.map((group) => formatNpgenGrid(group, parsed.size)),
+      );
+      setXmlComment(parsed.comment);
       setBlocksText(
         parsed.defaultBlock ? '' : formatNpgenGrid(parsed.blockLabels, parsed.size),
       );
@@ -260,8 +361,11 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
               });
             })()
           : parsed.blockLabels,
+        groupLabels: parsed.groupLabels,
         difficulty: parsed.difficulty,
         answerKind: 'unique',
+        vertical: parsed.vertical,
+        horizontal: parsed.horizontal,
         diagonal: parsed.diagonal,
         defaultBlock: parsed.defaultBlock,
       });
@@ -285,13 +389,20 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
           pattern: result.pattern,
           hidden:
             operation === 'generate'
-              ? parseNpgenGrid(hiddenText, options.size)
+              ? hiddenGrid
               : new Array(options.size * options.size).fill(0),
           problem: result.problem,
           solution: result.solution,
           blockLabels: result.blockLabels,
+          groupLabels: result.groupLabels,
+          groupCount: result.groupLabels.length / (options.size * options.size),
+          initialSeed: [],
           difficulty: Math.trunc(result.difficulty),
+          vertical: result.vertical,
+          horizontal: result.horizontal,
           diagonal: result.diagonal,
+          hasHint: true,
+          comment: xmlComment,
           defaultBlock: result.defaultBlock,
         },
       });
@@ -308,10 +419,31 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
     }
   };
 
-  const preview = useMemo(
-    () => (result ? formatNpgenGrid(result.problem, options.size) : ''),
-    [result, options.size],
-  );
+  const editorBlockLabels = useMemo(() => {
+    if (options.blockKind === 'random') return [];
+    if (options.blockKind === 'custom') {
+      try {
+        return parseNpgenGrid(blocksText, options.size);
+      } catch {
+        return [];
+      }
+    }
+    const width = options.blockWidth;
+    const height = options.blockHeight;
+    if (width < 1 || height < 1 || width * height !== options.size) return [];
+    const blocksPerRow = options.size / width;
+    return Array.from({ length: options.size * options.size }, (_, index) => {
+      const row = Math.floor(index / options.size);
+      const col = index % options.size;
+      return Math.floor(row / height) * blocksPerRow + Math.floor(col / width) + 1;
+    });
+  }, [
+    blocksText,
+    options.blockHeight,
+    options.blockKind,
+    options.blockWidth,
+    options.size,
+  ]);
 
   if (!isOpen) return null;
 
@@ -365,10 +497,24 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
                 <input
                   className="input-office w-full"
                   value={options.seed}
+                  disabled={!manualSeed}
                   onChange={(event) => updateOptions({ seed: event.target.value })}
                 />
               </Field>
             </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={manualSeed}
+                onChange={(event) => setManualSeed(event.target.checked)}
+              />
+              {t('npgen.manualSeed', 'Change / specify seed')}
+            </label>
+            {!manualSeed && (
+              <p className="text-[11px] text-office-text-secondary">
+                {t('npgen.randomSeedHint', 'A new random seed is used for every run.')}
+              </p>
+            )}
             <Field label={t('npgen.blocks', 'Blocks')}>
               <select
                 className="input-office w-full"
@@ -418,34 +564,131 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
                 />
               </Field>
             )}
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={options.diagonal}
-                onChange={(event) => updateOptions({ diagonal: event.target.checked })}
-              />
-              {t('npgen.diagonal', 'Diagonal constraints')}
-            </label>
+            <div className="space-y-1">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={options.vertical}
+                  onChange={(event) => updateOptions({ vertical: event.target.checked })}
+                />
+                {t('npgen.vertical', 'Column constraints')}
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={options.horizontal}
+                  onChange={(event) => updateOptions({ horizontal: event.target.checked })}
+                />
+                {t('npgen.horizontal', 'Row constraints')}
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={options.diagonal}
+                  onChange={(event) => updateOptions({ diagonal: event.target.checked })}
+                />
+                {t('npgen.diagonal', 'Diagonal constraints')}
+              </label>
+              {options.diagonal && (
+                <label className="flex items-center gap-2 text-xs pl-5">
+                  <input
+                    type="checkbox"
+                    checked={options.diagonalLast}
+                    onChange={(event) =>
+                      updateOptions({ diagonalLast: event.target.checked })
+                    }
+                  />
+                  {t('npgen.diagonalLast', 'Apply diagonals after custom groups')}
+                </label>
+              )}
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-office-text-secondary">
+                  {t('npgen.additionalGroups', 'Additional constraint groups')}
+                </span>
+                <button
+                  type="button"
+                  className="btn-office text-xs"
+                  onClick={() =>
+                    setAdditionalGroupTexts((current) => [
+                      ...current,
+                      formatNpgenGrid(emptyGrid(options.size), options.size),
+                    ])
+                  }
+                >
+                  {t('npgen.addGroup', 'Add group')}
+                </button>
+              </div>
+              {additionalGroupTexts.map((text, index) => (
+                <div key={index} className="space-y-1">
+                  <textarea
+                    aria-label={t('npgen.groupLabel', 'Constraint group {{number}}', {
+                      number: index + 1,
+                    })}
+                    className="input-office w-full h-24 font-mono text-[11px] whitespace-pre"
+                    value={text}
+                    onChange={(event) =>
+                      setAdditionalGroupTexts((current) =>
+                        current.map((value, item) =>
+                          item === index ? event.target.value : value,
+                        ),
+                      )
+                    }
+                  />
+                  <button
+                    type="button"
+                    className="btn-office text-xs"
+                    onClick={() =>
+                      setAdditionalGroupTexts((current) =>
+                        current.filter((_, item) => item !== index),
+                      )
+                    }
+                  >
+                    {t('npgen.removeGroup', 'Remove group')}
+                  </button>
+                </div>
+              ))}
+            </div>
             <button type="button" className="btn-office w-full" onClick={readCurrentBoard}>
               {t('npgen.readBoard', 'Read current puzzle-kit board')}
             </button>
 
-            {operation !== 'solve' && operation !== 'benchmark' && (
+            {operation !== 'solve' && (
               <>
                 <h3 className="font-medium text-sm border-b pb-1 pt-2">
                   {t('npgen.generation', 'Generation')}
                 </h3>
                 {operation === 'random' && (
-                  <Field label={t('npgen.hints', 'Hint count (multiple of 4)')}>
-                    <input
-                      type="number"
-                      min={4}
-                      step={4}
-                      className="input-office w-full"
-                      value={hints}
-                      onChange={(event) => setHints(Number(event.target.value))}
-                    />
-                  </Field>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field label={t('npgen.hints', 'Hint count')}>
+                      <input
+                        type="number"
+                        min={1}
+                        step={options.symmetry === 'rot4' ? 4 : options.symmetry === 'none' ? 1 : 2}
+                        className="input-office w-full"
+                        value={hints}
+                        onChange={(event) => setHints(Number(event.target.value))}
+                      />
+                    </Field>
+                    <Field label={t('npgen.symmetry', 'Symmetry')}>
+                      <select
+                        className="input-office w-full"
+                        value={options.symmetry}
+                        onChange={(event) =>
+                          updateOptions({
+                            symmetry: event.target.value as NpgenSymmetry,
+                          })
+                        }
+                      >
+                        {SYMMETRY_KEYS.map((item) => (
+                          <option key={item.value} value={item.value}>
+                            {t(item.label)}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                  </div>
                 )}
                 <div className="grid grid-cols-2 gap-2">
                   <Field label={t('npgen.difficultyMin', 'Difficulty min')}>
@@ -481,6 +724,18 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
                     ))}
                   </select>
                 </Field>
+                <Field label={t('npgen.retryLimit', 'Retry limit')}>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100000}
+                    className="input-office w-full"
+                    value={options.retryLimit}
+                    onChange={(event) =>
+                      updateOptions({ retryLimit: Number(event.target.value) })
+                    }
+                  />
+                </Field>
               </>
             )}
           </section>
@@ -494,26 +749,111 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
                   : t('npgen.output', 'Output')}
             </h3>
             {operation === 'solve' && (
-              <textarea
-                className="input-office w-full h-64 font-mono text-xs whitespace-pre"
-                value={problemText}
-                onChange={(event) => setProblemText(event.target.value)}
+              <NPGeneratorGridEditor
+                size={options.size}
+                values={problemGrid}
+                mode="numbers"
+                label={t('npgen.problemGrid', 'Problem grid')}
+                instructions={t(
+                  'npgen.editor.numberInstructions',
+                  'Select a cell, then use the keyboard or number pad.',
+                )}
+                clearLabel={t('npgen.editor.clear', 'Clear board')}
+                emptyLabel={t('npgen.editor.empty', 'Empty')}
+                numberPadLabel={t('npgen.editor.numberPad', 'Number pad')}
+                blockLabels={editorBlockLabels}
+                diagonal={options.diagonal}
+                onChange={setProblemGrid}
               />
             )}
             {operation === 'generate' && (
               <>
-                <textarea
-                  className="input-office w-full h-48 font-mono text-xs whitespace-pre"
-                  value={patternText}
-                  onChange={(event) => setPatternText(event.target.value)}
-                />
-                <Field label={t('npgen.hiddenGrid', 'Fixed/hidden numbers (optional)')}>
-                  <textarea
-                    className="input-office w-full h-36 font-mono text-xs whitespace-pre"
-                    value={hiddenText}
-                    onChange={(event) => setHiddenText(event.target.value)}
+                <div className="flex gap-1 border-b border-office-border">
+                  <button
+                    type="button"
+                    className={`px-3 py-2 text-sm border-b-2 ${
+                      generateGridMode === 'pattern'
+                        ? 'border-office-accent text-office-accent font-medium'
+                        : 'border-transparent text-office-text-secondary'
+                    }`}
+                    onClick={() => setGenerateGridMode('pattern')}
+                  >
+                    {t('npgen.patternGrid', 'Hint pattern')}
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-3 py-2 text-sm border-b-2 ${
+                      generateGridMode === 'hidden'
+                        ? 'border-office-accent text-office-accent font-medium'
+                        : 'border-transparent text-office-text-secondary'
+                    }`}
+                    onClick={() => setGenerateGridMode('hidden')}
+                  >
+                    {t('npgen.hiddenGrid', 'Fixed/hidden numbers (optional)')}
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-3 py-2 text-sm border-b-2 ${
+                      generateGridMode === 'seed'
+                        ? 'border-office-accent text-office-accent font-medium'
+                        : 'border-transparent text-office-text-secondary'
+                    }`}
+                    onClick={() => setGenerateGridMode('seed')}
+                  >
+                    {t('npgen.initialSeedGrid', 'Initial solution seed (optional)')}
+                  </button>
+                </div>
+                {generateGridMode === 'pattern' ? (
+                  <NPGeneratorGridEditor
+                    size={options.size}
+                    values={patternGrid}
+                    mode="pattern"
+                    label={t('npgen.patternGrid', 'Hint pattern')}
+                    instructions={t(
+                      'npgen.editor.patternInstructions',
+                      'Click cells to toggle hint positions.',
+                    )}
+                    clearLabel={t('npgen.editor.clear', 'Clear board')}
+                    emptyLabel={t('npgen.editor.empty', 'Empty')}
+                    blockLabels={editorBlockLabels}
+                    diagonal={options.diagonal}
+                    onChange={setPatternGrid}
                   />
-                </Field>
+                ) : generateGridMode === 'hidden' ? (
+                  <NPGeneratorGridEditor
+                    size={options.size}
+                    values={hiddenGrid}
+                    mode="numbers"
+                    label={t('npgen.hiddenGrid', 'Fixed/hidden numbers (optional)')}
+                    instructions={t(
+                      'npgen.editor.numberInstructions',
+                      'Select a cell, then use the keyboard or number pad.',
+                    )}
+                    clearLabel={t('npgen.editor.clear', 'Clear board')}
+                    emptyLabel={t('npgen.editor.empty', 'Empty')}
+                    numberPadLabel={t('npgen.editor.numberPad', 'Number pad')}
+                    blockLabels={editorBlockLabels}
+                    diagonal={options.diagonal}
+                    onChange={setHiddenGrid}
+                  />
+                ) : (
+                  <NPGeneratorGridEditor
+                    size={options.size}
+                    values={initialSeedGrid}
+                    mode="numbers"
+                    label={t('npgen.initialSeedGrid', 'Initial solution seed (optional)')}
+                    instructions={t(
+                      'npgen.editor.numberInstructions',
+                      'Select a cell, then use the keyboard or number pad.',
+                    )}
+                    clearLabel={t('npgen.editor.clear', 'Clear board')}
+                    emptyLabel={t('npgen.editor.empty', 'Empty')}
+                    numberPadLabel={t('npgen.editor.numberPad', 'Number pad')}
+                    blockLabels={editorBlockLabels}
+                    diagonal={options.diagonal}
+                    onChange={setInitialSeedGrid}
+                  />
+                )}
               </>
             )}
             {operation === 'random' && !result && (
@@ -521,24 +861,8 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
                 {t('npgen.randomHint', 'Run the generator to create a symmetric hint pattern.')}
               </div>
             )}
-            {operation === 'benchmark' && (
-              <div className="space-y-3">
-                <Field label={t('npgen.benchmarkCount', 'Puzzle count')}>
-                  <input
-                    type="number"
-                    min={1}
-                    className="input-office w-full"
-                    value={benchmarkCount}
-                    onChange={(event) => setBenchmarkCount(Number(event.target.value))}
-                  />
-                </Field>
-                <p className="text-xs text-office-text-secondary">
-                  {t('npgen.benchmarkHint', 'Runs the original 9×9 / 20-hint benchmark with one continuous random stream.')}
-                </p>
-              </div>
-            )}
-            {result && operation !== 'benchmark' && (
-              <div>
+            {result && (
+              <div className="space-y-2">
                 <div className="grid grid-cols-2 gap-2 mb-2 text-sm">
                   <div className="bg-gray-50 border p-2">
                     {t('npgen.difficulty', 'Difficulty')}:{' '}
@@ -550,18 +874,14 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
                     {t('npgen.answerKind', 'Result')}: {t(`npgen.answer.${result.answerKind}`, result.answerKind)}
                   </div>
                 </div>
-                <textarea
-                  readOnly
-                  className="input-office w-full h-64 font-mono text-xs whitespace-pre bg-gray-50"
-                  value={preview}
+                <NPGeneratorGridEditor
+                  size={options.size}
+                  values={result.problem}
+                  mode="readonly"
+                  label={t('npgen.resultGrid', 'Generated problem')}
+                  blockLabels={result.blockLabels}
+                  diagonal={result.diagonal}
                 />
-              </div>
-            )}
-            {benchmarkResult && (
-              <div className="border bg-gray-50 p-4 text-sm space-y-1">
-                <div>{t('npgen.succeeded', 'Succeeded')}: {benchmarkResult.succeeded}/{benchmarkResult.count}</div>
-                <div>{t('npgen.elapsed', 'Elapsed')}: {benchmarkResult.elapsedMs.toFixed(1)} ms</div>
-                <div>{t('npgen.perPuzzle', 'Per puzzle')}: {(benchmarkResult.elapsedMs / benchmarkResult.count).toFixed(1)} ms</div>
               </div>
             )}
             {error && (
@@ -638,6 +958,13 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
                 }}
               />
             </label>
+            <Field label={t('npgen.comment', 'Comment')}>
+              <textarea
+                className="input-office w-full h-20"
+                value={xmlComment}
+                onChange={(event) => setXmlComment(event.target.value)}
+              />
+            </Field>
             <button type="button" className="btn-office w-full" disabled={!result || busy} onClick={() => void exportXml()}>
               {t('npgen.exportXml', 'Export result XML')}
             </button>
@@ -648,8 +975,8 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
         </div>
 
         <div className="border-t border-office-border p-3 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex gap-2">
-            {result && operation !== 'benchmark' && (
+          <div className="flex flex-wrap items-center gap-2">
+            {result && (
               <>
                 <button type="button" className="btn-office" onClick={() => applyResult(false)}>
                   {t('npgen.applyProblem', 'Apply problem to puzzle-kit')}
@@ -657,10 +984,62 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
                 <button type="button" className="btn-office" onClick={() => applyResult(true)}>
                   {t('npgen.applySolution', 'Apply problem + solution')}
                 </button>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={includeSudokuPadSolution}
+                    onChange={(event) =>
+                      setIncludeSudokuPadSolution(event.target.checked)
+                    }
+                  />
+                  {t('npgen.sudokupad.includeSolution', 'Include solution')}
+                </label>
+                <span
+                  className="inline-flex"
+                  title={sudokuPadDisabledTitle || undefined}
+                >
+                  <button
+                    type="button"
+                    className="btn-office"
+                    disabled={sudokuPadDisabledReasons.length > 0}
+                    onClick={openSudokuPad}
+                  >
+                    {t('npgen.sudokupad.open', 'Open in SudokuPad')}
+                  </button>
+                </span>
+                <span
+                  className="inline-flex"
+                  title={sudokuPadDisabledTitle || undefined}
+                >
+                  <button
+                    type="button"
+                    className="btn-office"
+                    disabled={sudokuPadDisabledReasons.length > 0}
+                    onClick={() => void copySudokuPadUrl()}
+                  >
+                    {t('npgen.sudokupad.copy', 'Copy SudokuPad URL')}
+                  </button>
+                </span>
               </>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            {busy && progress && (
+              <span
+                className="text-sm text-office-text-secondary tabular-nums"
+                role="status"
+                aria-live="polite"
+                title={t(
+                  'npgen.progressNote',
+                  'Progress mode derives a new seed for each chunk, so its result can differ from generation without progress.',
+                )}
+              >
+                {t('npgen.progress', {
+                  attempts: progress.attempts,
+                  elapsed: Math.round(progress.elapsedMs),
+                })}
+              </span>
+            )}
             {busy ? (
               <button type="button" className="btn-office" onClick={cancel}>
                 {t('solver.cancel', 'Cancel')}
@@ -669,9 +1048,7 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
               <button type="button" className="btn-office-primary min-w-28" onClick={() => void run()}>
                 {operation === 'solve'
                   ? t('npgen.runSolve', 'Solve / evaluate')
-                  : operation === 'benchmark'
-                    ? t('npgen.runBenchmark', 'Run benchmark')
-                    : t('npgen.runGenerate', 'Generate')}
+                  : t('npgen.runGenerate', 'Generate')}
               </button>
             )}
           </div>
