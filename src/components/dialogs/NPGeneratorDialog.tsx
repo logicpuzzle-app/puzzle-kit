@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { usePuzzleStoreApi } from '../../store/puzzleStoreContext';
 import { runNpgenWorker } from '../../npgen/client';
 import {
+  detectRectangularBlocks,
   formatNpgenGrid,
   isStandardNineByNine,
   npgenResultToPuzzleState,
@@ -211,6 +212,7 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
     if (!result) return;
     const size = Math.sqrt(result.problem.length);
     const standard = isStandardNineByNine(result);
+    const rectangularBlocks = detectRectangularBlocks(result);
     const state = store.getState();
     state.newPuzzle({
       rows: size,
@@ -220,7 +222,16 @@ export const NPGeneratorDialog: React.FC<NPGeneratorDialogProps> = ({
     });
     const nextState = store.getState();
     nextState.setCurrentSchemaId(standard ? 'sudoku' : null);
-    if (!standard) nextState.setGrid({ gridStyle: 'normal', frameStyle: 'thick' });
+    if (rectangularBlocks) {
+      nextState.setGrid({
+        gridStyle: 'sudoku',
+        blockRows: rectangularBlocks.height,
+        blockCols: rectangularBlocks.width,
+        frameStyle: 'thick',
+      });
+    } else {
+      nextState.setGrid({ gridStyle: 'normal', frameStyle: 'thick' });
+    }
     store.setState({ puzzle: npgenResultToPuzzleState(result, includeSolution) });
     store.getState().setActiveLayer(includeSolution ? 'answer' : 'problem');
     store.getState().historyManager.clear();

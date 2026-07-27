@@ -109,7 +109,17 @@ export function loadToolSettings(): PersistedToolSettings {
 // Grid Config Persistence
 // ===========================
 
-type PersistedGridConfig = Pick<GridConfig, 'rows' | 'cols' | 'cellSize' | 'gridType' | 'gridStyle' | 'frameStyle'>;
+type PersistedGridConfig = Pick<
+  GridConfig,
+  | 'rows'
+  | 'cols'
+  | 'cellSize'
+  | 'gridType'
+  | 'gridStyle'
+  | 'blockRows'
+  | 'blockCols'
+  | 'frameStyle'
+>;
 
 const DEFAULT_PERSISTED_GRID_CONFIG: PersistedGridConfig = {
   rows: 9,
@@ -117,23 +127,41 @@ const DEFAULT_PERSISTED_GRID_CONFIG: PersistedGridConfig = {
   cellSize: 40,
   gridType: 'square',
   gridStyle: 'normal',
+  blockRows: 3,
+  blockCols: 3,
   frameStyle: 'normal',
 };
 
 export function saveGridConfig(config: GridConfig): boolean {
-  const { rows, cols, cellSize, gridType, gridStyle, frameStyle } = config;
+  const {
+    rows,
+    cols,
+    cellSize,
+    gridType,
+    gridStyle,
+    blockRows = 3,
+    blockCols = 3,
+    frameStyle,
+  } = config;
   return setItem(STORAGE_KEYS.GRID_CONFIG, {
     rows,
     cols,
     cellSize,
     gridType,
     gridStyle,
+    blockRows,
+    blockCols,
     frameStyle,
   });
 }
 
 export function loadGridConfig(): PersistedGridConfig {
-  return getItem(STORAGE_KEYS.GRID_CONFIG, DEFAULT_PERSISTED_GRID_CONFIG);
+  const config = getItem(STORAGE_KEYS.GRID_CONFIG, DEFAULT_PERSISTED_GRID_CONFIG);
+  return {
+    ...config,
+    blockRows: config.blockRows ?? 3,
+    blockCols: config.blockCols ?? 3,
+  };
 }
 
 // ===========================
