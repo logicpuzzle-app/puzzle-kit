@@ -34,6 +34,7 @@ import {
   getMaxDigitsForGrid,
   appendDigit,
   removeLastChar,
+  MARKER_KEYS,
   type KeyboardShortcut,
   executeMatchingShortcut,
 } from './keyboardUtils';
@@ -457,6 +458,25 @@ export function useNumberKeyboard() {
     // Single character input (non-digit)
     {
       keys: 'abcdefghijklmnopqrstuvwxyz'.split(''),
+      preventDefault: true,
+      when: (ctx) => (ctx.isNumberTool || ctx.isConstraintNumberInput) && ctx.target !== null,
+      run: (ctx, key) => {
+        if (!ctx.target) return;
+        const { isConstraintNumberInput, isNumberTool } = ctx;
+
+        if (isConstraintNumberInput) {
+          handleConstraintNumber(ctx.target, key, false, true);
+        } else if (toolSettings.currentTool === 'number-directional') {
+          handleDirectionalNumber(ctx.target, key, false, true);
+        } else if (isNumberTool) {
+          handleNormalNumber(ctx.target, key, false, true);
+        }
+      },
+    },
+    // Marker characters. '?' already exists as a number pad button; typing these while
+    // constructing is quicker than reaching for the panel.
+    {
+      keys: [...MARKER_KEYS],
       preventDefault: true,
       when: (ctx) => (ctx.isNumberTool || ctx.isConstraintNumberInput) && ctx.target !== null,
       run: (ctx, key) => {
