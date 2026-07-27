@@ -836,6 +836,8 @@ export const en = {
   'grid.gridColor': 'Grid Color',
   'grid.backgroundColor': 'Background',
   'grid.disabledCellColor': 'Disabled Cell Color',
+  'grid.cursorCellColor': 'Selection cursor color',
+  'grid.cursorCellThickness': 'Selection cursor width',
 
   // Common
   'common.apply': 'Apply',
