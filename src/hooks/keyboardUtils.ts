@@ -202,6 +202,12 @@ export function isDigit(key: string): boolean {
 /**
  * Check if key is a single character (non-digit)
  */
+/**
+ * Characters that mark a clue position while constructing a puzzle.
+ * '?' mirrors the number pad's unknown button; '.' flags a spot to fill in later.
+ */
+export const MARKER_KEYS = ['?', '.'] as const;
+
 export function isSingleChar(key: string): boolean {
   return key.length === 1 && !isDigit(key);
 }

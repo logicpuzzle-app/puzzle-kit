@@ -16,6 +16,7 @@ import {
   removeLastChar,
   type KeyboardShortcut,
   type KeyModifiers,
+  MARKER_KEYS,
 } from '../hooks/keyboardUtils';
 
 describe('keyboardUtils', () => {
@@ -251,6 +252,19 @@ describe('keyboardUtils', () => {
       expect(matchesShortcut(shortcut, '=', modifiers, undefined)).toBe(true);
       expect(matchesShortcut(shortcut, '+', modifiers, undefined)).toBe(true);
       expect(matchesShortcut(shortcut, '-', modifiers, undefined)).toBe(false);
+    });
+  });
+
+  describe('MARKER_KEYS', () => {
+    it('covers the clue markers requested for keyboard entry', () => {
+      expect([...MARKER_KEYS]).toEqual(['?', '.']);
+    });
+
+    it('holds only single non-digit characters, so isSingleChar accepts them', () => {
+      for (const key of MARKER_KEYS) {
+        expect(isSingleChar(key)).toBe(true);
+        expect(isDigit(key)).toBe(false);
+      }
     });
   });
 });
