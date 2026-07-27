@@ -1,0 +1,21 @@
+{
+  "variant": "before",
+  "viewport": "mobile",
+  "baseUrl": "http://127.0.0.1:5199",
+  "results": [
+    {
+      "key": "initial-layout",
+      "pr": null,
+      "title": "Editor layout on load",
+      "file": "19-before-develop-mobile-initial-layout.png",
+      "ok": true,
+      "shot": "view",
+      "observed": {
+        "scrollWidth": 560,
+        "clientWidth": 412,
+        "overflowsHorizontally": true
+      },
+      "errors": []
+    }
+  ]
+}

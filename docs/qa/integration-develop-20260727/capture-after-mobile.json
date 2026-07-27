@@ -1,0 +1,21 @@
+{
+  "variant": "after",
+  "viewport": "mobile",
+  "baseUrl": "http://127.0.0.1:5200",
+  "results": [
+    {
+      "key": "initial-layout",
+      "pr": null,
+      "title": "Editor layout on load",
+      "file": "20-after-branch-mobile-initial-layout.png",
+      "ok": true,
+      "shot": "view",
+      "observed": {
+        "scrollWidth": 560,
+        "clientWidth": 412,
+        "overflowsHorizontally": true
+      },
+      "errors": []
+    }
+  ]
+}

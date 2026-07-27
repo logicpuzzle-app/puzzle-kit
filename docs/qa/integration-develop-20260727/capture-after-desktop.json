@@ -1,0 +1,159 @@
+{
+  "variant": "after",
+  "viewport": "desktop",
+  "baseUrl": "http://127.0.0.1:5200",
+  "results": [
+    {
+      "key": "marker-keys",
+      "pr": 46,
+      "title": "'?' and '.' typed straight into cells",
+      "file": "02-after-branch-desktop-marker-keys.png",
+      "ok": true,
+      "shot": "board",
+      "observed": {
+        "afterQuestion": [
+          "?"
+        ],
+        "afterDot": [
+          "?",
+          "."
+        ],
+        "afterDigit": [
+          "?",
+          ".",
+          "7"
+        ],
+        "markerAccepted": true,
+        "digitReplacesMarker": true
+      },
+      "errors": []
+    },
+    {
+      "key": "arrow-backspace",
+      "pr": 37,
+      "title": "Backspace clears a number in Arrow Number mode",
+      "file": "04-after-branch-desktop-arrow-backspace.png",
+      "ok": true,
+      "shot": "board",
+      "observed": {
+        "typed": [
+          "5"
+        ],
+        "afterBackspace": [],
+        "cleared": true
+      },
+      "errors": []
+    },
+    {
+      "key": "exclude-wording",
+      "pr": 39,
+      "title": "Exclude panel wording",
+      "file": "06-after-branch-desktop-exclude-wording.png",
+      "ok": true,
+      "shot": "view",
+      "observed": {
+        "clearButton": "Clear all excluded cells",
+        "help": null
+      },
+      "errors": []
+    },
+    {
+      "key": "exclude-restore",
+      "pr": 39,
+      "title": "An excluded cell is restored by clicking it again",
+      "file": "08-after-branch-desktop-exclude-restore.png",
+      "ok": true,
+      "shot": "board",
+      "observed": {
+        "cells": {
+          "start": 81,
+          "excluded": 80,
+          "restored": 81
+        },
+        "restoredOk": true
+      },
+      "errors": []
+    },
+    {
+      "key": "gap-click",
+      "pr": 38,
+      "title": "Clicking the hole of an excluded cell must not paint the board",
+      "file": "10-after-branch-desktop-gap-click.png",
+      "ok": true,
+      "shot": "board",
+      "observed": {
+        "shadedByHoleClick": 0,
+        "shadedAfterRealCell": 1,
+        "holeIsInert": true
+      },
+      "errors": []
+    },
+    {
+      "key": "edge-lines",
+      "pr": 43,
+      "title": "Lines connect edge midpoints in topology mode",
+      "file": "12-after-branch-desktop-edge-lines.png",
+      "ok": true,
+      "shot": "board",
+      "observed": {
+        "lines": {
+          "start": 0,
+          "afterSegment": 2,
+          "afterRoute": 7
+        },
+        "drawn": true
+      },
+      "errors": []
+    },
+    {
+      "key": "cursor-settings",
+      "pr": 45,
+      "title": "The Grid > Style panel exposes the selection cursor settings",
+      "file": "14-after-branch-desktop-cursor-settings.png",
+      "ok": true,
+      "shot": "view",
+      "observed": {
+        "settingPresent": true,
+        "widthOptions": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "6",
+          "8"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "key": "cursor-appearance",
+      "pr": 45,
+      "title": "The selection cursor honours the configured colour and width",
+      "file": "16-after-branch-desktop-cursor-appearance.png",
+      "ok": true,
+      "shot": "board",
+      "observed": {
+        "settingPresent": true,
+        "cursor": {
+          "stroke": "rgba(0, 0, 255, 0.95)",
+          "width": "8"
+        }
+      },
+      "errors": []
+    },
+    {
+      "key": "initial-layout",
+      "pr": null,
+      "title": "Editor layout on load",
+      "file": "18-after-branch-desktop-initial-layout.png",
+      "ok": true,
+      "shot": "view",
+      "observed": {
+        "scrollWidth": 1600,
+        "clientWidth": 1600,
+        "overflowsHorizontally": false
+      },
+      "errors": []
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "scope": "integration-develop-20260727",
+  "status": "captured",
+  "prs": [37, 38, 39, 43, 45, 46],
+  "baseUrl": {
+    "before": "http://127.0.0.1:5199/master",
+    "after": "http://127.0.0.1:5200/master"
+  },
+  "capturedAt": "2026-07-27T13:02:07Z",
+  "before": {
+    "branch": "develop",
+    "commit": "112d999f6472f3949937e24bdc52a0159591ebd8",
+    "screenshotsCaptured": 10
+  },
+  "after": {
+    "branch": "qa/integration-develop",
+    "commit": "4a37784a58a764e518c159d3f3091cd1b74243a6",
+    "screenshotsCaptured": 10
+  },
+  "viewports": {
+    "desktop": "Desktop Chrome 1600x1000",
+    "mobile": "Pixel 7"
+  },
+  "firebase": "not-applicable",
+  "environment": {
+    "os": "macOS 26.2 (arm64)",
+    "node": "v22.21.1",
+    "pnpm": "10.32.0",
+    "playwright": "1.62.0",
+    "browser": "Playwright bundled Chromium"
+  },
+  "captureScript": ".qa/capture-integration.mjs",
+  "verification": {
+    "eslint": { "before": "506 errors / 51 warnings", "after": "506 errors / 51 warnings" },
+    "tsc": { "before": "exit 0", "after": "exit 0" },
+    "vitest": { "before": "926 passed / 47 files", "after": "960 passed / 50 files" }
+  },
+  "captureNote": "モバイル(Pixel 7)はエディタのリボンがビューポート外へ溢れて操作できないため、初期表示の比較のみ。この横溢れはdevelopでも同一で、対象PR起因ではない。"
+}
