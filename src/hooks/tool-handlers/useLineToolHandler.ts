@@ -17,7 +17,7 @@ import {
 } from '../../utils/lineUtils';
 import { normalizeSegmentEndpoints } from '../../utils/lineNormalization';
 import { useGridPointUtils } from '../useGridPointUtils';
-import type { Point, LineTargetType, LineElement } from '../../types';
+import type { Point, LineTargetType, LineElement, LineDirection } from '../../types';
 import { resolveEdge } from '../../utils/pointResolver';
 import { getVertexId, getVertexIndexById } from '../../utils/gridUtils';
 import { resolveGridIdToPosition } from '../../utils/gridIds';
@@ -479,7 +479,8 @@ export function useLineToolHandler({
       const allowedDirections = (toolSettings.lineDirections || ['orthogonal']).filter(
         (dir) => dir === 'orthogonal' || dir === 'diagonal'
       );
-      const effectiveDirections = allowedDirections.length > 0 ? allowedDirections : ['orthogonal'];
+      const effectiveDirections: LineDirection[] =
+        allowedDirections.length > 0 ? allowedDirections : ['orthogonal'];
 
       if (isStart) {
         setDrawStartPoint(vertexId);

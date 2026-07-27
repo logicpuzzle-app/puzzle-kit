@@ -218,7 +218,7 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
               y: symbolPreview.y,
               size: symbolPreview.size,
               color: symbolPreview.color,
-              rotation: symbolPreview.rotation,
+              rotation: symbolPreview.rotation ?? 0,
               directions: symbolPreview.directions,
               directionAngles: symbolPreview.directionAngles,
             })}

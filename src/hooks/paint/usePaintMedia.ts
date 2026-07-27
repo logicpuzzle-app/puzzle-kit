@@ -5,9 +5,11 @@ import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import type React from 'react';
 import type { GridConfig } from '../../types';
 import type { PdfImagePage, TranslateFn } from '../../components/paint/types';
-import type { useModalStore } from '../../store/modalStoreContext';
+import type { ModalStore } from '../../store/modalStore';
 
-type ModalStoreApi = ReturnType<typeof useModalStore>;
+// ReturnType<typeof useModalStore> resolves to unknown because the hook is generic;
+// reference the store interface directly instead.
+type ModalStoreApi = ModalStore;
 
 type PdfPagePreview = {
   pageNumber: number;
@@ -21,7 +23,7 @@ type UsePaintMediaArgs = {
   t: TranslateFn;
   grid: GridConfig;
   setGrid: (updates: Partial<GridConfig>) => void;
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
   showAlert: ModalStoreApi['showAlert'];
 };
 

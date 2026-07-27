@@ -3,6 +3,7 @@
  */
 
 import type { ToolSlice, SliceCreator } from './types';
+import type { LineGridPoint } from '../../types';
 import { DEFAULT_TOOL_SETTINGS } from './types';
 import { isLineToolCategory } from '../../utils/lineRender';
 
@@ -43,7 +44,7 @@ export const createToolSlice: SliceCreator<ToolSlice> = (set, get) => ({
                 ? 'icon'
                 : state.toolSettings.symbolSubMode
           : state.toolSettings.symbolSubMode;
-      const nextSymbolGridPoints = tool.startsWith('symbol-arrow')
+      const nextSymbolGridPoints: LineGridPoint[] = tool.startsWith('symbol-arrow')
         ? ['cell']
         : state.toolSettings.symbolGridPoints;
 

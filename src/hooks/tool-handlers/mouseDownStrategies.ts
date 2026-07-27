@@ -5,7 +5,7 @@
  * Each strategy handles a specific tool/mode combination.
  */
 
-import type { Point, SurfaceDisplayMode } from '../../types';
+import type { Point, SurfaceDisplayMode, PenpaDirectionalClue } from '../../types';
 import type { AutoModeConfig } from '../../constraints/inputModeMapping';
 import type { FlickState } from '../inputStrategies';
 import { INITIAL_FLICK_STATE } from '../inputStrategies';
@@ -61,6 +61,9 @@ export interface MouseDownResult {
   action?: MouseDownAction;
 }
 
+/** Payload accepted by the store's addDirectionalClue action. */
+type DirectionalClueInput = Omit<PenpaDirectionalClue, 'id'>;
+
 /**
  * Actions that strategies can request
  */
@@ -72,6 +75,9 @@ export type MouseDownAction =
   | { type: 'handleSymbolTool'; point: Point; options: SymbolToolOptions }
   | { type: 'addSurface'; cellId: string; color: string; layer: DataLayerType; displayMode: SurfaceDisplayMode }
   | { type: 'removeDirectionalClue'; id: string }
+  // Handled by useCanvasInputRouter; no strategy emits these yet.
+  | { type: 'incrementDirectionalClue'; clue: DirectionalClueInput }
+  | { type: 'convertNumberToDirectionalClue'; clue: DirectionalClueInput; removeNumberId: string }
   | { type: 'setCursorCell'; cellId: string }
   | { type: 'resetFillModes' }
   | { type: 'baseMouseDown' };

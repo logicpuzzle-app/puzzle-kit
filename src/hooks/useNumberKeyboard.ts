@@ -592,7 +592,7 @@ export function useNumberKeyboard() {
       keys: ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'],
       preventDefault: true,
       when: (ctx) => ctx.isNumberTool || ctx.isConstraintNumberInput,
-      run: (ctx, _key) => {
+      run: (ctx, key) => {
         const direction = getArrowDirection(key);
         if (!direction) return;
 
