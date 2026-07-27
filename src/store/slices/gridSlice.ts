@@ -31,6 +31,8 @@ const DEFAULT_GRID: GridConfig = {
   outerPadding: 20,
   showGrid: true,
   gridStyle: 'normal',
+  blockRows: 3,
+  blockCols: 3,
   gridType: 'square',
   marginTop: 0,
   marginBottom: 0,

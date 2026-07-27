@@ -471,6 +471,8 @@ export interface GridConfig {
   outerPadding: number;
   showGrid: boolean;
   gridStyle: 'normal' | 'thick' | 'sudoku' | 'dots' | 'dashed';
+  blockRows?: number;
+  blockCols?: number;
   // Grid type (cell shape)
   gridType: GridType;
   // Extended margin options (extra cells outside main grid)

@@ -27,6 +27,7 @@ function numberElement(
 function blockBoundaries(
   size: number,
   labels: number[],
+  includeLines: boolean,
 ): { roomMap: RoomMap; lines: Record<string, LineElement> } {
   const roomMap: RoomMap = {};
   const lines: Record<string, LineElement> = {};
@@ -34,7 +35,11 @@ function blockBoundaries(
     for (let col = 0; col < size; col++) {
       const index = row * size + col;
       roomMap[`cell-${row}-${col}`] = labels[index] ?? 0;
-      if (col + 1 < size && labels[index] !== labels[index + 1]) {
+      if (
+        includeLines &&
+        col + 1 < size &&
+        labels[index] !== labels[index + 1]
+      ) {
         const id = `npgen-border-v-${row}-${col + 1}`;
         lines[id] = {
           id,
@@ -48,7 +53,11 @@ function blockBoundaries(
           layer: 'problem',
         };
       }
-      if (row + 1 < size && labels[index] !== labels[index + size]) {
+      if (
+        includeLines &&
+        row + 1 < size &&
+        labels[index] !== labels[index + size]
+      ) {
         const id = `npgen-border-h-${row + 1}-${col}`;
         lines[id] = {
           id,
@@ -65,6 +74,94 @@ function blockBoundaries(
     }
   }
   return { roomMap, lines };
+}
+
+export function detectRectangularBlocks(
+  result: NpgenEngineResult,
+): { width: number; height: number } | null {
+  const size = Math.sqrt(result.problem.length);
+  if (
+    !Number.isInteger(size) ||
+    result.blockLabels.length !== result.problem.length
+  ) {
+    return null;
+  }
+
+  const bounds = new Map<
+    number,
+    {
+      minRow: number;
+      maxRow: number;
+      minCol: number;
+      maxCol: number;
+      count: number;
+    }
+  >();
+  result.blockLabels.forEach((label, index) => {
+    const row = Math.floor(index / size);
+    const col = index % size;
+    const current = bounds.get(label);
+    if (current) {
+      current.minRow = Math.min(current.minRow, row);
+      current.maxRow = Math.max(current.maxRow, row);
+      current.minCol = Math.min(current.minCol, col);
+      current.maxCol = Math.max(current.maxCol, col);
+      current.count++;
+    } else {
+      bounds.set(label, {
+        minRow: row,
+        maxRow: row,
+        minCol: col,
+        maxCol: col,
+        count: 1,
+      });
+    }
+  });
+
+  if (bounds.size !== size) return null;
+
+  let blockWidth: number | null = null;
+  let blockHeight: number | null = null;
+  for (const [label, block] of bounds) {
+    const width = block.maxCol - block.minCol + 1;
+    const height = block.maxRow - block.minRow + 1;
+    if (
+      block.count !== size ||
+      width * height !== block.count ||
+      (blockWidth !== null && width !== blockWidth) ||
+      (blockHeight !== null && height !== blockHeight)
+    ) {
+      return null;
+    }
+    blockWidth ??= width;
+    blockHeight ??= height;
+
+    for (let row = block.minRow; row <= block.maxRow; row++) {
+      for (let col = block.minCol; col <= block.maxCol; col++) {
+        if (result.blockLabels[row * size + col] !== label) return null;
+      }
+    }
+  }
+
+  if (
+    blockWidth === null ||
+    blockHeight === null ||
+    size % blockWidth !== 0 ||
+    size % blockHeight !== 0
+  ) {
+    return null;
+  }
+
+  for (const block of bounds.values()) {
+    if (
+      block.minCol % blockWidth !== 0 ||
+      block.minRow % blockHeight !== 0
+    ) {
+      return null;
+    }
+  }
+
+  return { width: blockWidth, height: blockHeight };
 }
 
 export function isStandardNineByNine(result: NpgenEngineResult): boolean {
@@ -101,7 +198,12 @@ export function npgenResultToPuzzleState(
       );
     }
   });
-  const { roomMap, lines } = blockBoundaries(size, result.blockLabels);
+  const rectangularBlocks = detectRectangularBlocks(result);
+  const { roomMap, lines } = blockBoundaries(
+    size,
+    result.blockLabels,
+    rectangularBlocks === null,
+  );
   const emptyElements = {
     surfaces: {},
     lines: {},

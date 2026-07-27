@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  detectRectangularBlocks,
   formatNpgenGrid,
   isStandardNineByNine,
   npgenResultToPuzzleState,
@@ -29,6 +30,38 @@ function standardResult(): NpgenEngineResult {
   };
 }
 
+function rectangularResult(
+  size: number,
+  blockWidth: number,
+  blockHeight: number,
+): NpgenEngineResult {
+  const problem = new Array<number>(size * size).fill(0);
+  return {
+    pattern: [...problem],
+    problem,
+    solution: Array.from(
+      { length: size * size },
+      (_, index) => (index % size) + 1,
+    ),
+    blockLabels: Array.from({ length: size * size }, (_, index) => {
+      const row = Math.floor(index / size);
+      const col = index % size;
+      return (
+        Math.floor(row / blockHeight) * (size / blockWidth) +
+        Math.floor(col / blockWidth) +
+        1
+      );
+    }),
+    groupLabels: [],
+    difficulty: 0,
+    answerKind: 'unique',
+    vertical: true,
+    horizontal: true,
+    diagonal: false,
+    defaultBlock: true,
+  };
+}
+
 describe('NPGenerator puzzle adapter', () => {
   it('round-trips text grids', () => {
     const values = [1, 0, 0, 2];
@@ -41,8 +74,18 @@ describe('NPGenerator puzzle adapter', () => {
   });
 
   it('recognizes standard 9x9 blocks', () => {
+    expect(detectRectangularBlocks(standardResult())).toEqual({ width: 3, height: 3 });
     expect(isStandardNineByNine(standardResult())).toBe(true);
     expect(isStandardNineByNine({ ...standardResult(), diagonal: true })).toBe(false);
+  });
+
+  it('recognizes rectangular 3x2 blocks on a 6x6 grid', () => {
+    const result = rectangularResult(6, 3, 2);
+    expect(detectRectangularBlocks(result)).toEqual({
+      width: 3,
+      height: 2,
+    });
+    expect(Object.keys(npgenResultToPuzzleState(result).problem.lines)).toHaveLength(0);
   });
 
   it('creates problem and optional answer numbers', () => {
@@ -54,8 +97,22 @@ describe('NPGenerator puzzle adapter', () => {
     expect(Object.keys(puzzle.problem.roomMap ?? {})).toHaveLength(81);
   });
 
-  it('draws only internal block boundaries', () => {
+  it('uses the grid style instead of line elements for rectangular blocks', () => {
     const puzzle = npgenResultToPuzzleState(standardResult());
-    expect(Object.keys(puzzle.problem.lines)).toHaveLength(36);
+    expect(Object.keys(puzzle.problem.lines)).toHaveLength(0);
+    expect(Object.keys(puzzle.problem.roomMap ?? {})).toHaveLength(81);
+  });
+
+  it('draws line elements for irregular block boundaries', () => {
+    const result = standardResult();
+    [result.blockLabels[0], result.blockLabels[3]] = [
+      result.blockLabels[3],
+      result.blockLabels[0],
+    ];
+
+    expect(detectRectangularBlocks(result)).toBeNull();
+    const puzzle = npgenResultToPuzzleState(result);
+    expect(Object.keys(puzzle.problem.lines).length).toBeGreaterThan(0);
+    expect(Object.keys(puzzle.problem.roomMap ?? {})).toHaveLength(81);
   });
 });
