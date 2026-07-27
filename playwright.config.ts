@@ -9,7 +9,9 @@ export default defineConfig({
   },
   reporter: [['list']],
   use: {
-    baseURL: 'http://127.0.0.1:4174',
+    baseURL: process.env.QA_STATIC_DIR
+      ? 'http://puzzle-kit-qa.local'
+      : 'http://127.0.0.1:4174',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
@@ -18,13 +20,19 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      name: 'mobile-chrome',
+      use: { ...devices['Pixel 7'] },
+    },
   ],
-  webServer: {
-    command: 'pnpm dev --host 127.0.0.1 --port 4174',
-    url: 'http://127.0.0.1:4174/master',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  },
+  webServer: process.env.QA_STATIC_DIR
+    ? undefined
+    : {
+        command: 'pnpm dev --host 127.0.0.1 --port 4174',
+        url: 'http://127.0.0.1:4174/master',
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
+        stdout: 'pipe',
+        stderr: 'pipe',
+      },
 });
