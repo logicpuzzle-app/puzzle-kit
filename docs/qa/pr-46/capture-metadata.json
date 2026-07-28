@@ -1,0 +1,29 @@
+{
+  "scope": "pr-46",
+  "status": "captured",
+  "baseUrl": "http://localhost:5199/master",
+  "capturedAt": "2026-07-28T02:57:26Z",
+  "before": {
+    "ref": "origin/develop",
+    "commit": "112d999f"
+  },
+  "after": {
+    "ref": "feat/symbol-keyboard-input",
+    "commit": "cc3f9fc4ee95566efc36aee26601bb6f73ea8300"
+  },
+  "viewports": {
+    "desktop": "Desktop Chrome 1600x1000",
+    "mobile": "Pixel 7"
+  },
+  "mobileScope": "layout-only (ribbon does not fit 412px)",
+  "screenshots": [
+    "01-before-develop-desktop-marker-keys-full.png",
+    "01-before-develop-desktop-marker-keys-markers.png",
+    "02-before-develop-mobile-marker-keys-board.png",
+    "02-before-develop-mobile-marker-keys-editor.png",
+    "03-after-branch-desktop-marker-keys-full.png",
+    "03-after-branch-desktop-marker-keys-markers.png",
+    "04-after-branch-mobile-marker-keys-board.png",
+    "04-after-branch-mobile-marker-keys-editor.png"
+  ]
+}
