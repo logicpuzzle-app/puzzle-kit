@@ -183,7 +183,7 @@ export const MenuBar: React.FC = () => {
   return (
     <div
       ref={menuRef}
-      className="flex items-center bg-office-ribbon border-b border-office-border h-7 px-1"
+      className="flex items-center bg-office-ribbon border-b border-office-border h-7 px-1 max-md:overflow-x-auto max-md:[&>*]:shrink-0"
     >
       {/* App icon/title */}
       <div className="flex items-center px-2 mr-2">

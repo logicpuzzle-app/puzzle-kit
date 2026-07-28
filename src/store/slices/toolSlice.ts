@@ -93,7 +93,7 @@ export const createToolSlice: SliceCreator<ToolSlice> = (set, get) => ({
     })),
 
   // UI panels
-  isPropertiesPanelOpen: true,
+  isPropertiesPanelOpen: typeof window === 'undefined' || window.innerWidth >= 768,
   setPropertiesPanelOpen: (open) => set({ isPropertiesPanelOpen: open }),
   togglePropertiesPanel: () => set((state) => ({ isPropertiesPanelOpen: !state.isPropertiesPanelOpen })),
 });
