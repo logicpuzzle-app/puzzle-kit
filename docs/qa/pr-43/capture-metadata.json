@@ -1,0 +1,31 @@
+{
+  "scope": "pr-43",
+  "status": "captured",
+  "baseUrl": "http://localhost:5199/master",
+  "capturedAt": "2026-07-28T02:57:26Z",
+  "before": {
+    "ref": "origin/develop",
+    "commit": "112d999f"
+  },
+  "after": {
+    "ref": "fix/edge-midpoint-lines",
+    "commit": "bad0a2413b15cc164e5d7c89b20f1c8599dccf75"
+  },
+  "viewports": {
+    "desktop": "Desktop Chrome 1600x1000",
+    "mobile": "Pixel 7"
+  },
+  "mobileScope": "layout-only (ribbon does not fit 412px)",
+  "screenshots": [
+    "01-before-develop-desktop-edge-lines-edge-route.png",
+    "01-before-develop-desktop-edge-lines-edge-to-edge.png",
+    "01-before-develop-desktop-edge-lines-full.png",
+    "02-before-develop-mobile-edge-lines-board.png",
+    "02-before-develop-mobile-edge-lines-editor.png",
+    "03-after-branch-desktop-edge-lines-edge-route.png",
+    "03-after-branch-desktop-edge-lines-edge-to-edge.png",
+    "03-after-branch-desktop-edge-lines-full.png",
+    "04-after-branch-mobile-edge-lines-board.png",
+    "04-after-branch-mobile-edge-lines-editor.png"
+  ]
+}
