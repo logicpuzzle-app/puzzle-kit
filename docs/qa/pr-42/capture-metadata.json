@@ -1,0 +1,31 @@
+{
+  "scope": "pr-42",
+  "status": "captured",
+  "baseUrl": "http://localhost:5199/master",
+  "capturedAt": "2026-07-28T03:15:53Z",
+  "before": {
+    "ref": "origin/wip/paint-office-20260727",
+    "commit": "0fcb0811"
+  },
+  "after": {
+    "ref": "fix/type-errors-wip",
+    "commit": "753774bf820fcebaf2405c754ab9970e8b5e1e22"
+  },
+  "viewports": {
+    "desktop": "Desktop Chrome 1600x1000",
+    "mobile": "Pixel 7"
+  },
+  "mobileScope": "layout-only (ribbon does not fit 412px)",
+  "screenshots": [
+    "01-before-wip-desktop-runtime-bugs-arrow-nav.png",
+    "01-before-wip-desktop-runtime-bugs-free-segment.png",
+    "01-before-wip-desktop-runtime-bugs-full.png",
+    "02-before-wip-mobile-runtime-bugs-board.png",
+    "02-before-wip-mobile-runtime-bugs-editor.png",
+    "03-after-branch-desktop-runtime-bugs-arrow-nav.png",
+    "03-after-branch-desktop-runtime-bugs-free-segment.png",
+    "03-after-branch-desktop-runtime-bugs-full.png",
+    "04-after-branch-mobile-runtime-bugs-board.png",
+    "04-after-branch-mobile-runtime-bugs-editor.png"
+  ]
+}
