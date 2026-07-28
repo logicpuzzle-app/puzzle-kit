@@ -1,0 +1,30 @@
+{
+  "scope": "pr-45",
+  "status": "captured",
+  "baseUrl": "http://localhost:5199/master",
+  "capturedAt": "2026-07-28T02:57:26Z",
+  "before": {
+    "ref": "origin/develop",
+    "commit": "112d999f"
+  },
+  "after": {
+    "ref": "feat/selection-highlight",
+    "commit": "8c58365db38c801b62ec2584f8c63d3929cc4fb6"
+  },
+  "viewports": {
+    "desktop": "Desktop Chrome 1600x1000",
+    "mobile": "Pixel 7"
+  },
+  "mobileScope": "layout-only (ribbon does not fit 412px)",
+  "screenshots": [
+    "01-before-develop-desktop-selection-cursor-cursor-default.png",
+    "01-before-develop-desktop-selection-cursor-ribbon.png",
+    "02-before-develop-mobile-selection-cursor-board.png",
+    "02-before-develop-mobile-selection-cursor-editor.png",
+    "03-after-branch-desktop-selection-cursor-cursor-custom.png",
+    "03-after-branch-desktop-selection-cursor-cursor-default.png",
+    "03-after-branch-desktop-selection-cursor-ribbon.png",
+    "04-after-branch-mobile-selection-cursor-board.png",
+    "04-after-branch-mobile-selection-cursor-editor.png"
+  ]
+}
