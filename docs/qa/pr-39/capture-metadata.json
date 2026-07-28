@@ -1,0 +1,31 @@
+{
+  "scope": "pr-39",
+  "status": "captured",
+  "baseUrl": "http://localhost:5199/master",
+  "capturedAt": "2026-07-28T02:57:26Z",
+  "before": {
+    "ref": "origin/develop",
+    "commit": "112d999f"
+  },
+  "after": {
+    "ref": "fix/exclude-cell-restore",
+    "commit": "d38c0b4b5483d066438d3b72317e0d24772251db"
+  },
+  "viewports": {
+    "desktop": "Desktop Chrome 1600x1000",
+    "mobile": "Pixel 7"
+  },
+  "mobileScope": "layout-only (ribbon does not fit 412px)",
+  "screenshots": [
+    "01-before-develop-desktop-exclude-restore-excluded.png",
+    "01-before-develop-desktop-exclude-restore-panel.png",
+    "01-before-develop-desktop-exclude-restore-restored.png",
+    "02-before-develop-mobile-exclude-restore-board.png",
+    "02-before-develop-mobile-exclude-restore-editor.png",
+    "03-after-branch-desktop-exclude-restore-excluded.png",
+    "03-after-branch-desktop-exclude-restore-panel.png",
+    "03-after-branch-desktop-exclude-restore-restored.png",
+    "04-after-branch-mobile-exclude-restore-board.png",
+    "04-after-branch-mobile-exclude-restore-editor.png"
+  ]
+}
