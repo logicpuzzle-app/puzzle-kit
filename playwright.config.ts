@@ -1,19 +1,34 @@
 import { defineConfig, devices } from '@playwright/test';
+import { resolve } from 'node:path';
+
+const artifactDir = process.env.QA_ARTIFACT_DIR;
 
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
+  forbidOnly: !!process.env.CI,
+  workers: 2,
+  retries: 0,
+  outputDir: artifactDir ? resolve(artifactDir, 'test-results') : 'test-results',
   timeout: 45_000,
   expect: {
     timeout: 10_000,
   },
-  reporter: [['list']],
+  reporter: [
+    ['list'],
+    ['html', { outputFolder: artifactDir ? resolve(artifactDir, 'report') : 'playwright-report', open: 'never' }],
+    ['json', { outputFile: artifactDir ? resolve(artifactDir, 'results.json') : 'test-results/results.json' }],
+  ],
   use: {
     baseURL: process.env.QA_STATIC_DIR
       ? 'http://puzzle-kit-qa.local'
       : 'http://127.0.0.1:4174',
-    trace: 'retain-on-failure',
+    trace: artifactDir ? 'on' : 'retain-on-failure',
     screenshot: 'only-on-failure',
+    video: artifactDir ? 'on' : 'retain-on-failure',
+    locale: 'en-US',
+    timezoneId: 'Asia/Tokyo',
+    contextOptions: { reducedMotion: 'reduce' },
   },
   projects: [
     {
@@ -28,9 +43,9 @@ export default defineConfig({
   webServer: process.env.QA_STATIC_DIR
     ? undefined
     : {
-        command: 'pnpm dev --host 127.0.0.1 --port 4174',
+        command: 'pnpm exec vite --config vite.qa.config.ts --host 127.0.0.1 --port 4174 --strictPort',
         url: 'http://127.0.0.1:4174/master',
-        reuseExistingServer: !process.env.CI,
+        reuseExistingServer: false,
         timeout: 120_000,
         stdout: 'pipe',
         stderr: 'pipe',

@@ -1,4 +1,5 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test } from './fixtures';
+import type { Locator, Page } from '@playwright/test';
 import { resolve } from 'node:path';
 
 async function openNPGenerator(page: Page) {
@@ -126,7 +127,7 @@ test('imports updated XML constraints and uses an initial solution seed', async 
   await openNPGenerator(page);
   const fixture = resolve(
     process.cwd(),
-    '../../Puzzle/npgenerator/java/testdata/xml-seed.xml',
+    'e2e/fixtures/xml-seed.xml',
   );
   await page.locator('input[type="file"][accept*="xml"]').setInputFiles(fixture);
 
@@ -154,7 +155,7 @@ test('imports every XML constraint group in declaration order', async ({ page })
   await openNPGenerator(page);
   const fixture = resolve(
     process.cwd(),
-    '../../Puzzle/npgenerator/java/testdata/xml-multiple-groups.xml',
+    'e2e/fixtures/xml-multiple-groups.xml',
   );
   await page.locator('input[type="file"][accept*="xml"]').setInputFiles(fixture);
 

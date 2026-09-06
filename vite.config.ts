@@ -34,8 +34,16 @@ export default defineConfig({
     },
   },
   test: {
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text-summary', 'html', 'json-summary'],
+      reportsDirectory: './coverage',
+      include: ['src/{utils,store,hooks,npgen}/**/*.{ts,tsx}'],
+      exclude: ['**/*.{test,spec}.{ts,tsx}', '**/*.d.ts', '**/__tests__/**'],
+    },
   },
 })

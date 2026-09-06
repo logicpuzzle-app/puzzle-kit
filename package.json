@@ -44,7 +44,19 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "deploy": "npm run build && firebase deploy --only hosting"
+    "deploy": "npm run build && firebase deploy --only hosting",
+    "test:unit": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:report": "playwright show-report",
+    "test:issues": "playwright test e2e/editor-issues.spec.ts",
+    "typecheck": "tsc -b",
+    "qa:capture": "node scripts/qa-capture.mjs",
+    "qa:check": "node scripts/qa-check.mjs",
+    "qa:doctor": "node scripts/qa-doctor.mjs",
+    "dev:harness": "vite --config vite.qa.config.ts --host 127.0.0.1 --port 4175 --strictPort",
+    "qa:compare": "node scripts/qa-compare.mjs",
+    "typecheck:e2e": "tsc -p tsconfig.e2e.json"
   },
   "dependencies": {
     "firebase": "^12.6.0",
@@ -71,6 +83,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^5.1.1",
+    "@vitest/coverage-v8": "4.0.16",
     "autoprefixer": "^10.4.22",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
@@ -82,7 +95,6 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "^7.2.7",
-    "vitest": "4.0.16",
-    "@vitest/coverage-v8": "4.0.16"
+    "vitest": "4.0.16"
   }
 }

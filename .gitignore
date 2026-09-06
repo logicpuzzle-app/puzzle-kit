@@ -37,3 +37,7 @@ test-results
 .firebase/
 .firebaserc
 firebase.json
+
+# Local QA recordings and reports
+artifacts/
+coverage/
