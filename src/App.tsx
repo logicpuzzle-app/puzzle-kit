@@ -78,7 +78,7 @@ function App() {
         />
 
         {/* Properties Panel */}
-        <PropertiesPanel />
+        <PropertiesPanel suspended={isStorageErrorOpen || textDialogOpen} />
       </div>
 
       {/* Status Bar */}
