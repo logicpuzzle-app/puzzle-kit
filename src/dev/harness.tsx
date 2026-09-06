@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from '../App';
 import '../index.css';
@@ -12,6 +12,11 @@ const scenarios = {
   'free-segment': { label: '#40 Free Segment', tool: 'line-normal', category: 'line', directions: ['straight'] },
   'orthogonal': { label: '#20 Orthogonal erase', tool: 'line-normal', category: 'line', directions: ['orthogonal'] },
   'number': { label: '#19 Number / Backspace / arrows', tool: 'number-normal', category: 'number', directions: ['orthogonal'] },
+  'square-exclusion': { label: '#23 Square exclusion / restore', tool: 'surface-fill', category: 'surface', directions: ['orthogonal'] },
+  'hex-exclusion': { label: '#18 Hex exclusion / restore', tool: 'surface-fill', category: 'surface', directions: ['orthogonal'] },
+  'edge-lines': { label: '#21 Edge midpoint lines', tool: 'line-normal', category: 'line', directions: ['orthogonal'] },
+  'half-lines': { label: '#21 Cell to edge half lines', tool: 'line-normal', category: 'line', directions: ['orthogonal'] },
+  'directional-number': { label: '#19 Directional number deletion', tool: 'number-directional', category: 'number', directions: ['orthogonal'] },
   'thermo': { label: '#40 Thermometer', tool: 'special-thermo', category: 'special', directions: ['orthogonal'] },
 } as const;
 type Scenario = keyof typeof scenarios;
@@ -20,11 +25,18 @@ function newSession(scenario: Scenario) {
   Object.keys(localStorage).filter(key => key.startsWith('puzzlekit')).forEach(key => localStorage.removeItem(key));
   const session = createPuzzleStore();
   const state = session.useStore.getState();
-  state.newPuzzle({ rows: 6, cols: 6 });
+  state.newPuzzle({ rows: 6, cols: 6, gridType: scenario === 'hex-exclusion' ? 'hex' : 'square' });
   state.setActiveLayer('problem');
   const settings = scenarios[scenario];
   state.setTool(settings.tool, settings.category);
   state.setToolSettings({ lineDirections: [...settings.directions], lineGridPoints: ['cell'] });
+  if (scenario.endsWith('-exclusion')) {
+    state.setActiveLayer('grid');
+    state.setGridEditMode('exclude');
+  }
+  if (scenario === 'edge-lines' || scenario === 'half-lines') {
+    state.setToolSettings({ lineGridPoints: scenario === 'edge-lines' ? ['edge'] : ['cell', 'edge'], lineHalfMode: scenario === 'half-lines' });
+  }
   saveToolSettings(session.useStore.getState().toolSettings);
   saveGridConfig(session.useStore.getState().grid);
   return { ...session, modal: createModalStore() };
@@ -37,6 +49,13 @@ export function Harness() {
   const [session, setSession] = useState(() => newSession(initial));
   const [revision, setRevision] = useState(0);
   const [snapshot, setSnapshot] = useState('');
+  // App restores preferences in a mount effect, including its default input mode.
+  // Apply the chosen tool after that initialization so every scenario is reproducible.
+  useEffect(() => {
+    const state = session.useStore.getState();
+    const settings = scenarios[scenario];
+    state.setTool(settings.tool, settings.category);
+  }, [session, scenario]);
   function reset(next: Scenario) {
     // This origin is dedicated to QA; remove only Puzzle Kit preferences.
     Object.keys(localStorage).filter(key => key.startsWith('puzzlekit')).forEach(key => localStorage.removeItem(key));
