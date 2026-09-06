@@ -23,7 +23,7 @@ interface TouchState {
   isDragging: boolean;
 }
 
-type PointerInfo = { clientX: number; clientY: number };
+type PointerInfo = { clientX: number; clientY: number; startX: number; startY: number };
 
 interface UseTouchHandlersOptions {
   svgRef: React.RefObject<SVGSVGElement | null>;
@@ -78,7 +78,6 @@ export function useTouchHandlers({
     canvas,
     toolSettings,
     setCanvasState,
-    setZoom,
     setPan,
     startHistoryGroup,
     endHistoryGroup,
@@ -165,7 +164,7 @@ export function useTouchHandlers({
       const touchState = touchStateRef.current;
       const pointers = activePointersRef.current;
       if (pointers.has(e.pointerId)) return;
-      pointers.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
+      pointers.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY, startX: e.clientX, startY: e.clientY });
       e.currentTarget.setPointerCapture(e.pointerId);
       const points = Array.from(pointers.values());
 
@@ -282,10 +281,10 @@ export function useTouchHandlers({
       const previousPoint = pointers.get(e.pointerId);
       if (!previousPoint) return;
       if (touchState.initialTouchCount >= 2 &&
-          Math.hypot(e.clientX - previousPoint.clientX, e.clientY - previousPoint.clientY) > 0.5) {
+          Math.hypot(e.clientX - previousPoint.startX, e.clientY - previousPoint.startY) > 0.5) {
         touchState.isDragging = true;
       }
-      pointers.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
+      pointers.set(e.pointerId, { ...previousPoint, clientX: e.clientX, clientY: e.clientY });
       const points = Array.from(pointers.values());
 
       if (touchState.initialTouchCount >= 2 && !allowMultiTouchPanZoom) {
@@ -301,12 +300,20 @@ export function useTouchHandlers({
 
         const center = getPinchCenter(points);
         if (touchState.lastTouchPoint) {
-          const dx = center.x - touchState.lastTouchPoint.x;
-          const dy = center.y - touchState.lastTouchPoint.y;
-          setPan(currentCanvas.panX + dx, currentCanvas.panY + dy);
+          // Keep the point under the previous midpoint under the new midpoint.
+          // Both transforms use live store values, including clamped zoom. The
+          // export padding is inside the scaled group, so it needs no extra shift.
+          const rect = svgRef.current?.getBoundingClientRect();
+          const previousX = touchState.lastTouchPoint.x - (rect?.left ?? 0);
+          const previousY = touchState.lastTouchPoint.y - (rect?.top ?? 0);
+          const ratio = newZoom / currentCanvas.zoom;
+          setCanvasState({
+            zoom: newZoom,
+            panX: center.x - (rect?.left ?? 0) - (previousX - currentCanvas.panX) * ratio,
+            panY: center.y - (rect?.top ?? 0) - (previousY - currentCanvas.panY) * ratio,
+          });
         }
 
-        setZoom(newZoom);
         touchState.lastTouchPoint = center;
       } else if (points.length === 1 && touchState.lastTouchPoint) {
         if (touchState.initialTouchCount >= 2 || touchState.isPanning || !currentCanvas.isDrawing) {
@@ -334,9 +341,10 @@ export function useTouchHandlers({
     },
     [
       store,
+      svgRef,
+      setCanvasState,
       activeLayer,
       gridHandlers,
-      setZoom,
       setPan,
       getCanvasPoint,
       allowMultiTouchPanZoom,
