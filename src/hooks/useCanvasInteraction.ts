@@ -364,6 +364,11 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom }: UseCanv
   const { handlePointerDown, handlePointerMove, handlePointerUp } = useTouchHandlers({
     svgRef,
     allowMultiTouchPanZoom,
+    gridHandlers: isGridMode && gridEditMode === 'exclude' ? {
+      down: (point) => handleGridTool(point, false, false),
+      move: (point) => handleGridTool(point, false, false),
+      up: finishGridTool,
+    } : undefined,
     toolHandlers,
     drawStartPoint,
     setDrawStartPoint,

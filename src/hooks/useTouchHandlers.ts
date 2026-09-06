@@ -12,6 +12,7 @@ import type { Point } from '../types';
 
 interface TouchState {
   isPinching: boolean;
+  isPanning: boolean;
   initialPinchDistance: number;
   initialZoom: number;
   lastTouchPoint: Point | null;
@@ -26,6 +27,11 @@ type PointerInfo = { clientX: number; clientY: number };
 interface UseTouchHandlersOptions {
   svgRef: React.RefObject<SVGSVGElement | null>;
   allowMultiTouchPanZoom?: boolean;
+  gridHandlers?: {
+    down: (point: Point) => void;
+    move: (point: Point) => void;
+    up: () => void;
+  };
   toolHandlers: ToolDispatchHandlers & {
     handleStraightLineEnd: (point: Point, isRightClick: boolean, isShiftKey: boolean) => void;
     resetFillModes: () => void;
@@ -59,6 +65,7 @@ const getPinchCenter = (points: PointerInfo[]): Point => {
 export function useTouchHandlers({
   svgRef,
   allowMultiTouchPanZoom = true,
+  gridHandlers,
   toolHandlers,
   drawStartPoint,
   setDrawStartPoint,
@@ -81,6 +88,7 @@ export function useTouchHandlers({
 
   const touchStateRef = useRef<TouchState>({
     isPinching: false,
+    isPanning: false,
     initialPinchDistance: 0,
     initialZoom: 1,
     lastTouchPoint: null,
@@ -180,16 +188,28 @@ export function useTouchHandlers({
         const tool = toolSettings.currentTool;
 
         resetFillModes();
+        touchState.isDragging = false;
+        touchState.isPanning = canvas.panMode;
+        if (touchState.isPanning) {
+          setCanvasState({ isDragging: true, isDrawing: false });
+          return;
+        }
         startHistoryGroup();
         setCanvasState({ isDrawing: true });
-        touchState.isDragging = false;
 
-        toolDispatchers.dispatchStart(tool, point, false, false);
+        if (activeLayer === 'grid') {
+          gridHandlers?.down(point);
+        } else {
+          toolDispatchers.dispatchStart(tool, point, false, false);
+        }
       }
     },
     [
       allowMultiTouchPanZoom,
       canvas.zoom,
+      canvas.panMode,
+      activeLayer,
+      gridHandlers,
       getCanvasPoint,
       toolSettings.currentTool,
       setCanvasState,
@@ -266,7 +286,7 @@ export function useTouchHandlers({
         setZoom(newZoom);
         touchState.lastTouchPoint = center;
       } else if (points.length === 1 && touchState.lastTouchPoint) {
-        if (!canvas.isDrawing) {
+        if (touchState.isPanning || !canvas.isDrawing) {
           const dx = points[0].clientX - touchState.lastTouchPoint.x;
           const dy = points[0].clientY - touchState.lastTouchPoint.y;
           setPan(canvas.panX + dx, canvas.panY + dy);
@@ -279,7 +299,11 @@ export function useTouchHandlers({
           const isRightClick = false;
           const isShiftKey = false;
 
-          toolDispatchers.dispatchMove(tool, point, isRightClick, isShiftKey);
+          if (activeLayer === 'grid') {
+            gridHandlers?.move(point);
+          } else {
+            toolDispatchers.dispatchMove(tool, point, isRightClick, isShiftKey);
+          }
 
           touchState.lastTouchPoint = { x: points[0].clientX, y: points[0].clientY };
         }
@@ -289,6 +313,8 @@ export function useTouchHandlers({
       canvas.panX,
       canvas.panY,
       canvas.isDrawing,
+      activeLayer,
+      gridHandlers,
       setZoom,
       setPan,
       getCanvasPoint,
@@ -309,50 +335,60 @@ export function useTouchHandlers({
       const touchDuration = Date.now() - touchState.touchStartTime;
       const initialTouches = touchState.initialTouchCount;
       const pointers = activePointersRef.current;
-      const pointInfo = pointers.get(e.pointerId) ?? { clientX: e.clientX, clientY: e.clientY };
+      const pointInfo = pointers.get(e.pointerId);
+      if (!pointInfo) return;
+      const cancelled = e.type === 'pointercancel';
       pointers.delete(e.pointerId);
       const point = getCanvasPoint(pointInfo.clientX, pointInfo.clientY);
 
-      // Multi-finger tap gestures
-      if (touchDuration < 300 && !touchState.isDragging && initialTouches >= 2) {
-        const tool = toolSettings.currentTool;
-        const isSecondaryColor = initialTouches === 2;
-        const isDeleteMode = initialTouches >= 3;
+      // Cancellation is cleanup, never a tap or a free-segment commit. Exclusions
+      // already applied during a drag still need their topology refreshed.
+      if (activeLayer === 'grid' && !touchState.isPanning) {
+        gridHandlers?.up();
+      } else if (!cancelled && !touchState.isPanning) {
+        // Multi-finger tap gestures
+        if (touchDuration < 300 && !touchState.isDragging && initialTouches >= 2) {
+          const tool = toolSettings.currentTool;
+          const isSecondaryColor = initialTouches === 2;
+          const isDeleteMode = initialTouches >= 3;
 
-        toolDispatchers.dispatchTap(tool, point, isSecondaryColor, isDeleteMode);
-      }
-      // Single-finger tap for click-style input (number/text/select)
-      else if (touchDuration < 300 && !touchState.isDragging && initialTouches === 1) {
-        handleTapInput(point);
-      }
-      // Long press for deletion
-      else if (touchDuration > 500 && !touchState.isDragging && initialTouches === 1) {
-        const tool = toolSettings.currentTool;
+          toolDispatchers.dispatchTap(tool, point, isSecondaryColor, isDeleteMode);
+        }
+        // Single-finger tap for click-style input (number/text/select)
+        else if (touchDuration < 300 && !touchState.isDragging && initialTouches === 1) {
+          handleTapInput(point);
+        }
+        // Long press for deletion
+        else if (touchDuration > 500 && !touchState.isDragging && initialTouches === 1) {
+          const tool = toolSettings.currentTool;
 
-        toolDispatchers.dispatchLongPress(tool, point);
-      }
+          toolDispatchers.dispatchLongPress(tool, point);
+        }
 
-      // Handle straight line on touch end
-      if (initialTouches === 1) {
-        const tool = toolSettings.currentTool;
-        if (tool.startsWith('line')) {
-          const allowedDirections = toolSettings.lineDirections || ['orthogonal'];
-          if (allowedDirections.includes('straight') && drawStartPoint) {
-            handleStraightLineEnd(point, false, false);
+        // Handle straight line on touch end
+        if (initialTouches === 1) {
+          const tool = toolSettings.currentTool;
+          if (tool.startsWith('line')) {
+            const allowedDirections = toolSettings.lineDirections || ['orthogonal'];
+            if (allowedDirections.includes('straight') && drawStartPoint) {
+              handleStraightLineEnd(point, false, false);
+            }
+          } else if (tool === 'special-boxline') {
+            toolDispatchers.dispatchEnd(tool, point);
           }
-        } else if (tool === 'special-boxline') {
-          toolDispatchers.dispatchEnd(tool, point);
         }
       }
 
-      endHistoryGroup();
+      if (!touchState.isPanning) endHistoryGroup();
+      if (cancelled) pointers.clear();
       resetFillModes();
 
       touchState.isPinching = false;
       touchState.lastTouchPoint = null;
       touchState.initialTouchCount = 0;
+      touchState.isPanning = false;
       touchState.isDragging = false;
-      setCanvasState({ isDrawing: false });
+      setCanvasState({ isDrawing: false, isDragging: false });
       setDrawStartPoint(null);
       setDrawStartPosition(null);
       setCurrentStrokeId(null);
@@ -362,6 +398,8 @@ export function useTouchHandlers({
     },
     [
       handleTapInput,
+      activeLayer,
+      gridHandlers,
       getCanvasPoint,
       toolSettings.currentTool,
       toolSettings.lineDirections,
