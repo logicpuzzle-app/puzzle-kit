@@ -1,4 +1,6 @@
-export type TranslateFn = (key: string, ...args: Array<string | number | Record<string, unknown>>) => string;
+import type { TFunction } from 'i18next';
+
+export type TranslateFn = TFunction;
 
 export type PaintCategory = 'surface' | 'number' | 'word' | 'symbol' | 'line' | 'freehand';
 

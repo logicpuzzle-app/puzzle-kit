@@ -7,7 +7,7 @@ export type PaintMenuBarProps = {
   paintMenus: PaintMenu[];
   activeMenu: string | null;
   setActiveMenu: React.Dispatch<React.SetStateAction<string | null>>;
-  menuRef: React.RefObject<HTMLDivElement>;
+  menuRef: React.RefObject<HTMLDivElement | null>;
   isJa: boolean;
   isEn: boolean;
   onLanguageChange: (lang: 'ja' | 'en') => void;

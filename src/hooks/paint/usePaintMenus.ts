@@ -8,7 +8,7 @@ type UsePaintMenusArgs = {
   t: TranslateFn;
   grid: GridConfig;
   setGrid: (updates: Partial<GridConfig>) => void;
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
   undo: () => void;
   redo: () => void;
   canUndo: () => boolean;

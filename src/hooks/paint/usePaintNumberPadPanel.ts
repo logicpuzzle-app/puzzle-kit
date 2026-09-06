@@ -4,8 +4,8 @@ import type { ToolSettings } from '../../types';
 import type { InputMode } from '../../constraints/types';
 
 type UsePaintNumberPadPanelArgs = {
-  rootRef: React.RefObject<HTMLDivElement>;
-  canvasWrapperRef: React.RefObject<HTMLDivElement>;
+  rootRef: React.RefObject<HTMLDivElement | null>;
+  canvasWrapperRef: React.RefObject<HTMLDivElement | null>;
   toolSettings: ToolSettings;
   currentInputMode: InputMode | null;
   onWindowResize?: () => void;

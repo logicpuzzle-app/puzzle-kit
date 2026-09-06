@@ -5,7 +5,7 @@
  * Each strategy handles a specific tool/mode combination.
  */
 
-import type { Point, SurfaceDisplayMode } from '../../types';
+import type { Point, SurfaceDisplayMode, PenpaDirectionalClue } from '../../types';
 import type { AutoModeConfig } from '../../constraints/inputModeMapping';
 import type { FlickState } from '../inputStrategies';
 import { INITIAL_FLICK_STATE } from '../inputStrategies';
@@ -72,6 +72,8 @@ export type MouseDownAction =
   | { type: 'handleSymbolTool'; point: Point; options: SymbolToolOptions }
   | { type: 'addSurface'; cellId: string; color: string; layer: DataLayerType; displayMode: SurfaceDisplayMode }
   | { type: 'removeDirectionalClue'; id: string }
+  | { type: 'incrementDirectionalClue'; clue: Omit<PenpaDirectionalClue, 'id'> }
+  | { type: 'convertNumberToDirectionalClue'; clue: Omit<PenpaDirectionalClue, 'id'>; removeNumberId: string }
   | { type: 'setCursorCell'; cellId: string }
   | { type: 'resetFillModes' }
   | { type: 'baseMouseDown' };

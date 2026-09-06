@@ -5,7 +5,7 @@ import type { PaintAdjustMode, PdfImagePage, TranslateFn } from './types';
 
 export type PaintPrimaryToolbarProps = {
   t: TranslateFn;
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
   onImageSelect: (event: React.ChangeEvent<HTMLInputElement>) => void;
   hasImage: boolean;
   onRemoveImage: () => void;
