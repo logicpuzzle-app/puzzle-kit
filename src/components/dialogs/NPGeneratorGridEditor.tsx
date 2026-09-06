@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 
 type NPGeneratorGridMode = 'numbers' | 'pattern' | 'readonly';
 
@@ -33,6 +33,7 @@ export const NPGeneratorGridEditor: React.FC<NPGeneratorGridEditorProps> = ({
   diagonal = false,
   onChange,
 }) => {
+  const cellRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const cells = useMemo(() => normalizedValues(values, size), [values, size]);
   const editable = mode !== 'readonly' && onChange !== undefined;
@@ -51,7 +52,9 @@ export const NPGeneratorGridEditor: React.FC<NPGeneratorGridEditorProps> = ({
     const col = selectedCell % size;
     const nextRow = Math.max(0, Math.min(size - 1, row + rowDelta));
     const nextCol = Math.max(0, Math.min(size - 1, col + colDelta));
-    setSelectedIndex(nextRow * size + nextCol);
+    const next = nextRow * size + nextCol;
+    setSelectedIndex(next);
+    cellRefs.current[next]?.focus({ preventScroll: true });
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
@@ -134,7 +137,9 @@ export const NPGeneratorGridEditor: React.FC<NPGeneratorGridEditorProps> = ({
               <button
                 key={index}
                 type="button"
+                ref={element => { cellRefs.current[index] = element; }}
                 role="gridcell"
+                tabIndex={editable && selectedCell === index ? 0 : -1}
                 aria-label={cellLabel}
                 aria-selected={selected}
                 disabled={!editable}
@@ -152,7 +157,12 @@ export const NPGeneratorGridEditor: React.FC<NPGeneratorGridEditorProps> = ({
                   borderBottomWidth: bottomBoundary ? 2 : 1,
                   fontSize: `clamp(9px, ${Math.min(4.5, 32 / size)}vw, ${Math.max(11, 28 - size)}px)`,
                 }}
-                onClick={() => selectCell(index)}
+                onClick={event => {
+                  // Safari does not focus buttons on click. The selected cell must
+                  // receive subsequent typing even when another input had focus.
+                  event.currentTarget.focus({ preventScroll: true });
+                  selectCell(index);
+                }}
                 onFocus={() => setSelectedIndex(index)}
                 onKeyDown={handleKeyDown}
               >
