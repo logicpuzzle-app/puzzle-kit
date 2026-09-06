@@ -1,6 +1,6 @@
 # 開発・テストハーネス
 
-2026-09-06 / 対象: `PuzzleTools/puzzle-kit`。実測結果と既知不具合は [最新QA記録](qa/2026-09-06-multitouch-grid.md)を参照。UIレビューの作業文書は非追跡の `.work/ui-review/` に保存し、公開しない。
+2026-09-06 / 対象: `PuzzleTools/puzzle-kit`。実測結果と既知不具合は [最新QA記録](qa/2026-09-06-properties-drawer.md)を参照。UIレビューの作業文書は非追跡の `.work/ui-review/` に保存し、公開しない。
 
 ## 構成
 
@@ -11,6 +11,7 @@
 - `e2e/topology-issues.spec.ts`: 正方形/六角形の除外・復元、辺中点/半分の線とUndo/Redo、方向付き数字のBackspace。ハーネスで初期化して実際のポインターとキーボードを操作。
 - `e2e/multitouch-grid.chromium-touch.spec.ts`: 複数指の部分リリース、タッチのMerge/Splitと中断、Undo/Redoをmobile-chromeで検証。
 - `e2e/grid-sculpt.spec.ts`: Sculpt Rotate/CutとUndo/Redoを全4projectのtouchscreen.tapで検証。
+- `e2e/properties-drawer.spec.ts`: 狭幅Propertiesの開閉・設定・フォーカス・リサイズ・エラー通知を4projectで検証。
 - `e2e/editor-quality.spec.ts`: Edit起動とPaint/Masterの最低限の盤面寸法。
 - `e2e/ui-audit.spec.ts`: Home / Master / Edit / Paint / 開発ハーネスの起動、画面寸法、スクリーンショット。表示スモークテストの成功は操作性やアクセシビリティの適合を意味しない。
 - `e2e/fixtures.ts`: uncaught browser exception を失敗として扱い、エラーを添付。QAでは成功時も画面を保存。

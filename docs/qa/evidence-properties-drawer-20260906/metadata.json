@@ -1,0 +1,71 @@
+[
+  {
+    "flow": "width-360",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T10-25-52-416Z-before",
+      "title": "Properties preserves board geometry at 360px",
+      "status": "failed",
+      "commit": "3742aa505e17f5fb206d07f8305fc00153357c80",
+      "video": "width-360-before.webm",
+      "videoSHA256": "7ec7ae1ef4748f005428278f6dbb74d1cdf9a7df0f52e062677d257c312faaa3",
+      "sourceManifestSHA256": "d600f520d4670efbd98d591388521bf00d398db5ddcb87e99d6ecc4433008227"
+    },
+    "after": {
+      "capture": "2026-09-06T10-36-06-058Z-after",
+      "title": "Properties preserves board geometry at 360px",
+      "status": "passed",
+      "commit": "3742aa505e17f5fb206d07f8305fc00153357c80",
+      "video": "width-360-after.webm",
+      "videoSHA256": "b81d22dd6493e3196d3c52917f93d5782793e94df61fe902af7d0648606256bb",
+      "sourceManifestSHA256": "357698bb79f5296cc76626c1f831b82d1c51cfab02c1128bec7f7067c470aeaa"
+    },
+    "title": "Properties preserves board geometry at 360px"
+  },
+  {
+    "flow": "width-412",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T10-25-52-416Z-before",
+      "title": "Properties preserves board geometry at 412px",
+      "status": "failed",
+      "commit": "3742aa505e17f5fb206d07f8305fc00153357c80",
+      "video": "width-412-before.webm",
+      "videoSHA256": "eac602cfa0fa51a1faceabdf4b30cd45065151532eb5fb58aad2a1f82be31910",
+      "sourceManifestSHA256": "d600f520d4670efbd98d591388521bf00d398db5ddcb87e99d6ecc4433008227"
+    },
+    "after": {
+      "capture": "2026-09-06T10-36-06-058Z-after",
+      "title": "Properties preserves board geometry at 412px",
+      "status": "passed",
+      "commit": "3742aa505e17f5fb206d07f8305fc00153357c80",
+      "video": "width-412-after.webm",
+      "videoSHA256": "6facc7cf34c250603c645d1865fca0ab0794e3247282fe18a025c71d55c802f4",
+      "sourceManifestSHA256": "357698bb79f5296cc76626c1f831b82d1c51cfab02c1128bec7f7067c470aeaa"
+    },
+    "title": "Properties preserves board geometry at 412px"
+  },
+  {
+    "flow": "escape",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T10-25-52-416Z-before",
+      "title": "Properties closes with Escape and restores its opener",
+      "status": "failed",
+      "commit": "3742aa505e17f5fb206d07f8305fc00153357c80",
+      "video": "escape-before.webm",
+      "videoSHA256": "4dd8606f50663cc624988383f89805b9a7e8588edcb6d52ecaf662ca82a7bd4a",
+      "sourceManifestSHA256": "d600f520d4670efbd98d591388521bf00d398db5ddcb87e99d6ecc4433008227"
+    },
+    "after": {
+      "capture": "2026-09-06T10-36-06-058Z-after",
+      "title": "Properties closes with Escape and restores its opener",
+      "status": "passed",
+      "commit": "3742aa505e17f5fb206d07f8305fc00153357c80",
+      "video": "escape-after.webm",
+      "videoSHA256": "586b6effdd8b34af8b3b873dbdf8567014f1b27e59bbd3a551a8f8ee690b6fdc",
+      "sourceManifestSHA256": "357698bb79f5296cc76626c1f831b82d1c51cfab02c1128bec7f7067c470aeaa"
+    },
+    "title": "Properties closes with Escape and restores its opener"
+  }
+]
