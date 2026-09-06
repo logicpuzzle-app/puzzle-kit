@@ -1,6 +1,6 @@
 # 開発・テストハーネス
 
-2026-09-06 / 対象: `PuzzleTools/puzzle-kit`。実測結果と既知不具合は [最新QA記録](qa/2026-09-06-touch-webkit.md)を参照。UIレビューの作業文書は非追跡の `.work/ui-review/` に保存し、公開しない。
+2026-09-06 / 対象: `PuzzleTools/puzzle-kit`。実測結果と既知不具合は [最新QA記録](qa/2026-09-06-multitouch-grid.md)を参照。UIレビューの作業文書は非追跡の `.work/ui-review/` に保存し、公開しない。
 
 ## 構成
 
@@ -9,6 +9,8 @@
 - `e2e/npgen.spec.ts`: 実際のWasm Workerによる生成、XML読込、盤面編集。XMLは `e2e/fixtures` に同梱。
 - `e2e/editor-issues.spec.ts`: GitHub #40 / #20 / #19 / #22 と数字の矢印移動。実際の `/master` のUIを操作し、描画されたSVGを確認。ストアをブラウザーから直接書き換えない。
 - `e2e/topology-issues.spec.ts`: 正方形/六角形の除外・復元、辺中点/半分の線とUndo/Redo、方向付き数字のBackspace。ハーネスで初期化して実際のポインターとキーボードを操作。
+- `e2e/multitouch-grid.chromium-touch.spec.ts`: 複数指の部分リリース、タッチのMerge/Splitと中断、Undo/Redoをmobile-chromeで検証。
+- `e2e/grid-sculpt.spec.ts`: Sculpt Rotate/CutとUndo/Redoを全4projectのtouchscreen.tapで検証。
 - `e2e/editor-quality.spec.ts`: Edit起動とPaint/Masterの最低限の盤面寸法。
 - `e2e/ui-audit.spec.ts`: Home / Master / Edit / Paint / 開発ハーネスの起動、画面寸法、スクリーンショット。表示スモークテストの成功は操作性やアクセシビリティの適合を意味しない。
 - `e2e/fixtures.ts`: uncaught browser exception を失敗として扱い、エラーを添付。QAでは成功時も画面を保存。
@@ -71,7 +73,7 @@ npm run dev:harness
 # http://127.0.0.1:4175/harness.html?scenario=number
 ```
 
-`free-segment` / `orthogonal` / `number` / `thermo` に加え、`square-exclusion` / `hex-exclusion` / `edge-lines` / `half-lines` / `directional-number` を選択できる。6×6の盤面と独立したストア・履歴・モーダルで開始する。Resetでシナリオを再初期化し、Inspect puzzle JSONでexport結果を確認する。
+`free-segment` / `orthogonal` / `number` / `thermo` に加え、`square-exclusion` / `hex-exclusion` / `edge-lines` / `half-lines` / `directional-number` 、`square-merge` / `square-split` / `iso-sculpt` / `iso-sculpt-cut` を選択できる。6×6の盤面と独立したストア・履歴・モーダルで開始する。Resetでシナリオを再初期化し、Inspect puzzle JSONでexport結果を確認する。
 
 ハーネスはQA専用originの `puzzlekit*` 設定を初期化する。日常編集には別ポートの通常devを使う。保存済みパズルや別originのデータは削除しない。デスクトップでの利用を基本とする。`harness.html` はViteの本番build入力に含めず、開発時のみモジュールを読み込む。
 
@@ -99,7 +101,7 @@ npx playwright show-report artifacts/qa/<run>/report
 npx playwright show-trace artifacts/qa/<run>/test-results/<test>/trace.zip
 ```
 
-`artifacts/` と `coverage/` はGit対象外。証跡は作業フォルダに残るがGit pushでは共有されない。共有する場合はbefore/after/comparisonを相対位置を保ったまままとめて渡す。初期ハーネスの証跡に加え、[修正後の9フロー・18動画](qa/evidence-editor-quality-20260906/README.md) をGit管理している。
+`artifacts/` と `coverage/` はGit対象外。証跡は作業フォルダに残るがGit pushでは共有されない。共有する場合はbefore/after/comparisonを相対位置を保ったまままとめて渡す。初期ハーネスの証跡に加え、[修正後の9フロー・18動画](qa/evidence-editor-quality-20260906/README.md) と[複数指・Gridの7フロー・14動画](qa/evidence-multitouch-grid-20260906/README.md)をGit管理している。
 
 既存の `qa-npgen-capture.spec.ts` は `QA_VARIANT=before|after` の手動スクリーンショット用途。通常は4件skipされる。旧 `QA_STATIC_DIR` はそのファイル専用の静的ルーティングなので、全E2Eには設定しない。録画には新しい `qa:capture` を使う。
 

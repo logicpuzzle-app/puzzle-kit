@@ -1,0 +1,163 @@
+[
+  {
+    "flow": "pinch-release",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T08-02-56-086Z-before",
+      "title": "pinch keeps the remaining finger active without drawing",
+      "status": "failed",
+      "commit": "e6c5ab7b01fcacb81d65b971a3526f9fe0df58f2",
+      "video": "pinch-release-before.webm",
+      "videoSHA256": "cdd7e5d25063e2f84220471a508bda40e37ae4f21384933e262f241f32cbae1b",
+      "sourceManifestSHA256": "b4eff6cbca333c42d9ec39eb1151ca819018275f6757d284b582a55a7d660db5"
+    },
+    "after": {
+      "capture": "2026-09-06T08-07-47-286Z-after",
+      "title": "pinch keeps the remaining finger active without drawing",
+      "status": "passed",
+      "commit": "e6c5ab7b01fcacb81d65b971a3526f9fe0df58f2",
+      "video": "pinch-release-after.webm",
+      "videoSHA256": "a138d34c36e2b2f8abd6f106f15331553c24ca808fbd2830976efd05c297c105",
+      "sourceManifestSHA256": "aac743a0ef130aaddd9faa90177a8d740e0ff03518979850de4ca45e33bd0dc8"
+    },
+    "title": "pinch keeps the remaining finger active without drawing"
+  },
+  {
+    "flow": "merge",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T08-02-56-086Z-before",
+      "title": "touch merge commits and undoes grid geometry",
+      "status": "failed",
+      "commit": "e6c5ab7b01fcacb81d65b971a3526f9fe0df58f2",
+      "video": "merge-before.webm",
+      "videoSHA256": "d0d76b255ac6b28c4ef04c2e27ace7faa3c9b83ea519356b310c407350e30c6a",
+      "sourceManifestSHA256": "b4eff6cbca333c42d9ec39eb1151ca819018275f6757d284b582a55a7d660db5"
+    },
+    "after": {
+      "capture": "2026-09-06T08-07-47-286Z-after",
+      "title": "touch merge commits and undoes grid geometry",
+      "status": "passed",
+      "commit": "e6c5ab7b01fcacb81d65b971a3526f9fe0df58f2",
+      "video": "merge-after.webm",
+      "videoSHA256": "38b85b9e31f97a7e98b59f3bd2bd3ba042ab170fe3e5c30f7746895e6cf3b98c",
+      "sourceManifestSHA256": "aac743a0ef130aaddd9faa90177a8d740e0ff03518979850de4ca45e33bd0dc8"
+    },
+    "title": "touch merge commits and undoes grid geometry"
+  },
+  {
+    "flow": "merge-cancel",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T08-02-56-086Z-before",
+      "title": "cancelled touch merge leaves grid geometry unchanged",
+      "status": "failed",
+      "commit": "e6c5ab7b01fcacb81d65b971a3526f9fe0df58f2",
+      "video": "merge-cancel-before.webm",
+      "videoSHA256": "5701bbf6119e8a529cd265727f8c7bd5247594557b529ec38c1d11ac92935803",
+      "sourceManifestSHA256": "b4eff6cbca333c42d9ec39eb1151ca819018275f6757d284b582a55a7d660db5"
+    },
+    "after": {
+      "capture": "2026-09-06T08-07-47-286Z-after",
+      "title": "cancelled touch merge leaves grid geometry unchanged",
+      "status": "passed",
+      "commit": "e6c5ab7b01fcacb81d65b971a3526f9fe0df58f2",
+      "video": "merge-cancel-after.webm",
+      "videoSHA256": "dcd54e99928421e3068d5e16bc75a76fcec1b458b4e9a86f3db31f3f8ed33fd4",
+      "sourceManifestSHA256": "aac743a0ef130aaddd9faa90177a8d740e0ff03518979850de4ca45e33bd0dc8"
+    },
+    "title": "cancelled touch merge leaves grid geometry unchanged"
+  },
+  {
+    "flow": "split",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T08-02-56-086Z-before",
+      "title": "touch split commits and undoes grid geometry",
+      "status": "failed",
+      "commit": "e6c5ab7b01fcacb81d65b971a3526f9fe0df58f2",
+      "video": "split-before.webm",
+      "videoSHA256": "b5ce3379806d6121a9a94a56eb8aa16547729f5eee5f52d10f209666374820de",
+      "sourceManifestSHA256": "b4eff6cbca333c42d9ec39eb1151ca819018275f6757d284b582a55a7d660db5"
+    },
+    "after": {
+      "capture": "2026-09-06T08-07-47-286Z-after",
+      "title": "touch split commits and undoes grid geometry",
+      "status": "passed",
+      "commit": "e6c5ab7b01fcacb81d65b971a3526f9fe0df58f2",
+      "video": "split-after.webm",
+      "videoSHA256": "ca63f7b9ff438ee463c5e41fbd7a4cbc0918fb288fecae4d06c99a78cf1c80e0",
+      "sourceManifestSHA256": "aac743a0ef130aaddd9faa90177a8d740e0ff03518979850de4ca45e33bd0dc8"
+    },
+    "title": "touch split commits and undoes grid geometry"
+  },
+  {
+    "flow": "split-cancel",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T08-02-56-086Z-before",
+      "title": "cancelled touch split leaves grid geometry unchanged",
+      "status": "failed",
+      "commit": "e6c5ab7b01fcacb81d65b971a3526f9fe0df58f2",
+      "video": "split-cancel-before.webm",
+      "videoSHA256": "efe1f82e3e6649b534dcb0bab71f0e579646379d15013e62316c6cf1ad6119a4",
+      "sourceManifestSHA256": "b4eff6cbca333c42d9ec39eb1151ca819018275f6757d284b582a55a7d660db5"
+    },
+    "after": {
+      "capture": "2026-09-06T08-07-47-286Z-after",
+      "title": "cancelled touch split leaves grid geometry unchanged",
+      "status": "passed",
+      "commit": "e6c5ab7b01fcacb81d65b971a3526f9fe0df58f2",
+      "video": "split-cancel-after.webm",
+      "videoSHA256": "03031f0c700570668f8bd85fd290345a3612088d5d9ca24d19c32e4cd37b8aae",
+      "sourceManifestSHA256": "aac743a0ef130aaddd9faa90177a8d740e0ff03518979850de4ca45e33bd0dc8"
+    },
+    "title": "cancelled touch split leaves grid geometry unchanged"
+  },
+  {
+    "flow": "sculpt-rotate",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T08-02-56-086Z-before",
+      "title": "touch iso-sculpt changes geometry once and supports undo/redo",
+      "status": "failed",
+      "commit": "e6c5ab7b01fcacb81d65b971a3526f9fe0df58f2",
+      "video": "sculpt-rotate-before.webm",
+      "videoSHA256": "4243784bb9c7d15f5adb4000f85015ff28ccb59cf54cd49d31f10e7557a0ba4c",
+      "sourceManifestSHA256": "b4eff6cbca333c42d9ec39eb1151ca819018275f6757d284b582a55a7d660db5"
+    },
+    "after": {
+      "capture": "2026-09-06T08-07-47-286Z-after",
+      "title": "touch iso-sculpt changes geometry once and supports undo/redo",
+      "status": "passed",
+      "commit": "e6c5ab7b01fcacb81d65b971a3526f9fe0df58f2",
+      "video": "sculpt-rotate-after.webm",
+      "videoSHA256": "914ec6901969f55ead9084e2f1d28fdc47259746b081f61b5b7f98970dae6337",
+      "sourceManifestSHA256": "aac743a0ef130aaddd9faa90177a8d740e0ff03518979850de4ca45e33bd0dc8"
+    },
+    "title": "touch iso-sculpt changes geometry once and supports undo/redo"
+  },
+  {
+    "flow": "sculpt-cut",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T08-02-56-086Z-before",
+      "title": "touch iso-sculpt-cut changes geometry once and supports undo/redo",
+      "status": "failed",
+      "commit": "e6c5ab7b01fcacb81d65b971a3526f9fe0df58f2",
+      "video": "sculpt-cut-before.webm",
+      "videoSHA256": "591329bd55b794dcad742761be04b2b36b57d5f8983f3ffd965aa89634fcdb7a",
+      "sourceManifestSHA256": "b4eff6cbca333c42d9ec39eb1151ca819018275f6757d284b582a55a7d660db5"
+    },
+    "after": {
+      "capture": "2026-09-06T08-07-47-286Z-after",
+      "title": "touch iso-sculpt-cut changes geometry once and supports undo/redo",
+      "status": "passed",
+      "commit": "e6c5ab7b01fcacb81d65b971a3526f9fe0df58f2",
+      "video": "sculpt-cut-after.webm",
+      "videoSHA256": "275bb5a0ac35fc32a972d2f5f75bf36b824cad9df502524ff13dd1529e2182a2",
+      "sourceManifestSHA256": "aac743a0ef130aaddd9faa90177a8d740e0ff03518979850de4ca45e33bd0dc8"
+    },
+    "title": "touch iso-sculpt-cut changes geometry once and supports undo/redo"
+  }
+]
