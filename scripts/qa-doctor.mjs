@@ -12,9 +12,9 @@ check('Node', () => {
   if (major < 22 || (major === 22 && minor < 12)) throw new Error('Use Node 22.12+ (Node 24 LTS recommended)');
   return process.version;
 });
-check('pnpm', () => {
-  const result = spawnSync('pnpm', ['--version'], { encoding: 'utf8' });
-  if (result.status !== 0) throw new Error('Install pnpm');
+check('npm', () => {
+  const result = spawnSync('npm', ['--version'], { encoding: 'utf8' });
+  if (result.status !== 0) throw new Error('Install npm with Node.js');
   return result.stdout.trim();
 });
 const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
@@ -25,7 +25,7 @@ for (const name of packages) {
 }
 check('Chromium', () => {
   const { chromium } = require('@playwright/test');
-  if (!existsSync(chromium.executablePath())) throw new Error('Run pnpm exec playwright install chromium');
+  if (!existsSync(chromium.executablePath())) throw new Error('Run npx playwright install chromium');
   return chromium.executablePath();
 });
 for (const name of ['src/wasm/npgen/npgen_bg.wasm', 'e2e/fixtures/xml-seed.xml', 'e2e/fixtures/xml-multiple-groups.xml']) {

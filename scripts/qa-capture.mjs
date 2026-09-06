@@ -2,10 +2,12 @@ import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
 
 const [phase, ...filters] = process.argv.slice(2);
 if (!['before', 'after'].includes(phase)) {
-  console.error('Usage: pnpm qa:capture before|after [Playwright filters]');
+  console.error('Usage: npm run qa:capture -- before|after [Playwright filters]');
   process.exit(2);
 }
 const stamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -23,8 +25,8 @@ const metadata = {
   phase, createdAt: new Date().toISOString(), commit: git('rev-parse', 'HEAD'),
   branch: git('branch', '--show-current'), status: git('status', '--short'),
   node: process.version, platform: process.platform,
-  pnpm: spawnSync('pnpm', ['--version'], { encoding: 'utf8' }).stdout?.trim(),
-  command: ['pnpm', 'exec', 'playwright', 'test', ...(filters.length ? filters : ['e2e/editor-issues.spec.ts'])],
+  npm: spawnSync('npm', ['--version'], { encoding: 'utf8' }).stdout?.trim(),
+  command: [process.execPath, require.resolve('@playwright/test/cli'), 'test', ...(filters.length ? filters : ['e2e/editor-issues.spec.ts'])],
 };
 writeFileSync(resolve(directory, 'metadata.json'), JSON.stringify(metadata, null, 2));
 const result = spawnSync(metadata.command[0], metadata.command.slice(1), {
@@ -34,5 +36,5 @@ writeFileSync(resolve(directory, 'run.log'), (result.stdout ?? '') + (result.std
 metadata.exitCode = result.status ?? 1;
 writeFileSync(resolve(directory, 'metadata.json'), JSON.stringify(metadata, null, 2));
 console.log(result.stdout ?? '');
-console.log(`QA artifacts: ${directory}\nOpen: pnpm exec playwright show-report "${directory}/report"`);
+console.log(`QA artifacts: ${directory}\nOpen: npx playwright show-report "${directory}/report"`);
 process.exitCode = metadata.exitCode;

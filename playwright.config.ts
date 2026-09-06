@@ -43,7 +43,7 @@ export default defineConfig({
   webServer: process.env.QA_STATIC_DIR
     ? undefined
     : {
-        command: 'pnpm exec vite --config vite.qa.config.ts --host 127.0.0.1 --port 4174 --strictPort',
+        command: 'npm run dev -- --config vite.qa.config.ts --host 127.0.0.1 --port 4174 --strictPort',
         url: 'http://127.0.0.1:4174/master',
         reuseExistingServer: false,
         timeout: 120_000,

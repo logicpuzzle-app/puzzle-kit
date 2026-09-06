@@ -8,7 +8,7 @@ const results = [];
 // Continue after a failure so type errors cannot hide browser regression results.
 for (const script of ['typecheck', 'typecheck:e2e', 'test:unit', 'test:e2e']) {
   console.log(`Running ${script}...`);
-  const result = spawnSync('pnpm', [script], {
+  const result = spawnSync('npm', ['run', script], {
     encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
     env: { ...process.env, QA_ARTIFACT_DIR: resolve(directory, 'e2e') },
   });

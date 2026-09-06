@@ -1,9 +1,9 @@
-import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 
 const [beforeArg, afterArg] = process.argv.slice(2);
 if (!beforeArg || !afterArg) {
-  console.error('Usage: pnpm qa:compare artifacts/qa/<before> artifacts/qa/<after>');
+  console.error('Usage: npm run qa:compare -- artifacts/qa/<before> artifacts/qa/<after>');
   process.exit(2);
 }
 const before = resolve(beforeArg), after = resolve(afterArg);
@@ -26,9 +26,19 @@ function load(directory) {
   return cases;
 }
 const oldCases = load(before), newCases = load(after);
+// Playwright reports contain absolute paths. Rebase artifacts after moving a worktree
+// or downloading a CI archive, retaining the original report as immutable evidence.
+function videoPath(directory, recordedPath) {
+  const original = resolve(directory, recordedPath);
+  if (existsSync(original)) return original;
+  const suffix = recordedPath.replaceAll('\\', '/').split('/test-results/').at(-1);
+  const relocated = resolve(directory, 'test-results', suffix);
+  if (!existsSync(relocated)) throw new Error(`Missing recording: ${recordedPath}`);
+  return relocated;
+}
 function panel(item, directory) {
   if (!item) return '<p>Not run</p>';
-  return `<p>${escape(item.status)}</p>${item.video ? `<video controls preload="metadata" src="${link(resolve(directory, item.video))}"></video>` : '<p>No recording</p>'}`;
+  return `<p>${escape(item.status)}</p>${item.video ? `<video controls preload="metadata" src="${link(videoPath(directory, item.video))}"></video>` : '<p>No recording</p>'}`;
 }
 const rows = [...new Set([...oldCases.keys(), ...newCases.keys()])].map(key =>
   `<section><h2>${escape(key)}</h2><div class="pair"><div><h3>Before</h3>${panel(oldCases.get(key), before)}</div><div><h3>After</h3>${panel(newCases.get(key), after)}</div></div></section>`).join('\n');
