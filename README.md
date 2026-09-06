@@ -37,8 +37,8 @@ npm run build:lib
 ## Development and QA
 
 See [Testing and development harness](docs/testing.md) for unit/E2E commands,
-local scenario debugging, and before/after video capture. The latest verification is in [editor QA results](docs/qa/2026-09-06-editor-quality.md),
-with [before/after recordings](docs/qa/evidence-editor-quality-20260906/README.md).
+local scenario debugging, and before/after video capture. The latest verification is in [touch and WebKit QA results](docs/qa/2026-09-06-touch-webkit.md),
+with [before/after recordings](docs/qa/evidence-touch-webkit-20260906/README.md).
 
 ## Solver Backend
 
