@@ -1,6 +1,37 @@
 import { test, expect } from './fixtures';
 import type { Page } from '@playwright/test';
 
+// Native events distinguish a missed tap from an application/history failure.
+// Keep this bounded and local to the deterministic gesture harness.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    const events: Record<string, unknown>[] = [];
+    Object.assign(window, { __qaInputEvents: events });
+    for (const type of ['pointerdown', 'pointerup', 'pointercancel', 'mousedown', 'mouseup', 'click']) {
+      document.addEventListener(type, event => {
+        const pointer = event as PointerEvent;
+        const target = event.target instanceof Element ? event.target : null;
+        const button = target?.closest('button');
+        events.push({
+          type, time: performance.now(), pointerId: pointer.pointerId,
+          pointerType: pointer.pointerType, x: pointer.clientX, y: pointer.clientY,
+          target: button?.title || target?.tagName, disabled: button?.disabled,
+        });
+        if (events.length > 100) events.shift();
+      }, true);
+    }
+  });
+});
+
+test.afterEach(async ({ page }, testInfo) => {
+  if (page.isClosed()) return;
+  const events = await page.evaluate(() =>
+    (window as unknown as { __qaInputEvents: unknown[] }).__qaInputEvents ?? []);
+  await testInfo.attach('input-events', {
+    body: JSON.stringify(events, null, 2), contentType: 'application/json',
+  });
+});
+
 async function point(page: Page, x: number, y: number) {
   await page.locator('#puzzle-canvas').scrollIntoViewIfNeeded();
   return page.locator('#puzzle-canvas > g').first().evaluate((g, p) => {
