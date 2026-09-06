@@ -134,6 +134,7 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom }: UseCanv
   const {
     mergingCells,
     handleMergeMode,
+    cancelGridEdit,
     splitStartVertex,
     splitHoverVertex,
     handleSplitMode,
@@ -364,10 +365,16 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom }: UseCanv
   const { handlePointerDown, handlePointerMove, handlePointerUp } = useTouchHandlers({
     svgRef,
     allowMultiTouchPanZoom,
-    gridHandlers: isGridMode && gridEditMode === 'exclude' ? {
-      down: (point) => handleGridTool(point, false, false),
-      move: (point) => handleGridTool(point, false, false),
-      up: finishGridTool,
+    gridHandlers: isGridMode ? {
+      down: (point) => executeGridDown(gridEditMode as StateMachineGridEditMode, point, false, false),
+      move: (point) => executeGridMove(gridEditMode as StateMachineGridEditMode, point, false),
+      up: (point) => executeGridUp(gridEditMode as StateMachineGridEditMode, point, false),
+      cancel: () => {
+        // Exclusion is incremental; refresh it even on interruption. Merge and
+        // split are pending until release and must be discarded instead.
+        if (gridEditMode === 'exclude') finishGridTool();
+        cancelGridEdit();
+      },
     } : undefined,
     toolHandlers,
     drawStartPoint,
