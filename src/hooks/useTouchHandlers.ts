@@ -17,6 +17,7 @@ interface TouchState {
   initialZoom: number;
   lastTouchPoint: Point | null;
   touchStartTime: number;
+  tapPoint: Point | null;
   initialTouchCount: number;
   /** Whether a drag occurred during this touch sequence */
   isDragging: boolean;
@@ -30,7 +31,8 @@ interface UseTouchHandlersOptions {
   gridHandlers?: {
     down: (point: Point) => void;
     move: (point: Point) => void;
-    up: () => void;
+    up: (point: Point) => void;
+    cancel: () => void;
   };
   toolHandlers: ToolDispatchHandlers & {
     handleStraightLineEnd: (point: Point, isRightClick: boolean, isShiftKey: boolean) => void;
@@ -94,6 +96,7 @@ export function useTouchHandlers({
     initialZoom: 1,
     lastTouchPoint: null,
     touchStartTime: 0,
+    tapPoint: null,
     initialTouchCount: 0,
     isDragging: false,
   });
@@ -161,13 +164,22 @@ export function useTouchHandlers({
       }
       const touchState = touchStateRef.current;
       const pointers = activePointersRef.current;
+      if (pointers.has(e.pointerId)) return;
       pointers.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
+      e.currentTarget.setPointerCapture(e.pointerId);
       const points = Array.from(pointers.values());
 
-      touchState.touchStartTime = Date.now();
-      touchState.initialTouchCount = points.length;
+      if (points.length === 1) touchState.touchStartTime = Date.now();
+      touchState.initialTouchCount = Math.max(touchState.initialTouchCount, points.length);
 
       if (points.length >= 2) {
+        // Switching to a multi-finger gesture abandons pending shape previews,
+        // while incremental edits remain in the current undo group.
+        gridHandlers?.cancel();
+        setDrawStartPoint(null);
+        setDrawStartPosition(null);
+        setCurrentStrokeId(null);
+        setCanvasState({ isDrawing: false, isDragging: allowMultiTouchPanZoom });
         if (!allowMultiTouchPanZoom) {
           touchState.isPinching = false;
           touchState.lastTouchPoint = null;
@@ -175,18 +187,18 @@ export function useTouchHandlers({
         }
         touchState.isPinching = true;
         touchState.initialPinchDistance = getPinchDistance(points);
-        touchState.initialZoom = canvas.zoom;
+        touchState.initialZoom = store.getState().canvas.zoom;
         touchState.lastTouchPoint = getPinchCenter(points);
         return;
       }
 
       if (points.length === 1) {
-        e.currentTarget.setPointerCapture(e.pointerId);
         touchState.isPinching = false;
         touchState.lastTouchPoint = { x: points[0].clientX, y: points[0].clientY };
 
         const point = getCanvasPoint(points[0].clientX, points[0].clientY);
         const tool = toolSettings.currentTool;
+        touchState.tapPoint = point;
 
         resetFillModes();
         touchState.isDragging = false;
@@ -207,7 +219,10 @@ export function useTouchHandlers({
     },
     [
       allowMultiTouchPanZoom,
-      canvas.zoom,
+      store,
+      setDrawStartPoint,
+      setDrawStartPosition,
+      setCurrentStrokeId,
       canvas.panMode,
       activeLayer,
       gridHandlers,
@@ -264,11 +279,16 @@ export function useTouchHandlers({
       }
       const touchState = touchStateRef.current;
       const pointers = activePointersRef.current;
-      if (!pointers.has(e.pointerId)) return;
+      const previousPoint = pointers.get(e.pointerId);
+      if (!previousPoint) return;
+      if (touchState.initialTouchCount >= 2 &&
+          Math.hypot(e.clientX - previousPoint.clientX, e.clientY - previousPoint.clientY) > 0.5) {
+        touchState.isDragging = true;
+      }
       pointers.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
       const points = Array.from(pointers.values());
 
-      if (points.length >= 2 && !allowMultiTouchPanZoom) {
+      if (touchState.initialTouchCount >= 2 && !allowMultiTouchPanZoom) {
         return;
       }
 
@@ -276,7 +296,7 @@ export function useTouchHandlers({
       const currentCanvas = store.getState().canvas;
       if (points.length >= 2 && touchState.isPinching) {
         const currentDistance = getPinchDistance(points);
-        const scale = currentDistance / touchState.initialPinchDistance;
+        const scale = touchState.initialPinchDistance > 0 ? currentDistance / touchState.initialPinchDistance : 1;
         const newZoom = Math.max(0.1, Math.min(5, touchState.initialZoom * scale));
 
         const center = getPinchCenter(points);
@@ -289,7 +309,7 @@ export function useTouchHandlers({
         setZoom(newZoom);
         touchState.lastTouchPoint = center;
       } else if (points.length === 1 && touchState.lastTouchPoint) {
-        if (touchState.isPanning || !currentCanvas.isDrawing) {
+        if (touchState.initialTouchCount >= 2 || touchState.isPanning || !currentCanvas.isDrawing) {
           const dx = points[0].clientX - touchState.lastTouchPoint.x;
           const dy = points[0].clientY - touchState.lastTouchPoint.y;
           setPan(currentCanvas.panX + dx, currentCanvas.panY + dy);
@@ -340,12 +360,23 @@ export function useTouchHandlers({
       if (!pointInfo) return;
       const cancelled = e.type === 'pointercancel';
       pointers.delete(e.pointerId);
-      const point = getCanvasPoint(pointInfo.clientX, pointInfo.clientY);
+      if (e.currentTarget.hasPointerCapture?.(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+      if (!cancelled && pointers.size > 0) {
+        const remaining = Array.from(pointers.values());
+        touchState.lastTouchPoint = getPinchCenter(remaining);
+        touchState.isPinching = allowMultiTouchPanZoom && remaining.length >= 2;
+        touchState.initialPinchDistance = getPinchDistance(remaining);
+        touchState.initialZoom = store.getState().canvas.zoom;
+        return;
+      }
+      const point = initialTouches >= 2 && touchState.tapPoint
+        ? touchState.tapPoint : getCanvasPoint(pointInfo.clientX, pointInfo.clientY);
 
       // Cancellation is cleanup, never a tap or a free-segment commit. Exclusions
       // already applied during a drag still need their topology refreshed.
       if (activeLayer === 'grid' && !touchState.isPanning) {
-        gridHandlers?.up();
+        if (cancelled || initialTouches >= 2) gridHandlers?.cancel();
+        else gridHandlers?.up(point);
       } else if (!cancelled && !touchState.isPanning) {
         // Multi-finger tap gestures
         if (touchDuration < 300 && !touchState.isDragging && initialTouches >= 2) {
@@ -353,6 +384,7 @@ export function useTouchHandlers({
           const isSecondaryColor = initialTouches === 2;
           const isDeleteMode = initialTouches >= 3;
 
+          resetFillModes();
           toolDispatchers.dispatchTap(tool, point, isSecondaryColor, isDeleteMode);
         }
         // Single-finger tap for click-style input (number/text/select)
@@ -381,12 +413,18 @@ export function useTouchHandlers({
       }
 
       if (!touchState.isPanning) endHistoryGroup();
-      if (cancelled) pointers.clear();
+      if (cancelled) {
+        for (const id of pointers.keys()) {
+          if (e.currentTarget.hasPointerCapture?.(id)) e.currentTarget.releasePointerCapture(id);
+        }
+        pointers.clear();
+      }
       resetFillModes();
 
       touchState.isPinching = false;
       touchState.lastTouchPoint = null;
       touchState.initialTouchCount = 0;
+      touchState.tapPoint = null;
       touchState.isPanning = false;
       touchState.isDragging = false;
       setCanvasState({ isDrawing: false, isDragging: false });
@@ -399,6 +437,8 @@ export function useTouchHandlers({
     },
     [
       handleTapInput,
+      store,
+      allowMultiTouchPanZoom,
       activeLayer,
       gridHandlers,
       getCanvasPoint,
