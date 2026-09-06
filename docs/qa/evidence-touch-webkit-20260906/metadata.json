@@ -1,5 +1,28 @@
 [
   {
+    "flow": "touch-pan-burst",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T03-11-41-390Z-before",
+      "title": "touch pan accumulates a burst of moves before the next render",
+      "status": "failed",
+      "commit": "89644402c7923545429adf4e44c4ed6b06b4e31b",
+      "video": "touch-pan-burst-before.webm",
+      "videoSHA256": "827e62544c99c1ccd9387779665022b7149e25441393838abc82240f764002b7",
+      "sourceManifestSHA256": "ef67e534400997f75afa79307ba96e4034429eb4414b8a35d6eea0001c0bcccd"
+    },
+    "after": {
+      "capture": "2026-09-06T03-11-46-798Z-after",
+      "title": "touch pan accumulates a burst of moves before the next render",
+      "status": "passed",
+      "commit": "89644402c7923545429adf4e44c4ed6b06b4e31b",
+      "video": "touch-pan-burst-after.webm",
+      "videoSHA256": "c43402fd2867017c7d2045e6443bd7e762ea905250056445198c48f5d5f1e10c",
+      "sourceManifestSHA256": "31e3cc1930cbf7552f171c20dcdc38d7f094c5281b7fc32826be907f887de66e"
+    },
+    "title": "touch pan accumulates a burst of moves before the next render"
+  },
+  {
     "flow": "touch-pan",
     "project": "mobile-chrome",
     "before": {

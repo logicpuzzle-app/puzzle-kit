@@ -89,3 +89,31 @@ test('cancelled touch discards a pending free segment and allows the next stroke
   await page.getByTitle(/Undo \(Ctrl\+Z\)/).first().tap();
   await expect(lines).toHaveCount(0);
 });
+
+// A deterministic render-batching regression, not a claim about physical touch
+// event cadence. Start a real pointer, then deliver three moves in one JS task.
+test('touch pan accumulates a burst of moves before the next render', async ({ page }) => {
+  await page.goto('/harness.html?scenario=free-segment');
+  await page.getByTitle('Pan Mode', { exact: true }).tap();
+  const start = await point(page, 80, 80);
+  const cdp = await page.context().newCDPSession(page);
+  try {
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ ...start, id: 1 }] });
+    await page.locator('#puzzle-canvas').evaluate((svg, start) => {
+      const events = (window as unknown as { __qaInputEvents: { type: string; pointerId: number }[] }).__qaInputEvents;
+      const pointerId = events.filter(event => event.type === 'pointerdown').at(-1)?.pointerId;
+      if (pointerId === undefined) throw new Error('Missing active touch pointer');
+      for (const delta of [20, 40, 60]) {
+        svg.dispatchEvent(new PointerEvent('pointermove', {
+          bubbles: true, cancelable: true, pointerType: 'touch', pointerId,
+          clientX: start.x + delta, clientY: start.y, buttons: 1,
+        }));
+      }
+    }, start);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  } finally { await cdp.detach(); }
+  const after = await point(page, 80, 80);
+  expect(after.x - start.x).toBeCloseTo(60, 0);
+  expect(after.y - start.y).toBeCloseTo(0, 0);
+  await expect(page.locator('.line-layer-problem > *')).toHaveCount(0);
+});
