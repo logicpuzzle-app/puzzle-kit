@@ -24,7 +24,7 @@ E2Eのprojectは `chromium`、`mobile-chrome` (Pixel 7)、`webkit` (Desktop Safa
 | タッチ終了処理unit | 3 FAIL / 1 PASS | 4 PASS（さらに中断済みrouteのUndoを1件追加） |
 | NPGeneratorセル操作unit | 2 FAIL / 3 PASS | 5 PASS |
 
-[7フロー・14本の比較動画](evidence-touch-webkit-20260906/README.md) を同梱。比較ページの全動画の読み込みを実ブラウザーで確認した。
+[アプリ7フロー・14本とLinux入力条件比較2本の比較動画](evidence-touch-webkit-20260906/README.md) を同梱。比較ページの全動画の読み込みを実ブラウザーで確認した。
 
 - パンモード中の1本指ドラッグは、編集を開始せず盤面を移動する。
 - pointercancelはtap/long press/未確定Free Segmentの確定として扱わない。入力・履歴状態を解放し、次のstrokeが描画・Undoできる。既に反映したorthogonal routeはキャンセル後も1つのUndoで戻せる。
@@ -52,3 +52,11 @@ Chromiumのドラッグ・中断は [CDP dispatchTouchEvent](https://chromedevto
 同一描画サイクル内で20pxずつ3回移動すると、古い座標から加算され60pxの入力が20pxになる不具合をunitとE2Eで再現。各イベントで最新のstore座標を参照するよう修正した。E2EはCDPの接触開始後に合成PointerEventを同一JavaScriptタスク内で3回送信する条件であり、実機の入力周期を検証したものではない。
 
 Before capture: `2026-09-06T03-11-41-390Z-before`（20px、FAIL）。After: `2026-09-06T03-11-46-798Z-after`（60px、PASS）。beforeはTouchHandlersを217dc66の状態へ戻して実行し、差分とsource manifestを保存した。
+
+## Linux CIの入力条件
+
+CI 34007512487 / 34008251436 / 34008710119では、描画後のUndoタップ2件が失敗した。Linux arm64のPlaywright公式コンテナでも再現し、内部トレースで`GestureFlingStart`→`GestureFlingCancel`→`FilterTapSuppression`を確認した。canvasのtouch-actionはNONEだったが、CDPが生成した慣性の停止に直後のタップが消費され、pointerdown/upだけが届いていた。待機フレーム、タップ継続時間、ボタンのtouch-action、有効化、CDP送信順序の変更では解消しなかった。
+
+描画の終点で指を150ms静止してから離す入力条件に変更し、Undo/Redoは通常のlocator.tapに戻した。Linuxコンテナで対象E2E 8件が成功。アプリのUndo処理は変更していない。タッチキャンセルは静止なし、パンのバッチ回帰は同一タスク内の合成移動という条件を維持している。
+
+証跡: `artifacts/linux-touch-before-e2e/`（before 1 FAIL）、`artifacts/linux-touch-trace/chrome-trace.json`（Chromium内部）、`artifacts/linux-touch-e2e/`（after 8 PASS）。テスト入力条件の比較動画2本も同梱した。Linuxコンテナから同じE2Eを実行する手順は[開発ハーネス](../testing.md#linuxコンテナでciのタッチ入力を再現する)に記載。最新のLinux x64全検証結果はPRのchecksを参照する。

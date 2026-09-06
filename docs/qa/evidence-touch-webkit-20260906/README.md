@@ -1,6 +1,6 @@
 # Touch / WebKit before-after (2026-09-06)
 
-[index.html](index.html) をブラウザーで開くと、7フロー・14本の動画を左右に並べて比較できる。GitHub上ではこのフォルダを取得して開くか、各動画をダウンロードする。静止画は各検証の終了時点であり、動画の開始フレームではない。別実行のためフレーム同期はしていない。
+[index.html](index.html) をブラウザーで開くと、7つのアプリ回帰＋Linux入力条件の比較1件・計16本の動画を左右に並べて比較できる。GitHub上ではこのフォルダを取得して開くか、各動画をダウンロードする。静止画は各検証の終了時点であり、動画の開始フレームではない。別実行のためフレーム同期はしていない。
 
 | フロー | Before | After |
 | --- | --- | --- |
@@ -17,3 +17,5 @@
 タッチドラッグ・中断・パンはChromiumのCDP touch入力、セル除外はPlaywright touchscreen.tap。WebKitの動画はPlaywrightのDesktop Safari/iPhone設定でNPGeneratorを操作したもので、iPhone実機の動画ではない。
 
 追加のtouch-pan-burstは、CDPで指の接触を開始してから3つのPointerEventを同じJavaScriptタスク内で送る合成イベントの回帰検証。60pxの入力に対してbeforeは20px、afterは60px移動する。実機の入力周期の再現とはしていない。beforeはTouchHandlersを217dc66の版に戻し、afterはaf6aa17の修正を適用した状態。
+
+Linux CIの入力条件比較: [before](linux-undo-input-before.webm) / [after](linux-undo-input-after.webm)。同じLinux arm64コンテナで、アプリのソースは変更せず、指を終点で静止してから離す条件へ変更したもの。before/afterとも同じUndo/Redo E2EとPixel 7設定を使っている。これはアプリのUndo修正動画とは区別する。

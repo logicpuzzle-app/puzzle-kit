@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures';
-import type { Locator, Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
 // Native events distinguish a missed tap from an application/history failure.
 // Keep this bounded and local to the deterministic gesture harness.
@@ -49,23 +49,12 @@ async function gesture(page: Page, start: {x:number;y:number}, end: {x:number;y:
     for (let step = 1; step <= 8; step++) {
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: start.x + (end.x-start.x)*step/8, y: start.y + (end.y-start.y)*step/8, id: 1 }] });
     }
+    // Model stopping the finger before lifting it. Without this stationary
+    // contact, Linux CDP emits GestureFlingStart and consumes the next toolbar
+    // tap as GestureFlingCancel (confirmed in Chromium's input trace). This
+    // duration belongs to the input gesture, not an application settling wait.
+    if (!cancel) await page.waitForTimeout(150);
     await cdp.send('Input.dispatchTouchEvent', { type: cancel ? 'touchCancel' : 'touchEnd', touchPoints: [] });
-  } finally { await cdp.detach(); }
-}
-
-// Keep the drag and subsequent toolbar tap on the same ordered CDP input
-// path. Playwright 1.62 sends touchStart/touchEnd concurrently for locator.tap;
-// Linux Chromium delivered pointer events but no click after free-segment end.
-async function tapAfterGesture(page: Page, button: Locator) {
-  await button.tap({ trial: true });
-  const bounds = await button.boundingBox();
-  if (!bounds) throw new Error('Missing touch target bounds');
-  const cdp = await page.context().newCDPSession(page);
-  try {
-    await cdp.send('Input.dispatchTouchEvent', {
-      type: 'touchStart', touchPoints: [{ x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2, id: 1 }],
-    });
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   } finally { await cdp.detach(); }
 }
 
@@ -76,9 +65,9 @@ for (const scenario of ['free-segment', 'orthogonal']) {
     const lines = page.locator('.line-layer-problem > *');
     await expect(lines).not.toHaveCount(0);
     const count = await lines.count();
-    await tapAfterGesture(page, page.getByTitle(/Undo \(Ctrl\+Z\)/).first());
+    await page.getByTitle(/Undo \(Ctrl\+Z\)/).first().tap();
     await expect(lines).toHaveCount(0);
-    await tapAfterGesture(page, page.getByTitle(/Redo/).first());
+    await page.getByTitle(/Redo/).first().tap();
     await expect(lines).toHaveCount(count);
   });
 }
@@ -102,7 +91,7 @@ test('cancelled touch discards a pending free segment and allows the next stroke
   await expect(lines).toHaveCount(0);
   await gesture(page, start, end);
   await expect(lines).not.toHaveCount(0);
-  await tapAfterGesture(page, page.getByTitle(/Undo \(Ctrl\+Z\)/).first());
+  await page.getByTitle(/Undo \(Ctrl\+Z\)/).first().tap();
   await expect(lines).toHaveCount(0);
 });
 

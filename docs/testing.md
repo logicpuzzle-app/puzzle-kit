@@ -122,3 +122,31 @@ npm run test:e2e -- --project=webkit --project=mobile-webkit
 [Playwrightのデバイス設定](https://playwright.dev/docs/emulation) と [CDP touch入力](https://chromedevtools.github.io/devtools-protocol/tot/Input/#method-dispatchTouchEvent) を使う。マウスイベントをtouchと呼び換える方法ではなく、ブラウザーのtouch/pointer経路を実行する。WebKitではCDPを使わずtapと既存操作を検証する。
 
 CIはPRおよびdevelop/puzzle-kit-refactorへのpushで実行し、featureへのpushとPRで同じ検査・大容量動画が二重保存されることを避ける。
+
+### LinuxコンテナでCIのタッチ入力を再現する
+
+MacとLinuxで入力処理が違う場合は、インストール済みのPlaywrightと同じ版の公式コンテナから専用ハーネスに接続する。Docker Desktopと`npm ci`が必要。`QA_EXTERNAL_BASE_URL`を指定した場合、Playwright自身はViteを起動しない。
+
+別ターミナルでQAサーバーを起動する（コンテナ用のポート。検証後はCtrl+Cで停止）。
+
+```bash
+__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS=host.docker.internal npm run dev -- --config vite.qa.config.ts --host 0.0.0.0 --port 4176 --strictPort
+```
+
+```bash
+qa_root="$PWD"
+qa_evidence="$qa_root/artifacts/linux-touch-$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$qa_evidence"
+docker run --rm --init \
+  --mount "type=bind,source=$qa_root,target=/work,readonly" \
+  --mount "type=bind,source=$qa_evidence,target=/evidence" \
+  --env QA_ARTIFACT_DIR=/evidence \
+  --env QA_EXTERNAL_BASE_URL=http://host.docker.internal:4176 \
+  --workdir /work mcr.microsoft.com/playwright:v1.62.0-noble \
+  node node_modules/@playwright/test/cli.js test \
+  e2e/gestures.chromium-touch.spec.ts e2e/tap-input.spec.ts --project=mobile-chrome
+```
+
+録画・trace・入力イベント・HTMLレポートは作成した証跡フォルダに残る。ソースは読み取り専用。Apple Silicon上ではLinux arm64であり、GitHub Actionsのx64と同一ハードウェアとはしない。
+
+描画ドラッグは終点で150ms静止してから指を離す入力条件を使う。高速移動中のまま離すと、LinuxのCDPが`GestureFlingStart`を発生させ、直後のタップが慣性停止に消費されることを内部トレースで確認した。この150msは指を接触させている時間で、操作後にアプリの状態が変わるのを待つsleepではない。Undoボタンは通常の`locator.tap()`で操作し、結果をそのまま検証する。`touchCancel`は静止を挟まず送信する。
