@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures';
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 // Native events distinguish a missed tap from an application/history failure.
 // Keep this bounded and local to the deterministic gesture harness.
@@ -53,6 +53,22 @@ async function gesture(page: Page, start: {x:number;y:number}, end: {x:number;y:
   } finally { await cdp.detach(); }
 }
 
+// Keep the drag and subsequent toolbar tap on the same ordered CDP input
+// path. Playwright 1.62 sends touchStart/touchEnd concurrently for locator.tap;
+// Linux Chromium delivered pointer events but no click after free-segment end.
+async function tapAfterGesture(page: Page, button: Locator) {
+  await button.tap({ trial: true });
+  const bounds = await button.boundingBox();
+  if (!bounds) throw new Error('Missing touch target bounds');
+  const cdp = await page.context().newCDPSession(page);
+  try {
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart', touchPoints: [{ x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2, id: 1 }],
+    });
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  } finally { await cdp.detach(); }
+}
+
 for (const scenario of ['free-segment', 'orthogonal']) {
   test(`touch ${scenario} draws an undoable line`, async ({ page }) => {
     await page.goto(`/harness.html?scenario=${scenario}`);
@@ -60,9 +76,9 @@ for (const scenario of ['free-segment', 'orthogonal']) {
     const lines = page.locator('.line-layer-problem > *');
     await expect(lines).not.toHaveCount(0);
     const count = await lines.count();
-    await page.getByTitle(/Undo \(Ctrl\+Z\)/).first().tap();
+    await tapAfterGesture(page, page.getByTitle(/Undo \(Ctrl\+Z\)/).first());
     await expect(lines).toHaveCount(0);
-    await page.getByTitle(/Redo/).first().tap();
+    await tapAfterGesture(page, page.getByTitle(/Redo/).first());
     await expect(lines).toHaveCount(count);
   });
 }
@@ -86,7 +102,7 @@ test('cancelled touch discards a pending free segment and allows the next stroke
   await expect(lines).toHaveCount(0);
   await gesture(page, start, end);
   await expect(lines).not.toHaveCount(0);
-  await page.getByTitle(/Undo \(Ctrl\+Z\)/).first().tap();
+  await tapAfterGesture(page, page.getByTitle(/Undo \(Ctrl\+Z\)/).first());
   await expect(lines).toHaveCount(0);
 });
 
