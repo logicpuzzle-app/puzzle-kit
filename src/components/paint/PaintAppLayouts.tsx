@@ -115,7 +115,7 @@ export const PaintAppMobileLayout: React.FC<PaintAppMobileLayoutProps> = ({
         {gridSettingsToolbarProps && <PaintGridSettingsToolbar {...gridSettingsToolbarProps} />}
       </header>
       <PaintCanvasArea {...canvasAreaProps} className="min-h-[240px]" />
-      <div className="min-h-0 max-h-[45%] overflow-y-auto overscroll-contain" role="region" aria-label="Paint tools" tabIndex={0}>
+      <div className="min-h-0 max-h-[45%] overflow-y-auto overscroll-contain" role="region" aria-label={genreToolbarProps.t('paint.tools', 'Paint tools')} tabIndex={0}>
       <div className="border-t border-office-border bg-white px-2 py-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <PaintAdjustModeControls {...adjustModeControlsProps} size="lg" />

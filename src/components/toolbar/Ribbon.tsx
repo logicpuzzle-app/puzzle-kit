@@ -434,6 +434,7 @@ export const Ribbon: React.FC = () => {
               return (
                 <button
                   key={category.id}
+                  aria-pressed={toolSettings.currentCategory === category.id}
                   className={`flex items-center gap-1 h-7 px-2 text-xs rounded-sm border transition-colors ${
                     toolSettings.currentCategory === category.id
                       ? 'bg-office-accent text-white border-office-accent'
@@ -691,6 +692,7 @@ export const Ribbon: React.FC = () => {
                 return (
                   <button
                     key={tool.id}
+                    aria-pressed={toolSettings.currentTool === tool.id}
                     className={`flex items-center gap-1 px-2 py-1 text-xs rounded-sm border transition-colors ${
                       toolSettings.currentTool === tool.id
                         ? 'bg-office-accent text-white border-office-accent'

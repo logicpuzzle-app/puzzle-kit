@@ -58,6 +58,7 @@ export const GridShapeContent: React.FC = () => {
                     : 'bg-white border-office-border hover:bg-office-ribbon-hover'
               }`}
               onClick={() => !isDisabled && setGridEditMode(mode.id)}
+              aria-pressed={gridEditMode === mode.id}
               disabled={isDisabled}
               title={isDisabled ? t('gridEdit.disabledDuringPreview') : undefined}
             >

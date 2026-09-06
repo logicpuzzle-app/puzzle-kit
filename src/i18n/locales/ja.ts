@@ -1038,6 +1038,7 @@ export const ja = {
   'grid.scale': '拡大率',
   'grid.offset': '位置調整',
   'grid.step': 'ステップ',
+  'paint.tools': 'Paintのツール',
   'paint.genre': 'ジャンル',
   'paint.color.green': '緑',
   'paint.color.blue': '青',

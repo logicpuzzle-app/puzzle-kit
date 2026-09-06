@@ -55,6 +55,7 @@ export function SegmentedToggle<T extends string>({
             onClick={() => !isDisabled && onChange(option.value)}
             title={option.title}
             aria-label={option.ariaLabel ?? option.title}
+            aria-pressed={isActive}
             disabled={isDisabled}
           >
             {option.label}

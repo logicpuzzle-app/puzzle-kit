@@ -1038,6 +1038,7 @@ export const en = {
   'grid.scale': 'Scale',
   'grid.offset': 'Offset',
   'grid.step': 'Step',
+  'paint.tools': 'Paint tools',
   'paint.genre': 'Genre',
   'paint.color.green': 'Green',
   'paint.color.blue': 'Blue',
