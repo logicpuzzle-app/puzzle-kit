@@ -18,8 +18,8 @@ A web-based puzzle editor for creating and solving logic puzzles. Built with Rea
 ## Getting Started
 
 ```bash
-# Install dependencies
-npm install
+# Install locked dependencies
+npm ci
 
 # Copy environment file and configure Firebase (optional)
 cp .env.example .env.local
@@ -33,6 +33,13 @@ npm run build
 # Build library artifacts
 npm run build:lib
 ```
+
+## Development and QA
+
+See [Testing and development harness](docs/testing.md) for unit/E2E commands,
+local scenario debugging, and before/after video capture. Current findings are
+recorded in [QA results](docs/qa/2026-09-06-testing.md) and
+[Design / UI review](docs/design-ui-review.md).
 
 ## Solver Backend
 
