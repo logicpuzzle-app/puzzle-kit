@@ -37,6 +37,7 @@ import {
   INITIAL_STATE,
   getMouseButton,
   getModifiers,
+  getToolCategory,
   type InteractionState,
   type InteractionAction,
   type InteractionContext,

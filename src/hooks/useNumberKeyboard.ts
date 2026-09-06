@@ -593,7 +593,7 @@ export function useNumberKeyboard() {
       preventDefault: true,
       when: (ctx) => ctx.isNumberTool || ctx.isConstraintNumberInput,
       run: (ctx, _key) => {
-        const direction = getArrowDirection(key);
+        const direction = getArrowDirection(_key);
         if (!direction) return;
 
         if (ctx.panelMode === 'hiragana' && ctx.target) {
