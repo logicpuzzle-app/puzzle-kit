@@ -35,6 +35,19 @@ describe('touch interaction completion', () => {
     expect(useStore.getState().canvas.isDragging).toBe(false);
   });
 
+  it('accumulates pan movement even when several events arrive before a render', () => {
+    const { useStore, result, event } = setup();
+    act(() => useStore.getState().setPanMode(true));
+    act(() => result.current.handlePointerDown(event(80, 'pointerdown')));
+    act(() => {
+      result.current.handlePointerMove(event(100, 'pointermove'));
+      result.current.handlePointerMove(event(120, 'pointermove'));
+      result.current.handlePointerMove(event(140, 'pointermove'));
+    });
+    expect(useStore.getState().canvas.panX).toBe(60);
+    act(() => result.current.handlePointerUp(event(140)));
+  });
+
   it('discards a cancelled free segment and leaves the next stroke undoable', () => {
     const { useStore, result, event } = setup();
     act(() => result.current.handlePointerDown(event(80, 'pointerdown')));

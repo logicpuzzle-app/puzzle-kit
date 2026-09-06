@@ -3,7 +3,7 @@
  */
 
 import { useCallback, useMemo, useRef } from 'react';
-import { usePuzzleStore } from '../store/puzzleStoreContext';
+import { usePuzzleStore, usePuzzleStoreApi } from '../store/puzzleStoreContext';
 import { useCellFinder } from './useCellFinder';
 import { useCanvasPoint } from './useCanvasPoint';
 import { shouldAllowOutboardForTool } from '../utils/outboardPolicy';
@@ -84,6 +84,7 @@ export function useTouchHandlers({
     activeLayer,
     setNumberSelection,
   } = usePuzzleStore();
+  const store = usePuzzleStoreApi();
   const { findCellAtPoint } = useCellFinder();
 
   const touchStateRef = useRef<TouchState>({
@@ -271,6 +272,8 @@ export function useTouchHandlers({
         return;
       }
 
+      // Pointer events can arrive before React renders the preceding update.
+      const currentCanvas = store.getState().canvas;
       if (points.length >= 2 && touchState.isPinching) {
         const currentDistance = getPinchDistance(points);
         const scale = currentDistance / touchState.initialPinchDistance;
@@ -280,16 +283,16 @@ export function useTouchHandlers({
         if (touchState.lastTouchPoint) {
           const dx = center.x - touchState.lastTouchPoint.x;
           const dy = center.y - touchState.lastTouchPoint.y;
-          setPan(canvas.panX + dx, canvas.panY + dy);
+          setPan(currentCanvas.panX + dx, currentCanvas.panY + dy);
         }
 
         setZoom(newZoom);
         touchState.lastTouchPoint = center;
       } else if (points.length === 1 && touchState.lastTouchPoint) {
-        if (touchState.isPanning || !canvas.isDrawing) {
+        if (touchState.isPanning || !currentCanvas.isDrawing) {
           const dx = points[0].clientX - touchState.lastTouchPoint.x;
           const dy = points[0].clientY - touchState.lastTouchPoint.y;
-          setPan(canvas.panX + dx, canvas.panY + dy);
+          setPan(currentCanvas.panX + dx, currentCanvas.panY + dy);
           touchState.lastTouchPoint = { x: points[0].clientX, y: points[0].clientY };
         } else {
           touchState.isDragging = true;
@@ -310,9 +313,7 @@ export function useTouchHandlers({
       }
     },
     [
-      canvas.panX,
-      canvas.panY,
-      canvas.isDrawing,
+      store,
       activeLayer,
       gridHandlers,
       setZoom,
