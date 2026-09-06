@@ -67,7 +67,7 @@ Install the Playwright-managed Chromium binary once, then run the NPGenerator
 end-to-end test:
 
 ```bash
-npx playwright install chromium
+npx playwright install chromium webkit
 npm run test:e2e
 ```
 

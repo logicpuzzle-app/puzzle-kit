@@ -20,7 +20,7 @@ PRのcheckoutでは `npm ci` で依存を再現できる。Node 22.12以上とnp
 
 ```bash
 npm ci
-npx playwright install chromium
+npx playwright install chromium webkit
 npm run qa:doctor
 ```
 
@@ -50,7 +50,7 @@ npm run qa:doctor
 | `npm run test:coverage` | utils/store/hooks/npgenのカバレッジ。`coverage/index.html` |
 | `npm run typecheck:e2e` | Playwright設定とE2Eテストの型チェック |
 | `npm run typecheck` | アプリの型チェック |
-| `npm run test:e2e` | 全E2E、Chromium + Pixel 7設定 |
+| `npm run test:e2e` | 全E2E、Chromium / WebKitのdesktop・mobile設定 |
 | `npm run test:issues -- --project=chromium` | デスクトップのIssue回帰 |
 | `npm run test:e2e -- --grep '#40' --project=chromium` | 1つのIssueに絞る |
 | `npm run test:e2e:ui` / `npm run test:e2e:debug` | UI / ステップ実行 |
@@ -61,7 +61,7 @@ npm run qa:doctor
 
 E2Eは4174番ポートを専有し、既存サーバーを再利用しない。競合時は明示的に失敗する。別プロセスで同時にE2Eを起動しない。通常はテストごとに新しいブラウザーコンテキストを作る。Firebaseのログインや認証情報は不要。
 
-Pixel 7設定のIssueテストは狭いviewportでのmouse/keyboard操作。実機の指ドラッグ・ソフトウェアキーボード・Safariまで保証するものではない。モバイルレイアウトの失敗を隠すskip/期待失敗指定は追加していない。
+既存Issueテストはmouse/keyboard操作。`tap-input.spec.ts` は全4projectでtouchscreen.tap、`gestures.chromium-touch.spec.ts` はmobile-chrome専用のCDP touch入力でドラッグ・中断・パンを検証する。CDP専用ファイルは他projectのtestIgnoreで対象外にする。WebKit desktop/iPhone設定はSafari実機の検証ではなく、ソフトウェアキーボードやOS割込みも対象外。モバイルレイアウトの失敗を隠すskip/期待失敗指定は追加していない。
 
 ## 手動の開発ハーネス
 
@@ -109,4 +109,16 @@ npx playwright show-trace artifacts/qa/<run>/test-results/<test>/trace.zip
 
 ## CI
 
-`.github/workflows/qa.yml` はPR/push時に独立した `npm ci` から型検査・unit・E2E・buildを実行する。成功時も動画・trace・レポートを30日保存する。[PlaywrightのCI手順](https://playwright.dev/docs/ci) に従いChromiumとOS依存をインストールする。UIレビューの `.work/` はアップロード対象に含めない。
+`.github/workflows/qa.yml` はPR/push時に独立した `npm ci` から型検査・unit・E2E・buildを実行する。成功時も動画・trace・レポートを30日保存する。[PlaywrightのCI手順](https://playwright.dev/docs/ci) に従いChromium/WebKitとOS依存をインストールする。UIレビューの `.work/` はアップロード対象に含めない。
+
+## タッチとWebKitの回帰
+
+```bash
+npm run qa:capture -- before e2e/gestures.chromium-touch.spec.ts e2e/tap-input.spec.ts --project=mobile-chrome
+npm run qa:capture -- after e2e/gestures.chromium-touch.spec.ts e2e/tap-input.spec.ts --project=mobile-chrome
+npm run test:e2e -- --project=webkit --project=mobile-webkit
+```
+
+[Playwrightのデバイス設定](https://playwright.dev/docs/emulation) と [CDP touch入力](https://chromedevtools.github.io/devtools-protocol/tot/Input/#method-dispatchTouchEvent) を使う。マウスイベントをtouchと呼び換える方法ではなく、ブラウザーのtouch/pointer経路を実行する。WebKitではCDPを使わずtapと既存操作を検証する。
+
+CIはPRおよびdevelop/puzzle-kit-refactorへのpushで実行し、featureへのpushとPRで同じ検査・大容量動画が二重保存されることを避ける。

@@ -2,7 +2,7 @@ name: QA
 on:
   pull_request:
   push:
-    branches: [develop, puzzle-kit-refactor, 'feature/**']
+    branches: [develop, puzzle-kit-refactor]
   workflow_dispatch:
 permissions:
   contents: read
@@ -20,7 +20,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit
       - run: npm run qa:doctor
       - run: npm run qa:check
       - name: Production build

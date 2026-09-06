@@ -23,11 +23,13 @@ if (manifest.dependencies?.['yajilin-kit']) packages.push('yajilin-kit');
 for (const name of packages) {
   check(name, () => require.resolve(name));
 }
-check('Chromium', () => {
-  const { chromium } = require('@playwright/test');
-  if (!existsSync(chromium.executablePath())) throw new Error('Run npx playwright install chromium');
-  return chromium.executablePath();
-});
+for (const name of ['chromium', 'webkit']) {
+  check(name, () => {
+    const browser = require('@playwright/test')[name];
+    if (!existsSync(browser.executablePath())) throw new Error(`Run npx playwright install ${name}`);
+    return browser.executablePath();
+  });
+}
 for (const name of ['src/wasm/npgen/npgen_bg.wasm', 'e2e/fixtures/xml-seed.xml', 'e2e/fixtures/xml-multiple-groups.xml']) {
   check(name, () => { if (!existsSync(name)) throw new Error('Missing fixture/artifact'); return 'present'; });
 }
