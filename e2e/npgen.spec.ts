@@ -123,7 +123,7 @@ test('edits problems, hint patterns, and fixed numbers on the GUI board', async 
   ).toBeVisible();
 });
 
-test('imports updated XML constraints and uses an initial solution seed', async ({ page }) => {
+async function importXmlPattern(page: Page) {
   await openNPGenerator(page);
   const fixture = resolve(
     process.cwd(),
@@ -145,10 +145,40 @@ test('imports updated XML constraints and uses an initial solution seed', async 
     }),
   ).toBeVisible();
 
+  // The XML's <seed> is a solution grid, not the PRNG seed. Keep the
+  // generation input reproducible instead of depending on OS randomness.
+  await page.getByRole('checkbox', { name: 'Change / specify seed' }).check();
+}
+
+test('imports updated XML constraints and uses an initial solution seed', async ({ page }) => {
+  await importXmlPattern(page);
+  await page.getByRole('textbox', { name: 'Seed' }).fill('1');
   await page.getByRole('button', { name: 'Generate', exact: true }).click();
   await expect(page.getByText(/Result: Unique solution/)).toBeVisible({
     timeout: 30_000,
   });
+});
+
+test('XML generation reports exhausted attempts and recovers with a new seed', async ({ page }) => {
+  await importXmlPattern(page);
+  // Captured from the failed Chromium QA run on 2026-09-07.
+  const seed = page.getByRole('textbox', { name: 'Seed' });
+  await seed.fill('-8157813607070382776');
+  const generate = page.getByRole('button', { name: 'Generate', exact: true });
+  await generate.click();
+  await expect(page.getByText('generation failed after 100 attempts', { exact: true })).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(generate).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Export result XML' })).toBeDisabled();
+
+  await seed.fill('1');
+  await generate.click();
+  await expect(page.getByText(/Result: Unique solution/)).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(page.getByText('generation failed after 100 attempts', { exact: true })).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Export result XML' })).toBeEnabled();
 });
 
 test('imports every XML constraint group in declaration order', async ({ page }) => {
