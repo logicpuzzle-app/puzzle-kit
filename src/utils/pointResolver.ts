@@ -30,6 +30,17 @@ export type ResolveOptions = {
   maxDistance?: number;
 };
 
+/**
+ * Fallback snap radius used when a point lies inside the topology bounding box but
+ * outside every cell polygon (outer padding, void holes, ragged tiling borders).
+ *
+ * Without a bound, the nearest-cell lookup would snap such a point to an arbitrarily
+ * distant cell, so clicking the grey area around the board would edit the board.
+ * Points that are genuinely inside a cell are matched by polygon containment and are
+ * unaffected by this radius.
+ */
+const CELL_SNAP_RADIUS_RATIO = 0.5;
+
 export interface ResolvedCell {
   cellId: string;
   row?: number;
@@ -79,7 +90,8 @@ export function resolveCell(point: Point, ctx: ResolveContext, options: ResolveO
   }
 
   if (useTopology && topology) {
-    const topoCell = findNearestCellInTopology(topology, point);
+    const snapRadius = options.maxDistance ?? grid.cellSize * CELL_SNAP_RADIUS_RATIO;
+    const topoCell = findNearestCellInTopology(topology, point, snapRadius);
     if (!topoCell) return null;
     if (topoCell.outboard && !allowOutboard) return null;
     const { row, col } = getTopologyRowCol(topoCell);
