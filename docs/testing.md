@@ -24,7 +24,7 @@ npx playwright install chromium
 npm run qa:doctor
 ```
 
-`package-lock.json` はPRに含める依存で更新済み。Vitestとcoverage providerは4.0.16で揃えている。Firebaseの設定は不要。
+`package-lock.json` はPRに含める依存で更新済み。Vitestとcoverage providerは4.1.11で揃えている。Firebaseの設定は不要。
 
 ### 元の作業workspaceについて
 
