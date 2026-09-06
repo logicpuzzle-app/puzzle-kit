@@ -37,8 +37,8 @@ npm run build:lib
 ## Development and QA
 
 See [Testing and development harness](docs/testing.md) for unit/E2E commands,
-local scenario debugging, and before/after video capture. Current findings are
-recorded in [QA results](docs/qa/2026-09-06-testing.md).
+local scenario debugging, and before/after video capture. The latest verification is in [editor QA results](docs/qa/2026-09-06-editor-quality.md),
+with [before/after recordings](docs/qa/evidence-editor-quality-20260906/README.md).
 
 ## Solver Backend
 
@@ -56,7 +56,7 @@ constraints, deterministic seeds, and NPGenerator XML import/export.
 The checked-in Wasm artifact is rebuilt from the verified Rust port with:
 
 ```bash
-pnpm build:npgen-wasm
+npm run build:npgen-wasm
 ```
 
 Generation runs in a Web Worker so the editor UI remains responsive.
@@ -67,8 +67,8 @@ Install the Playwright-managed Chromium binary once, then run the NPGenerator
 end-to-end test:
 
 ```bash
-pnpm exec playwright install chromium
-pnpm test:e2e
+npx playwright install chromium
+npm run test:e2e
 ```
 
 ## Library Usage

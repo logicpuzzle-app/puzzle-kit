@@ -1,0 +1,209 @@
+[
+  {
+    "flow": "edit-mobile",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T01-33-04-417Z-before",
+      "title": "Edit starts with a visible board and stays responsive",
+      "status": "failed",
+      "commit": "613f1b27e088ebc0a32b45105c0053cad928ac39",
+      "video": "edit-mobile-before.webm",
+      "videoSHA256": "8d7f2e84131704d32e2e8776b7aeb2ac716cedfc9b25f68c1297e25fd7ca69ae",
+      "sourceManifestSHA256": "5565c51366491899cc1d7d2d55397417374d40bb83c4201de705a7fb068b2617"
+    },
+    "after": {
+      "capture": "2026-09-06T01-39-33-439Z-after",
+      "title": "Edit starts with a visible board and stays responsive",
+      "status": "passed",
+      "commit": "3b8ee03a687b1cce870e8168875068f7eab9016f",
+      "video": "edit-mobile-after.webm",
+      "videoSHA256": "df522fc3fa637228cc6699f861f6666066babfe21190fc921357ee295f87efd0",
+      "sourceManifestSHA256": "67954aac0a52c6dcf650a9702738b67e89c6be5d396bf0acfe7d1110e23deda2"
+    },
+    "title": "Edit starts with a visible board and stays responsive"
+  },
+  {
+    "flow": "paint-mobile",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T01-33-04-417Z-before",
+      "title": "Paint reserves usable board space and keeps tools reachable",
+      "status": "failed",
+      "commit": "613f1b27e088ebc0a32b45105c0053cad928ac39",
+      "video": "paint-mobile-before.webm",
+      "videoSHA256": "396f470cc06a437eed36e0ee395f1dbdd368f814b39a805e9d69ff7a59bebd98",
+      "sourceManifestSHA256": "5565c51366491899cc1d7d2d55397417374d40bb83c4201de705a7fb068b2617"
+    },
+    "after": {
+      "capture": "2026-09-06T01-39-33-439Z-after",
+      "title": "Paint reserves usable board space and keeps tools reachable",
+      "status": "passed",
+      "commit": "3b8ee03a687b1cce870e8168875068f7eab9016f",
+      "video": "paint-mobile-after.webm",
+      "videoSHA256": "3d4af2291b1b115e27fb2550047ca4e52ee2f1cf331b4c29c3cfd99bd454e11c",
+      "sourceManifestSHA256": "67954aac0a52c6dcf650a9702738b67e89c6be5d396bf0acfe7d1110e23deda2"
+    },
+    "title": "Paint reserves usable board space and keeps tools reachable"
+  },
+  {
+    "flow": "master-mobile",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T01-33-04-417Z-before",
+      "title": "Master keeps the document and board within the viewport",
+      "status": "failed",
+      "commit": "613f1b27e088ebc0a32b45105c0053cad928ac39",
+      "video": "master-mobile-before.webm",
+      "videoSHA256": "786ba8f978b5b212df35c2822d102159d95b5a7b951c0308c9874a116f031028",
+      "sourceManifestSHA256": "5565c51366491899cc1d7d2d55397417374d40bb83c4201de705a7fb068b2617"
+    },
+    "after": {
+      "capture": "2026-09-06T01-39-33-439Z-after",
+      "title": "Master keeps the document and board within the viewport",
+      "status": "passed",
+      "commit": "3b8ee03a687b1cce870e8168875068f7eab9016f",
+      "video": "master-mobile-after.webm",
+      "videoSHA256": "ebcff4dfb5dbf37bbe3516a5d2bc187eada7e1027a8269433509140a79e7ba94",
+      "sourceManifestSHA256": "67954aac0a52c6dcf650a9702738b67e89c6be5d396bf0acfe7d1110e23deda2"
+    },
+    "title": "Master keeps the document and board within the viewport"
+  },
+  {
+    "flow": "square-restore",
+    "project": "chromium",
+    "before": {
+      "capture": "2026-09-06T01-49-35-237Z-before",
+      "title": "#18/#23 square excluded cell disappears immediately and can be restored",
+      "status": "failed",
+      "commit": "897d89088beba6eac4aeed85ff99bbf2d341de73",
+      "video": "square-restore-before.webm",
+      "videoSHA256": "7bf64cf03d1d3ac1863e96ed76fdae1b9596a938fb924cec4007c2ce8d224fc5",
+      "sourceManifestSHA256": "04c25d441e18e4fe3f415e4efcc9a23b8c2e218a65d705160d89d8707b498d2b"
+    },
+    "after": {
+      "capture": "2026-09-06T01-51-48-387Z-after",
+      "title": "#18/#23 square excluded cell disappears immediately and can be restored",
+      "status": "passed",
+      "commit": "897d89088beba6eac4aeed85ff99bbf2d341de73",
+      "video": "square-restore-after.webm",
+      "videoSHA256": "1f63a3f502cf52ee5b0d6034d933dddc88dfb682767850010c490334f22c1a79",
+      "sourceManifestSHA256": "201b1660c18683b9cd07a1b70ca0e61822bdfb60afc905339da361127f3a3550"
+    },
+    "title": "#18/#23 square excluded cell disappears immediately and can be restored"
+  },
+  {
+    "flow": "hex-restore",
+    "project": "chromium",
+    "before": {
+      "capture": "2026-09-06T01-49-35-237Z-before",
+      "title": "#18/#23 hex excluded cell disappears immediately and can be restored",
+      "status": "failed",
+      "commit": "897d89088beba6eac4aeed85ff99bbf2d341de73",
+      "video": "hex-restore-before.webm",
+      "videoSHA256": "c398134775232493b7438107fa9e8a9312ab263e421c667331779c923ed7f697",
+      "sourceManifestSHA256": "04c25d441e18e4fe3f415e4efcc9a23b8c2e218a65d705160d89d8707b498d2b"
+    },
+    "after": {
+      "capture": "2026-09-06T01-51-48-387Z-after",
+      "title": "#18/#23 hex excluded cell disappears immediately and can be restored",
+      "status": "passed",
+      "commit": "897d89088beba6eac4aeed85ff99bbf2d341de73",
+      "video": "hex-restore-after.webm",
+      "videoSHA256": "64a9250cb3d5efcfe29faf4f376c028a39ce26fea1a51a2da98abf6a1be1eb45",
+      "sourceManifestSHA256": "201b1660c18683b9cd07a1b70ca0e61822bdfb60afc905339da361127f3a3550"
+    },
+    "title": "#18/#23 hex excluded cell disappears immediately and can be restored"
+  },
+  {
+    "flow": "edge-lines",
+    "project": "chromium",
+    "before": {
+      "capture": "2026-09-06T01-49-35-237Z-before",
+      "title": "#21 edge-lines draws a segment and supports Undo/Redo",
+      "status": "failed",
+      "commit": "897d89088beba6eac4aeed85ff99bbf2d341de73",
+      "video": "edge-lines-before.webm",
+      "videoSHA256": "87e011896796792146feb6c7fc9ab8d63c069eae8b85701d888cfa4c040a9c87",
+      "sourceManifestSHA256": "04c25d441e18e4fe3f415e4efcc9a23b8c2e218a65d705160d89d8707b498d2b"
+    },
+    "after": {
+      "capture": "2026-09-06T01-51-48-387Z-after",
+      "title": "#21 edge-lines draws a segment and supports Undo/Redo",
+      "status": "passed",
+      "commit": "897d89088beba6eac4aeed85ff99bbf2d341de73",
+      "video": "edge-lines-after.webm",
+      "videoSHA256": "56f1a7a93bddc6ca7a5242f67cd03fc4d1efc091533ff80ae2818bef18acedc8",
+      "sourceManifestSHA256": "201b1660c18683b9cd07a1b70ca0e61822bdfb60afc905339da361127f3a3550"
+    },
+    "title": "#21 edge-lines draws a segment and supports Undo/Redo"
+  },
+  {
+    "flow": "half-lines",
+    "project": "chromium",
+    "before": {
+      "capture": "2026-09-06T01-49-35-237Z-before",
+      "title": "#21 half-lines draws a segment and supports Undo/Redo",
+      "status": "failed",
+      "commit": "897d89088beba6eac4aeed85ff99bbf2d341de73",
+      "video": "half-lines-before.webm",
+      "videoSHA256": "6bdb5cfa3801a15328bc9b50047782d222eafaf60fa4a490b62da89fbd63ec3c",
+      "sourceManifestSHA256": "04c25d441e18e4fe3f415e4efcc9a23b8c2e218a65d705160d89d8707b498d2b"
+    },
+    "after": {
+      "capture": "2026-09-06T01-51-48-387Z-after",
+      "title": "#21 half-lines draws a segment and supports Undo/Redo",
+      "status": "passed",
+      "commit": "897d89088beba6eac4aeed85ff99bbf2d341de73",
+      "video": "half-lines-after.webm",
+      "videoSHA256": "26adb7d2adb9f09ceaf334b912d96ec98cc531760c5f662d2b7b9234404cfa2e",
+      "sourceManifestSHA256": "201b1660c18683b9cd07a1b70ca0e61822bdfb60afc905339da361127f3a3550"
+    },
+    "title": "#21 half-lines draws a segment and supports Undo/Redo"
+  },
+  {
+    "flow": "directional-number",
+    "project": "chromium",
+    "before": {
+      "capture": "2026-09-06T01-49-35-237Z-before",
+      "title": "#19 directional number supports Backspace deletion",
+      "status": "failed",
+      "commit": "897d89088beba6eac4aeed85ff99bbf2d341de73",
+      "video": "directional-number-before.webm",
+      "videoSHA256": "7f4bd780028417cf4e6879847dbf4b66d0c42c9890101ea331dbf6ecff72f410",
+      "sourceManifestSHA256": "04c25d441e18e4fe3f415e4efcc9a23b8c2e218a65d705160d89d8707b498d2b"
+    },
+    "after": {
+      "capture": "2026-09-06T01-51-48-387Z-after",
+      "title": "#19 directional number supports Backspace deletion",
+      "status": "passed",
+      "commit": "897d89088beba6eac4aeed85ff99bbf2d341de73",
+      "video": "directional-number-after.webm",
+      "videoSHA256": "c11cbcf2f4bc34723323e9abc76c2711e6440aeef23536a4d423e2beae4160b1",
+      "sourceManifestSHA256": "201b1660c18683b9cd07a1b70ca0e61822bdfb60afc905339da361127f3a3550"
+    },
+    "title": "#19 directional number supports Backspace deletion"
+  },
+  {
+    "flow": "keyboard-tools",
+    "project": "chromium",
+    "before": {
+      "capture": "2026-09-06T01-53-32-241Z-before",
+      "title": "Master announces tool selection and supports keyboard activation",
+      "status": "failed",
+      "commit": "2aca64a9c9919506242c5d81bbe0319125b075fa",
+      "video": "keyboard-tools-before.webm",
+      "videoSHA256": "0b7efedc446224652025c1d3ff1044264f36e661b455548b816f15a3cc00941d",
+      "sourceManifestSHA256": "7946c376d875db25f7eb280add59763407d89b243c56e36b01766cd47c1de7f7"
+    },
+    "after": {
+      "capture": "2026-09-06T01-54-22-057Z-after",
+      "title": "Master announces tool selection and supports keyboard activation",
+      "status": "passed",
+      "commit": "2aca64a9c9919506242c5d81bbe0319125b075fa",
+      "video": "keyboard-tools-after.webm",
+      "videoSHA256": "8a1250cd8535df40a8ae1bbf5a3502bf1363c0bf5dfb778a0ef2bddcd599b8ce",
+      "sourceManifestSHA256": "1208e1754d1f29c8cf1b60a420b9b20784ea109b771f440fff978ccdaaf00ed5"
+    },
+    "title": "Master announces tool selection and supports keyboard activation"
+  }
+]
