@@ -1,6 +1,6 @@
 # 開発・テストハーネス
 
-2026-09-06 / 対象: `PuzzleTools/puzzle-kit`。実測結果と既知不具合は [最新QA記録](qa/2026-09-06-properties-drawer.md)を参照。UIレビューの作業文書は非追跡の `.work/ui-review/` に保存し、公開しない。
+2026-09-06 / 対象: `PuzzleTools/puzzle-kit`。実測結果と既知不具合は [最新QA記録](qa/2026-09-07-pinch-anchor.md)を参照。UIレビューの作業文書は非追跡の `.work/ui-review/` に保存し、公開しない。
 
 ## 構成
 
@@ -9,6 +9,7 @@
 - `e2e/npgen.spec.ts`: 実際のWasm Workerによる生成、XML読込、盤面編集。XMLは `e2e/fixtures` に同梱。
 - `e2e/editor-issues.spec.ts`: GitHub #40 / #20 / #19 / #22 と数字の矢印移動。実際の `/master` のUIを操作し、描画されたSVGを確認。ストアをブラウザーから直接書き換えない。
 - `e2e/topology-issues.spec.ts`: 正方形/六角形の除外・復元、辺中点/半分の線とUndo/Redo、方向付き数字のBackspace。ハーネスで初期化して実際のポインターとキーボードを操作。
+- `e2e/pinch-anchor.chromium-touch.spec.ts`: ピンチ中心、副色誤判定、最初の描画・Pan Modeの境界を録画付きで検証。
 - `e2e/multitouch-grid.chromium-touch.spec.ts`: 複数指の部分リリース、タッチのMerge/Splitと中断、Undo/Redoをmobile-chromeで検証。
 - `e2e/grid-sculpt.spec.ts`: Sculpt Rotate/CutとUndo/Redoを全4projectのtouchscreen.tapで検証。
 - `e2e/properties-drawer.spec.ts`: 狭幅Propertiesの開閉・設定・フォーカス・リサイズ・エラー通知を4projectで検証。
