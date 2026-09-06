@@ -3,7 +3,7 @@
  */
 
 import type { GridConfig } from '../../types';
-import type { GridSlice, SliceCreator } from './types';
+import type { GridSlice, SliceCreator, PuzzleStore } from './types';
 import type { TopologyPreset, GridTopology } from '../../utils/gridTopology';
 import {
   gridConfigToTopology,
@@ -49,6 +49,20 @@ const createDefaultTopology = (): GridTopology => {
   const baseTopology = gridConfigToTopology(DEFAULT_GRID);
   return applyTopologyPreset(baseTopology, { preset: 'square', intensity: 0.5 });
 };
+
+// Geometry operations are immutable. Keep matching grid/topology snapshots so
+// undo never restores configuration while leaving a different rendered board.
+function recordGeometryEdit(state: PuzzleStore, result: Partial<PuzzleStore>, description: string): Partial<PuzzleStore> {
+  if (result === state || !result.grid || result.grid === state.grid) return result === state ? {} : result;
+  if (JSON.stringify(result.grid) !== JSON.stringify(state.grid)) {
+    state.historyManager.addAction({
+      type: 'EDIT_GRID_GEOMETRY', description,
+      before: { grid: state.grid, topology: state.topology },
+      after: { grid: result.grid, topology: result.topology ?? state.topology },
+    });
+  }
+  return result;
+}
 
 export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
   grid: { ...DEFAULT_GRID },
@@ -211,42 +225,42 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
   sculptRotateCluster: (vertexId: string) =>
     set((state) => {
       const result = sculptRotateCluster(state, vertexId);
-      return result === state ? {} : result;
+      return recordGeometryEdit(state, result, 'Rotate isometric cluster');
     }),
 
   sculptCutCluster: (vertexId: string) =>
     set((state) => {
       const result = sculptCutCluster(state, vertexId);
-      return result === state ? {} : result;
+      return recordGeometryEdit(state, result, 'Cut isometric cluster');
     }),
 
   // Merge/unmerge cells (delegated to cellOperations module)
   mergeCells: (cellIds) =>
-    set((state) => mergeCells(state, cellIds)),
+    set((state) => recordGeometryEdit(state, mergeCells(state, cellIds), 'Merge cells')),
 
   unmergeCells: (cellIds) =>
     set((state) => {
       const result = unmergeCells(state, cellIds);
-      return result === state ? {} : result;
+      return recordGeometryEdit(state, result, 'Unmerge cells');
     }),
 
   // Split lines (delegated to cellOperations module)
   addSplitLine: (cellId, startVertexId, endVertexId) =>
     set((state) => {
       const result = addSplitLine(state, cellId, startVertexId, endVertexId);
-      return result === state ? {} : result;
+      return recordGeometryEdit(state, result, 'Split cell');
     }),
 
   removeSplitLine: (cellId) =>
     set((state) => {
       const result = removeSplitLine(state, cellId);
-      return result === state ? {} : result;
+      return recordGeometryEdit(state, result, 'Remove cell split');
     }),
 
   clearSplitLines: () =>
     set((state) => {
       const result = clearSplitLines(state);
-      return result === state ? {} : result;
+      return recordGeometryEdit(state, result, 'Clear cell splits');
     }),
 
   // Grid resize
