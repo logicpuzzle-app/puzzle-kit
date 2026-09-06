@@ -102,10 +102,10 @@ export const PaintAppMobileLayout: React.FC<PaintAppMobileLayoutProps> = ({
       className={
         isExpanded
           ? 'flex flex-col w-full h-full bg-white border border-office-border rounded-none shadow-none overflow-hidden'
-          : 'flex flex-col min-h-[520px] h-[78vh] bg-white border border-office-border rounded-lg shadow-lg overflow-hidden'
+          : 'flex flex-col h-[calc(100dvh-24px)] bg-white border border-office-border rounded-lg shadow-lg overflow-hidden'
       }
     >
-      <header className="flex flex-col border-b border-office-border bg-white">
+      <header className="shrink-0 flex flex-col border-b border-office-border bg-white">
         <PaintMenuBar {...menuBarProps} />
         <div className="flex flex-wrap items-center gap-2 px-2 py-2 border-t border-office-border bg-white">
           <PaintMediaControls {...mediaControlsProps} />
@@ -114,7 +114,8 @@ export const PaintAppMobileLayout: React.FC<PaintAppMobileLayoutProps> = ({
         {imageAdjustToolbarProps && <PaintImageAdjustToolbar {...imageAdjustToolbarProps} />}
         {gridSettingsToolbarProps && <PaintGridSettingsToolbar {...gridSettingsToolbarProps} />}
       </header>
-      <PaintCanvasArea {...canvasAreaProps} />
+      <PaintCanvasArea {...canvasAreaProps} className="min-h-[240px]" />
+      <div className="min-h-0 max-h-[45%] overflow-y-auto overscroll-contain" role="region" aria-label="Paint tools" tabIndex={0}>
       <div className="border-t border-office-border bg-white px-2 py-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <PaintAdjustModeControls {...adjustModeControlsProps} size="lg" />
@@ -122,6 +123,7 @@ export const PaintAppMobileLayout: React.FC<PaintAppMobileLayoutProps> = ({
         </div>
       </div>
       <PaintGenreToolbarMobile {...genreToolbarProps} />
+      </div>
     </div>
   </div>
 );

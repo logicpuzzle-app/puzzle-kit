@@ -11,6 +11,7 @@ type Bounds = {
 };
 
 export type PaintCanvasAreaProps = {
+  className?: string;
   t: TranslateFn;
   canvasWrapperRef: React.RefObject<HTMLDivElement | null>;
   boardAdjustMode: boolean;
@@ -35,6 +36,7 @@ export type PaintCanvasAreaProps = {
 };
 
 export const PaintCanvasArea: React.FC<PaintCanvasAreaProps> = ({
+  className = 'min-h-0',
   t,
   canvasWrapperRef,
   boardAdjustMode,
@@ -57,7 +59,7 @@ export const PaintCanvasArea: React.FC<PaintCanvasAreaProps> = ({
   handleResizePointerMove,
   handleResizePointerUp,
 }) => (
-  <div ref={canvasWrapperRef} className="flex-1 min-h-0 flex flex-col relative">
+  <div ref={canvasWrapperRef} className={`flex-1 flex flex-col relative ${className}`}>
     <PuzzleCanvas allowMultiTouchPanZoom={false} />
     {boardAdjustMode && hasImage && (
       <div

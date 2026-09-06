@@ -78,7 +78,12 @@ export const usePaintBoardCentering = ({
 
   useEffect(() => {
     centerBoard(true);
-  }, [centerBoard]);
+    const container = canvasWrapperRef.current;
+    if (!container) return;
+    const observer = new ResizeObserver(() => centerBoard(true));
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [canvasWrapperRef, centerBoard]);
 
   return { centerBoard, getBoardDimensions };
 };
