@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import upstreamDeclaration from './fixtures/penpa-edit/compress-sub.txt?raw';
 
 import { COMPRESS_SUBSTITUTIONS } from '../utils/penpaSerializer';
 
@@ -28,9 +27,7 @@ function extractPenpaEditCompressSubPairs(source: string): [string, string][] {
 
 describe('penpa-edit parity', () => {
   it('keeps COMPRESS_SUB table identical to penpa-edit', () => {
-    const classP = resolve(process.cwd(), '..', 'penpa-edit', 'docs', 'js', 'class_p.js');
-    const src = readFileSync(classP, 'utf8');
-    const penpaEditPairs = extractPenpaEditCompressSubPairs(src);
+    const penpaEditPairs = extractPenpaEditCompressSubPairs(upstreamDeclaration);
 
     expect(COMPRESS_SUBSTITUTIONS).toEqual(penpaEditPairs);
   });
