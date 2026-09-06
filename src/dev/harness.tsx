@@ -9,6 +9,10 @@ import { ModalStoreProvider } from '../store/modalStoreContext';
 import { saveGridConfig, saveToolSettings } from '../utils/storage';
 
 const scenarios = {
+  'square-merge': { label: 'Square touch merge', tool: 'surface-fill', category: 'surface', directions: ['orthogonal'] },
+  'square-split': { label: 'Square touch split', tool: 'surface-fill', category: 'surface', directions: ['orthogonal'] },
+  'iso-sculpt-cut': { label: 'Isometric touch sculpt cut', tool: 'surface-fill', category: 'surface', directions: ['orthogonal'] },
+  'iso-sculpt': { label: 'Isometric touch sculpt', tool: 'surface-fill', category: 'surface', directions: ['orthogonal'] },
   'free-segment': { label: '#40 Free Segment', tool: 'line-normal', category: 'line', directions: ['straight'] },
   'orthogonal': { label: '#20 Orthogonal erase', tool: 'line-normal', category: 'line', directions: ['orthogonal'] },
   'number': { label: '#19 Number / Backspace / arrows', tool: 'number-normal', category: 'number', directions: ['orthogonal'] },
@@ -25,7 +29,7 @@ function newSession(scenario: Scenario) {
   Object.keys(localStorage).filter(key => key.startsWith('puzzlekit')).forEach(key => localStorage.removeItem(key));
   const session = createPuzzleStore();
   const state = session.useStore.getState();
-  state.newPuzzle({ rows: 6, cols: 6, gridType: scenario === 'hex-exclusion' ? 'hex' : 'square' });
+  state.newPuzzle({ rows: 6, cols: 6, gridType: scenario === 'hex-exclusion' ? 'hex' : scenario.startsWith('iso-sculpt') ? 'iso' : 'square' });
   state.setActiveLayer('problem');
   const settings = scenarios[scenario];
   state.setTool(settings.tool, settings.category);
@@ -34,9 +38,14 @@ function newSession(scenario: Scenario) {
     state.setActiveLayer('grid');
     state.setGridEditMode('exclude');
   }
+  if (scenario === 'square-merge' || scenario === 'square-split' || scenario.startsWith('iso-sculpt')) {
+    state.setActiveLayer('grid');
+    state.setGridEditMode(scenario === 'square-merge' ? 'merge' : scenario === 'square-split' ? 'split' : 'sculpt');
+  }
   if (scenario === 'edge-lines' || scenario === 'half-lines') {
     state.setToolSettings({ lineGridPoints: scenario === 'edge-lines' ? ['edge'] : ['cell', 'edge'], lineHalfMode: scenario === 'half-lines' });
   }
+  if (scenario === 'iso-sculpt-cut') state.setSculptMode('cut');
   saveToolSettings(session.useStore.getState().toolSettings);
   saveGridConfig(session.useStore.getState().grid);
   return { ...session, modal: createModalStore() };
