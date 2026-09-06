@@ -607,11 +607,11 @@ export function useNumberKeyboard() {
         }
       },
     },
-    // Delete/Backspace
+    // Delete/Backspace: non-numeric character restrictions must not prevent deletion.
     {
       keys: ['Backspace', 'Delete'],
       preventDefault: true,
-      when: (ctx) => (ctx.isNumberTool || ctx.isConstraintNumberInput) && ctx.allowNonNumeric && ctx.target !== null,
+      when: (ctx) => (ctx.isNumberTool || ctx.isConstraintNumberInput) && ctx.target !== null,
       run: (ctx, key) => {
         if (!ctx.target) return;
         handleDeleteInput(ctx.target, ctx);
