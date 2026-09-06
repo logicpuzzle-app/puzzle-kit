@@ -183,7 +183,7 @@ export const MenuBar: React.FC = () => {
   return (
     <div
       ref={menuRef}
-      className="flex items-center bg-office-ribbon border-b border-office-border h-7 px-1"
+      className="flex items-center bg-office-ribbon border-b border-office-border h-7 px-1 shrink-0"
     >
       {/* App icon/title */}
       <div className="flex items-center px-2 mr-2">
@@ -249,7 +249,7 @@ export const MenuBar: React.FC = () => {
       ))}
 
       {/* Right side - language indicator */}
-      <div className="ml-auto flex items-center gap-2 px-2">
+      <div className="ml-auto hidden md:flex items-center gap-2 px-2">
         <span className="text-xs text-office-text-secondary">
           {i18n.language === 'ja' ? '日本語' : 'English'}
         </span>

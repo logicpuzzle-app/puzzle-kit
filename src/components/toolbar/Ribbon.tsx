@@ -196,9 +196,9 @@ export const Ribbon: React.FC = () => {
   };
 
   return (
-    <div className="bg-office-ribbon border-b border-office-border">
+    <div className="shrink-0 min-w-0 bg-office-ribbon border-b border-office-border">
       {/* Primary toolbar - Category selection */}
-      <div className="flex items-center px-2 py-1 border-b border-office-border">
+      <div className="flex items-center px-2 py-1 border-b border-office-border max-md:overflow-x-auto max-md:[&>*]:shrink-0">
         {/* Layer switcher with visibility toggles */}
         <div className="flex items-center gap-2 px-2 border-r border-office-border mr-2">
           {/* Constraint layer - button with checkbox on right (placed first) */}
@@ -581,7 +581,7 @@ export const Ribbon: React.FC = () => {
       </div>
 
       {/* Secondary toolbar - Tool details */}
-      <div className="flex items-center px-2 py-1 min-h-[50px]">
+      <div className="flex items-center px-2 py-1 min-h-[50px] max-md:overflow-x-auto max-md:[&>*]:shrink-0">
         {isGridMode ? (
           gridSubTab === 'shape' ? <GridShapeContent /> : <GridDisplayContent />
         ) : isSpecificMode ? (

@@ -266,7 +266,7 @@ export const IconToolbar: React.FC = () => {
 
   return (
     <>
-      <div className="flex items-center bg-office-ribbon border-b border-office-border h-8 px-2 gap-0.5">
+      <div className="flex items-center bg-office-ribbon border-b border-office-border h-8 px-2 gap-0.5 shrink-0 max-md:overflow-x-auto max-md:[&>*]:shrink-0">
         {/* File actions */}
         <ToolbarButton
           icon={<NewIcon />}
