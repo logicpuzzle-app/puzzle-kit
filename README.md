@@ -38,8 +38,7 @@ npm run build:lib
 
 See [Testing and development harness](docs/testing.md) for unit/E2E commands,
 local scenario debugging, and before/after video capture. Current findings are
-recorded in [QA results](docs/qa/2026-09-06-testing.md) and
-[Design / UI review](docs/design-ui-review.md).
+recorded in [QA results](docs/qa/2026-09-06-testing.md).
 
 ## Solver Backend
 

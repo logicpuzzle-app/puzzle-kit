@@ -1,6 +1,6 @@
 # 開発・テストハーネス
 
-2026-09-06 / 対象: `PuzzleTools/puzzle-kit`。実測結果と既知不具合は [QA記録](qa/2026-09-06-testing.md)、設計とUIの調査は [設計・UIレビュー](design-ui-review.md) を参照。
+2026-09-06 / 対象: `PuzzleTools/puzzle-kit`。実測結果と既知不具合は [QA記録](qa/2026-09-06-testing.md)を参照。UIレビューの作業文書は非追跡の `.work/ui-review/` に保存し、公開しない。
 
 ## 構成
 

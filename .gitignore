@@ -41,3 +41,6 @@ firebase.json
 # Local QA recordings and reports
 artifacts/
 coverage/
+
+# Private working notes and UI reviews
+.work/
