@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import './i18n';
 import { PuzzleCanvas } from './components/canvas';
@@ -111,6 +111,7 @@ function PlayerApp() {
     showConstraintLayer,
     t,
   });
+  const getCurrentZoom = useCallback(() => store.getState().canvas.zoom, [store]);
   const { centerBoard } = useBoardCentering({
     canvasWrapperRef,
     grid,
@@ -118,7 +119,7 @@ function PlayerApp() {
     useTopology,
     setPan,
     setZoom,
-    getCurrentZoom: () => store.getState().canvas.zoom,
+    getCurrentZoom,
   });
 
   useEffect(() => {

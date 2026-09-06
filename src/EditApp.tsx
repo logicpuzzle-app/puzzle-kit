@@ -278,6 +278,7 @@ function EditApp() {
     }
   }, [grid, puzzlinkType, puzzle.problem, showAlert, t]);
 
+  const getCurrentZoom = useCallback(() => store.getState().canvas.zoom, [store]);
   const { centerBoard } = useBoardCentering({
     canvasWrapperRef,
     grid,
@@ -285,7 +286,7 @@ function EditApp() {
     useTopology,
     setPan,
     setZoom,
-    getCurrentZoom: () => store.getState().canvas.zoom,
+    getCurrentZoom,
   });
 
   useEffect(() => {
