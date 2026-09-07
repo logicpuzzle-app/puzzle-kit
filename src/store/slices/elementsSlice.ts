@@ -35,6 +35,7 @@ import {
   createRemoveLineAction,
   createUpdateLineAction,
   createAddNumberAction,
+  createBatchAction,
   createRemoveNumberAction,
   createUpdateNumberAction,
   createAddSymbolAction,
@@ -271,32 +272,29 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
     if (!canEditLayer(fullElement.layer)) {
       return '';
     }
+    const layer = fullElement.layer;
+    const replaced = Object.values(get().puzzle[layer].numbers).filter(num =>
+      fullElement.position === 'center' && num.position === 'center' &&
+      num.cellId === fullElement.cellId &&
+      (isDirectionalNumber(fullElement) || isDirectionalNumber(num)),
+    );
     set((state) => {
-      const layer = fullElement.layer;
-      const isDirectional = isDirectionalNumber(fullElement);
       const newNumbers = { ...state.puzzle[layer].numbers, [id]: fullElement };
-
-      if (fullElement.position === 'center') {
-        for (const [existingId, num] of Object.entries(newNumbers)) {
-          if (existingId === id) continue;
-          if (num.cellId !== fullElement.cellId || num.position !== 'center') continue;
-          if (isDirectional || isDirectionalNumber(num)) {
-            delete newNumbers[existingId];
-          }
-        }
-      }
-
+      for (const previous of replaced) delete newNumbers[previous.id];
       return {
         puzzle: {
           ...state.puzzle,
-          [layer]: {
-            ...state.puzzle[layer],
-            numbers: newNumbers,
-          },
+          [layer]: { ...state.puzzle[layer], numbers: newNumbers },
         },
       };
     });
-    get().historyManager.addAction(createAddNumberAction(fullElement));
+    const addition = createAddNumberAction(fullElement);
+    // A replacement must restore the previous center entry in the same undo step,
+    // without starting/ending a group owned by the surrounding pointer gesture.
+    get().historyManager.addAction(replaced.length ? createBatchAction([
+      ...replaced.map(previous => createRemoveNumberAction(previous.id, previous)),
+      addition,
+    ], 'Replace number') : addition);
     return id;
   },
 
@@ -588,75 +586,19 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
   },
 
   // DirectionalClue operations
-  addDirectionalClue: (element) => {
-    const id = generateNumberId();
-    const fullElement = { ...element, id };
-    if (!canEditLayer(fullElement.layer)) {
-      return '';
-    }
-    set((state) => {
-      const layer = fullElement.layer;
-      const displayValue = getDirectionalClueDisplayValue(fullElement) ?? '';
-      let newNumbers: Record<string, NumberElement> = {
-        ...state.puzzle[layer].numbers,
-        [id]: {
-          id,
-          cellId: fullElement.cellId,
-          value: displayValue,
-          size: 'large',
-          position: 'center',
-          direction: fullElement.direction,
-          angle: fullElement.angle ?? null,
-          color: fullElement.color || '#000',
-          layer: fullElement.layer,
-          objectKey: fullElement.objectKey,
-        },
-      };
+  addDirectionalClue: (element) => get().addNumber({
+    cellId: element.cellId,
+    value: getDirectionalClueDisplayValue(element) ?? '',
+    size: 'large',
+    position: 'center',
+    direction: element.direction,
+    angle: element.angle ?? null,
+    color: element.color || '#000',
+    layer: element.layer,
+    objectKey: element.objectKey,
+  }),
 
-      // Remove any center number at the same cell (mutual exclusivity)
-      for (const [existingId, num] of Object.entries(newNumbers)) {
-        if (existingId === id) continue;
-        if (num.cellId === fullElement.cellId && num.position === 'center') {
-          delete newNumbers[existingId];
-        }
-      }
-
-      return {
-        puzzle: {
-          ...state.puzzle,
-          [layer]: {
-            ...state.puzzle[layer],
-            numbers: newNumbers,
-          },
-        },
-      };
-    });
-    return id;
-  },
-
-  removeDirectionalClue: (id) => {
-    const state = get();
-    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
-    if (!layer) {
-      return;
-    }
-    const element = state.puzzle[layer].numbers[id];
-    if (!element) return;
-    set((state) => {
-      const dataLayer = toDataLayer(state.activeLayer);
-      const newNumbers = { ...state.puzzle[dataLayer].numbers };
-      delete newNumbers[id];
-      return {
-        puzzle: {
-          ...state.puzzle,
-          [dataLayer]: {
-            ...state.puzzle[dataLayer],
-            numbers: newNumbers,
-          },
-        },
-      };
-    });
-  },
+  removeDirectionalClue: (id) => get().removeNumber(id),
 
   // Line group operations (for arrow chains, etc.)
   addLineGroup: (lineIds, groupType) => {

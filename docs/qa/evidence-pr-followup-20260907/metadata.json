@@ -1,0 +1,79 @@
+[
+  {
+    "phase": "before",
+    "project": "chromium",
+    "video": "directional-before-chromium.webm",
+    "sha256": "9fc1f330d69c7f0bfa4c577d5c6dcb41c7529e7f0d3c0fd7dc38bdc0c196cc7b",
+    "source": {
+      "phase": "before",
+      "createdAt": "2026-09-07T11:42:19.789Z",
+      "commit": "88d023d8eeaef7af30b87c2ded7a916cdc9c0287",
+      "branch": "feature/pr-review-followup",
+      "status": "?? e2e/number-history.spec.ts\n?? src/test/directionalHistory.test.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/number-history.spec.ts",
+        "--project=chromium"
+      ],
+      "exitCode": 1
+    },
+    "capture": "artifacts/qa/2026-09-07T11-42-19-706Z-before"
+  },
+  {
+    "phase": "after",
+    "project": "mobile-chrome",
+    "video": "directional-after-mobile-chrome.webm",
+    "sha256": "f663fea7dd8d4671d490189063e9897c404ab540a4b216903c1e4d5847e940e6",
+    "source": {
+      "phase": "after",
+      "createdAt": "2026-09-07T11:43:10.464Z",
+      "commit": "88d023d8eeaef7af30b87c2ded7a916cdc9c0287",
+      "branch": "feature/pr-review-followup",
+      "status": "M src/store/slices/elementsSlice.ts\n?? e2e/number-history.spec.ts\n?? src/test/directionalHistory.test.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/number-history.spec.ts",
+        "--project=chromium",
+        "--project=mobile-chrome"
+      ],
+      "exitCode": 0
+    },
+    "capture": "artifacts/qa/2026-09-07T11-43-10-396Z-after"
+  },
+  {
+    "phase": "after",
+    "project": "chromium",
+    "video": "directional-after-chromium.webm",
+    "sha256": "bf923015885c3ed16c2b3423c51939aca0bff801e961c2518e8f8433d5de0620",
+    "source": {
+      "phase": "after",
+      "createdAt": "2026-09-07T11:43:10.464Z",
+      "commit": "88d023d8eeaef7af30b87c2ded7a916cdc9c0287",
+      "branch": "feature/pr-review-followup",
+      "status": "M src/store/slices/elementsSlice.ts\n?? e2e/number-history.spec.ts\n?? src/test/directionalHistory.test.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/number-history.spec.ts",
+        "--project=chromium",
+        "--project=mobile-chrome"
+      ],
+      "exitCode": 0
+    },
+    "capture": "artifacts/qa/2026-09-07T11-43-10-396Z-after"
+  }
+]
