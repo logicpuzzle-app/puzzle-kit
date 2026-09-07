@@ -1,0 +1,17 @@
+{
+  "success": true,
+  "status": "solved",
+  "answer": {
+    "surfaces": {},
+    "lines": {},
+    "edges": {},
+    "walls": {},
+    "numbers": {},
+    "symbols": {},
+    "cages": {},
+    "specials": {},
+    "boxLines": {}
+  },
+  "time": 1.2000000029802322,
+  "solutionCount": 1
+}
