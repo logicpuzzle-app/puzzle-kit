@@ -587,10 +587,14 @@ function solveHeyawake(grid: GridConfig, problem: PuzzleState['problem']): Solve
     }
     // Add extra row for vertical walls between last row and beyond (not needed, but for consistency)
 
-    // Parse walls from problem.walls
+    // Accept canonical wall lines and legacy walls during the data-format migration.
     // wall format: { id, edgeId: "edge-v-row-col" or "edge-h-row-col", ... }
-    if (problem.walls) {
-      for (const wall of Object.values(problem.walls)) {
+    {
+      const walls = [
+        ...Object.values(problem.lines || {}).filter(line => line.lineTarget === 'wall'),
+        ...Object.values(problem.walls || {}),
+      ];
+      for (const wall of walls) {
         if (!wall.edgeId) continue;
 
         const idx = getEdgeIndexById(wall.edgeId, grid);

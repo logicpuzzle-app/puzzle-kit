@@ -69,10 +69,12 @@ async function loadSolver(): Promise<CspuzModule> {
   solverLoading = (async () => {
     // Fetch wasm binary directly
     const wasmResponse = await fetch('/solver/cspuz_solver_backend.wasm');
+    if (!wasmResponse.ok) throw new Error(`Could not load cspuz Wasm (HTTP ${wasmResponse.status})`);
     const wasmBinary = await wasmResponse.arrayBuffer();
 
     // Fetch and modify the JS module to work without import.meta
     const jsResponse = await fetch('/solver/cspuz_solver_backend.js');
+    if (!jsResponse.ok) throw new Error(`Could not load cspuz JavaScript (HTTP ${jsResponse.status})`);
     let jsCode = await jsResponse.text();
 
     // Remove the ES module export and import.meta usage
@@ -97,7 +99,11 @@ async function loadSolver(): Promise<CspuzModule> {
 
     solver = mod;
     return mod;
-  })();
+  })().catch(error => {
+    // Keep successful modules cached, but let a later Solve retry a transient failure.
+    solverLoading = null;
+    throw error;
+  });
 
   return solverLoading;
 }
@@ -401,7 +407,7 @@ async function solve(
       return {
         success: status === 'solved',
         status,
-        answer,
+        ...(status === 'solved' ? { answer } : { partialAnswer: answer }),
         time: performance.now() - startTime,
         solutionCount: desc.isUnique === false ? 2 : 1,
       };

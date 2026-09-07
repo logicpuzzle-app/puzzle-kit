@@ -131,8 +131,11 @@ export const Ribbon: React.FC = () => {
       if (e instanceof CspuzSolverCancelledError || e instanceof SolverCancelledError) {
         return;
       }
-      setSolverError(e instanceof Error ? e.message : t('solver.failed'));
-      setSolving(false);
+      enterSolverMode({
+        success: false,
+        status: 'error',
+        error: e instanceof Error ? e.message : t('solver.failed'),
+      });
     }
   }, [
     currentSchemaId,

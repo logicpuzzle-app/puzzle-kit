@@ -1,9 +1,5 @@
-import * as solverKit from '../../solver/index.js';
-
-type SolverKitModule = typeof solverKit & { SOLVER_KIT_AVAILABLE?: boolean };
-
-export const solverKitAvailable =
-  (solverKit as SolverKitModule).SOLVER_KIT_AVAILABLE ?? true;
+// The tracked solver bundle is a required build input; there is no optional stub.
+export const solverKitAvailable = true;
 
 export {
   SlitherField,
