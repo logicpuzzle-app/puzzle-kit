@@ -20,17 +20,30 @@ export function runNpgenWorker<T extends NpgenWorkerResult>(
   onProgress?: (progress: NpgenProgress) => void,
 ): Promise<T> {
   return new Promise((resolve, reject) => {
+    const cancelled = () => new DOMException('NPGenerator operation was cancelled', 'AbortError');
+    if (signal?.aborted) {
+      reject(cancelled());
+      return;
+    }
     const worker = new Worker(new URL('./npgen.worker.ts', import.meta.url), {
       type: 'module',
     });
     const id = nextRequestId++;
-    const stop = () => worker.terminate();
+    let stopped = false;
+    const stop = () => {
+      stopped = true;
+      signal?.removeEventListener('abort', abort);
+      worker.onmessage = null;
+      worker.onerror = null;
+      worker.terminate();
+    };
     const abort = () => {
       stop();
-      reject(new DOMException('NPGenerator operation was cancelled', 'AbortError'));
+      reject(cancelled());
     };
     signal?.addEventListener('abort', abort, { once: true });
     worker.onmessage = (event: MessageEvent<NpgenWorkerResponse>) => {
+      if (stopped) return;
       const response = event.data;
       if (response.id !== id) return;
       if ('type' in response) {
@@ -40,7 +53,6 @@ export function runNpgenWorker<T extends NpgenWorkerResult>(
         });
         return;
       }
-      signal?.removeEventListener('abort', abort);
       stop();
       if (response.ok) {
         resolve(response.result as T);
@@ -49,7 +61,7 @@ export function runNpgenWorker<T extends NpgenWorkerResult>(
       }
     };
     worker.onerror = (event) => {
-      signal?.removeEventListener('abort', abort);
+      if (stopped) return;
       stop();
       reject(new Error(event.message || 'NPGenerator worker failed'));
     };

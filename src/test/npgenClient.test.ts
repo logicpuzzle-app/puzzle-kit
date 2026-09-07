@@ -33,6 +33,29 @@ afterEach(() => {
 });
 
 describe('NPGenerator worker client', () => {
+  it('rejects an already cancelled operation without starting a worker', async () => {
+    vi.stubGlobal('Worker', FakeWorker);
+    const controller = new AbortController();
+    controller.abort();
+    await expect(runNpgenWorker({ type: 'parse-xml', xml: '' }, controller.signal))
+      .rejects.toMatchObject({ name: 'AbortError' });
+    expect(FakeWorker.latest).toBeNull();
+  });
+
+  it('terminates on cancellation and ignores queued progress from that worker', async () => {
+    vi.stubGlobal('Worker', FakeWorker);
+    const controller = new AbortController();
+    const onProgress = vi.fn();
+    const pending = runNpgenWorker({ type: 'parse-xml', xml: '' }, controller.signal, onProgress);
+    const worker = FakeWorker.latest!;
+    const queuedMessage = worker.onmessage!;
+    controller.abort();
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+    expect(worker.terminated).toBe(true);
+    queuedMessage({ data: { id: worker.request!.id, type: 'progress', attempts: 1, elapsedMs: 2 } } as MessageEvent<NpgenWorkerResponse>);
+    expect(onProgress).not.toHaveBeenCalled();
+  });
+
   it('reports progress without finishing the pending request', async () => {
     vi.stubGlobal('Worker', FakeWorker);
     const onProgress = vi.fn();
