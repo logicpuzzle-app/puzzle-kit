@@ -2,7 +2,8 @@ import { defineConfig } from '@playwright/test';
 import { resolve } from 'node:path';
 import base from './playwright.config';
 
-const artifactDir = resolve(process.env.QA_ARTIFACT_DIR ??
+// Workers re-evaluate this module. Inherit one run directory through the environment.
+const artifactDir = resolve(process.env.QA_ARTIFACT_DIR ??=
   `artifacts/check/production-${new Date().toISOString().replace(/[:.]/g, '-')}`);
 
 // Exercise the shipped assets and worker through /master, without the dev harness.
