@@ -24,8 +24,12 @@ jobs:
       - run: npm run qa:doctor
       - run: npm run qa:check
       - name: Production build
+        id: build
         if: ${{ !cancelled() }}
         run: npm run build
+      - name: Production Chromium smoke
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: npm run qa:production
       - name: Preserve QA recordings and logs
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4

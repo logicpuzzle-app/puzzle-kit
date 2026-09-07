@@ -56,7 +56,8 @@
     "qa:doctor": "node scripts/qa-doctor.mjs",
     "dev:harness": "vite --config vite.qa.config.ts --host 127.0.0.1 --port 4175 --strictPort",
     "qa:compare": "node scripts/qa-compare.mjs",
-    "typecheck:e2e": "tsc -p tsconfig.e2e.json"
+    "typecheck:e2e": "tsc -p tsconfig.e2e.json",
+    "qa:production": "playwright test --config playwright.production.config.ts"
   },
   "dependencies": {
     "firebase": "^12.6.0",

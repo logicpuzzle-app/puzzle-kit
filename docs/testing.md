@@ -1,6 +1,6 @@
 # 開発・テストハーネス
 
-2026-09-06 / 対象: `PuzzleTools/puzzle-kit`。実測結果と既知不具合は [最新QA記録](qa/2026-09-07-pinch-anchor.md)を参照。UIレビューの作業文書は非追跡の `.work/ui-review/` に保存し、公開しない。
+2026-09-07 / 対象: `PuzzleTools/puzzle-kit`。実測結果と既知不具合は [最新QA記録](qa/2026-09-07-pr-followup.md)を参照。UIレビューの作業文書は非追跡の `.work/ui-review/` に保存し、公開しない。
 
 ## 構成
 
@@ -59,6 +59,7 @@ npm run qa:doctor
 | `npm run test:e2e -- --grep '#40' --project=chromium` | 1つのIssueに絞る |
 | `npm run test:e2e:ui` / `npm run test:e2e:debug` | UI / ステップ実行 |
 | `npm run test:e2e:report` | 最後の通常実行のHTMLレポート |
+| `npm run build` → `npm run qa:production` | ビルド済みアプリを4176番で配信し、ChromiumのPC/モバイル操作を録画検証 |
 | `npm run qa:check` | 型チェック→unit→E2Eをすべて実行しログを保存 |
 
 `qa:check` は途中で失敗しても残りの検査を実行し、どれかが失敗した場合は終了コード1を返す。結果は `artifacts/check/<timestamp>/summary.json`。テストの期待値による失敗と、依存やサーバーの起動失敗は保存ログで区別する。
@@ -154,3 +155,21 @@ docker run --rm --init \
 録画・trace・入力イベント・HTMLレポートは作成した証跡フォルダに残る。ソースは読み取り専用。Apple Silicon上ではLinux arm64であり、GitHub Actionsのx64と同一ハードウェアとはしない。
 
 描画ドラッグは終点で150ms静止してから指を離す入力条件を使う。高速移動中のまま離すと、LinuxのCDPが`GestureFlingStart`を発生させ、直後のタップが慣性停止に消費されることを内部トレースで確認した。この150msは指を接触させている時間で、操作後にアプリの状態が変わるのを待つsleepではない。Undoボタンは通常の`locator.tap()`で操作し、結果をそのまま検証する。`touchCancel`は静止を挟まず送信する。
+
+## 統合版をclean checkoutから検証
+
+CIはNode 24を使用する（`.nvmrc`）。通常ビルド・Unit・E2Eはこのリポジトリのファイルだけで実行でき、兄弟リポジトリやFirebase認証情報を必要としない。
+
+```bash
+npm ci
+npx playwright install chromium webkit
+npm run qa:check
+npm run build
+npm run qa:production
+```
+
+`qa:production` は既存のdistをプレビュー配信するため、コード変更後は先にbuildする。実際の `/master` に対して、方向付き数字/記号の履歴、Surface/Numberの選択枠設定、problem/answerの保存復元、Wasm Worker生成を操作する。動画・trace・JSON・HTMLは `artifacts/check/production-<timestamp>/`。CIもbuild後に同じ検証を実行し、通常QAとともに30日間artifactを保存する。
+
+rot2生成の回帰はPRNG seed 1/2を明示し、各回の生成成功を確認する。UIのランダムseed自体を固定する変更ではない。
+
+同梱済みのNPGenerator Wasmを再生成する場合だけ、別途Rustソースとwasm-packが必要。ソースの絶対パスを `npm run build:npgen-wasm -- /path/to/npgenerator/rust` で指定する。通常の `npm run build` はWasm再生成を行わない。

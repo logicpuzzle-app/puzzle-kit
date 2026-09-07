@@ -56,23 +56,17 @@ test('generates a seeded Number Place puzzle through the Wasm worker', async ({ 
   await expect(page.getByText(/Ready/)).toBeVisible();
 });
 
-test('generates with the updated rotational symmetry modes', async ({ page }) => {
+test('generates rot2 puzzles successfully with two explicit seeds', async ({ page }) => {
   await openNPGenerator(page);
-  const seed = page.getByRole('textbox', { name: 'Seed' });
-  await expect(seed).toBeDisabled();
-  const initialSeed = await seed.inputValue();
+  await page.getByRole('checkbox', { name: 'Change / specify seed' }).check();
   await page.getByRole('combobox', { name: 'Symmetry' }).selectOption('rot2');
-  await page.getByRole('button', { name: 'Generate', exact: true }).click();
-  await expect.poll(() => seed.inputValue()).not.toBe(initialSeed);
-  await expect(page.getByText(/Result: Unique solution/)).toBeVisible({
-    timeout: 30_000,
-  });
-  const firstRunSeed = await seed.inputValue();
-  await page.getByRole('button', { name: 'Generate', exact: true }).click();
-  await expect.poll(() => seed.inputValue()).not.toBe(firstRunSeed);
-  await expect(page.getByRole('button', { name: 'Generate', exact: true })).toBeVisible({
-    timeout: 30_000,
-  });
+  for (const value of ['1', '2']) {
+    await page.getByRole('textbox', { name: 'Seed' }).fill(value);
+    await page.getByRole('button', { name: 'Generate', exact: true }).click();
+    await expect(page.getByText(/Result: Unique solution/)).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole('textbox', { name: 'Seed' })).toHaveValue(value);
+    await expect(page.getByRole('button', { name: 'Apply problem to puzzle-kit' })).toBeEnabled();
+  }
 });
 
 test('edits problems, hint patterns, and fixed numbers on the GUI board', async ({ page }) => {

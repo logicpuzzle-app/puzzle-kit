@@ -32,3 +32,10 @@ Surface/Number color and width changes, persisted settings and reload: 4/4 Chrom
 | --- | --- | --- |
 | Surface | [Setting absent](evidence-pr-followup-20260907/cursor-surface-before-chromium.webm) | [Configure + reload](evidence-pr-followup-20260907/cursor-surface-after-chromium.webm) |
 | Number | [Setting absent](evidence-pr-followup-20260907/cursor-number-before-chromium.webm) | [Configure + reload](evidence-pr-followup-20260907/cursor-number-after-chromium.webm) |
+
+
+## Production and persistence coverage
+
+Added `qa:production` to CI after the build. The accepted local preview run passed 14/14 Chromium cases (desktop/mobile) against the built assets: number history, markers, both selection cursors, puzzle autosave/reload with new undoable edits, and seeded Wasm generation. The persistence flow explicitly preserves the existing click-to-increment behavior (5 → click 6 → type 7 → Undo 6 → Undo 5). Node 22.21.1 and Node 25.2.1 both passed the three cursor persistence Unit tests.
+
+Rot2 regression now uses explicit PRNG seeds 1 and 2 and asserts a successful result for each run; two repeated desktop Chromium cases passed. Initial production-config exploration accidentally inherited extra servers/projects, and its persistence assertion assumed selection would not increment a clue. That diagnostic run is excluded; the final config replaces the servers/projects and the corrected test retains the product's existing click behavior.
