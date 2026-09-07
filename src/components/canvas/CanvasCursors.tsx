@@ -15,6 +15,7 @@
 import React from 'react';
 import type { Point } from '../../types';
 import { renderSymbol } from './symbols';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
 
 const CURSOR_COLOR = '#00A000';
 const CURSOR_FILL = 'rgba(0, 160, 0, 0.25)';
@@ -71,6 +72,13 @@ interface CanvasCursorsProps {
   sculptHoverPolygons: { id: string; points: string }[] | null;
 }
 
+function withAlpha(hex: string, alpha: number): string {
+  const match = /^#([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(hex);
+  if (!match) return hex;
+  const [r, g, b] = match.slice(1).map(part => parseInt(part, 16));
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
   canvas,
   offsetX = 0,
@@ -95,6 +103,10 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
   splitHoverVertexPos,
   sculptHoverPolygons,
 }) => {
+  const cursorColor = usePuzzleStore(state => state.toolSettings.cursorCellColor) ?? CURSOR_COLOR;
+  const cursorThickness = usePuzzleStore(state => state.toolSettings.cursorCellThickness) ?? 3;
+  const cursorFill = withAlpha(cursorColor, 0.25);
+  const cursorStroke = withAlpha(cursorColor, 0.95);
   const transform = `translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom}) translate(${offsetX}, ${offsetY})`;
 
   return (
@@ -102,7 +114,7 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
       {/* Cell cursor for number tools (Excel-like highlight) */}
       {cellCursorPath && (
         <g data-cursor="true" transform={transform}>
-          <path d={cellCursorPath} fill="none" stroke={CURSOR_COLOR} strokeWidth={3 / canvas.zoom} />
+          <path d={cellCursorPath} fill="none" stroke={cursorStroke} strokeWidth={cursorThickness / canvas.zoom} />
         </g>
       )}
 
@@ -112,9 +124,9 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
         {cursorCellPolygon && (
           <polygon
             points={cursorCellPolygon}
-            fill={CURSOR_FILL}
-            stroke={CURSOR_STROKE_STRONG}
-            strokeWidth={3 / canvas.zoom}
+            fill={cursorFill}
+            stroke={cursorStroke}
+            strokeWidth={cursorThickness / canvas.zoom}
             pointerEvents="none"
           />
         )}
@@ -125,9 +137,9 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
             y={cursorCellRect.y}
             width={cursorCellRect.size}
             height={cursorCellRect.size}
-            fill={CURSOR_FILL}
-            stroke={CURSOR_STROKE_STRONG}
-            strokeWidth={3 / canvas.zoom}
+            fill={cursorFill}
+            stroke={cursorStroke}
+            strokeWidth={cursorThickness / canvas.zoom}
             pointerEvents="none"
           />
         )}

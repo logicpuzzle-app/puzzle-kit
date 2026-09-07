@@ -55,6 +55,8 @@ export const DEFAULT_TOOL_SETTINGS: ToolSettings = {
   currentCategory: 'surface',
   color: '#000000',
   secondaryColor: '#CFCFCF',
+  cursorCellColor: '#00A000',
+  cursorCellThickness: 3,
   lineStyle: 'solid',
   lineThickness: 'normal',
   symbolSize: 'medium',

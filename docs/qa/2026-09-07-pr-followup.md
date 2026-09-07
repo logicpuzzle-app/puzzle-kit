@@ -21,3 +21,14 @@ Ported the marker shortcut from PR #46 onto the current numeric/kana keyboard ha
 | --- | --- | --- |
 | Normal markers | [Not accepted](evidence-pr-followup-20260907/marker-normal-before-chromium.webm) | [Entry + history](evidence-pr-followup-20260907/marker-normal-after-chromium.webm) |
 | Directional markers | [Not accepted](evidence-pr-followup-20260907/marker-directional-before-chromium.webm) | [Entry + history](evidence-pr-followup-20260907/marker-directional-after-chromium.webm) |
+
+## Selected-cell appearance (#45)
+
+Ported PR #45 settings and persistence to quality, keeping quality's current green default (#00A000) and width 3. Both the last-tapped Surface cell and Number selection outline use the setting; hover/other preview styles are unchanged. Thickness is compensated for zoom, so width 8 means 8 CSS pixels on screen. Existing transforms and symbol rotation rendering are retained.
+
+Surface/Number color and width changes, persisted settings and reload: 4/4 Chromium cases passed across desktop/mobile. Persistence Unit tests explicitly isolate Web Storage from Node's experimental global implementation; browser tests exercise real localStorage. The 11:45:52 cursor capture was an initial Grid-toggle selector probe and is excluded. Accepted before: 11:48:12; after: 11:49:51 UTC.
+
+| Flow | Before | After |
+| --- | --- | --- |
+| Surface | [Setting absent](evidence-pr-followup-20260907/cursor-surface-before-chromium.webm) | [Configure + reload](evidence-pr-followup-20260907/cursor-surface-after-chromium.webm) |
+| Number | [Setting absent](evidence-pr-followup-20260907/cursor-number-before-chromium.webm) | [Configure + reload](evidence-pr-followup-20260907/cursor-number-after-chromium.webm) |

@@ -88,6 +88,8 @@ type PersistedToolSettings = Partial<Omit<ToolSettings, 'currentTool' | 'current
 const DEFAULT_PERSISTED_TOOL_SETTINGS: PersistedToolSettings = {
   color: '#808080',
   secondaryColor: '#00ff00',
+  cursorCellColor: '#00A000',
+  cursorCellThickness: 3,
   lineStyle: 'solid',
   lineThickness: 'normal',
   symbolSize: 'medium',
