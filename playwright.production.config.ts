@@ -9,8 +9,8 @@ const artifactDir = resolve(process.env.QA_ARTIFACT_DIR ??=
 // Exercise the shipped assets and worker through /master, without the dev harness.
 export default defineConfig({
   ...base,
-  testMatch: ['**/number-history.spec.ts', '**/cursor-style.spec.ts', '**/persistence.spec.ts', '**/npgen.spec.ts'],
-  grep: /directional number insertion|marker keys|selection color|autosave survives|generates a seeded/,
+  testMatch: ['**/number-history.spec.ts', '**/cursor-style.spec.ts', '**/persistence.spec.ts', '**/npgen.spec.ts', '**/solver.spec.ts'],
+  grep: /directional number insertion|marker keys|selection color|autosave survives|generates a seeded|solver:/,
   projects: base.projects?.filter(project => ['chromium', 'mobile-chrome'].includes(project.name!)),
   outputDir: resolve(artifactDir, 'test-results'),
   reporter: [
