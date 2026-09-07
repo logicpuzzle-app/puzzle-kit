@@ -1,0 +1,58 @@
+
+> puzzle-kit@0.0.0 test:unit
+> vitest run src/test/npgenClient.test.ts
+
+
+ RUN  v4.1.11 /Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality
+
+ ❯ src/test/npgenClient.test.ts (3 tests | 2 failed) 5006ms
+     × rejects an already cancelled operation without starting a worker 5003ms
+     × terminates on cancellation and ignores queued progress from that worker 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/npgenClient.test.ts > NPGenerator worker client > rejects an already cancelled operation without starting a worker
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/test/npgenClient.test.ts:36:3
+     34|
+     35| describe('NPGenerator worker client', () => {
+     36|   it('rejects an already cancelled operation without starting a worker…
+       |   ^
+     37|     vi.stubGlobal('Worker', FakeWorker);
+     38|     const controller = new AbortController();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/test/npgenClient.test.ts > NPGenerator worker client > terminates on cancellation and ignores queued progress from that worker
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      Object {
+        "attempts": 1,
+        "elapsedMs": 2,
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/test/npgenClient.test.ts:56:28
+     54|     expect(worker.terminated).toBe(true);
+     55|     queuedMessage({ data: { id: worker.request!.id, type: 'progress', …
+     56|     expect(onProgress).not.toHaveBeenCalled();
+       |                            ^
+     57|   });
+     58|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 1 passed (3)
+   Start at  01:25:22
+   Duration  5.62s (transform 26ms, setup 68ms, import 18ms, tests 5.01s, environment 420ms)
