@@ -1,0 +1,31 @@
+{
+  "scope": "pr-38",
+  "status": "captured",
+  "baseUrl": "http://localhost:5199/master",
+  "capturedAt": "2026-07-28T02:57:26Z",
+  "before": {
+    "ref": "origin/develop",
+    "commit": "112d999f"
+  },
+  "after": {
+    "ref": "fix/cell-snap-gap",
+    "commit": "48c6045b22024cf76717b5dd4b7fab2792f3d650"
+  },
+  "viewports": {
+    "desktop": "Desktop Chrome 1600x1000",
+    "mobile": "Pixel 7"
+  },
+  "mobileScope": "layout-only (ribbon does not fit 412px)",
+  "screenshots": [
+    "01-before-develop-desktop-gap-click-click-in-hole.png",
+    "01-before-develop-desktop-gap-click-excluded.png",
+    "01-before-develop-desktop-gap-click-full.png",
+    "02-before-develop-mobile-gap-click-board.png",
+    "02-before-develop-mobile-gap-click-editor.png",
+    "03-after-branch-desktop-gap-click-click-in-hole.png",
+    "03-after-branch-desktop-gap-click-excluded.png",
+    "03-after-branch-desktop-gap-click-full.png",
+    "04-after-branch-mobile-gap-click-board.png",
+    "04-after-branch-mobile-gap-click-editor.png"
+  ]
+}

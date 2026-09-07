@@ -1,0 +1,31 @@
+{
+  "scope": "pr-37",
+  "status": "captured",
+  "baseUrl": "http://localhost:5199/master",
+  "capturedAt": "2026-07-28T02:57:26Z",
+  "before": {
+    "ref": "origin/develop",
+    "commit": "112d999f"
+  },
+  "after": {
+    "ref": "fix/number-backspace-delete",
+    "commit": "181c44beedbfc6a551c269d0367acac6ef2f9e10"
+  },
+  "viewports": {
+    "desktop": "Desktop Chrome 1600x1000",
+    "mobile": "Pixel 7"
+  },
+  "mobileScope": "layout-only (ribbon does not fit 412px)",
+  "screenshots": [
+    "01-before-develop-desktop-number-backspace-after-backspace.png",
+    "01-before-develop-desktop-number-backspace-full.png",
+    "01-before-develop-desktop-number-backspace-typed.png",
+    "02-before-develop-mobile-number-backspace-board.png",
+    "02-before-develop-mobile-number-backspace-editor.png",
+    "03-after-branch-desktop-number-backspace-after-backspace.png",
+    "03-after-branch-desktop-number-backspace-full.png",
+    "03-after-branch-desktop-number-backspace-typed.png",
+    "04-after-branch-mobile-number-backspace-board.png",
+    "04-after-branch-mobile-number-backspace-editor.png"
+  ]
+}
