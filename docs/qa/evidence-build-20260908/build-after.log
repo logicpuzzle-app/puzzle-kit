@@ -1,0 +1,40 @@
+
+> puzzle-kit@0.0.0 build
+> tsc -b && vite build
+
+vite v7.3.6 building client environment for production...
+transforming...
+✓ 2330 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/embedded.html                                  2.07 kB │ gzip:  0.66 kB
+dist/index.html                                     2.11 kB │ gzip:  0.65 kB
+dist/assets/npgen.worker-BO4JoxLm.js               12.00 kB
+dist/assets/cspuz.worker-DqQDSb9C.js               14.43 kB
+dist/assets/solver.worker-OfgvjYpy.js             104.81 kB
+dist/assets/npgen_bg-C8PHPDf8.wasm                133.84 kB │ gzip: 55.63 kB
+dist/assets/pdf.worker.min-yatZIOMy.mjs         1,375.84 kB
+dist/assets/index-D56sX8SX.css                     41.34 kB │ gzip:  7.41 kB
+dist/assets/_commonjsHelpers-CqkleIqs.js            0.12 kB │ gzip:  0.13 kB
+dist/assets/index-ZjvRfaT3.js                       0.71 kB │ gzip:  0.40 kB
+dist/assets/embedded-xZ-UVSb7.js                    1.42 kB │ gzip:  0.76 kB
+dist/assets/legacyDirectionalClues-DgjJXzpN.js      1.79 kB │ gzip:  0.88 kB
+dist/assets/types-DvXdqb6Y.js                       2.40 kB │ gzip:  1.13 kB
+dist/assets/icons-iOIR0txW.js                       6.57 kB │ gzip:  2.48 kB
+dist/assets/numberEntries-BTQ4vb7s.js               9.34 kB │ gzip:  3.12 kB
+dist/assets/useNumberPadPanel-Bh9QfIzS.js          15.27 kB │ gzip:  3.48 kB
+dist/assets/i18n-BK0fvseJ.js                       46.68 kB │ gzip: 15.23 kB
+dist/assets/dialogs-nald626S.js                    50.46 kB │ gzip: 12.67 kB
+dist/assets/toolbar-Dbci8-2O.js                    63.84 kB │ gzip: 13.91 kB
+dist/assets/firebase-PIkmWNQi.js                   65.83 kB │ gzip: 21.97 kB
+dist/assets/main-Blic249x.js                       71.62 kB │ gzip: 20.42 kB
+dist/assets/useHighlightOutput-COwfSMUM.js         86.02 kB │ gzip: 26.52 kB
+dist/assets/solver-DVBVv2mj.js                     98.47 kB │ gzip: 20.96 kB
+dist/assets/constraints-DmYGh5oW.js               121.74 kB │ gzip: 21.13 kB
+dist/assets/index-BD7B1yJw.js                     141.40 kB │ gzip: 35.68 kB
+dist/assets/panels-DPm95mQb.js                    151.20 kB │ gzip: 35.42 kB
+dist/assets/penpaCompat-CgIGi3SV.js               156.10 kB │ gzip: 44.59 kB
+dist/assets/ui-DIu51CFc.js                        186.76 kB │ gzip: 57.14 kB
+dist/assets/vendor-phwEA71u.js                    251.97 kB │ gzip: 79.28 kB
+dist/assets/pdf-BgyTCQfa.js                       333.77 kB │ gzip: 98.15 kB
+✓ built in 6.17s
