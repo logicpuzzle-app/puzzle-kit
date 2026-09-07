@@ -41,3 +41,31 @@ test('directional number insertion, replacement and deletion support Undo/Redo',
   await redo.click();
   await expect(numbers).toHaveCount(0);
 });
+
+for (const directional of [false, true]) {
+  test(`${directional ? 'directional' : 'normal'} marker keys support replacement, deletion and Undo/Redo`, async ({ page }) => {
+    await selectNumberCell(page, directional);
+    const numbers = page.locator(directional ? '.directional-clue-layer.problem text' : '.number-layer-problem text');
+    const undo = page.getByTitle(/Undo \(Ctrl\+Z\)/).first();
+    const redo = page.getByTitle(/Redo/).first();
+    const before = await numbers.allTextContents();
+    await page.keyboard.press('Shift+Slash');
+    await expect(numbers).toHaveText(['?']);
+    await undo.click();
+    await expect(numbers).toHaveText(before);
+    await redo.click();
+    await expect(numbers).toHaveText(['?']);
+    await page.keyboard.press('.');
+    await expect(numbers).toHaveText(['.']);
+    await undo.click();
+    await expect(numbers).toHaveText(['?']);
+    await redo.click();
+    await expect(numbers).toHaveText(['.']);
+    await page.keyboard.press('Backspace');
+    await expect(numbers).toHaveCount(0);
+    await undo.click();
+    await expect(numbers).toHaveText(['.']);
+    await redo.click();
+    await expect(numbers).toHaveCount(0);
+  });
+}

@@ -75,5 +75,181 @@
       "exitCode": 0
     },
     "capture": "artifacts/qa/2026-09-07T11-43-10-396Z-after"
+  },
+  {
+    "phase": "before",
+    "project": "chromium",
+    "title": "normal marker keys support replacement, deletion and Undo/Redo",
+    "status": "failed",
+    "video": "marker-normal-before-chromium.webm",
+    "sha256": "fb31d28c52fae75d37932725651876770368e91b5a55f13e203357638dfadf29",
+    "source": {
+      "phase": "before",
+      "createdAt": "2026-09-07T11:44:24.992Z",
+      "commit": "55e928772f451a7ab0d20e7dd508dbda7ed532c3",
+      "branch": "feature/pr-review-followup",
+      "status": "M e2e/number-history.spec.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/number-history.spec.ts",
+        "--grep",
+        "marker keys",
+        "--project=chromium"
+      ],
+      "exitCode": 1
+    },
+    "capture": "artifacts/qa/2026-09-07T11-44-24-896Z-before",
+    "sourceManifestSHA256": "350807f3bcec385acfacd4038a8fb4ec8123dfad8ff1ffabe72b3ed2b24f6704"
+  },
+  {
+    "phase": "before",
+    "project": "chromium",
+    "title": "directional marker keys support replacement, deletion and Undo/Redo",
+    "status": "failed",
+    "video": "marker-directional-before-chromium.webm",
+    "sha256": "c59a2a5813be202e608f362b6ba664f11f575809659a0b230ea3202380404140",
+    "source": {
+      "phase": "before",
+      "createdAt": "2026-09-07T11:44:24.992Z",
+      "commit": "55e928772f451a7ab0d20e7dd508dbda7ed532c3",
+      "branch": "feature/pr-review-followup",
+      "status": "M e2e/number-history.spec.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/number-history.spec.ts",
+        "--grep",
+        "marker keys",
+        "--project=chromium"
+      ],
+      "exitCode": 1
+    },
+    "capture": "artifacts/qa/2026-09-07T11-44-24-896Z-before",
+    "sourceManifestSHA256": "350807f3bcec385acfacd4038a8fb4ec8123dfad8ff1ffabe72b3ed2b24f6704"
+  },
+  {
+    "phase": "after",
+    "project": "chromium",
+    "title": "normal marker keys support replacement, deletion and Undo/Redo",
+    "status": "passed",
+    "video": "marker-normal-after-chromium.webm",
+    "sha256": "74e09f816fa4c73bb2019dcb4aa58570c14c022a15c9a91fbe66a95165930155",
+    "source": {
+      "phase": "after",
+      "createdAt": "2026-09-07T11:48:06.344Z",
+      "commit": "55e928772f451a7ab0d20e7dd508dbda7ed532c3",
+      "branch": "feature/pr-review-followup",
+      "status": "M e2e/number-history.spec.ts\n M src/hooks/keyboardUtils.ts\n M src/hooks/useNumberKeyboard.ts\n?? e2e/cursor-style.spec.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/number-history.spec.ts",
+        "--project=chromium",
+        "--project=mobile-chrome"
+      ],
+      "exitCode": 0
+    },
+    "capture": "artifacts/qa/2026-09-07T11-48-06-281Z-after",
+    "sourceManifestSHA256": "a725b9a107fa9707f3e946afbdc3a2e01576bb20c08fac48082e0d3cb91a3d9a"
+  },
+  {
+    "phase": "after",
+    "project": "chromium",
+    "title": "directional marker keys support replacement, deletion and Undo/Redo",
+    "status": "passed",
+    "video": "marker-directional-after-chromium.webm",
+    "sha256": "8edd15d3c6c8c4a4df7442ab0c316c24e5c744a8617ec749ed96f5573f4c48a2",
+    "source": {
+      "phase": "after",
+      "createdAt": "2026-09-07T11:48:06.344Z",
+      "commit": "55e928772f451a7ab0d20e7dd508dbda7ed532c3",
+      "branch": "feature/pr-review-followup",
+      "status": "M e2e/number-history.spec.ts\n M src/hooks/keyboardUtils.ts\n M src/hooks/useNumberKeyboard.ts\n?? e2e/cursor-style.spec.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/number-history.spec.ts",
+        "--project=chromium",
+        "--project=mobile-chrome"
+      ],
+      "exitCode": 0
+    },
+    "capture": "artifacts/qa/2026-09-07T11-48-06-281Z-after",
+    "sourceManifestSHA256": "a725b9a107fa9707f3e946afbdc3a2e01576bb20c08fac48082e0d3cb91a3d9a"
+  },
+  {
+    "phase": "after",
+    "project": "mobile-chrome",
+    "title": "normal marker keys support replacement, deletion and Undo/Redo",
+    "status": "passed",
+    "video": "marker-normal-after-mobile-chrome.webm",
+    "sha256": "2eb2f9f873a6b7b21432ae550b7a7eb33951b55abd50517fcfc47a141dfcb0cf",
+    "source": {
+      "phase": "after",
+      "createdAt": "2026-09-07T11:48:06.344Z",
+      "commit": "55e928772f451a7ab0d20e7dd508dbda7ed532c3",
+      "branch": "feature/pr-review-followup",
+      "status": "M e2e/number-history.spec.ts\n M src/hooks/keyboardUtils.ts\n M src/hooks/useNumberKeyboard.ts\n?? e2e/cursor-style.spec.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/number-history.spec.ts",
+        "--project=chromium",
+        "--project=mobile-chrome"
+      ],
+      "exitCode": 0
+    },
+    "capture": "artifacts/qa/2026-09-07T11-48-06-281Z-after",
+    "sourceManifestSHA256": "a725b9a107fa9707f3e946afbdc3a2e01576bb20c08fac48082e0d3cb91a3d9a"
+  },
+  {
+    "phase": "after",
+    "project": "mobile-chrome",
+    "title": "directional marker keys support replacement, deletion and Undo/Redo",
+    "status": "passed",
+    "video": "marker-directional-after-mobile-chrome.webm",
+    "sha256": "2b22458ed107ac37f535242671afd804f1fe02416a170fbb4cb6dc21cfba2108",
+    "source": {
+      "phase": "after",
+      "createdAt": "2026-09-07T11:48:06.344Z",
+      "commit": "55e928772f451a7ab0d20e7dd508dbda7ed532c3",
+      "branch": "feature/pr-review-followup",
+      "status": "M e2e/number-history.spec.ts\n M src/hooks/keyboardUtils.ts\n M src/hooks/useNumberKeyboard.ts\n?? e2e/cursor-style.spec.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/number-history.spec.ts",
+        "--project=chromium",
+        "--project=mobile-chrome"
+      ],
+      "exitCode": 0
+    },
+    "capture": "artifacts/qa/2026-09-07T11-48-06-281Z-after",
+    "sourceManifestSHA256": "a725b9a107fa9707f3e946afbdc3a2e01576bb20c08fac48082e0d3cb91a3d9a"
   }
 ]

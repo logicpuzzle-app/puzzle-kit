@@ -27,6 +27,7 @@ import {
   calculateNextPosition,
   appendDigit,
   removeLastChar,
+  MARKER_KEYS,
   type KeyboardShortcut,
   executeMatchingShortcut,
 } from './keyboardUtils';
@@ -635,6 +636,22 @@ export function useNumberKeyboard() {
           handleDirectionalNumber(ctx.target, key, false, false);
         } else if (isNumberTool) {
           handleNormalNumber(ctx.target, key, false, false);
+        }
+      },
+    },
+    // Marker entry also works in the numeric panel; keep word/kana input unchanged.
+    {
+      keys: [...MARKER_KEYS],
+      preventDefault: true,
+      when: (ctx) => (ctx.isNumberTool || ctx.isConstraintNumberInput) && ctx.target !== null,
+      run: (ctx, key) => {
+        if (!ctx.target) return;
+        if (ctx.isConstraintNumberInput) {
+          handleConstraintNumber(ctx.target, key, false, true);
+        } else if (toolSettings.currentTool === 'number-directional') {
+          handleDirectionalNumber(ctx.target, key, false, true);
+        } else {
+          handleNormalNumber(ctx.target, key, false, true);
         }
       },
     },

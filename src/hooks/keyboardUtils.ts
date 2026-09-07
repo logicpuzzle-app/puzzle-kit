@@ -199,6 +199,9 @@ export function isDigit(key: string): boolean {
   return /^[0-9]$/.test(key);
 }
 
+/** Keyboard equivalents of the number pad's clue markers. */
+export const MARKER_KEYS = ['?', '.'] as const;
+
 /**
  * Check if key is a single character (non-digit)
  */
