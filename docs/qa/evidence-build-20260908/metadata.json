@@ -1,0 +1,285 @@
+{
+  "beforeCommit": "9abcb4f4aab972262add5da823b59d7393be70df",
+  "afterImplementationCommit": "09380ff87f1ce3e3f96d0afeb59b75e96990ccd2",
+  "runs": {
+    "before": {
+      "directory": "artifacts/qa/build-entrypoints-before-verified",
+      "stats": {
+        "startTime": "2026-09-07T20:10:04.341Z",
+        "duration": 3692.117,
+        "expected": 14,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    "after": {
+      "directory": "artifacts/qa/build-warnings-after",
+      "stats": {
+        "startTime": "2026-09-07T20:11:04.854Z",
+        "duration": 38520.587999999996,
+        "expected": 44,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    }
+  },
+  "cases": [
+    {
+      "phase": "before",
+      "title": "build: opens /",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "home-before-chromium.webm",
+      "durationSeconds": 1.2,
+      "sha256": "4c29192ffeebed9bd746142692d33a8bbbabdd1d0be5936c79785d7317b1521c"
+    },
+    {
+      "phase": "before",
+      "title": "build: opens /master",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "master-before-chromium.webm",
+      "durationSeconds": 1.12,
+      "sha256": "54664a70f25ab36ae2d0a51064804f2e9d8e154e2e0bc2e5ea4fc07ac1f5f0db"
+    },
+    {
+      "phase": "before",
+      "title": "build: opens /edit",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "edit-before-chromium.webm",
+      "durationSeconds": 1.12,
+      "sha256": "a0b664e72135dd04e0bfa20502e22c7ca27810833ed80107a2eaaa43f3126e9d"
+    },
+    {
+      "phase": "before",
+      "title": "build: opens /paint",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "paint-before-chromium.webm",
+      "durationSeconds": 1.12,
+      "sha256": "b41a4115cf13ffdb8da56daf365ebe723b9f66a5dc805393628c716957633021"
+    },
+    {
+      "phase": "before",
+      "title": "build: opens /play",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "play-before-chromium.webm",
+      "durationSeconds": 1.08,
+      "sha256": "b9a40ba2f0c86e42fd5d052b9ca82fbb44347fc3fce758915b77df395bee55ed"
+    },
+    {
+      "phase": "before",
+      "title": "build: opens /embedded.html",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "embedded-before-chromium.webm",
+      "durationSeconds": 1.12,
+      "sha256": "f9b179b2bfc42f166bf95094d255856a316ca8b695d5abfa2b676985cff8ba18"
+    },
+    {
+      "phase": "before",
+      "title": "build: Paint renders and imports a PDF through its worker",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "pdf-before-chromium.webm",
+      "durationSeconds": 1.36,
+      "sha256": "898c308acf198a6154a423b4a1e030375d3e3168d62a0a7de0043862c84824d6"
+    },
+    {
+      "phase": "before",
+      "title": "build: opens /",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "home-before-mobile-chrome.webm",
+      "durationSeconds": 1.24,
+      "sha256": "9c5b3c6e4e3e1e04b0e287b6920b8430e8c7b84458be7f855f5289358fb0ab98"
+    },
+    {
+      "phase": "before",
+      "title": "build: opens /master",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "master-before-mobile-chrome.webm",
+      "durationSeconds": 1.08,
+      "sha256": "ffb2d7584d8b06c77fbd01aa0e38004e425a7ea174fe4700fef47f8b5a95325c"
+    },
+    {
+      "phase": "before",
+      "title": "build: opens /edit",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "edit-before-mobile-chrome.webm",
+      "durationSeconds": 1.12,
+      "sha256": "b0f664e333714ca49d81a7fc149bafa9505a492959cef7f718c829c8a330bb87"
+    },
+    {
+      "phase": "before",
+      "title": "build: opens /paint",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "paint-before-mobile-chrome.webm",
+      "durationSeconds": 1.16,
+      "sha256": "fb57fe19dd6eb6cc14308206f11bd5152438624fc93d5f012546d78dc995a1e4"
+    },
+    {
+      "phase": "before",
+      "title": "build: opens /play",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "play-before-mobile-chrome.webm",
+      "durationSeconds": 1.08,
+      "sha256": "9951a310bb1915e7076e19f7307302ea847a507926506abd0702e65b22e12c0d"
+    },
+    {
+      "phase": "before",
+      "title": "build: opens /embedded.html",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "embedded-before-mobile-chrome.webm",
+      "durationSeconds": 1.16,
+      "sha256": "2c99bb47a5d95c5b64665524e79632c0d1309cd73a00de682d031f500f57e312"
+    },
+    {
+      "phase": "before",
+      "title": "build: Paint renders and imports a PDF through its worker",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "pdf-before-mobile-chrome.webm",
+      "durationSeconds": 1.36,
+      "sha256": "37a4aac0cf99f15d5c968063f19c558f37b9d4904db6290dafdd92e97af34662"
+    },
+    {
+      "phase": "after",
+      "title": "build: opens /",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "home-after-chromium.webm",
+      "durationSeconds": 1.12,
+      "sha256": "a98811c367ef3c1990f79482f58438ab05d865ba1915c663c513ba9c5faa80ec"
+    },
+    {
+      "phase": "after",
+      "title": "build: opens /master",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "master-after-chromium.webm",
+      "durationSeconds": 1.32,
+      "sha256": "f3f3b6f03c767812ead724d5905a94f8114045780a64293ba88419b88a21986a"
+    },
+    {
+      "phase": "after",
+      "title": "build: opens /edit",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "edit-after-chromium.webm",
+      "durationSeconds": 1.24,
+      "sha256": "e0cab523a7030fe1cab25d7a66febbce00afbd2885b0627d1a331d26a6f68fb2"
+    },
+    {
+      "phase": "after",
+      "title": "build: opens /paint",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "paint-after-chromium.webm",
+      "durationSeconds": 1.56,
+      "sha256": "456d4e853c2660258e7b4840057466fd19497f538e25106fbdc91125b4a90858"
+    },
+    {
+      "phase": "after",
+      "title": "build: opens /play",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "play-after-chromium.webm",
+      "durationSeconds": 1.32,
+      "sha256": "5793858abea44244f3afbde32da10bd55f3ffd1e13ddfa56e01a7dfafba60a39"
+    },
+    {
+      "phase": "after",
+      "title": "build: opens /embedded.html",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "embedded-after-chromium.webm",
+      "durationSeconds": 1.24,
+      "sha256": "00f3b8c30532f8b11297d1ac41fd840ebaf3f9c593d3b25cf40587ef0c31fb09"
+    },
+    {
+      "phase": "after",
+      "title": "build: Paint renders and imports a PDF through its worker",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "pdf-after-chromium.webm",
+      "durationSeconds": 1.72,
+      "sha256": "8ed1edbb1a21c5498a5addc7426a35dce030592f7ca51c488b8a03b7acd688ff"
+    },
+    {
+      "phase": "after",
+      "title": "build: opens /",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "home-after-mobile-chrome.webm",
+      "durationSeconds": 1.12,
+      "sha256": "a4af7f961a2aaa10908f1e6e830b411c57fbf7418b700f9ea399184fd0b3fe82"
+    },
+    {
+      "phase": "after",
+      "title": "build: opens /master",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "master-after-mobile-chrome.webm",
+      "durationSeconds": 1.24,
+      "sha256": "48f4bbf25177c123aef8b191e613f47c38953b2325a2ad98e72141dbfe701cc9"
+    },
+    {
+      "phase": "after",
+      "title": "build: opens /edit",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "edit-after-mobile-chrome.webm",
+      "durationSeconds": 1.32,
+      "sha256": "ec41346d54973ad01b69e3c5b390deee81393cf5be54d8400515e634cf215615"
+    },
+    {
+      "phase": "after",
+      "title": "build: opens /paint",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "paint-after-mobile-chrome.webm",
+      "durationSeconds": 1.2,
+      "sha256": "9d6e901bbc26de1903deddcab175eedb676ad933d6a402367e90729f9184fba3"
+    },
+    {
+      "phase": "after",
+      "title": "build: opens /play",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "play-after-mobile-chrome.webm",
+      "durationSeconds": 1.24,
+      "sha256": "c912768d4c396a119ebc926486ca467cd62ae6904e37d5dfa0c3cda0b54a83b6"
+    },
+    {
+      "phase": "after",
+      "title": "build: opens /embedded.html",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "embedded-after-mobile-chrome.webm",
+      "durationSeconds": 1.44,
+      "sha256": "6af7eedc4443344e35ad8e5ec2a6681f46a42d43f924ee40ca956bc2cf8d7e01"
+    },
+    {
+      "phase": "after",
+      "title": "build: Paint renders and imports a PDF through its worker",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "pdf-after-mobile-chrome.webm",
+      "durationSeconds": 1.96,
+      "sha256": "42f7aae7172e97d258e307bc18a0d657808421cdb9408b08aa1db2170e21ec53"
+    }
+  ],
+  "testSourceSha256": "162b6a05ea6f27e0751b71e74a971a9b50037b6ccf8c6b821ab1268dcc8d7494",
+  "productionConfigSha256": "a58517f7d4df5f9573444d07c55b64af6aeacead46dac42056208d01395c1bcd",
+  "buildConfigSha256": "06dd77caa6988d6e4da958771b1a35073a171b0ab2ccaab004329b6b3788e630"
+}

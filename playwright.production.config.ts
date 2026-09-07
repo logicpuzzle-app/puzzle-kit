@@ -6,11 +6,11 @@ import base from './playwright.config';
 const artifactDir = resolve(process.env.QA_ARTIFACT_DIR ??=
   `artifacts/check/production-${new Date().toISOString().replace(/[:.]/g, '-')}`);
 
-// Exercise the shipped assets and worker through /master, without the dev harness.
+// Exercise shipped entrypoints and workers, without the dev harness.
 export default defineConfig({
   ...base,
-  testMatch: ['**/number-history.spec.ts', '**/cursor-style.spec.ts', '**/persistence.spec.ts', '**/npgen.spec.ts', '**/solver.spec.ts'],
-  grep: /directional number insertion|marker keys|selection color|autosave survives|generates a seeded|solver:/,
+  testMatch: ['**/build-entrypoints.spec.ts', '**/number-history.spec.ts', '**/cursor-style.spec.ts', '**/persistence.spec.ts', '**/npgen.spec.ts', '**/solver.spec.ts'],
+  grep: /build:|directional number insertion|marker keys|selection color|autosave survives|generates a seeded|solver:/,
   projects: base.projects?.filter(project => ['chromium', 'mobile-chrome'].includes(project.name!)),
   outputDir: resolve(artifactDir, 'test-results'),
   reporter: [
