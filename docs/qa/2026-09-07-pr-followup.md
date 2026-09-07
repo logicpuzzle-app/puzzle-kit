@@ -39,3 +39,21 @@ Surface/Number color and width changes, persisted settings and reload: 4/4 Chrom
 Added `qa:production` to CI after the build. The accepted local preview run passed 14/14 Chromium cases (desktop/mobile) against the built assets: number history, markers, both selection cursors, puzzle autosave/reload with new undoable edits, and seeded Wasm generation. The persistence flow explicitly preserves the existing click-to-increment behavior (5 → click 6 → type 7 → Undo 6 → Undo 5). Node 22.21.1 and Node 25.2.1 both passed the three cursor persistence Unit tests.
 
 Rot2 regression now uses explicit PRNG seeds 1 and 2 and asserts a successful result for each run; two repeated desktop Chromium cases passed. Initial production-config exploration accidentally inherited extra servers/projects, and its persistence assertion assumed selection would not increment a clue. That diagnostic run is excluded; the final config replaces the servers/projects and the corrected test retains the product's existing click behavior.
+
+
+## Clean integration verification
+
+Verified application commit `491d91c` in a new detached worktree, with its own `npm ci` and no copied node_modules or sibling source checkout. It includes latest develop `f459e07`, quality through #54, the directional-history fix, and ports of #45/#46. The develop merge conflict was only a deletion comment; the current keyboard implementation was retained. Production config commit `1624d3a` additionally shares one artifact directory across workers and was reverified against the same built application.
+
+| Check | Result |
+| --- | --- |
+| npm ci | PASS |
+| typecheck / typecheck:e2e | PASS / PASS |
+| Unit | 1,022 passed / 64 files |
+| Full E2E | 192 passed / 8 existing recording skips / 0 failed / 0 flaky |
+| Production build | PASS |
+| Production Chromium | 14 passed / 0 failed / 0 skipped |
+
+[Machine-readable results](evidence-pr-followup-20260907/clean-check-summary.json) · [5 before/after comparisons + 5 mobile after videos](evidence-pr-followup-20260907/index.html). All 15 committed videos fully decode with ffmpeg and match their SHA256 metadata. Cursor screenshots were also inspected visually. Build output retains pre-existing solver export/manual-chunk size/cycle warnings; successful smoke tests cover the listed editor and Wasm flows, not every bundled solver.
+
+Wasm regeneration now accepts an explicit Rust source path; missing arguments and missing Cargo.toml both fail with actionable messages (exit 2). Normal clean build uses the committed Wasm. The optional Rust/wasm-pack rebuild was not run in this verification.
