@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 *.local
+playwright-report
+test-results
 
 # Editor directories and files
 .vscode/*
@@ -35,3 +37,10 @@ dist-ssr
 .firebase/
 .firebaserc
 firebase.json
+
+# Local QA recordings and reports
+artifacts/
+coverage/
+
+# Private working notes and UI reviews
+.work/

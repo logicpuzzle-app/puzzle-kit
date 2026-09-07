@@ -151,6 +151,15 @@ export const createConstraintSlice: SliceCreator<ConstraintSlice> = (set, get) =
           newSettings.lineGridPoints = toolMapping.settings.lineGridPoints;
         }
       }
+      if (toolMapping.category === 'symbol' && !toolMapping.settings?.symbolGridPoints) {
+        if (toolMapping.target === 'edge') {
+          newSettings.symbolGridPoints = ['edge'];
+        } else if (toolMapping.target === 'vertex') {
+          newSettings.symbolGridPoints = ['vertex'];
+        } else {
+          newSettings.symbolGridPoints = ['cell'];
+        }
+      }
 
       if (showConstraintLayer && currentSchemaId && toolMapping.category === 'number') {
         newSettings.color = isEditMode ? '#000000' : '#00A000';

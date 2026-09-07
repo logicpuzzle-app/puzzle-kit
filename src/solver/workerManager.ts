@@ -75,6 +75,8 @@ class SolverWorkerManager {
    * Handle worker error
    */
   private handleError(event: ErrorEvent): void {
+    // The rejection is handled by the caller; do not bubble it as an uncaught page error.
+    event.preventDefault();
     console.error('Solver worker error:', event);
 
     // Reject all pending requests

@@ -1,0 +1,56 @@
+{
+  "applicationCommit": "491d91c",
+  "productionConfigCommit": "1624d3a266e586d9a69efd3eb3e02da87e23de60",
+  "develop": "f459e072d5369e69222ad89dffc870fb0e6346c4",
+  "node": "v25.2.1",
+  "cleanInstall": "PASS",
+  "checks": [
+    {
+      "script": "typecheck",
+      "exitCode": 0
+    },
+    {
+      "script": "typecheck:e2e",
+      "exitCode": 0
+    },
+    {
+      "script": "test:unit",
+      "exitCode": 0
+    },
+    {
+      "script": "test:e2e",
+      "exitCode": 0
+    }
+  ],
+  "unit": {
+    "passed": 1022,
+    "files": 64
+  },
+  "e2e": {
+    "startTime": "2026-09-07T11:57:00.534Z",
+    "duration": 135640.014,
+    "expected": 192,
+    "skipped": 8,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "build": "PASS",
+  "production": {
+    "startTime": "2026-09-07T12:04:09.585Z",
+    "duration": 13620.226,
+    "expected": 14,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "localArtifacts": {
+    "check": ".work/pr-followup-clean-20260907/artifacts/check/2026-09-07T11-56-45-690Z",
+    "production": ".work/pr-followup-clean-20260907/artifacts/check/production-2026-09-07T12-04-09-582Z"
+  },
+  "videoValidation": {
+    "decoded": 15,
+    "sha256Verified": 15,
+    "decoder": "ffmpeg",
+    "failures": 0
+  }
+}

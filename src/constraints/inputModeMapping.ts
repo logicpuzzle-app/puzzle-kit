@@ -115,7 +115,7 @@ export const inputModeToTool: Record<InputMode, ToolMapping | null> = {
     },
   },
 
-  // X mark on edges (peke = バツ) (pzprjs: rgb(0, 127, 0))
+  // X mark on edges (peke = X) (pzprjs: rgb(0, 127, 0))
   'peke': {
     tool: 'symbol-cross',
     category: 'symbol',
@@ -229,7 +229,7 @@ export const inputModeToTool: Record<InputMode, ToolMapping | null> = {
     symbolType: 'circle', // Outlined circle (white pearl)
     settings: {
       color: '#000000',
-      symbolSize: 'large',
+      symbolSize: 'medium',
     },
   },
   'circle-shade': {
@@ -239,7 +239,7 @@ export const inputModeToTool: Record<InputMode, ToolMapping | null> = {
     symbolType: 'circle-filled', // Filled circle (black pearl)
     settings: {
       color: '#000000',
-      symbolSize: 'large',
+      symbolSize: 'medium',
     },
   },
 
@@ -248,6 +248,9 @@ export const inputModeToTool: Record<InputMode, ToolMapping | null> = {
     tool: 'symbol-arrow',
     category: 'symbol',
     target: 'cell',
+    settings: {
+      symbolGridPoints: ['cell'],
+    },
   },
   'direc': {
     tool: 'number-directional',

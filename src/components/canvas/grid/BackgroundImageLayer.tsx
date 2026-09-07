@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import type { GridConfig } from '../../../types';
 
 interface BackgroundImageLayerProps {
@@ -27,9 +27,35 @@ export const BackgroundImageLayer: React.FC<BackgroundImageLayerProps> = ({
     backgroundTile = false,
     backgroundOffsetX = 0,
     backgroundOffsetY = 0,
+    backgroundClip = true,
   } = gridConfig;
 
   if (!backgroundImage) return null;
+
+  const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const img = new Image();
+    img.onload = () => {
+      if (cancelled) return;
+      const width = img.naturalWidth || img.width;
+      const height = img.naturalHeight || img.height;
+      if (width > 0 && height > 0) {
+        setNaturalSize({ width, height });
+      } else {
+        setNaturalSize(null);
+      }
+    };
+    img.onerror = () => {
+      if (cancelled) return;
+      setNaturalSize(null);
+    };
+    img.src = backgroundImage;
+    return () => {
+      cancelled = true;
+    };
+  }, [backgroundImage]);
 
   // Generate unique pattern ID for tiling
   const patternId = useMemo(() => `bg-pattern-${Math.random().toString(36).substr(2, 9)}`, []);
@@ -43,7 +69,14 @@ export const BackgroundImageLayer: React.FC<BackgroundImageLayerProps> = ({
     const tileHeight = baseTileSize * backgroundScale;
 
     return (
-      <g className="background-image-layer" opacity={backgroundOpacity}>
+      <g className="background-image-layer">
+        <rect
+          x={gridX}
+          y={gridY}
+          width={gridWidth}
+          height={gridHeight}
+          fill="#ffffff"
+        />
         <defs>
           <pattern
             id={patternId}
@@ -67,6 +100,7 @@ export const BackgroundImageLayer: React.FC<BackgroundImageLayerProps> = ({
           width={gridWidth}
           height={gridHeight}
           fill={`url(#${patternId})`}
+          opacity={backgroundOpacity}
         />
       </g>
     );
@@ -104,8 +138,45 @@ export const BackgroundImageLayer: React.FC<BackgroundImageLayerProps> = ({
       break;
   }
 
+  const backgroundRect = useMemo(() => {
+    if (backgroundFit === 'cover' || backgroundFit === 'fill') {
+      return { x: gridX, y: gridY, width: gridWidth, height: gridHeight };
+    }
+
+    const aspect = naturalSize ? naturalSize.width / naturalSize.height : null;
+    if (!aspect || imageWidth <= 0 || imageHeight <= 0) {
+      return { x: imageX, y: imageY, width: imageWidth, height: imageHeight };
+    }
+
+    const viewRatio = imageWidth / imageHeight;
+    let drawWidth = imageWidth;
+    let drawHeight = imageHeight;
+    if (aspect > viewRatio) {
+      drawWidth = imageWidth;
+      drawHeight = imageWidth / aspect;
+    } else {
+      drawHeight = imageHeight;
+      drawWidth = imageHeight * aspect;
+    }
+
+    return {
+      x: imageX + (imageWidth - drawWidth) / 2,
+      y: imageY + (imageHeight - drawHeight) / 2,
+      width: drawWidth,
+      height: drawHeight,
+    };
+  }, [backgroundFit, gridX, gridY, gridWidth, gridHeight, imageX, imageY, imageWidth, imageHeight, naturalSize]);
+
   return (
     <g className="background-image-layer">
+      <rect
+        x={backgroundRect.x}
+        y={backgroundRect.y}
+        width={backgroundRect.width}
+        height={backgroundRect.height}
+        fill="#ffffff"
+        clipPath={backgroundFit === 'none' && backgroundClip ? `url(#${patternId}-clip)` : undefined}
+      />
       {/* Clip path to constrain image to grid bounds */}
       <defs>
         <clipPath id={`${patternId}-clip`}>
@@ -120,7 +191,7 @@ export const BackgroundImageLayer: React.FC<BackgroundImageLayerProps> = ({
         href={backgroundImage}
         preserveAspectRatio={preserveAspectRatio}
         opacity={backgroundOpacity}
-        clipPath={backgroundFit === 'none' ? `url(#${patternId}-clip)` : undefined}
+        clipPath={backgroundFit === 'none' && backgroundClip ? `url(#${patternId}-clip)` : undefined}
       />
     </g>
   );

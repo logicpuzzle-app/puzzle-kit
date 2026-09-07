@@ -1,0 +1,140 @@
+[
+  {
+    "flow": "stationary",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T16-45-00-232Z-before",
+      "title": "pinch anchors the board under a stationary midpoint",
+      "status": "failed",
+      "commit": "1c3b0ffae9f4c33fe9e0aa4bb056f95b9a745e5f",
+      "video": "stationary-before.webm",
+      "videoSHA256": "cd36eb0b9491e0114815f00cb2bee7988f0884545defca0fd1af9b9fc8a7b235",
+      "sourceManifestSHA256": "17ff453f46bca807e2212f5690339ab508eeb6ac789b8368a97064791f2d42d9"
+    },
+    "after": {
+      "capture": "2026-09-06T16-49-38-489Z-after",
+      "title": "pinch anchors the board under a stationary midpoint",
+      "status": "passed",
+      "commit": "1c3b0ffae9f4c33fe9e0aa4bb056f95b9a745e5f",
+      "video": "stationary-after.webm",
+      "videoSHA256": "a4a70e3b3fd3e0cb0cc150c00040fc69d036940f71dcc99a7f56b16428b9c42d",
+      "sourceManifestSHA256": "2825e12f676900e81351b465d3a3cfa505b5eca66efb1be206e7f667bd8b4e76"
+    },
+    "title": "pinch anchors the board under a stationary midpoint"
+  },
+  {
+    "flow": "moving",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T16-45-00-232Z-before",
+      "title": "pinch anchors the board under a moving midpoint",
+      "status": "failed",
+      "commit": "1c3b0ffae9f4c33fe9e0aa4bb056f95b9a745e5f",
+      "video": "moving-before.webm",
+      "videoSHA256": "cc70fe08e823457b133a48375076ef43a6b365c165fe40fdbb69c1ab87f717fa",
+      "sourceManifestSHA256": "17ff453f46bca807e2212f5690339ab508eeb6ac789b8368a97064791f2d42d9"
+    },
+    "after": {
+      "capture": "2026-09-06T16-49-38-489Z-after",
+      "title": "pinch anchors the board under a moving midpoint",
+      "status": "passed",
+      "commit": "1c3b0ffae9f4c33fe9e0aa4bb056f95b9a745e5f",
+      "video": "moving-after.webm",
+      "videoSHA256": "8781228f4e57bf329c335746e2b81a356646015b1620d1beb1693e96d66c3e52",
+      "sourceManifestSHA256": "2825e12f676900e81351b465d3a3cfa505b5eca66efb1be206e7f667bd8b4e76"
+    },
+    "title": "pinch anchors the board under a moving midpoint"
+  },
+  {
+    "flow": "prezoomed",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T16-45-00-232Z-before",
+      "title": "pinch anchors the board under a prezoomed midpoint",
+      "status": "failed",
+      "commit": "1c3b0ffae9f4c33fe9e0aa4bb056f95b9a745e5f",
+      "video": "prezoomed-before.webm",
+      "videoSHA256": "aa2e121b3d44d95e3a0fe7ddbbe97b19fcaeeb5cbde181d6e70bbad10776ed79",
+      "sourceManifestSHA256": "17ff453f46bca807e2212f5690339ab508eeb6ac789b8368a97064791f2d42d9"
+    },
+    "after": {
+      "capture": "2026-09-06T16-49-38-489Z-after",
+      "title": "pinch anchors the board under a prezoomed midpoint",
+      "status": "passed",
+      "commit": "1c3b0ffae9f4c33fe9e0aa4bb056f95b9a745e5f",
+      "video": "prezoomed-after.webm",
+      "videoSHA256": "25f8b37aa3d91f40138c6e25852b3d3efc8b63b1dce16c86466d7ae3ad1a2148",
+      "sourceManifestSHA256": "2825e12f676900e81351b465d3a3cfa505b5eca66efb1be206e7f667bd8b4e76"
+    },
+    "title": "pinch anchors the board under a prezoomed midpoint"
+  },
+  {
+    "flow": "first-contact",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T16-45-00-232Z-before",
+      "title": "pinch preserves the first surface contact as one undoable edit",
+      "status": "passed",
+      "commit": "1c3b0ffae9f4c33fe9e0aa4bb056f95b9a745e5f",
+      "video": "first-contact-before.webm",
+      "videoSHA256": "055d29859f07cd7dd342cfa793dd60ae9245a3642f403f258a6caeea3520f527",
+      "sourceManifestSHA256": "17ff453f46bca807e2212f5690339ab508eeb6ac789b8368a97064791f2d42d9"
+    },
+    "after": {
+      "capture": "2026-09-06T16-49-38-489Z-after",
+      "title": "pinch preserves the first surface contact as one undoable edit",
+      "status": "passed",
+      "commit": "1c3b0ffae9f4c33fe9e0aa4bb056f95b9a745e5f",
+      "video": "first-contact-after.webm",
+      "videoSHA256": "e47e0ddf84a29db79942dbaa1ea4215f9c670cd6b96e54ab84aeadf117d7a8c2",
+      "sourceManifestSHA256": "2825e12f676900e81351b465d3a3cfa505b5eca66efb1be206e7f667bd8b4e76"
+    },
+    "title": "pinch preserves the first surface contact as one undoable edit"
+  },
+  {
+    "flow": "pan-mode",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T16-45-00-232Z-before",
+      "title": "pan mode pinch keeps a surface tool from editing the board",
+      "status": "passed",
+      "commit": "1c3b0ffae9f4c33fe9e0aa4bb056f95b9a745e5f",
+      "video": "pan-mode-before.webm",
+      "videoSHA256": "804269a6100fbe9ee6d8a183fb5247841dee32866a54255c8ef13404d83dc5ad",
+      "sourceManifestSHA256": "17ff453f46bca807e2212f5690339ab508eeb6ac789b8368a97064791f2d42d9"
+    },
+    "after": {
+      "capture": "2026-09-06T16-49-38-489Z-after",
+      "title": "pan mode pinch keeps a surface tool from editing the board",
+      "status": "passed",
+      "commit": "1c3b0ffae9f4c33fe9e0aa4bb056f95b9a745e5f",
+      "video": "pan-mode-after.webm",
+      "videoSHA256": "30c9f5d6fd5831ee22d8896869399afcc6d3a73a801ba9de7fb818ed454bb110",
+      "sourceManifestSHA256": "2825e12f676900e81351b465d3a3cfa505b5eca66efb1be206e7f667bd8b4e76"
+    },
+    "title": "pan mode pinch keeps a surface tool from editing the board"
+  },
+  {
+    "flow": "subpixel",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T16-48-38-225Z-before",
+      "title": "subpixel multi-pointer motion does not apply a secondary color",
+      "status": "failed",
+      "commit": "1c3b0ffae9f4c33fe9e0aa4bb056f95b9a745e5f",
+      "video": "subpixel-before.webm",
+      "videoSHA256": "0a8a2c5eb0784b28b20c9429f129b0d167ac4a03ee5706614d4223a3348a793c",
+      "sourceManifestSHA256": "4479f9e66fc75874c91261e8d76d848fb758fdd87ff7d180837630b86b144c77"
+    },
+    "after": {
+      "capture": "2026-09-06T16-49-38-489Z-after",
+      "title": "subpixel multi-pointer motion does not apply a secondary color",
+      "status": "passed",
+      "commit": "1c3b0ffae9f4c33fe9e0aa4bb056f95b9a745e5f",
+      "video": "subpixel-after.webm",
+      "videoSHA256": "8c2ea37432348650824f8a783d088fefa865729cb9b98a52742524741fa43d2c",
+      "sourceManifestSHA256": "2825e12f676900e81351b465d3a3cfa505b5eca66efb1be206e7f667bd8b4e76"
+    },
+    "title": "subpixel multi-pointer motion does not apply a secondary color"
+  }
+]

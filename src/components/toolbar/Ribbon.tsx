@@ -131,8 +131,11 @@ export const Ribbon: React.FC = () => {
       if (e instanceof CspuzSolverCancelledError || e instanceof SolverCancelledError) {
         return;
       }
-      setSolverError(e instanceof Error ? e.message : t('solver.failed'));
-      setSolving(false);
+      enterSolverMode({
+        success: false,
+        status: 'error',
+        error: e instanceof Error ? e.message : t('solver.failed'),
+      });
     }
   }, [
     currentSchemaId,
@@ -196,9 +199,9 @@ export const Ribbon: React.FC = () => {
   };
 
   return (
-    <div className="bg-office-ribbon border-b border-office-border">
+    <div className="shrink-0 min-w-0 bg-office-ribbon border-b border-office-border">
       {/* Primary toolbar - Category selection */}
-      <div className="flex items-center px-2 py-1 border-b border-office-border">
+      <div className="flex items-center px-2 py-1 border-b border-office-border max-md:overflow-x-auto max-md:[&>*]:shrink-0">
         {/* Layer switcher with visibility toggles */}
         <div className="flex items-center gap-2 px-2 border-r border-office-border mr-2">
           {/* Constraint layer - button with checkbox on right (placed first) */}
@@ -355,7 +358,7 @@ export const Ribbon: React.FC = () => {
               {showAnswerLayer ? <EyeIcon size={14} /> : <EyeOffIcon size={14} />}
             </button>
           </div>
-          {/* Trial mode (仮置き) - always available */}
+          {/* Trial mode - always available */}
           <div className="flex items-center">
             {trialStage === 0 ? (
               /* Enter trial button - disabled when not in answer mode */
@@ -400,7 +403,7 @@ export const Ribbon: React.FC = () => {
           </div>
         </div>
 
-        {/* Grid mode subtabs - 盤面形状 / 盤面スタイル (Type / Style) */}
+        {/* Grid mode subtabs - Type / Style */}
         {isGridMode && (
           <div className="flex items-center gap-1">
             <button
@@ -434,6 +437,7 @@ export const Ribbon: React.FC = () => {
               return (
                 <button
                   key={category.id}
+                  aria-pressed={toolSettings.currentCategory === category.id}
                   className={`flex items-center gap-1 h-7 px-2 text-xs rounded-sm border transition-colors ${
                     toolSettings.currentCategory === category.id
                       ? 'bg-office-accent text-white border-office-accent'
@@ -581,7 +585,7 @@ export const Ribbon: React.FC = () => {
       </div>
 
       {/* Secondary toolbar - Tool details */}
-      <div className="flex items-center px-2 py-1 min-h-[50px]">
+      <div className="flex items-center px-2 py-1 min-h-[50px] max-md:overflow-x-auto max-md:[&>*]:shrink-0">
         {isGridMode ? (
           gridSubTab === 'shape' ? <GridShapeContent /> : <GridDisplayContent />
         ) : isSpecificMode ? (
@@ -691,6 +695,7 @@ export const Ribbon: React.FC = () => {
                 return (
                   <button
                     key={tool.id}
+                    aria-pressed={toolSettings.currentTool === tool.id}
                     className={`flex items-center gap-1 px-2 py-1 text-xs rounded-sm border transition-colors ${
                       toolSettings.currentTool === tool.id
                         ? 'bg-office-accent text-white border-office-accent'

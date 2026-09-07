@@ -198,12 +198,13 @@ export const createImportHandlers = (options: ImportHandlersOptions) => {
         // Sync ID counters to avoid collisions
         syncCountersFromPuzzleState(result.state);
 
-        store.setState((state) => ({
-          ...state,
-          grid: result.grid,
-          puzzle: result.state,
-          ...(result.topology ? { topology: result.topology, useTopology: true } : {}),
-        }));
+        if (result.topology) {
+          store.setState({ grid: result.grid, puzzle: result.state, topology: result.topology, useTopology: true });
+        } else {
+          // Rebuild the topology when the imported grid dimensions change.
+          store.getState().setGrid(result.grid);
+          store.setState({ puzzle: result.state });
+        }
 
         // If puzz.link puzzle type is known, enable constraint mode
         if (puzzleType) {

@@ -1,0 +1,67 @@
+{
+  "date": "2026-09-06",
+  "checkRun": "2026-09-06T02-02-28-499Z",
+  "unit": {
+    "filesPassed": 59,
+    "testsPassed": 978
+  },
+  "e2e": {
+    "passed": 50,
+    "skipped": 4,
+    "failed": 0
+  },
+  "typecheck": "passed",
+  "typecheckE2e": "passed",
+  "build": "passed",
+  "coverage": {
+    "lines": {
+      "total": 12533,
+      "covered": 4209,
+      "skipped": 0,
+      "pct": 33.58
+    },
+    "statements": {
+      "total": 13746,
+      "covered": 4576,
+      "skipped": 0,
+      "pct": 33.28
+    },
+    "functions": {
+      "total": 1998,
+      "covered": 647,
+      "skipped": 0,
+      "pct": 32.38
+    },
+    "branches": {
+      "total": 8844,
+      "covered": 2491,
+      "skipped": 0,
+      "pct": 28.16
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "npmAudit": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "dependencies": {
+      "prod": 105,
+      "dev": 383,
+      "optional": 66,
+      "peer": 6,
+      "peerOptional": 0,
+      "total": 499
+    }
+  },
+  "packageLockSHA256": "d2710f32bfae2cb6d32b5cb23093119eb388e035923ac9f5a003a88103139a76"
+}

@@ -1,5 +1,5 @@
 // Test the Yajilin solver with a simple case
-import { YajilinSolver, Direction } from '@logicpuzzle-app/solver-kit';
+import { YajilinSolver, Direction } from '../solver/index.js';
 
 // Test 1: Simple 3x3 with one arrow
 console.log("=== Test 1: Simple 3x3 ===");

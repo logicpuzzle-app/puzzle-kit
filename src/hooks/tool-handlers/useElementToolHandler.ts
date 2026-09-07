@@ -62,6 +62,7 @@ export function useElementToolHandler({
   } = usePuzzleStore();
 
   const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
+  const isPaintSchema = currentSchemaId === 'paint';
 
   // Unified auto mode detection - replaces 3 separate useMemo blocks
   const autoModeInfo = useMemo(
@@ -159,7 +160,7 @@ export function useElementToolHandler({
             value: newValue,
             layer: dataLayer,
             angle: angle,
-            color: existingDirectionalNumber?.color || toolSettings.color,
+            color: isPaintSchema ? toolSettings.color : existingDirectionalNumber?.color || toolSettings.color,
             objectKey: 'directional-clue',
           });
           // Remove legacy number if it exists (migrate to directional number)
@@ -212,7 +213,7 @@ export function useElementToolHandler({
       }
       return null;
     },
-    [grid, puzzle, activeLayer, editableLayer, currentSchemaId, toolSettings, currentInputMode, autoModeInfo, numberRange, addNumber, removeNumber, updateNumber, addDirectionalClue, findCellId, showConstraintLayer]
+    [grid, puzzle, activeLayer, editableLayer, currentSchemaId, toolSettings, currentInputMode, autoModeInfo, numberRange, addNumber, removeNumber, updateNumber, addDirectionalClue, findCellId, showConstraintLayer, isPaintSchema]
   );
 
   /**
@@ -224,6 +225,7 @@ export function useElementToolHandler({
       inputMode?: 'add' | 'remove' | 'toggle';
       colorOverride?: string;
       symbolGridPointsOverride?: ('cell' | 'vertex' | 'edge')[];
+      rotationOverride?: number;
     }) => {
       if (!editableLayer) return;
       const dataLayer = editableLayer;
@@ -232,6 +234,7 @@ export function useElementToolHandler({
       const symbolType = options?.symbolTypeOverride || toolSettings.overrideSymbolType || toolSettings.currentTool.replace('symbol-', '');
       const color = options?.colorOverride || toolSettings.color;
       const symbolGridPoints = options?.symbolGridPointsOverride || toolSettings.symbolGridPoints || ['cell'];
+      const rotation = options?.rotationOverride ?? toolSettings.symbolRotation;
       const inputMode = options?.inputMode || 'toggle';
 
       // Find nearest target using unified helper
@@ -309,7 +312,7 @@ export function useElementToolHandler({
         cellId: targetId,
         symbolType,
         size: toolSettings.symbolSize,
-        rotation: toolSettings.symbolRotation,
+        rotation,
         color,
         layer: dataLayer,
         objectKey,

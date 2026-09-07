@@ -1,0 +1,42 @@
+[
+  {
+    "file": "free-segment-before.webm",
+    "capture": "2026-09-06T00-47-47-499Z-before",
+    "sha256": "6b2b22095c433f0e62766151b16e6078f67d7c34355fabe605a3b25b317b4ad1",
+    "project": "chromium",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    }
+  },
+  {
+    "file": "free-segment-after.webm",
+    "capture": "2026-09-06T00-49-58-702Z-after",
+    "sha256": "59d387c0f88d688be2865a82789944d767cb8d250fcc38393518ab0a0a93d5cc",
+    "project": "chromium",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    }
+  },
+  {
+    "file": "arrow-key-before.webm",
+    "capture": "2026-09-06T00-47-47-499Z-before",
+    "sha256": "89e9b706a3036e25b69bf9bddedb4b33c24287a9d2e7cfeebd77259ee74789d6",
+    "project": "chromium",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    }
+  },
+  {
+    "file": "arrow-key-after.webm",
+    "capture": "2026-09-06T00-49-58-702Z-after",
+    "sha256": "326476d7fe763c9f6af23a5c219a0f009871bf40426210f2a1f1cd64ab999f3e",
+    "project": "chromium",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    }
+  }
+]

@@ -22,7 +22,7 @@ export interface SolveResult {
   status?: SolverStatus;
   /** The solved state (answer layer updated) */
   answer?: PuzzleState['answer'];
-  /** Partial answer when solver times out or is interrupted (途中経過) */
+  /** Partial answer when solver times out or is interrupted */
   partialAnswer?: PuzzleState['answer'];
   /** Error message if solve failed */
   error?: string;

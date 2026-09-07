@@ -7,6 +7,8 @@
  * - Actions can be batched for group undo/redo
  */
 
+import type { GridTopology } from '../utils/gridTopology';
+
 import type {
   LayerType,
   DataLayerType,
@@ -113,6 +115,13 @@ export interface ClearLayerAction {
 // Grid Actions
 // ========================================
 
+export interface EditGridGeometryAction {
+  type: 'EDIT_GRID_GEOMETRY';
+  before: { grid: GridConfig; topology: GridTopology | null };
+  after: { grid: GridConfig; topology: GridTopology | null };
+  description: string;
+}
+
 export interface SetGridAction {
   type: 'SET_GRID';
   grid: Partial<GridConfig>;
@@ -158,6 +167,7 @@ export type PuzzleAction =
   | ClearLayerAction
   // Grid operations
   | SetGridAction
+  | EditGridGeometryAction
   // Batch operations
   | BatchAction;
 
@@ -296,6 +306,8 @@ export function reverseAction(action: PuzzleAction): PuzzleAction {
     case 'CLEAR_LAYER':
       // Clear layer cannot be easily reversed without snapshot
       return action;
+    case 'EDIT_GRID_GEOMETRY':
+      return { ...action, before: action.after, after: action.before };
     case 'SET_GRID':
       return {
         type: 'SET_GRID',
@@ -355,6 +367,8 @@ export function getActionDescription(action: PuzzleAction): string {
       return `Clear ${action.layer} layer`;
     case 'SET_GRID':
       return 'Update grid settings';
+    case 'EDIT_GRID_GEOMETRY':
+      return action.description;
     case 'BATCH':
       return action.description || `${action.actions.length} operations`;
     default:

@@ -355,7 +355,7 @@ export const FlashlightIcon: React.FC<IconProps> = ({ size, color }) => {
   );
 };
 
-// Frying pan icon (フライパン) - using provided SVG
+// Frying pan icon - using provided SVG
 export const FryingPanIcon: React.FC<IconProps> = ({ size, color }) => {
   const s = size;
   const viewBox = '0 0 512 512';
@@ -373,7 +373,7 @@ export const FryingPanIcon: React.FC<IconProps> = ({ size, color }) => {
   );
 };
 
-// Goat icon (ヤギ) - using provided SVG
+// Goat icon - using provided SVG
 export const GoatCuteIcon: React.FC<IconProps> = ({ size, color }) => {
   const s = size;
   return (
@@ -394,7 +394,7 @@ export const GoatCuteIcon: React.FC<IconProps> = ({ size, color }) => {
   );
 };
 
-// Wolf icon (オオカミ) - using provided SVG
+// Wolf icon - using provided SVG
 export const WolfCuteIcon: React.FC<IconProps> = ({ size, color }) => {
   const s = size;
   return (
@@ -412,7 +412,7 @@ export const WolfCuteIcon: React.FC<IconProps> = ({ size, color }) => {
   );
 };
 
-// Ghost icon (ゴースト) - using provided SVG
+// Ghost icon - using provided SVG
 export const GhostIcon: React.FC<IconProps> = ({ size, color }) => {
   const s = size;
   const viewBox = '0 0 512 512';
@@ -474,7 +474,7 @@ export const GhostIcon: React.FC<IconProps> = ({ size, color }) => {
   );
 };
 
-// Black ghost icon (黒ゴースト) - using provided SVG
+// Black ghost icon - using provided SVG
 export const GhostBlackIcon: React.FC<IconProps> = ({ size, color }) => {
   const s = size;
   const viewBox = '0 0 512 512';
@@ -492,7 +492,7 @@ export const GhostBlackIcon: React.FC<IconProps> = ({ size, color }) => {
   );
 };
 
-// Chicken icon (にわとり) - using provided SVG
+// Chicken icon - using provided SVG
 export const ChickenIcon: React.FC<IconProps> = ({ size, color }) => {
   const s = size;
   const sw = Math.max(12, size * 0.4);
@@ -562,7 +562,7 @@ export const ChickenIcon: React.FC<IconProps> = ({ size, color }) => {
   );
 };
 
-// Dracula icon (ドラキュラ) - using provided SVG
+// Dracula icon - using provided SVG
 export const DraculaIcon: React.FC<IconProps> = ({ size, color }) => {
   const s = size;
   const viewBox = '0 0 512 512';
@@ -585,7 +585,7 @@ export const DraculaIcon: React.FC<IconProps> = ({ size, color }) => {
   );
 };
 
-// Pig icon (ブタ) - using provided SVG
+// Pig icon - using provided SVG
 export const PigIcon: React.FC<IconProps> = ({ size, color }) => {
   const s = size;
   const viewBox = '0 0 512 512';
@@ -611,7 +611,7 @@ export const PigIcon: React.FC<IconProps> = ({ size, color }) => {
   );
 };
 
-// Skull icon (ドクロ) - using provided SVG
+// Skull icon - using provided SVG
 export const SkullIcon: React.FC<IconProps> = ({ size, color }) => {
   const s = size;
   const sw = Math.max(12, size * 0.4);
@@ -642,7 +642,7 @@ export const SkullIcon: React.FC<IconProps> = ({ size, color }) => {
   );
 };
 
-// Zombie icon (ゾンビ) - using provided SVG
+// Zombie icon - using provided SVG
 export const ZombieIcon: React.FC<IconProps> = ({ size, color }) => {
   const s = size;
   const sw = Math.max(12, size * 0.4);
@@ -836,7 +836,7 @@ export const ZombieIcon: React.FC<IconProps> = ({ size, color }) => {
   );
 };
 
-// Cactus icon (サボテン) - using provided SVG
+// Cactus icon - using provided SVG
 export const CactusIcon: React.FC<IconProps> = ({ size, color }) => {
   const s = size;
   const sw = Math.max(12, size * 0.4);
@@ -866,7 +866,7 @@ export const CactusIcon: React.FC<IconProps> = ({ size, color }) => {
   );
 };
 
-// Alien icon (エイリアン) - using provided SVG
+// Alien icon - using provided SVG
 export const AlienIcon: React.FC<IconProps> = ({ size, color }) => {
   const s = size;
   const viewBox = '0 0 512 512';

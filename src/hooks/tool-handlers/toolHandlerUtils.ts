@@ -208,7 +208,7 @@ export type IncrementMode = 'normal' | 'reverse';
 
 /**
  * Calculate next value for click increment/decrement
- * Implements pzpr-puzzlink style cycling: 空白 → min → ... → max → 空白
+ * Implements pzpr-puzzlink style cycling: empty → min → ... → max → empty
  */
 export function calculateNextValue(
   currentValue: number | null,
@@ -223,7 +223,7 @@ export function calculateNextValue(
   const shouldIncrement = mode === 'normal' ? !isRightClick : isRightClick;
 
   if (shouldIncrement) {
-    // Increment: 空白 → min → min+1 → ... → max → 空白
+    // Increment: empty → min → min+1 → ... → max → empty
     if (!isValidNum || currentValue === null) {
       return min;
     } else if (currentValue >= max) {
@@ -232,7 +232,7 @@ export function calculateNextValue(
       return currentValue + 1;
     }
   } else {
-    // Decrement: 空白 → max → max-1 → ... → min → 空白
+    // Decrement: empty → max → max-1 → ... → min → empty
     if (!isValidNum || currentValue === null) {
       return max;
     } else if (currentValue <= min) {

@@ -1,0 +1,41 @@
+[
+  {
+    "phase": "before",
+    "title": "imports updated XML constraints and uses an initial solution seed",
+    "capture": "2026-09-06T23-38-47-823Z-after",
+    "status": "failed",
+    "commit": "4cb6431c40a14db5cfcb07896c3d78baacad1960",
+    "branch": "feature/pinch-anchor-quality",
+    "video": "xml-before.webm",
+    "videoSHA256": "761878278af00fcb59c7d99e49b0fe89aa35d44c963c4ddfc9898a6c0e778cf5",
+    "durationSeconds": 32.68,
+    "sourceManifestSHA256": "062e774ada78c05e822cd320ac91be9a0d775230af9d06175aa23affd4c49d60",
+    "testSHA256": "1f131b731681cbec1a9eed029d089e8c7e3bf07ba4a8c51407e67a94d3c047d6"
+  },
+  {
+    "phase": "after",
+    "title": "imports updated XML constraints and uses an initial solution seed",
+    "capture": "2026-09-06T23-42-50-012Z-after",
+    "status": "passed",
+    "commit": "4cb6431c40a14db5cfcb07896c3d78baacad1960",
+    "branch": "feature/npgen-qa-determinism",
+    "video": "xml-after.webm",
+    "videoSHA256": "42dc6520edc8a43ae72140202bfad4dd53ff593d7e6fefda0863a193b9407635",
+    "durationSeconds": 2.92,
+    "sourceManifestSHA256": "68d3c18a3684d697c10e6c33de6cb6b05887c6cdf6a4ca2307f82680b95a2ad0",
+    "testSHA256": "800b1a5533445297602fca472c11905e30d2c6a1e49bf1f32aed5f12b655b8a0"
+  },
+  {
+    "phase": "after",
+    "title": "XML generation reports exhausted attempts and recovers with a new seed",
+    "capture": "2026-09-06T23-42-50-012Z-after",
+    "status": "passed",
+    "commit": "4cb6431c40a14db5cfcb07896c3d78baacad1960",
+    "branch": "feature/npgen-qa-determinism",
+    "video": "xml-recovery.webm",
+    "videoSHA256": "71c15d85418c43cdd1c2838ada3621dd90a0ee8fd14756d8f400b4d94ad16d85",
+    "durationSeconds": 4.84,
+    "sourceManifestSHA256": "68d3c18a3684d697c10e6c33de6cb6b05887c6cdf6a4ca2307f82680b95a2ad0",
+    "testSHA256": "800b1a5533445297602fca472c11905e30d2c6a1e49bf1f32aed5f12b655b8a0"
+  }
+]

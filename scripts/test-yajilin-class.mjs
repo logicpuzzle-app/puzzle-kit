@@ -1,5 +1,5 @@
 // Test the YajilinSolver class directly
-import { YajilinSolver, Direction } from '@logicpuzzle-app/solver-kit';
+import { YajilinSolver, Direction } from '../solver/index.js';
 
 // Test with the 10x10 puzzle from puzz.link
 // https://puzz.link/p?yajilin/10/10/b41e2121e21o41a41b41g41b41g30d41a41b40a40r31a31d30f

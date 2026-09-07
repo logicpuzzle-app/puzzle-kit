@@ -1,26 +1,10 @@
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
-import { createRequire } from 'module'
 import { resolve } from 'path'
-
-const require = createRequire(import.meta.url);
-const solverKitModuleId = '@logicpuzzle-app/solver-kit';
-const solverKitStub = resolve(__dirname, 'src/solver/solverKitStub.ts');
-const solverKitAlias = (() => {
-  try {
-    require.resolve(solverKitModuleId);
-    return [];
-  } catch {
-    return [{ find: solverKitModuleId, replacement: solverKitStub }];
-  }
-})();
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  resolve: {
-    alias: solverKitAlias,
-  },
   build: {
     rollupOptions: {
       input: {
@@ -37,7 +21,7 @@ export default defineConfig({
           }
           if (id.includes('/src/types/')) return 'types';
           if (id.includes('/src/constants/')) return 'types';
-          if (id.includes('/src/solver/')) return 'solver';
+          if (id.includes('/src/solver/') || id.includes('/solver/')) return 'solver';
           if (id.includes('/src/constraints/')) return 'constraints';
           if (id.includes('/src/components/dialogs/')) return 'dialogs';
           if (id.includes('/src/components/panels/')) return 'panels';
@@ -50,8 +34,16 @@ export default defineConfig({
     },
   },
   test: {
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text-summary', 'html', 'json-summary'],
+      reportsDirectory: './coverage',
+      include: ['src/{utils,store,hooks,npgen}/**/*.{ts,tsx}'],
+      exclude: ['**/*.{test,spec}.{ts,tsx}', '**/*.d.ts', '**/__tests__/**'],
+    },
   },
 })

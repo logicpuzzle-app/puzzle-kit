@@ -370,8 +370,8 @@ export const createCursorSlice: SliceCreator<CursorSlice> = (_set, get) => ({
           overlay: {
             showCellCursor: false,
             showCursorCellHighlight: false,
-            showLineCursor: true,
-            showSymbolCursor: false,
+            showLineCursor: false,
+            showSymbolCursor: true,
             showNumberCursor: false,
             showSelectionRect: false,
             showMergePreview: false,

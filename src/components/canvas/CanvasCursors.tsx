@@ -14,6 +14,13 @@
 
 import React from 'react';
 import type { Point } from '../../types';
+import { renderSymbol } from './symbols';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
+
+const CURSOR_COLOR = '#00A000';
+const CURSOR_FILL = 'rgba(0, 160, 0, 0.25)';
+const CURSOR_FILL_STRONG = 'rgba(0, 160, 0, 0.3)';
+const CURSOR_STROKE_STRONG = 'rgba(0, 160, 0, 0.95)';
 
 interface CanvasCursorsProps {
   canvas: {
@@ -21,6 +28,8 @@ interface CanvasCursorsProps {
     panX: number;
     panY: number;
   };
+  offsetX?: number;
+  offsetY?: number;
   // Hover cell
   hoverCellPolygon: string | null;
   hoverCellRect: { x: number; y: number; size: number } | null;
@@ -31,11 +40,21 @@ interface CanvasCursorsProps {
   lineStartPoint: Point | null;
   lineHoverPoint: Point | null;
   isLineTool: boolean;
-  lineColor: string;
   isStraightMode: boolean;
   // Symbol tool
   symbolHoverPoint: Point | null;
+  symbolHoverEdgeLine?: { x1: number; y1: number; x2: number; y2: number } | null;
   isSymbolTool: boolean;
+  symbolPreview?: {
+    x: number;
+    y: number;
+    size: number;
+    rotation?: number;
+    color: string;
+    symbolType: string;
+    directions?: boolean[];
+    directionAngles?: number[];
+  } | null;
   // Number tool cursor
   cellCursorPath: string | null;
   // Selection
@@ -53,8 +72,17 @@ interface CanvasCursorsProps {
   sculptHoverPolygons: { id: string; points: string }[] | null;
 }
 
+function withAlpha(hex: string, alpha: number): string {
+  const match = /^#([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(hex);
+  if (!match) return hex;
+  const [r, g, b] = match.slice(1).map(part => parseInt(part, 16));
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
   canvas,
+  offsetX = 0,
+  offsetY = 0,
   hoverCellPolygon,
   hoverCellRect,
   cursorCellPolygon,
@@ -62,10 +90,11 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
   lineStartPoint,
   lineHoverPoint,
   isLineTool,
-  lineColor,
   isStraightMode,
   symbolHoverPoint,
+  symbolHoverEdgeLine,
   isSymbolTool,
+  symbolPreview,
   cellCursorPath,
   isSelecting,
   selectionRect,
@@ -74,24 +103,30 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
   splitHoverVertexPos,
   sculptHoverPolygons,
 }) => {
+  const cursorColor = usePuzzleStore(state => state.toolSettings.cursorCellColor) ?? CURSOR_COLOR;
+  const cursorThickness = usePuzzleStore(state => state.toolSettings.cursorCellThickness) ?? 3;
+  const cursorFill = withAlpha(cursorColor, 0.25);
+  const cursorStroke = withAlpha(cursorColor, 0.95);
+  const transform = `translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom}) translate(${offsetX}, ${offsetY})`;
+
   return (
     <>
       {/* Cell cursor for number tools (Excel-like highlight) */}
       {cellCursorPath && (
-        <g data-cursor="true" transform={`translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom})`}>
-          <path d={cellCursorPath} fill="none" stroke="#2563eb" strokeWidth={3 / canvas.zoom} />
+        <g data-cursor="true" transform={transform}>
+          <path d={cellCursorPath} fill="none" stroke={cursorStroke} strokeWidth={cursorThickness / canvas.zoom} />
         </g>
       )}
 
       {/* Cursor cell (last tapped) - stronger highlight */}
-      <g data-cursor="true" transform={`translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom})`}>
+      <g data-cursor="true" transform={transform}>
         {/* Topology mode: polygon cursor */}
         {cursorCellPolygon && (
           <polygon
             points={cursorCellPolygon}
-            fill="rgba(255, 140, 0, 0.25)"
-            stroke="rgba(255, 140, 0, 0.95)"
-            strokeWidth={3 / canvas.zoom}
+            fill={cursorFill}
+            stroke={cursorStroke}
+            strokeWidth={cursorThickness / canvas.zoom}
             pointerEvents="none"
           />
         )}
@@ -102,16 +137,16 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
             y={cursorCellRect.y}
             width={cursorCellRect.size}
             height={cursorCellRect.size}
-            fill="rgba(255, 140, 0, 0.25)"
-            stroke="rgba(255, 140, 0, 0.95)"
-            strokeWidth={3 / canvas.zoom}
+            fill={cursorFill}
+            stroke={cursorStroke}
+            strokeWidth={cursorThickness / canvas.zoom}
             pointerEvents="none"
           />
         )}
       </g>
 
       {/* Hover cell cursor - must be in transformed space */}
-      <g data-cursor="true" transform={`translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom})`}>
+      <g data-cursor="true" transform={transform}>
         {/* Topology mode: polygon cursor */}
         {hoverCellPolygon && (
           <polygon
@@ -144,7 +179,7 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
             y1={lineStartPoint.y}
             x2={lineHoverPoint.x}
             y2={lineHoverPoint.y}
-            stroke={lineColor}
+            stroke={CURSOR_COLOR}
             strokeWidth={2 / canvas.zoom}
             strokeOpacity={isStraightMode ? 0.7 : 0.3}
             pointerEvents="none"
@@ -156,28 +191,55 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
             cx={lineHoverPoint.x}
             cy={lineHoverPoint.y}
             r={6 / canvas.zoom}
-            fill="rgba(0, 120, 215, 0.3)"
-            stroke="#0078d7"
+            fill={CURSOR_FILL_STRONG}
+            stroke={CURSOR_COLOR}
             strokeWidth={2 / canvas.zoom}
             pointerEvents="none"
           />
         )}
         {/* Symbol tool grid point cursor */}
-        {symbolHoverPoint && isSymbolTool && (
-          <circle
-            cx={symbolHoverPoint.x}
-            cy={symbolHoverPoint.y}
-            r={8 / canvas.zoom}
-            fill="rgba(76, 175, 80, 0.3)"
-            stroke="#4caf50"
-            strokeWidth={2 / canvas.zoom}
+        {symbolHoverEdgeLine && isSymbolTool ? (
+          <line
+            x1={symbolHoverEdgeLine.x1}
+            y1={symbolHoverEdgeLine.y1}
+            x2={symbolHoverEdgeLine.x2}
+            y2={symbolHoverEdgeLine.y2}
+            stroke={CURSOR_COLOR}
+            strokeWidth={3 / canvas.zoom}
+            strokeLinecap="round"
             pointerEvents="none"
           />
+        ) : (
+          symbolHoverPoint &&
+          isSymbolTool && (
+            <circle
+              cx={symbolHoverPoint.x}
+              cy={symbolHoverPoint.y}
+              r={8 / canvas.zoom}
+              fill={CURSOR_FILL_STRONG}
+              stroke={CURSOR_COLOR}
+              strokeWidth={2 / canvas.zoom}
+              pointerEvents="none"
+            />
+          )
+        )}
+        {symbolPreview && (
+          <g opacity={0.7} pointerEvents="none">
+            {renderSymbol(symbolPreview.symbolType, {
+              x: symbolPreview.x,
+              y: symbolPreview.y,
+              size: symbolPreview.size,
+              color: symbolPreview.color,
+              rotation: symbolPreview.rotation ?? 0,
+              directions: symbolPreview.directions,
+              directionAngles: symbolPreview.directionAngles,
+            })}
+          </g>
         )}
       </g>
 
       {/* Selection rectangle overlay - in transformed space */}
-      <g data-cursor="true" transform={`translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom})`}>
+      <g data-cursor="true" transform={transform}>
         {isSelecting && selectionRect && (
           <rect
             x={Math.min(selectionRect.startX, selectionRect.endX)}
@@ -194,7 +256,7 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
       </g>
 
       {/* Merge mode: highlight cells being merged */}
-      <g data-merge-preview="true" transform={`translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom})`}>
+      <g data-merge-preview="true" transform={transform}>
         {mergingCellsPolygons.map((cell, index) => (
           <polygon
             key={cell.cellId}
@@ -208,7 +270,7 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
       </g>
 
       {/* Split mode: show line between vertices and hover cursor */}
-      <g data-split-preview="true" transform={`translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom})`}>
+      <g data-split-preview="true" transform={transform}>
         {/* Hover vertex cursor when not dragging */}
         {!splitPreview && splitHoverVertexPos && (
           <circle
@@ -265,7 +327,7 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
 
       {/* Sculpt mode: 3-cell cluster highlight */}
       {sculptHoverPolygons && sculptHoverPolygons.length > 0 && (
-        <g data-sculpt-preview="true" transform={`translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom})`}>
+        <g data-sculpt-preview="true" transform={transform}>
           {sculptHoverPolygons.map(({ id, points }) => (
             <polygon
               key={id}

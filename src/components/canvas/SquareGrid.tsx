@@ -2,6 +2,22 @@ import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { BackgroundImageLayer } from './grid/BackgroundImageLayer';
 
+function isSudokuBoldLine(
+  index: number,
+  margin: number,
+  count: number,
+  blockSize: number,
+): boolean {
+  return (
+    Number.isInteger(blockSize) &&
+    blockSize > 0 &&
+    index >= margin &&
+    index <= margin + count &&
+    count % blockSize === 0 &&
+    (index - margin) % blockSize === 0
+  );
+}
+
 /**
  * SquareGrid - Renders a standard square grid
  */
@@ -14,6 +30,8 @@ export const SquareGrid: React.FC = () => {
     outerPadding,
     showGrid,
     gridStyle,
+    blockRows = 3,
+    blockCols = 3,
     marginTop = 0,
     marginBottom = 0,
     marginLeft = 0,
@@ -65,9 +83,7 @@ export const SquareGrid: React.FC = () => {
         const isInMainGrid = i >= marginTop && i <= marginTop + rows;
         const isBold =
           gridStyle === 'sudoku' &&
-          isInMainGrid &&
-          (i - marginTop) % 3 === 0 &&
-          rows % 3 === 0;
+          isSudokuBoldLine(i, marginTop, rows, blockRows);
         const opacity = isInMainGrid ? 1 : 0.3;
 
         lines.push(
@@ -90,9 +106,7 @@ export const SquareGrid: React.FC = () => {
         const isInMainGrid = j >= marginLeft && j <= marginLeft + cols;
         const isBold =
           gridStyle === 'sudoku' &&
-          isInMainGrid &&
-          (j - marginLeft) % 3 === 0 &&
-          cols % 3 === 0;
+          isSudokuBoldLine(j, marginLeft, cols, blockCols);
         const opacity = isInMainGrid ? 1 : 0.3;
 
         lines.push(
@@ -112,7 +126,7 @@ export const SquareGrid: React.FC = () => {
     }
 
     return lines;
-  }, [rows, cols, cellSize, outerPadding, showGrid, gridStyle, gridColor, marginTop, marginLeft, totalRows, totalCols]);
+  }, [rows, cols, cellSize, outerPadding, showGrid, gridStyle, blockRows, blockCols, gridColor, marginTop, marginLeft, totalRows, totalCols]);
 
   const outerFrame = useMemo(() => {
     if (frameStyle === 'none') return null;
@@ -323,6 +337,8 @@ export const SquareGridLines: React.FC = () => {
     outerPadding,
     showGrid,
     gridStyle,
+    blockRows = 3,
+    blockCols = 3,
     marginTop = 0,
     marginBottom = 0,
     marginLeft = 0,
@@ -372,9 +388,7 @@ export const SquareGridLines: React.FC = () => {
         const isInMainGrid = i >= marginTop && i <= marginTop + rows;
         const isBold =
           gridStyle === 'sudoku' &&
-          isInMainGrid &&
-          (i - marginTop) % 3 === 0 &&
-          rows % 3 === 0;
+          isSudokuBoldLine(i, marginTop, rows, blockRows);
         const opacity = isInMainGrid ? 1 : 0.3;
 
         lines.push(
@@ -397,9 +411,7 @@ export const SquareGridLines: React.FC = () => {
         const isInMainGrid = j >= marginLeft && j <= marginLeft + cols;
         const isBold =
           gridStyle === 'sudoku' &&
-          isInMainGrid &&
-          (j - marginLeft) % 3 === 0 &&
-          cols % 3 === 0;
+          isSudokuBoldLine(j, marginLeft, cols, blockCols);
         const opacity = isInMainGrid ? 1 : 0.3;
 
         lines.push(
@@ -419,7 +431,7 @@ export const SquareGridLines: React.FC = () => {
     }
 
     return lines;
-  }, [rows, cols, cellSize, outerPadding, showGrid, gridStyle, gridColor, marginTop, marginLeft, totalRows, totalCols]);
+  }, [rows, cols, cellSize, outerPadding, showGrid, gridStyle, blockRows, blockCols, gridColor, marginTop, marginLeft, totalRows, totalCols]);
 
   const outerFrame = useMemo(() => {
     if (frameStyle === 'none') return null;

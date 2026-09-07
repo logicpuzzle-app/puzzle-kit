@@ -1,0 +1,30 @@
+{
+  "environment": "Standalone checkout with only PR changes, npm ci from committed package-lock.json",
+  "node": "25.2.1",
+  "vitest": "4.0.16",
+  "playwright": "1.62.0",
+  "unit": {
+    "filesPassed": 55,
+    "testsPassed": 945,
+    "failed": 0
+  },
+  "e2e": {
+    "passed": 27,
+    "failed": 5,
+    "skipped": 4,
+    "flaky": 0
+  },
+  "typecheck": {
+    "diagnostics": 32,
+    "knownFailure": true
+  },
+  "e2eTypecheck": "passed",
+  "scopedHarnessLint": "passed",
+  "excludedLocalChanges": [
+    "yajilin-kit workspace dependency",
+    "tsx dependency",
+    "src/solver/adapters/index.ts",
+    "src/solver/adapters/yajilinKit.ts",
+    "src/solver/adapters/yajilinKit.smoke.ts"
+  ]
+}

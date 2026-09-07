@@ -1,0 +1,194 @@
+[
+  {
+    "flow": "touch-pan-burst",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T03-11-41-390Z-before",
+      "title": "touch pan accumulates a burst of moves before the next render",
+      "status": "failed",
+      "commit": "89644402c7923545429adf4e44c4ed6b06b4e31b",
+      "video": "touch-pan-burst-before.webm",
+      "videoSHA256": "827e62544c99c1ccd9387779665022b7149e25441393838abc82240f764002b7",
+      "sourceManifestSHA256": "ef67e534400997f75afa79307ba96e4034429eb4414b8a35d6eea0001c0bcccd"
+    },
+    "after": {
+      "capture": "2026-09-06T03-11-46-798Z-after",
+      "title": "touch pan accumulates a burst of moves before the next render",
+      "status": "passed",
+      "commit": "89644402c7923545429adf4e44c4ed6b06b4e31b",
+      "video": "touch-pan-burst-after.webm",
+      "videoSHA256": "c43402fd2867017c7d2045e6443bd7e762ea905250056445198c48f5d5f1e10c",
+      "sourceManifestSHA256": "31e3cc1930cbf7552f171c20dcdc38d7f094c5281b7fc32826be907f887de66e"
+    },
+    "title": "touch pan accumulates a burst of moves before the next render"
+  },
+  {
+    "flow": "touch-pan",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T02-36-24-161Z-before",
+      "title": "touch pan mode moves the viewport without drawing",
+      "status": "failed",
+      "commit": "712ccc3bbfcd9ab3135e123027c401a8d2ace562",
+      "video": "touch-pan-before.webm",
+      "videoSHA256": "7046e5c5be62bf177bed99149f2374327fa22e28bae2873ff0623e14524b6e73",
+      "sourceManifestSHA256": "501660d69c56acb75174aaf62832ba94d8b1322ccc15f6f41291cbef7f39abfc"
+    },
+    "after": {
+      "capture": "2026-09-06T02-41-56-817Z-after",
+      "title": "touch pan mode moves the viewport without drawing",
+      "status": "passed",
+      "commit": "712ccc3bbfcd9ab3135e123027c401a8d2ace562",
+      "video": "touch-pan-after.webm",
+      "videoSHA256": "4f5cdaf10d5e70439eb6f825f164d81c0b300829050494e37aac170ecfbfd3b5",
+      "sourceManifestSHA256": "9f771b6f38707f6c1e8bbe4a82113ec7a2870ed83ac812626316b78d5e86aa64"
+    },
+    "title": "touch pan mode moves the viewport without drawing"
+  },
+  {
+    "flow": "touch-cancel",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T02-36-24-161Z-before",
+      "title": "cancelled touch discards a pending free segment and allows the next stroke",
+      "status": "failed",
+      "commit": "712ccc3bbfcd9ab3135e123027c401a8d2ace562",
+      "video": "touch-cancel-before.webm",
+      "videoSHA256": "9734cd77fd62403b1cc715b88bf8824f03fa4cadf0c69d7bdbb52a6af6adad95",
+      "sourceManifestSHA256": "501660d69c56acb75174aaf62832ba94d8b1322ccc15f6f41291cbef7f39abfc"
+    },
+    "after": {
+      "capture": "2026-09-06T02-41-56-817Z-after",
+      "title": "cancelled touch discards a pending free segment and allows the next stroke",
+      "status": "passed",
+      "commit": "712ccc3bbfcd9ab3135e123027c401a8d2ace562",
+      "video": "touch-cancel-after.webm",
+      "videoSHA256": "6efc000a90d429fe0f22b3d9a85934a6ab6ae11ef4ae171b62978d8254508f69",
+      "sourceManifestSHA256": "9f771b6f38707f6c1e8bbe4a82113ec7a2870ed83ac812626316b78d5e86aa64"
+    },
+    "title": "cancelled touch discards a pending free segment and allows the next stroke"
+  },
+  {
+    "flow": "touch-square",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T02-36-24-161Z-before",
+      "title": "touch tap excludes and restores a square cell",
+      "status": "failed",
+      "commit": "712ccc3bbfcd9ab3135e123027c401a8d2ace562",
+      "video": "touch-square-before.webm",
+      "videoSHA256": "6023201bf4ccf8421a3b551697c1173cf1c49c1eb9dc56916773998c782d7eed",
+      "sourceManifestSHA256": "501660d69c56acb75174aaf62832ba94d8b1322ccc15f6f41291cbef7f39abfc"
+    },
+    "after": {
+      "capture": "2026-09-06T02-41-56-817Z-after",
+      "title": "touch tap excludes and restores a square cell",
+      "status": "passed",
+      "commit": "712ccc3bbfcd9ab3135e123027c401a8d2ace562",
+      "video": "touch-square-after.webm",
+      "videoSHA256": "11ba40a37f8ffcf39c923348f3efc8f169326d1ae4315833d8175c1c3b595a85",
+      "sourceManifestSHA256": "9f771b6f38707f6c1e8bbe4a82113ec7a2870ed83ac812626316b78d5e86aa64"
+    },
+    "title": "touch tap excludes and restores a square cell"
+  },
+  {
+    "flow": "touch-hex",
+    "project": "mobile-chrome",
+    "before": {
+      "capture": "2026-09-06T02-36-24-161Z-before",
+      "title": "touch tap excludes and restores a hex cell",
+      "status": "failed",
+      "commit": "712ccc3bbfcd9ab3135e123027c401a8d2ace562",
+      "video": "touch-hex-before.webm",
+      "videoSHA256": "a648ef7df9a9aa2f064c9acd106932ba22be166b2156b7346241ff5ef87d8a9b",
+      "sourceManifestSHA256": "501660d69c56acb75174aaf62832ba94d8b1322ccc15f6f41291cbef7f39abfc"
+    },
+    "after": {
+      "capture": "2026-09-06T02-41-56-817Z-after",
+      "title": "touch tap excludes and restores a hex cell",
+      "status": "passed",
+      "commit": "712ccc3bbfcd9ab3135e123027c401a8d2ace562",
+      "video": "touch-hex-after.webm",
+      "videoSHA256": "3f867920854f2330e1bc15c2c8b04dddcc29c452272f5a9c04040cc41dfcf7bf",
+      "sourceManifestSHA256": "9f771b6f38707f6c1e8bbe4a82113ec7a2870ed83ac812626316b78d5e86aa64"
+    },
+    "title": "touch tap excludes and restores a hex cell"
+  },
+  {
+    "flow": "webkit-npgen",
+    "project": "webkit",
+    "before": {
+      "capture": "2026-09-06T02-38-34-550Z-before",
+      "title": "edits problems, hint patterns, and fixed numbers on the GUI board",
+      "status": "failed",
+      "commit": "712ccc3bbfcd9ab3135e123027c401a8d2ace562",
+      "video": "webkit-npgen-before.webm",
+      "videoSHA256": "69441355f3beba71566c7f3a9dcd196cff2755fb234ccd74e7777b25401291a3",
+      "sourceManifestSHA256": "4479a95df9f4b9933500955b31abe26fb2e0f3094cf546c8098e6bb612af76d4"
+    },
+    "after": {
+      "capture": "2026-09-06T02-43-28-785Z-after",
+      "title": "edits problems, hint patterns, and fixed numbers on the GUI board",
+      "status": "passed",
+      "commit": "712ccc3bbfcd9ab3135e123027c401a8d2ace562",
+      "video": "webkit-npgen-after.webm",
+      "videoSHA256": "f39211517c7e9c7fb623bcee33fcf71d4413f21481193e9e700e038b7267b295",
+      "sourceManifestSHA256": "bb534d88447d1f75851c8fafc019af50987a60e3c593bea4819d0da99c7e47e1"
+    },
+    "title": "edits problems, hint patterns, and fixed numbers on the GUI board"
+  },
+  {
+    "flow": "mobile-webkit-npgen",
+    "project": "mobile-webkit",
+    "before": {
+      "capture": "2026-09-06T02-38-34-550Z-before",
+      "title": "edits problems, hint patterns, and fixed numbers on the GUI board",
+      "status": "failed",
+      "commit": "712ccc3bbfcd9ab3135e123027c401a8d2ace562",
+      "video": "mobile-webkit-npgen-before.webm",
+      "videoSHA256": "7ef79a30a208290b1e8c6f6b794750099c8be1ba43f4f5273056800076c1f327",
+      "sourceManifestSHA256": "4479a95df9f4b9933500955b31abe26fb2e0f3094cf546c8098e6bb612af76d4"
+    },
+    "after": {
+      "capture": "2026-09-06T02-43-28-785Z-after",
+      "title": "edits problems, hint patterns, and fixed numbers on the GUI board",
+      "status": "passed",
+      "commit": "712ccc3bbfcd9ab3135e123027c401a8d2ace562",
+      "video": "mobile-webkit-npgen-after.webm",
+      "videoSHA256": "0d19b6e2099165d88806146a4397d15b92c1b1f78dbf623ffa08064f3b31f882",
+      "sourceManifestSHA256": "bb534d88447d1f75851c8fafc019af50987a60e3c593bea4819d0da99c7e47e1"
+    },
+    "title": "edits problems, hint patterns, and fixed numbers on the GUI board"
+  },
+  {
+    "flow": "linux-undo-input",
+    "title": "Linux touch driver: stop the finger before release",
+    "project": "mobile-chrome / Linux arm64",
+    "image": "mcr.microsoft.com/playwright:v1.62.0-noble",
+    "imageDigest": "sha256:baed2032d533817f3dbe6425de795788430ba345e819a1201337009ba17c9d07",
+    "applicationCommit": "b2b7209",
+    "note": "Same E2E, Pixel 7 settings and application source. Stationary contact before release is 0ms before, 150ms after.",
+    "before": {
+      "video": "linux-undo-input-before.webm",
+      "videoSHA256": "873f8c3acba4cbdc9b01460d0dbd35ec614d7c4db9bcfe941c2f6d2b82bed22f",
+      "status": "Undo missed (pointer events, no click)",
+      "sourceState": {
+        "head": "b2b7209eb43030dad20e374af498df010fe47475",
+        "testSHA256": "e63d78db6106ce82b4742c44f0268fb41ec817864b86878b2474cdbf9918d845",
+        "stationaryContactMs": 0,
+        "changedScope": "test driver only"
+      }
+    },
+    "after": {
+      "video": "linux-undo-input-after.webm",
+      "videoSHA256": "61f0fa6e00f955d53481da2f55601414924cd4f99a4bb3e44185b678244f0160",
+      "status": "Undo/Redo passed",
+      "sourceState": {
+        "head": "b2b7209eb43030dad20e374af498df010fe47475",
+        "testSHA256": "08040761dcd761ab1951bd726fa8b29508c1c4e1b8b255692170982a6397eeab",
+        "stationaryContactMs": 150,
+        "changedScope": "test driver only"
+      }
+    }
+  }
+]

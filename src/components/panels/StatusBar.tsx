@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
 import { usePuzzleStore, usePuzzleStoreApi } from '../../store/puzzleStoreContext';
 
-export const StatusBar: React.FC = () => {
+export const StatusBar = React.memo(function StatusBar() {
   const { t } = useTranslation();
-  const { grid, canvas } = usePuzzleStore();
+  const { rows, cols, zoom } = usePuzzleStore(useShallow(state => ({
+    rows: state.grid.rows, cols: state.grid.cols, zoom: state.canvas.zoom,
+  })));
   const store = usePuzzleStoreApi();
 
   // Subscribe to history changes for reactive updates
@@ -36,7 +39,7 @@ export const StatusBar: React.FC = () => {
 
       {/* Grid info */}
       <span>
-        {grid.rows} × {grid.cols}
+        {rows} × {cols}
       </span>
 
       {/* Right side */}
@@ -48,9 +51,9 @@ export const StatusBar: React.FC = () => {
 
         {/* Zoom */}
         <span>
-          {t('status.zoom')}: {Math.round(canvas.zoom * 100)}%
+          {t('status.zoom')}: {Math.round(zoom * 100)}%
         </span>
       </div>
     </div>
   );
-};
+});

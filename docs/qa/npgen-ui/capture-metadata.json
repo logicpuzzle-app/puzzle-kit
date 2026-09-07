@@ -1,0 +1,34 @@
+{
+  "scope": "npgen-ui",
+  "status": "captured",
+  "baseUrl": "http://127.0.0.1:4174/master",
+  "fallbackUrl": "http://puzzle-kit-qa.local/master",
+  "capturedAt": "2026-07-27T10:29:30Z",
+  "before": {
+    "branch": "detached",
+    "commit": "0151cc1",
+    "screenshotsCaptured": 0
+  },
+  "after": {
+    "branch": "puzzle-kit-refactor",
+    "commit": "d3873c2a8c2ae0a9fd1f58f1c4cfe950154c8c9a",
+    "screenshotsCaptured": 0
+  },
+  "viewports": {
+    "desktop": "Desktop Chrome",
+    "mobile": "Pixel 7"
+  },
+  "firebase": "not-applicable",
+  "expectedScreenshots": [
+    "01-before-base-desktop-npgen-dialog.png",
+    "02-before-base-mobile-npgen-dialog.png",
+    "03-after-branch-desktop-npgen-dialog.png",
+    "04-after-branch-mobile-npgen-dialog.png",
+    "05-after-branch-desktop-npgen-result.png",
+    "06-after-branch-mobile-npgen-result.png",
+    "07-after-branch-desktop-sudoku-thick-lines.png",
+    "08-after-branch-desktop-npgen-result-6x6.png"
+  ],
+  "captureNote": "初回は macOS Mach port 権限エラーで失敗。権限昇格で再実行し全点取得。",
+  "afterCommit": "9e12e189ecfbd8a116665ce66e7f08df0b89c379"
+}

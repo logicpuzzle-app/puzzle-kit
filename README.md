@@ -18,8 +18,8 @@ A web-based puzzle editor for creating and solving logic puzzles. Built with Rea
 ## Getting Started
 
 ```bash
-# Install dependencies
-npm install
+# Install locked dependencies
+npm ci
 
 # Copy environment file and configure Firebase (optional)
 cp .env.example .env.local
@@ -34,23 +34,41 @@ npm run build
 npm run build:lib
 ```
 
-## Optional: solver-kit
+## Development and QA
 
-Solver features that rely on `@logicpuzzle-app/solver-kit` are optional. If the package
-is not installed, the app still builds and runs, but solver-kit backends are disabled.
+See [Testing and development harness](docs/testing.md) for unit/E2E commands,
+local scenario debugging, and before/after video capture. The latest verification is in [touch and WebKit QA results](docs/qa/2026-09-06-touch-webkit.md),
+with [before/after recordings](docs/qa/evidence-touch-webkit-20260906/README.md).
 
-If you have access to GitHub Packages:
+## Solver Backend
+
+Solver features are bundled in this repo under `puzzle-kit/solver`, so no extra install
+steps are required for solver functionality.
+
+## NPGenerator WebAssembly
+
+Choose **New → NPGenerator…** to open the Number Place generator. The dialog
+exposes solve/evaluate, pattern generation, symmetric random generation,
+benchmarking, all solver-method and uniqueness switches, difficulty bounds,
+forbidden numbers, sizes 2–25, rectangular/random/custom blocks, diagonal
+constraints, deterministic seeds, and NPGenerator XML import/export.
+
+The checked-in Wasm artifact is rebuilt from the verified Rust port with:
 
 ```bash
-npm config set @logicpuzzle-app:registry https://npm.pkg.github.com
-npm config set //npm.pkg.github.com/:_authToken <YOUR_TOKEN>
-npm install @logicpuzzle-app/solver-kit
+npm run build:npgen-wasm
 ```
 
-If you have a local checkout:
+Generation runs in a Web Worker so the editor UI remains responsive.
+
+### Browser test
+
+Install the Playwright-managed Chromium binary once, then run the NPGenerator
+end-to-end test:
 
 ```bash
-npm install ../solver-kit
+npx playwright install chromium webkit
+npm run test:e2e
 ```
 
 ## Library Usage
@@ -91,4 +109,7 @@ This project is inspired by these wonderful tools:
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+The pre-existing Puzzle Kit source is MIT-licensed; see [LICENSE](LICENSE).
+The bundled NPGenerator Wasm component is GPL-3.0-or-later. See
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) before distributing the
+combined application.

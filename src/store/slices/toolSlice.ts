@@ -3,6 +3,7 @@
  */
 
 import type { ToolSlice, SliceCreator } from './types';
+import type { LineGridPoint } from '../../types';
 import { DEFAULT_TOOL_SETTINGS } from './types';
 import { isLineToolCategory } from '../../utils/lineRender';
 
@@ -43,6 +44,9 @@ export const createToolSlice: SliceCreator<ToolSlice> = (set, get) => ({
                 ? 'icon'
                 : state.toolSettings.symbolSubMode
           : state.toolSettings.symbolSubMode;
+      const nextSymbolGridPoints: LineGridPoint[] = tool.startsWith('symbol-arrow')
+        ? ['cell']
+        : state.toolSettings.symbolGridPoints;
 
       // Save tool per-layer for normal mode (problem/answer), so layer switches restore correctly.
       const activeLayer = get().activeLayer;
@@ -57,6 +61,7 @@ export const createToolSlice: SliceCreator<ToolSlice> = (set, get) => ({
           ...state.toolSettings,
           currentTool: tool,
           currentCategory: category,
+          ...(nextSymbolGridPoints !== state.toolSettings.symbolGridPoints ? { symbolGridPoints: nextSymbolGridPoints } : {}),
           ...(nextSymbolSubMode !== state.toolSettings.symbolSubMode ? { symbolSubMode: nextSymbolSubMode } : {}),
         },
         numberSelection: newNumberSelection,
@@ -93,7 +98,7 @@ export const createToolSlice: SliceCreator<ToolSlice> = (set, get) => ({
     })),
 
   // UI panels
-  isPropertiesPanelOpen: true,
+  isPropertiesPanelOpen: typeof window === 'undefined' || window.innerWidth >= 768,
   setPropertiesPanelOpen: (open) => set({ isPropertiesPanelOpen: open }),
   togglePropertiesPanel: () => set((state) => ({ isPropertiesPanelOpen: !state.isPropertiesPanelOpen })),
 });

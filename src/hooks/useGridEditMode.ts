@@ -159,7 +159,14 @@ export function useGridEditMode({ topology }: UseGridEditModeOptions) {
     [findNearestVertexAtPoint]
   );
 
+  const cancelGridEdit = useCallback(() => {
+    setMergingCells([]);
+    setSplitStartVertex(null);
+    setSplitHoverVertex(null);
+  }, []);
+
   return {
+    cancelGridEdit,
     // Merge mode
     mergingCells,
     handleMergeMode,

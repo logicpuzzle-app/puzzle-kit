@@ -246,15 +246,17 @@ export function screenToSvg(
   zoom: number,
   panX: number,
   panY: number,
-  svgElement: SVGSVGElement | null
+  svgElement: SVGSVGElement | null,
+  offsetX: number = 0,
+  offsetY: number = 0
 ): Point {
   if (!svgElement) {
     return { x: screenX, y: screenY };
   }
 
   const rect = svgElement.getBoundingClientRect();
-  const x = (screenX - rect.left - panX) / zoom;
-  const y = (screenY - rect.top - panY) / zoom;
+  const x = (screenX - rect.left - panX) / zoom - offsetX;
+  const y = (screenY - rect.top - panY) / zoom - offsetY;
 
   return { x, y };
 }

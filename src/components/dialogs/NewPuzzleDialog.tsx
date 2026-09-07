@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { constraintCatalog } from '../../constraints';
 import type { GridType, IsometricFace } from '../../types';
+import { NPGeneratorDialog } from './NPGeneratorDialog';
 
 interface NewPuzzleDialogProps {
   isOpen: boolean;
@@ -38,6 +39,7 @@ export const NewPuzzleDialog: React.FC<NewPuzzleDialogProps> = ({
   const [isometricFaces, setIsometricFaces] = useState<IsometricFace[]>(['top', 'left', 'right']);
   // Preset schema selection (null = no constraint)
   const [selectedSchemaId, setSelectedSchemaId] = useState<string | null>(null);
+  const [isNPGeneratorOpen, setIsNPGeneratorOpen] = useState(false);
 
   // Get available schemas for current grid type
   const availableSchemas = useMemo(() => {
@@ -253,6 +255,13 @@ export const NewPuzzleDialog: React.FC<NewPuzzleDialogProps> = ({
 
         {/* Action buttons */}
         <div className="flex gap-2 justify-end border-t border-office-border pt-3">
+          <button
+            type="button"
+            className="btn-office mr-auto"
+            onClick={() => setIsNPGeneratorOpen(true)}
+          >
+            NPGenerator…
+          </button>
           <button type="button" className="btn-office" onClick={onClose}>
             {t('action.cancel')}
           </button>
@@ -261,6 +270,13 @@ export const NewPuzzleDialog: React.FC<NewPuzzleDialogProps> = ({
           </button>
         </div>
       </div>
+      <NPGeneratorDialog
+        isOpen={isNPGeneratorOpen}
+        onClose={() => {
+          setIsNPGeneratorOpen(false);
+          onClose();
+        }}
+      />
     </div>
   );
 };

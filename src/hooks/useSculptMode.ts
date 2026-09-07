@@ -31,16 +31,11 @@ export function useSculptMode({ grid, topology }: UseSculptModeOptions) {
 
   const candidates = useMemo(() => {
     if (!topology || grid.gridType !== 'iso') {
-      console.log('[useSculptMode] candidates: empty (no topology or not iso)', { hasTopology: !!topology, gridType: grid.gridType });
       return [];
     }
     const result: { vertex: TopologyVertex; cellIds: string[] }[] = [];
-    let totalVertices = 0;
-    let verticesWith3Cells = 0;
     topology.vertices.forEach((v) => {
-      totalVertices++;
       if (v.adjacentCells.length === 3) {
-        verticesWith3Cells++;
         const cells = v.adjacentCells
           .map((id) => topology.cells.get(id))
           .filter((c): c is TopologyCell => !!c);
@@ -65,7 +60,6 @@ export function useSculptMode({ grid, topology }: UseSculptModeOptions) {
         }
       }
     });
-    console.log('[useSculptMode] candidates:', { totalVertices, verticesWith3Cells, candidateCount: result.length });
     return result;
   }, [topology, grid.gridType]);
 

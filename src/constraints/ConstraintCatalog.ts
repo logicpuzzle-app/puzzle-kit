@@ -20,6 +20,8 @@ import {
   simpleloopSchema,
   simplegakoSchema,
   nanroSchema,
+  paintSchema,
+  sudokuSchema,
 } from './schemas';
 
 /**
@@ -46,6 +48,8 @@ class ConstraintCatalogImpl implements IConstraintCatalog {
     this.registerSchema(simpleloopSchema);
     this.registerSchema(simplegakoSchema);
     this.registerSchema(nanroSchema);
+    this.registerSchema(paintSchema);
+    this.registerSchema(sudokuSchema);
   }
 
   /**

@@ -1,0 +1,40 @@
+name: QA
+on:
+  pull_request:
+  push:
+    branches: [develop, puzzle-kit-refactor]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: qa-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run qa:doctor
+      - run: npm run qa:check
+      - name: Production build
+        id: build
+        if: ${{ !cancelled() }}
+        run: npm run build
+      - name: Production Chromium smoke
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: npm run qa:production
+      - name: Preserve QA recordings and logs
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/check/
+          retention-days: 30
+          if-no-files-found: warn

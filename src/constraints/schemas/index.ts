@@ -26,3 +26,4 @@ export { tapaSchema } from './tapa';
 export { nonogramSchema } from './nonogram';
 export { simplegakoSchema } from './simplegako';
 export { nanroSchema } from './nanro';
+export { paintSchema } from './paint';

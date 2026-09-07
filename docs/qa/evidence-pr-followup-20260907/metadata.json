@@ -1,0 +1,427 @@
+[
+  {
+    "phase": "before",
+    "project": "chromium",
+    "video": "directional-before-chromium.webm",
+    "sha256": "9fc1f330d69c7f0bfa4c577d5c6dcb41c7529e7f0d3c0fd7dc38bdc0c196cc7b",
+    "source": {
+      "phase": "before",
+      "createdAt": "2026-09-07T11:42:19.789Z",
+      "commit": "88d023d8eeaef7af30b87c2ded7a916cdc9c0287",
+      "branch": "feature/pr-review-followup",
+      "status": "?? e2e/number-history.spec.ts\n?? src/test/directionalHistory.test.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/number-history.spec.ts",
+        "--project=chromium"
+      ],
+      "exitCode": 1
+    },
+    "capture": "artifacts/qa/2026-09-07T11-42-19-706Z-before"
+  },
+  {
+    "phase": "after",
+    "project": "mobile-chrome",
+    "video": "directional-after-mobile-chrome.webm",
+    "sha256": "f663fea7dd8d4671d490189063e9897c404ab540a4b216903c1e4d5847e940e6",
+    "source": {
+      "phase": "after",
+      "createdAt": "2026-09-07T11:43:10.464Z",
+      "commit": "88d023d8eeaef7af30b87c2ded7a916cdc9c0287",
+      "branch": "feature/pr-review-followup",
+      "status": "M src/store/slices/elementsSlice.ts\n?? e2e/number-history.spec.ts\n?? src/test/directionalHistory.test.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/number-history.spec.ts",
+        "--project=chromium",
+        "--project=mobile-chrome"
+      ],
+      "exitCode": 0
+    },
+    "capture": "artifacts/qa/2026-09-07T11-43-10-396Z-after"
+  },
+  {
+    "phase": "after",
+    "project": "chromium",
+    "video": "directional-after-chromium.webm",
+    "sha256": "bf923015885c3ed16c2b3423c51939aca0bff801e961c2518e8f8433d5de0620",
+    "source": {
+      "phase": "after",
+      "createdAt": "2026-09-07T11:43:10.464Z",
+      "commit": "88d023d8eeaef7af30b87c2ded7a916cdc9c0287",
+      "branch": "feature/pr-review-followup",
+      "status": "M src/store/slices/elementsSlice.ts\n?? e2e/number-history.spec.ts\n?? src/test/directionalHistory.test.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/number-history.spec.ts",
+        "--project=chromium",
+        "--project=mobile-chrome"
+      ],
+      "exitCode": 0
+    },
+    "capture": "artifacts/qa/2026-09-07T11-43-10-396Z-after"
+  },
+  {
+    "phase": "before",
+    "project": "chromium",
+    "title": "normal marker keys support replacement, deletion and Undo/Redo",
+    "status": "failed",
+    "video": "marker-normal-before-chromium.webm",
+    "sha256": "fb31d28c52fae75d37932725651876770368e91b5a55f13e203357638dfadf29",
+    "source": {
+      "phase": "before",
+      "createdAt": "2026-09-07T11:44:24.992Z",
+      "commit": "55e928772f451a7ab0d20e7dd508dbda7ed532c3",
+      "branch": "feature/pr-review-followup",
+      "status": "M e2e/number-history.spec.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/number-history.spec.ts",
+        "--grep",
+        "marker keys",
+        "--project=chromium"
+      ],
+      "exitCode": 1
+    },
+    "capture": "artifacts/qa/2026-09-07T11-44-24-896Z-before",
+    "sourceManifestSHA256": "350807f3bcec385acfacd4038a8fb4ec8123dfad8ff1ffabe72b3ed2b24f6704"
+  },
+  {
+    "phase": "before",
+    "project": "chromium",
+    "title": "directional marker keys support replacement, deletion and Undo/Redo",
+    "status": "failed",
+    "video": "marker-directional-before-chromium.webm",
+    "sha256": "c59a2a5813be202e608f362b6ba664f11f575809659a0b230ea3202380404140",
+    "source": {
+      "phase": "before",
+      "createdAt": "2026-09-07T11:44:24.992Z",
+      "commit": "55e928772f451a7ab0d20e7dd508dbda7ed532c3",
+      "branch": "feature/pr-review-followup",
+      "status": "M e2e/number-history.spec.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/number-history.spec.ts",
+        "--grep",
+        "marker keys",
+        "--project=chromium"
+      ],
+      "exitCode": 1
+    },
+    "capture": "artifacts/qa/2026-09-07T11-44-24-896Z-before",
+    "sourceManifestSHA256": "350807f3bcec385acfacd4038a8fb4ec8123dfad8ff1ffabe72b3ed2b24f6704"
+  },
+  {
+    "phase": "after",
+    "project": "chromium",
+    "title": "normal marker keys support replacement, deletion and Undo/Redo",
+    "status": "passed",
+    "video": "marker-normal-after-chromium.webm",
+    "sha256": "74e09f816fa4c73bb2019dcb4aa58570c14c022a15c9a91fbe66a95165930155",
+    "source": {
+      "phase": "after",
+      "createdAt": "2026-09-07T11:48:06.344Z",
+      "commit": "55e928772f451a7ab0d20e7dd508dbda7ed532c3",
+      "branch": "feature/pr-review-followup",
+      "status": "M e2e/number-history.spec.ts\n M src/hooks/keyboardUtils.ts\n M src/hooks/useNumberKeyboard.ts\n?? e2e/cursor-style.spec.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/number-history.spec.ts",
+        "--project=chromium",
+        "--project=mobile-chrome"
+      ],
+      "exitCode": 0
+    },
+    "capture": "artifacts/qa/2026-09-07T11-48-06-281Z-after",
+    "sourceManifestSHA256": "a725b9a107fa9707f3e946afbdc3a2e01576bb20c08fac48082e0d3cb91a3d9a"
+  },
+  {
+    "phase": "after",
+    "project": "chromium",
+    "title": "directional marker keys support replacement, deletion and Undo/Redo",
+    "status": "passed",
+    "video": "marker-directional-after-chromium.webm",
+    "sha256": "8edd15d3c6c8c4a4df7442ab0c316c24e5c744a8617ec749ed96f5573f4c48a2",
+    "source": {
+      "phase": "after",
+      "createdAt": "2026-09-07T11:48:06.344Z",
+      "commit": "55e928772f451a7ab0d20e7dd508dbda7ed532c3",
+      "branch": "feature/pr-review-followup",
+      "status": "M e2e/number-history.spec.ts\n M src/hooks/keyboardUtils.ts\n M src/hooks/useNumberKeyboard.ts\n?? e2e/cursor-style.spec.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/number-history.spec.ts",
+        "--project=chromium",
+        "--project=mobile-chrome"
+      ],
+      "exitCode": 0
+    },
+    "capture": "artifacts/qa/2026-09-07T11-48-06-281Z-after",
+    "sourceManifestSHA256": "a725b9a107fa9707f3e946afbdc3a2e01576bb20c08fac48082e0d3cb91a3d9a"
+  },
+  {
+    "phase": "after",
+    "project": "mobile-chrome",
+    "title": "normal marker keys support replacement, deletion and Undo/Redo",
+    "status": "passed",
+    "video": "marker-normal-after-mobile-chrome.webm",
+    "sha256": "2eb2f9f873a6b7b21432ae550b7a7eb33951b55abd50517fcfc47a141dfcb0cf",
+    "source": {
+      "phase": "after",
+      "createdAt": "2026-09-07T11:48:06.344Z",
+      "commit": "55e928772f451a7ab0d20e7dd508dbda7ed532c3",
+      "branch": "feature/pr-review-followup",
+      "status": "M e2e/number-history.spec.ts\n M src/hooks/keyboardUtils.ts\n M src/hooks/useNumberKeyboard.ts\n?? e2e/cursor-style.spec.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/number-history.spec.ts",
+        "--project=chromium",
+        "--project=mobile-chrome"
+      ],
+      "exitCode": 0
+    },
+    "capture": "artifacts/qa/2026-09-07T11-48-06-281Z-after",
+    "sourceManifestSHA256": "a725b9a107fa9707f3e946afbdc3a2e01576bb20c08fac48082e0d3cb91a3d9a"
+  },
+  {
+    "phase": "after",
+    "project": "mobile-chrome",
+    "title": "directional marker keys support replacement, deletion and Undo/Redo",
+    "status": "passed",
+    "video": "marker-directional-after-mobile-chrome.webm",
+    "sha256": "2b22458ed107ac37f535242671afd804f1fe02416a170fbb4cb6dc21cfba2108",
+    "source": {
+      "phase": "after",
+      "createdAt": "2026-09-07T11:48:06.344Z",
+      "commit": "55e928772f451a7ab0d20e7dd508dbda7ed532c3",
+      "branch": "feature/pr-review-followup",
+      "status": "M e2e/number-history.spec.ts\n M src/hooks/keyboardUtils.ts\n M src/hooks/useNumberKeyboard.ts\n?? e2e/cursor-style.spec.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/number-history.spec.ts",
+        "--project=chromium",
+        "--project=mobile-chrome"
+      ],
+      "exitCode": 0
+    },
+    "capture": "artifacts/qa/2026-09-07T11-48-06-281Z-after",
+    "sourceManifestSHA256": "a725b9a107fa9707f3e946afbdc3a2e01576bb20c08fac48082e0d3cb91a3d9a"
+  },
+  {
+    "phase": "before",
+    "project": "chromium",
+    "title": "Surface selection color and width survive reload",
+    "status": "failed",
+    "video": "cursor-surface-before-chromium.webm",
+    "sha256": "7b97bf433c26aafc15706d27b2bb26df016cb2017fb38d3f130e5ae73737b5b4",
+    "source": {
+      "phase": "before",
+      "createdAt": "2026-09-07T11:48:12.209Z",
+      "commit": "55e928772f451a7ab0d20e7dd508dbda7ed532c3",
+      "branch": "feature/pr-review-followup",
+      "status": "M e2e/number-history.spec.ts\n M src/hooks/keyboardUtils.ts\n M src/hooks/useNumberKeyboard.ts\n?? e2e/cursor-style.spec.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/cursor-style.spec.ts",
+        "--project=chromium"
+      ],
+      "exitCode": 1
+    },
+    "capture": "artifacts/qa/2026-09-07T11-48-12-151Z-before",
+    "sourceManifestSHA256": "a725b9a107fa9707f3e946afbdc3a2e01576bb20c08fac48082e0d3cb91a3d9a"
+  },
+  {
+    "phase": "before",
+    "project": "chromium",
+    "title": "Number selection color and width survive reload",
+    "status": "failed",
+    "video": "cursor-number-before-chromium.webm",
+    "sha256": "5aa631fa0de67e756eeea852fe55a5620ab9a618768f19d218ead18539970480",
+    "source": {
+      "phase": "before",
+      "createdAt": "2026-09-07T11:48:12.209Z",
+      "commit": "55e928772f451a7ab0d20e7dd508dbda7ed532c3",
+      "branch": "feature/pr-review-followup",
+      "status": "M e2e/number-history.spec.ts\n M src/hooks/keyboardUtils.ts\n M src/hooks/useNumberKeyboard.ts\n?? e2e/cursor-style.spec.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/cursor-style.spec.ts",
+        "--project=chromium"
+      ],
+      "exitCode": 1
+    },
+    "capture": "artifacts/qa/2026-09-07T11-48-12-151Z-before",
+    "sourceManifestSHA256": "a725b9a107fa9707f3e946afbdc3a2e01576bb20c08fac48082e0d3cb91a3d9a"
+  },
+  {
+    "phase": "after",
+    "project": "chromium",
+    "title": "Surface selection color and width survive reload",
+    "status": "passed",
+    "video": "cursor-surface-after-chromium.webm",
+    "sha256": "4dfed88de0163c0178f07349de73e826058d19f093996615948ffaa34ce87a90",
+    "source": {
+      "phase": "after",
+      "createdAt": "2026-09-07T11:49:51.523Z",
+      "commit": "b9b360f6ce5f7f75d866d432483a86a93cff364d",
+      "branch": "feature/pr-review-followup",
+      "status": "M src/components/canvas/CanvasCursors.tsx\n M src/components/toolbar/RibbonGridContent.tsx\n M src/i18n/locales/en.ts\n M src/i18n/locales/ja.ts\n M src/store/slices/types.ts\n M src/types/index.ts\n M src/utils/storage.ts\n?? e2e/cursor-style.spec.ts\n?? src/test/cursorCellStyle.test.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/cursor-style.spec.ts",
+        "--project=chromium",
+        "--project=mobile-chrome"
+      ],
+      "exitCode": 0
+    },
+    "capture": "artifacts/qa/2026-09-07T11-49-51-407Z-after",
+    "sourceManifestSHA256": "8d6a3ddb094fa9b915aacabfbb34857d047274c30cc1e5e610938db446a2e4a4"
+  },
+  {
+    "phase": "after",
+    "project": "chromium",
+    "title": "Number selection color and width survive reload",
+    "status": "passed",
+    "video": "cursor-number-after-chromium.webm",
+    "sha256": "c9dce2aa4751799d852d03396440efe107aabe03cefeb95bc355ff4b02e84d5f",
+    "source": {
+      "phase": "after",
+      "createdAt": "2026-09-07T11:49:51.523Z",
+      "commit": "b9b360f6ce5f7f75d866d432483a86a93cff364d",
+      "branch": "feature/pr-review-followup",
+      "status": "M src/components/canvas/CanvasCursors.tsx\n M src/components/toolbar/RibbonGridContent.tsx\n M src/i18n/locales/en.ts\n M src/i18n/locales/ja.ts\n M src/store/slices/types.ts\n M src/types/index.ts\n M src/utils/storage.ts\n?? e2e/cursor-style.spec.ts\n?? src/test/cursorCellStyle.test.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/cursor-style.spec.ts",
+        "--project=chromium",
+        "--project=mobile-chrome"
+      ],
+      "exitCode": 0
+    },
+    "capture": "artifacts/qa/2026-09-07T11-49-51-407Z-after",
+    "sourceManifestSHA256": "8d6a3ddb094fa9b915aacabfbb34857d047274c30cc1e5e610938db446a2e4a4"
+  },
+  {
+    "phase": "after",
+    "project": "mobile-chrome",
+    "title": "Surface selection color and width survive reload",
+    "status": "passed",
+    "video": "cursor-surface-after-mobile-chrome.webm",
+    "sha256": "c7fc51741b2c8c0c46531e28ebf4cb253829ee1ee8833d73d6ae51fcecbd9899",
+    "source": {
+      "phase": "after",
+      "createdAt": "2026-09-07T11:49:51.523Z",
+      "commit": "b9b360f6ce5f7f75d866d432483a86a93cff364d",
+      "branch": "feature/pr-review-followup",
+      "status": "M src/components/canvas/CanvasCursors.tsx\n M src/components/toolbar/RibbonGridContent.tsx\n M src/i18n/locales/en.ts\n M src/i18n/locales/ja.ts\n M src/store/slices/types.ts\n M src/types/index.ts\n M src/utils/storage.ts\n?? e2e/cursor-style.spec.ts\n?? src/test/cursorCellStyle.test.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/cursor-style.spec.ts",
+        "--project=chromium",
+        "--project=mobile-chrome"
+      ],
+      "exitCode": 0
+    },
+    "capture": "artifacts/qa/2026-09-07T11-49-51-407Z-after",
+    "sourceManifestSHA256": "8d6a3ddb094fa9b915aacabfbb34857d047274c30cc1e5e610938db446a2e4a4"
+  },
+  {
+    "phase": "after",
+    "project": "mobile-chrome",
+    "title": "Number selection color and width survive reload",
+    "status": "passed",
+    "video": "cursor-number-after-mobile-chrome.webm",
+    "sha256": "1a2fe6d979803977af7e98c21b0c182f1d272848e5aae3a1a1227d5b5222c6f5",
+    "source": {
+      "phase": "after",
+      "createdAt": "2026-09-07T11:49:51.523Z",
+      "commit": "b9b360f6ce5f7f75d866d432483a86a93cff364d",
+      "branch": "feature/pr-review-followup",
+      "status": "M src/components/canvas/CanvasCursors.tsx\n M src/components/toolbar/RibbonGridContent.tsx\n M src/i18n/locales/en.ts\n M src/i18n/locales/ja.ts\n M src/store/slices/types.ts\n M src/types/index.ts\n M src/utils/storage.ts\n?? e2e/cursor-style.spec.ts\n?? src/test/cursorCellStyle.test.ts",
+      "node": "v25.2.1",
+      "platform": "darwin",
+      "npm": "11.7.0",
+      "command": [
+        "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/cursor-style.spec.ts",
+        "--project=chromium",
+        "--project=mobile-chrome"
+      ],
+      "exitCode": 0
+    },
+    "capture": "artifacts/qa/2026-09-07T11-49-51-407Z-after",
+    "sourceManifestSHA256": "8d6a3ddb094fa9b915aacabfbb34857d047274c30cc1e5e610938db446a2e4a4"
+  }
+]

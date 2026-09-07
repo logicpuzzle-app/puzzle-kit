@@ -1,7 +1,8 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { getCellIndexById } from '../../utils/gridUtils';
 import type { GridTopology } from '../../utils/gridTopology';
+import { gridConfigToTopology, applyTopologyPreset } from '../../utils/gridTopology';
 import { normalizeMulticolorSlots } from '../../utils/multicolor';
 import type { GridConfig, Point, PuzzleState } from '../../types';
 import { resolveCell } from '../../utils/pointResolver';
@@ -69,6 +70,8 @@ export function useSurfaceToolHandler() {
     updateTopology,
     useTopology,
     topology,
+    topologyPreset,
+    topologyIntensity,
   } = usePuzzleStore();
 
   const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
@@ -212,9 +215,35 @@ export function useSurfaceToolHandler() {
     [grid, puzzle, activeLayer, editableLayer, toolSettings.currentTool, toolSettings.color, toolSettings.secondaryColor, toolSettings.inputConstraint, addSurface, removeSurface, findCellId, getCellCoordsFromId, hasSameParity, topology]
   );
 
+  /**
+   * Topology that still contains the excluded cells.
+   *
+   * A void cell is dropped from the live topology, so the hole it leaves behind has no
+   * click target and the cell could never be re-enabled individually - clearing every
+   * exclusion was the only way back. The exclude tool resolves against this variant so
+   * the hole stays clickable. Outboard exclusions are unaffected: those cells remain in
+   * the live topology.
+   */
+  const topologyWithExcluded = useMemo(() => {
+    if (!useTopology) return null;
+    const hasVoid = (grid.voidCells?.length ?? 0) > 0 || (grid.disabledCells?.length ?? 0) > 0;
+    if (!hasVoid) return topology;
+    const base = gridConfigToTopology({ ...grid, voidCells: undefined, disabledCells: undefined });
+    return applyTopologyPreset(base, { preset: topologyPreset, intensity: topologyIntensity });
+  }, [grid, useTopology, topology, topologyPreset, topologyIntensity]);
+
+  const findCellIdForExclude = useCallback((point: Point): string | null => {
+    const cell = resolveCell(
+      point,
+      { grid, useTopology, topology: topologyWithExcluded ?? topology },
+      { allowOutboard: true }
+    );
+    return cell ? cell.cellId : null;
+  }, [grid, useTopology, topology, topologyWithExcluded]);
+
   const handleGridTool = useCallback(
     (point: Point, isRightClick: boolean, isShiftKey: boolean = false) => {
-      const cellId = findCellId(point, { allowOutboard: true });
+      const cellId = findCellIdForExclude(point);
       if (!cellId) return;
 
       // Skip if this cell was already processed during this drag
@@ -256,7 +285,7 @@ export function useSurfaceToolHandler() {
         }
       }
     },
-    [grid, setCellDisabled, findCellId]
+    [grid, setCellDisabled, findCellIdForExclude]
   );
 
   // Finish grid tool operation and regenerate topology if needed

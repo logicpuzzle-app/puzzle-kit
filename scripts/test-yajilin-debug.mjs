@@ -1,5 +1,5 @@
 // Debug the YajilinSolver
-import { YajilinSolver, Direction } from '@logicpuzzle-app/solver-kit';
+import { YajilinSolver, Direction } from '../solver/index.js';
 
 // Same arrows as before
 const arrows = [

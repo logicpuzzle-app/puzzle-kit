@@ -71,11 +71,17 @@ function HomeApp() {
           <div className="text-xs font-semibold uppercase tracking-wide text-office-text-secondary">
             {t('app.modeSelect')}
           </div>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-4">
             <ModeCard
               href="/play"
               title={t('app.mode.play.title')}
               description={t('app.mode.play.desc')}
+              ctaLabel={t('app.mode.open')}
+            />
+            <ModeCard
+              href="/paint"
+              title={t('app.mode.paint.title')}
+              description={t('app.mode.paint.desc')}
               ctaLabel={t('app.mode.open')}
             />
             <ModeCard

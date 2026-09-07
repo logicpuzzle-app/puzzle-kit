@@ -102,7 +102,7 @@ function solveSlitherlink(grid: GridConfig, problem: PuzzleState['problem']): So
         solutionCount: 1,
       };
     } else if (result.status === SolveStatus.MULTIPLE) {
-      // Return partial progress showing confirmed parts (確定部分を表示)
+      // Return partial progress showing confirmed parts
       const partialAnswer = result.state
         ? convertSlitherSolutionToAnswer(grid, result.state, true)
         : undefined;
@@ -113,7 +113,7 @@ function solveSlitherlink(grid: GridConfig, problem: PuzzleState['problem']): So
         time: performance.now() - startTime,
       };
     } else if (result.status === SolveStatus.TIMEOUT) {
-      // Return partial progress when timed out (途中経過を返す)
+      // Return partial progress when timed out
       const partialAnswer = result.state
         ? convertSlitherSolutionToAnswer(grid, result.state, true)
         : undefined;
@@ -257,7 +257,7 @@ function solveMasyu(grid: GridConfig, problem: PuzzleState['problem']): SolveRes
         solutionCount: 1,
       };
     } else if (result.status === SolveStatus.MULTIPLE) {
-      // Return partial progress showing confirmed parts (確定部分を表示)
+      // Return partial progress showing confirmed parts
       const partialAnswer = result.state
         ? convertMasyuSolutionToAnswer(grid, result.state, true)
         : undefined;
@@ -268,7 +268,7 @@ function solveMasyu(grid: GridConfig, problem: PuzzleState['problem']): SolveRes
         time: performance.now() - startTime,
       };
     } else if (result.status === SolveStatus.TIMEOUT) {
-      // Return partial progress when timed out (途中経過を返す)
+      // Return partial progress when timed out
       const partialAnswer = result.state
         ? convertMasyuSolutionToAnswer(grid, result.state, true)
         : undefined;
@@ -434,7 +434,7 @@ function solveYajilin(grid: GridConfig, problem: PuzzleState['problem']): SolveR
         solutionCount: 1,
       };
     } else if (result.status === SolveStatus.MULTIPLE) {
-      // Return partial progress showing confirmed parts (確定部分を表示)
+      // Return partial progress showing confirmed parts
       const partialAnswer = result.state
         ? convertYajilinSolutionToAnswer(grid, result.state, true)
         : undefined;
@@ -445,7 +445,7 @@ function solveYajilin(grid: GridConfig, problem: PuzzleState['problem']): SolveR
         time: performance.now() - startTime,
       };
     } else if (result.status === SolveStatus.TIMEOUT) {
-      // Return partial progress when timed out (途中経過を返す)
+      // Return partial progress when timed out
       const partialAnswer = result.state
         ? convertYajilinSolutionToAnswer(grid, result.state, true)
         : undefined;
@@ -587,10 +587,14 @@ function solveHeyawake(grid: GridConfig, problem: PuzzleState['problem']): Solve
     }
     // Add extra row for vertical walls between last row and beyond (not needed, but for consistency)
 
-    // Parse walls from problem.walls
+    // Accept canonical wall lines and legacy walls during the data-format migration.
     // wall format: { id, edgeId: "edge-v-row-col" or "edge-h-row-col", ... }
-    if (problem.walls) {
-      for (const wall of Object.values(problem.walls)) {
+    {
+      const walls = [
+        ...Object.values(problem.lines || {}).filter(line => line.lineTarget === 'wall'),
+        ...Object.values(problem.walls || {}),
+      ];
+      for (const wall of walls) {
         if (!wall.edgeId) continue;
 
         const idx = getEdgeIndexById(wall.edgeId, grid);
@@ -708,7 +712,7 @@ function solveHeyawake(grid: GridConfig, problem: PuzzleState['problem']): Solve
         solutionCount: 1,
       };
     } else if (result.status === SolveStatus.MULTIPLE) {
-      // Return partial progress showing confirmed parts (確定部分を表示)
+      // Return partial progress showing confirmed parts
       const partialAnswer = result.state
         ? convertHeyawakeSolutionToAnswer(grid, result.state, true)
         : undefined;

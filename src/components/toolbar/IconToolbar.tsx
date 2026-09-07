@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
 import { usePuzzleStore, usePuzzleStoreApi } from '../../store/puzzleStoreContext';
-import { useModalStore } from '../../store/modalStoreContext';
+import { useModalStore, useModalStoreApi } from '../../store/modalStoreContext';
 import {
   generateShareUrl,
   downloadAsJson,
   exportToPng,
   downloadAsPng,
 } from '../../utils/serialization';
-import { parsePenpaUrl, isPenpaUrl, parsePuzzlinkUrl, isPuzzlinkUrl, isPuzsqUrl, fetchPuzsqPuzzle } from '../../utils/penpaCompat';
+import { createImportHandlers } from './menu/importHandlers';
 import { NewPuzzleDialog } from '../dialogs/NewPuzzleDialog';
 
 // SVG Icon components
@@ -155,7 +155,8 @@ export const IconToolbar: React.FC = () => {
   } = usePuzzleStore();
   const store = usePuzzleStoreApi();
 
-  const { showConfirm, showAlert, showUrlImport } = useModalStore();
+  const { showConfirm, showAlert } = useModalStore();
+  const modalStore = useModalStoreApi();
 
   const handleExportJson = () => {
     downloadAsJson(grid, puzzle, { title: 'Puzzle' });
@@ -214,59 +215,19 @@ export const IconToolbar: React.FC = () => {
     });
   };
 
-  const handleImportPenpaUrl = () => {
-    showUrlImport(async (url) => {
-      let result = null;
-
-      // Try puzsq format first (needs async fetch)
-      if (isPuzsqUrl(url)) {
-        result = await fetchPuzsqPuzzle(url);
-      } else if (isPuzzlinkUrl(url)) {
-        result = parsePuzzlinkUrl(url);
-      } else if (isPenpaUrl(url)) {
-        result = parsePenpaUrl(url);
-      } else {
-        showAlert({
-          title: t('error.invalidPenpaUrl'),
-          message: t('error.invalidPenpaUrl'),
-          variant: 'error',
-        });
-        return;
-      }
-
-      if (result) {
-        if (result.topology) {
-          // Custom topology (e.g., Penrose) must be applied directly; generic presets don't cover it.
-          store.setState({
-            grid: result.grid,
-            topology: result.topology,
-            useTopology: true,
-            puzzle: result.state,
-          });
-        } else {
-          // Use store APIs so topology stays in sync with the imported grid.
-          store.getState().setGrid(result.grid);
-          store.setState({ puzzle: result.state });
-        }
-
-        showAlert({
-          title: t('file.importSuccess'),
-          message: t('file.importSuccess'),
-          variant: 'success',
-        });
-      } else {
-        showAlert({
-          title: t('error.importFailed'),
-          message: t('error.importFailed'),
-          variant: 'error',
-        });
-      }
-    });
-  };
+  const { handleImportPenpaUrl } = createImportHandlers({
+    store,
+    modalStore,
+    grid,
+    puzzle,
+    setActiveMenu: () => {},
+    setCurrentSchemaId: store.getState().setCurrentSchemaId,
+    t,
+  });
 
   return (
     <>
-      <div className="flex items-center bg-office-ribbon border-b border-office-border h-8 px-2 gap-0.5">
+      <div className="flex items-center bg-office-ribbon border-b border-office-border h-8 px-2 gap-0.5 shrink-0 max-md:overflow-x-auto max-md:[&>*]:shrink-0">
         {/* File actions */}
         <ToolbarButton
           icon={<NewIcon />}

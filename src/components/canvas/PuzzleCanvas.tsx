@@ -8,8 +8,11 @@
  */
 
 import React, { useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { getGridDimensions } from '../../utils/gridUtils';
+import { getHexSize } from '../../utils/hexGridUtils';
+import type { NumberClickInfo, TextClickInfo } from '../../types/canvasInput';
 import { InputHandlerLayer } from './InputHandlerLayer';
 import { Grid, GridBackground, GridLines, DisabledCellsOverlay } from './Grid';
 import { BackgroundImageLayer } from './grid/BackgroundImageLayer';
@@ -27,12 +30,29 @@ import { AdjacencyOverlay } from './AdjacencyOverlay';
 import { SolverLayer } from './SolverLayer';
 import { TrialStackLayer } from './TrialStackLayer';
 
-// Re-export types from InputHandlerLayer
-export type { NumberClickInfo, TextClickInfo } from './InputHandlerLayer';
+const ZoomInIcon: React.FC<{ size?: number }> = ({ size = 14 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="11" cy="11" r="7" />
+    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    <line x1="11" y1="8" x2="11" y2="14" />
+    <line x1="8" y1="11" x2="14" y2="11" />
+  </svg>
+);
+
+const ZoomOutIcon: React.FC<{ size?: number }> = ({ size = 14 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="11" cy="11" r="7" />
+    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    <line x1="8" y1="11" x2="14" y2="11" />
+  </svg>
+);
+
+// Re-export input types for downstream usage
+export type { NumberClickInfo, TextClickInfo } from '../../types/canvasInput';
 
 interface PuzzleCanvasProps {
-  onNumberClick?: (info: import('./InputHandlerLayer').NumberClickInfo) => void;
-  onTextClick?: (info: import('./InputHandlerLayer').TextClickInfo) => void;
+  onNumberClick?: (info: NumberClickInfo) => void;
+  onTextClick?: (info: TextClickInfo) => void;
   /** Arrow style for directional numbers: 'polygon' (pzprjs-style) or 'unicode' */
   arrowStyle?: ArrowStyle;
   /** Allow multi-touch pan/zoom gestures */
@@ -45,6 +65,7 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
   arrowStyle = 'polygon',
   allowMultiTouchPanZoom,
 }) => {
+  const { t } = useTranslation();
   const svgRef = useRef<SVGSVGElement | null>(null);
   const {
     grid,
@@ -54,6 +75,8 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
     previewTopology,
     previewGrid,
     trialStage,
+    setZoom,
+    setPan,
   } = usePuzzleStore();
 
   // Trial mode opacity for current answer layer:
@@ -92,11 +115,22 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
   // Calculate grid area for background image
   const gridArea = useMemo(() => {
     if (topologyPreferred && effectiveTopology) {
+      const { minX, minY, maxX, maxY } = effectiveTopology.bounds;
       return {
-        x: effectiveTopology.bounds.minX,
-        y: effectiveTopology.bounds.minY,
-        width: effectiveTopology.bounds.width,
-        height: effectiveTopology.bounds.height,
+        x: minX,
+        y: minY,
+        width: Math.max(0, maxX - minX),
+        height: Math.max(0, maxY - minY),
+      };
+    }
+    if (effectiveGrid.gridType === 'hex') {
+      const { width: hexWidth, height: hexHeight } = getHexSize(effectiveGrid.cellSize);
+      const rowHeight = hexHeight * 0.75;
+      return {
+        x: effectiveGrid.outerPadding,
+        y: effectiveGrid.outerPadding,
+        width: effectiveGrid.cols * hexWidth + hexWidth / 2,
+        height: (effectiveGrid.rows - 1) * rowHeight + hexHeight,
       };
     }
     const { outerPadding, cellSize, rows, cols, marginTop = 0, marginLeft = 0 } = effectiveGrid;
@@ -326,9 +360,38 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
         </g>
       </InputHandlerLayer>
 
-      {/* Zoom indicator */}
-      <div className="absolute bottom-2 right-2 px-2 py-1 bg-white/80 border border-office-border rounded text-xs text-office-text-secondary">
-        {Math.round(canvas.zoom * 100)}%
+      {/* Zoom controls */}
+      <div className="absolute bottom-2 right-2 flex items-center gap-1 px-1 py-0.5 bg-white/80 border border-office-border rounded text-xs text-office-text-secondary shadow-sm">
+        <button
+          className="h-6 w-6 flex items-center justify-center rounded-sm hover:bg-office-ribbon-hover"
+          onClick={() => setZoom(canvas.zoom / 1.2)}
+          title={t('view.zoomOut')}
+          aria-label={t('view.zoomOut')}
+          type="button"
+        >
+          <ZoomOutIcon size={12} />
+        </button>
+        <button
+          className="h-6 px-1 min-w-[44px] rounded-sm hover:bg-office-ribbon-hover"
+          onClick={() => {
+            setZoom(1);
+            setPan(0, 0);
+          }}
+          title={t('view.zoom100')}
+          aria-label={t('view.zoom100')}
+          type="button"
+        >
+          {Math.round(canvas.zoom * 100)}%
+        </button>
+        <button
+          className="h-6 w-6 flex items-center justify-center rounded-sm hover:bg-office-ribbon-hover"
+          onClick={() => setZoom(canvas.zoom * 1.2)}
+          title={t('view.zoomIn')}
+          aria-label={t('view.zoomIn')}
+          type="button"
+        >
+          <ZoomInIcon size={12} />
+        </button>
       </div>
     </div>
   );

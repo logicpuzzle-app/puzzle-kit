@@ -18,12 +18,12 @@
  * Architecture:
  * - Mouse interactions are coordinated by a state machine (interactionStateMachine.ts)
  * - Tool handlers are pure-ish functions that receive point + modifiers
- * - Actions from the state machine are executed by useInteractionMachine
+ * - Actions from the state machine are executed inline in this hook
  */
 
 import { useCallback, useState, useEffect, useMemo } from 'react';
 import { usePuzzleStore } from '../store/puzzleStoreContext';
-import { screenToSvg } from '../utils/gridUtils';
+import { useCanvasPoint } from './useCanvasPoint';
 import { useToolHandlers } from './useToolHandlers';
 import { useSelectionTool, type SelectionRect } from './useSelectionTool';
 import { useGridPointUtils } from './useGridPointUtils';
@@ -31,6 +31,7 @@ import { useGridEditMode } from './useGridEditMode';
 import { useSculptMode } from './useSculptMode';
 import { useZoomPan } from './useZoomPan';
 import { useTouchHandlers } from './useTouchHandlers';
+import { createToolDispatchers } from './toolDispatchers';
 import {
   transition,
   INITIAL_STATE,
@@ -66,6 +67,8 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom }: UseCanv
 
   // Derived state: grid mode is when activeLayer is 'grid'
   const isGridMode = activeLayer === 'grid';
+  const exportPaddingLeft = grid.exportPaddingLeft ?? 0;
+  const exportPaddingTop = grid.exportPaddingTop ?? 0;
 
   // State machine state
   const [machineState, setMachineState] = useState<InteractionState>(INITIAL_STATE);
@@ -76,6 +79,7 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom }: UseCanv
   const [specialPath, setSpecialPath] = useState<string[]>([]);
   const [lineHoverPoint, setLineHoverPoint] = useState<Point | null>(null);
   const [symbolHoverPoint, setSymbolHoverPoint] = useState<Point | null>(null);
+  const [symbolHoverId, setSymbolHoverId] = useState<string | null>(null);
   const [currentStrokeId, setCurrentStrokeId] = useState<string | null>(null);
 
   // Derived state from machine
@@ -130,6 +134,7 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom }: UseCanv
   const {
     mergingCells,
     handleMergeMode,
+    cancelGridEdit,
     splitStartVertex,
     splitHoverVertex,
     handleSplitMode,
@@ -148,18 +153,18 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom }: UseCanv
   const { handleWheel } = useZoomPan({ svgRef });
 
   // Mouse position helper
+  const getCanvasPoint = useCanvasPoint({
+    svgRef,
+    zoom: canvas.zoom,
+    panX: canvas.panX,
+    panY: canvas.panY,
+    exportPaddingLeft,
+    exportPaddingTop,
+  });
+
   const getMousePosition = useCallback(
-    (e: React.MouseEvent | MouseEvent): Point => {
-      return screenToSvg(
-        e.clientX,
-        e.clientY,
-        canvas.zoom,
-        canvas.panX,
-        canvas.panY,
-        svgRef.current
-      );
-    },
-    [canvas.zoom, canvas.panX, canvas.panY, svgRef]
+    (e: React.MouseEvent | MouseEvent): Point => getCanvasPoint(e.clientX, e.clientY),
+    [getCanvasPoint]
   );
 
   // Selection tool handlers
@@ -177,37 +182,31 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom }: UseCanv
     currentTool: toolSettings.currentTool,
   }), [canvas.panMode, activeLayer, gridEditMode, toolSettings.currentTool]);
 
-  // Tool dispatch maps (declarative approach instead of switch statements)
-  type ToolDispatcher = (point: Point, isRightClick: boolean, isShiftKey: boolean) => void;
-
-  const toolDownDispatchers = useMemo<Partial<Record<import('./interactionStateMachine').ToolCategory, ToolDispatcher>>>(() => ({
-    'surface-cycle': (point, isRightClick) => handleSurfaceCycleTool(point, isRightClick),
-    'surface': (point, isRightClick, isShiftKey) => handleSurfaceTool(point, isRightClick, isShiftKey),
-    'line': (point, isRightClick, isShiftKey) => handleLineTool(point, true, isRightClick, isShiftKey),
-    'edge': (point, isRightClick, isShiftKey) => handleEdgeTool(point, true, isRightClick, isShiftKey),
-    'wall': (point, isRightClick, isShiftKey) => handleWallTool(point, isRightClick, isShiftKey),
-    'symbol': (point, isRightClick, isShiftKey) => handleSymbolTool(point, isRightClick, isShiftKey),
-    'special-thermo': (point, isRightClick) => handleSpecialTool(point, true, false, isRightClick),
-    'special-arrow': (point, isRightClick) => handleSpecialTool(point, true, false, isRightClick),
-    'special-cage': (point, isRightClick) => handleCageTool(point, true, false, isRightClick),
-    'special-boxline': (point, isRightClick) => handleBoxLineTool(point, true, false, isRightClick),
-    'multicolor-surface': (point, isRightClick) => handleMulticolorSurfaceTool(point, isRightClick),
-    'solution-area': (point, isRightClick) => handleSolutionAreaTool(point, isRightClick),
-  }), [handleSurfaceCycleTool, handleSurfaceTool, handleLineTool, handleEdgeTool, handleWallTool, handleSymbolTool, handleSpecialTool, handleCageTool, handleBoxLineTool, handleMulticolorSurfaceTool, handleSolutionAreaTool]);
-
-  const toolMoveDispatchers = useMemo<Partial<Record<import('./interactionStateMachine').ToolCategory, ToolDispatcher>>>(() => ({
-    'surface-cycle': (point, isRightClick) => handleSurfaceCycleTool(point, isRightClick),
-    'surface': (point, isRightClick, isShiftKey) => handleSurfaceTool(point, isRightClick, isShiftKey),
-    'line': (point, isRightClick, isShiftKey) => handleLineTool(point, false, isRightClick, isShiftKey),
-    'edge': (point, isRightClick, isShiftKey) => handleEdgeTool(point, false, isRightClick, isShiftKey),
-    'wall': (point, isRightClick, isShiftKey) => handleWallTool(point, isRightClick, isShiftKey),
-    'special-thermo': (point, isRightClick) => handleSpecialTool(point, false, false, isRightClick),
-    'special-arrow': (point, isRightClick) => handleSpecialTool(point, false, false, isRightClick),
-    'special-cage': (point, isRightClick) => handleCageTool(point, false, false, isRightClick),
-    'special-boxline': (point, isRightClick) => handleBoxLineTool(point, false, false, isRightClick),
-    'multicolor-surface': (point, isRightClick) => handleMulticolorSurfaceTool(point, isRightClick),
-    'solution-area': (point, isRightClick) => handleSolutionAreaTool(point, isRightClick),
-  }), [handleSurfaceCycleTool, handleSurfaceTool, handleLineTool, handleEdgeTool, handleWallTool, handleSpecialTool, handleCageTool, handleBoxLineTool, handleMulticolorSurfaceTool, handleSolutionAreaTool]);
+  const toolDispatchers = useMemo(() => createToolDispatchers({
+    handleSurfaceTool,
+    handleSurfaceCycleTool,
+    handleLineTool,
+    handleEdgeTool,
+    handleWallTool,
+    handleSymbolTool,
+    handleSpecialTool,
+    handleCageTool,
+    handleBoxLineTool,
+    handleMulticolorSurfaceTool,
+    handleSolutionAreaTool,
+  }), [
+    handleSurfaceTool,
+    handleSurfaceCycleTool,
+    handleLineTool,
+    handleEdgeTool,
+    handleWallTool,
+    handleSymbolTool,
+    handleSpecialTool,
+    handleCageTool,
+    handleBoxLineTool,
+    handleMulticolorSurfaceTool,
+    handleSolutionAreaTool,
+  ]);
 
   // Execute tool action using dispatch map
   const executeToolDown = useCallback((
@@ -216,10 +215,8 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom }: UseCanv
     isRightClick: boolean,
     isShiftKey: boolean
   ) => {
-    const category = getToolCategory(tool);
-    const dispatcher = toolDownDispatchers[category];
-    dispatcher?.(point, isRightClick, isShiftKey);
-  }, [toolDownDispatchers]);
+    toolDispatchers.dispatchStart(tool, point, isRightClick, isShiftKey);
+  }, [toolDispatchers]);
 
   const executeToolMove = useCallback((
     tool: string,
@@ -227,10 +224,8 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom }: UseCanv
     isRightClick: boolean,
     isShiftKey: boolean
   ) => {
-    const category = getToolCategory(tool);
-    const dispatcher = toolMoveDispatchers[category];
-    dispatcher?.(point, isRightClick, isShiftKey);
-  }, [toolMoveDispatchers]);
+    toolDispatchers.dispatchMove(tool, point, isRightClick, isShiftKey);
+  }, [toolDispatchers]);
 
   const executeToolUp = useCallback((
     tool: string,
@@ -367,9 +362,20 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom }: UseCanv
   }, [executeAction]);
 
   // Touch handlers
-  const { handleTouchStart, handleTouchMove, handleTouchEnd } = useTouchHandlers({
+  const { handlePointerDown, handlePointerMove, handlePointerUp } = useTouchHandlers({
     svgRef,
     allowMultiTouchPanZoom,
+    gridHandlers: isGridMode ? {
+      down: (point) => executeGridDown(gridEditMode as StateMachineGridEditMode, point, false, false),
+      move: (point) => executeGridMove(gridEditMode as StateMachineGridEditMode, point, false),
+      up: (point) => executeGridUp(gridEditMode as StateMachineGridEditMode, point, false),
+      cancel: () => {
+        // Exclusion is incremental; refresh it even on interruption. Merge and
+        // split are pending until release and must be discarded instead.
+        if (gridEditMode === 'exclude') finishGridTool();
+        cancelGridEdit();
+      },
+    } : undefined,
     toolHandlers,
     drawStartPoint,
     setDrawStartPoint,
@@ -446,6 +452,11 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom }: UseCanv
         return;
       }
 
+      if (tool.startsWith('line') && toolSettings.lineDirections?.includes('freehand')) {
+        setLineHoverPoint(point);
+        return;
+      }
+
       const allowedGridPoints = toolSettings.lineGridPoints || ['cell'];
       const gridPoint = findNearestGridPoint(point, allowedGridPoints);
       if (gridPoint) {
@@ -454,7 +465,7 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom }: UseCanv
         setLineHoverPoint(null);
       }
     },
-    [toolSettings.currentTool, toolSettings.lineGridPoints, findNearestGridPoint]
+    [toolSettings.currentTool, toolSettings.lineDirections, toolSettings.lineGridPoints, findNearestGridPoint]
   );
 
   // Update symbol hover point
@@ -463,6 +474,7 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom }: UseCanv
       const tool = toolSettings.currentTool;
       if (!tool.startsWith('symbol')) {
         setSymbolHoverPoint(null);
+        setSymbolHoverId(null);
         return;
       }
 
@@ -475,8 +487,10 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom }: UseCanv
       );
       if (gridPoint) {
         setSymbolHoverPoint(gridPoint.position);
+        setSymbolHoverId(gridPoint.id);
       } else {
         setSymbolHoverPoint(null);
+        setSymbolHoverId(null);
       }
     },
     [toolSettings.currentTool, toolSettings.symbolGridPoints, activeLayer, findNearestGridPoint]
@@ -496,9 +510,9 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom }: UseCanv
     // Symbol handlers (exposed for line auto mode - peke input)
     handleSymbolTool,
     // Touch handlers
-    handleTouchStart,
-    handleTouchMove,
-    handleTouchEnd,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
     // Selection handlers
     handleSelectTool,
     isSelecting,
@@ -511,6 +525,7 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom }: UseCanv
     updateLineHoverPoint,
     // Symbol tool hover
     symbolHoverPoint,
+    symbolHoverId,
     updateSymbolHoverPoint,
     // Merge mode state
     mergingCells,

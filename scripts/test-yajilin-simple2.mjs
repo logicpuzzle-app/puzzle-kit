@@ -1,5 +1,5 @@
 // Test with a simple 4x4 puzzle with arrows
-import { YajilinSolver, Direction } from '@logicpuzzle-app/solver-kit';
+import { YajilinSolver, Direction } from '../solver/index.js';
 
 // Simple 4x4 with one arrow pointing right with count 1
 console.log("=== Test: 4x4 with (1,1) RIGHT 1 ===");

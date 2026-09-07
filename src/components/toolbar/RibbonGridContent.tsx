@@ -58,6 +58,7 @@ export const GridShapeContent: React.FC = () => {
                     : 'bg-white border-office-border hover:bg-office-ribbon-hover'
               }`}
               onClick={() => !isDisabled && setGridEditMode(mode.id)}
+              aria-pressed={gridEditMode === mode.id}
               disabled={isDisabled}
               title={isDisabled ? t('gridEdit.disabledDuringPreview') : undefined}
             >
@@ -86,7 +87,7 @@ export const GridShapeContent: React.FC = () => {
 // Grid Style Tab Content - styles and colors
 export const GridDisplayContent: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const { grid, setGrid } = usePuzzleStore();
+  const { grid, setGrid, toolSettings, setToolSettings } = usePuzzleStore();
 
   return (
     <>
@@ -180,6 +181,34 @@ export const GridDisplayContent: React.FC = () => {
               <span className="text-[8px] text-office-text-secondary">{i18n.language === 'ja' ? '無効' : 'Off'}</span>
             </div>
           )}
+          {/* Selection cursor: colour and outline width */}
+          <div className="flex flex-col items-center">
+            <input
+              type="color"
+              className="w-6 h-6 cursor-pointer border border-office-border rounded"
+              value={toolSettings.cursorCellColor ?? '#00A000'}
+              onChange={(e) => setToolSettings({ cursorCellColor: e.target.value })}
+              title={t('grid.cursorCellColor')}
+            />
+            <span className="text-[8px] text-office-text-secondary">
+              {i18n.language === 'ja' ? '選択' : 'Sel'}
+            </span>
+          </div>
+          <div className="flex flex-col items-center">
+            <select
+              className="w-10 h-6 text-[10px] border border-office-border rounded bg-white cursor-pointer"
+              value={toolSettings.cursorCellThickness ?? 3}
+              onChange={(e) => setToolSettings({ cursorCellThickness: Number(e.target.value) })}
+              title={t('grid.cursorCellThickness')}
+            >
+              {[1, 2, 3, 4, 6, 8].map((w) => (
+                <option key={w} value={w}>{w}</option>
+              ))}
+            </select>
+            <span className="text-[8px] text-office-text-secondary">
+              {i18n.language === 'ja' ? '太さ' : 'Width'}
+            </span>
+          </div>
         </div>
         <span className="text-[10px] text-office-text-secondary uppercase">
           {t('panel.colors')}

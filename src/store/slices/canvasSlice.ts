@@ -21,14 +21,15 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set) => ({
     })),
 
   setZoom: (zoom) =>
-    set((state) => ({
-      canvas: { ...state.canvas, zoom: Math.max(0.1, Math.min(5, zoom)) },
-    })),
+    set((state) => {
+      const nextZoom = Math.max(0.1, Math.min(5, zoom));
+      return state.canvas.zoom === nextZoom ? state : { canvas: { ...state.canvas, zoom: nextZoom } };
+    }),
 
   setPan: (x, y) =>
-    set((state) => ({
-      canvas: { ...state.canvas, panX: x, panY: y },
-    })),
+    set((state) => state.canvas.panX === x && state.canvas.panY === y
+      ? state
+      : { canvas: { ...state.canvas, panX: x, panY: y } }),
 
   setPanMode: (enabled) =>
     set((state) => ({

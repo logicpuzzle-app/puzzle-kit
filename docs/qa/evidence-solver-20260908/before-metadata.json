@@ -1,0 +1,18 @@
+{
+  "phase": "before",
+  "createdAt": "2026-09-07T16:38:20.797Z",
+  "commit": "785729d0dde1a4c6a0d11b5aad36040cbb096cfd",
+  "branch": "feature/pr-review-followup",
+  "status": "M src/npgen/client.ts\n M src/test/npgenClient.test.ts\n?? e2e/solver.spec.ts\n?? src/test/cspuzWorker.test.ts\n?? src/test/solverWorker.test.ts",
+  "node": "v25.2.1",
+  "platform": "darwin",
+  "npm": "11.7.0",
+  "command": [
+    "/opt/homebrew/Cellar/node/25.2.1/bin/node",
+    "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+    "test",
+    "e2e/solver.spec.ts",
+    "--project=chromium"
+  ],
+  "exitCode": 1
+}

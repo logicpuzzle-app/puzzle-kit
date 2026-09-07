@@ -55,6 +55,8 @@ export const DEFAULT_TOOL_SETTINGS: ToolSettings = {
   currentCategory: 'surface',
   color: '#000000',
   secondaryColor: '#CFCFCF',
+  cursorCellColor: '#00A000',
+  cursorCellThickness: 3,
   lineStyle: 'solid',
   lineThickness: 'normal',
   symbolSize: 'medium',
@@ -63,6 +65,10 @@ export const DEFAULT_TOOL_SETTINGS: ToolSettings = {
   numberPosition: 'center',
   cornerIndex: 0,
   sideIndex: 0,
+  numberInputMode: 'number',
+  numberInputCase: 'upper',
+  numberInputKana: 'hiragana',
+  numberWordDirection: 'horizontal',
   selectedCandidates: [],
   arrowDirection: -1, // -1 = no direction (default), 0=up, 1=left, 2=right, 3=down
   arrowAngle: null as number | null, // Arbitrary angle in degrees (null = use arrowDirection)
@@ -267,7 +273,7 @@ export interface LayerSlice {
   toggleConstraintLayer: () => void;
 }
 
-// Constraint layer sub-categories: common (共通), edit (編集設定), play (プレイ設定), check (チェック設定), highlight (ハイライト)
+// Constraint layer sub-categories: common, edit, play, check, highlight
 export type ConstraintSubCategory = 'common' | 'edit' | 'play' | 'check' | 'highlight';
 
 // pzprjs-style input modes
@@ -378,7 +384,7 @@ export interface HistorySlice {
 }
 
 /**
- * Trial mode (仮置き) state management
+ * Trial mode state management
  * Based on pzprjs trial mode implementation
  */
 export interface TrialSlice {

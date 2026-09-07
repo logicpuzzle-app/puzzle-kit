@@ -47,6 +47,8 @@ const COMPRESS_KEYS: Record<string, string> = {
   outerPadding: 'op',
   showGrid: 'sg',
   gridStyle: 'gs',
+  blockRows: 'br',
+  blockCols: 'bc',
   colors: 'crs',
   enabled: 'en',
   startRow: 'sr',

@@ -10,11 +10,9 @@
  * - Candidates mode (pencil marks)
  */
 
-import { useEffect, useCallback, useMemo } from 'react';
+import { useEffect, useCallback, useMemo, useRef } from 'react';
 import { usePuzzleStore } from '../store/puzzleStoreContext';
 import { useCellFinder } from './useCellFinder';
-import { constraintCatalog } from '../constraints';
-import { getAutoModeConfig } from '../constraints/inputModeMapping';
 import { getEditableDataLayer } from '../utils/editPolicy';
 import { toPenpaDirection } from '../utils/directionalClue';
 import {
@@ -25,18 +23,24 @@ import {
 } from '../utils/numberEntries';
 import {
   shouldIgnoreKeyEvent,
-  isArrowKey,
   getArrowDirection,
   calculateNextPosition,
-  isDigit,
-  isSingleChar,
-  isDeleteKey,
-  getMaxDigitsForGrid,
   appendDigit,
   removeLastChar,
+  MARKER_KEYS,
   type KeyboardShortcut,
   executeMatchingShortcut,
 } from './keyboardUtils';
+import { getNumberInputFlags, getNumberMaxDigits } from './numberKeyboardContext';
+import {
+  ROMAJI_N_CONFIRM_DELAY,
+  handleRomajiInput,
+  handleRomajiDelete,
+  isHiraganaChar,
+  isKatakanaChar,
+  normalizeKanaFromKatakana,
+  normalizeKanaInput,
+} from '../utils/romaji';
 
 // ============================================================================
 // Types
@@ -49,6 +53,10 @@ interface NumberKeyboardContext {
   target: { row: number; col: number } | null;
   gridRows: number;
   gridCols: number;
+  panelMode: 'number' | 'alphabet' | 'hiragana' | 'custom';
+  isUpperCase: boolean;
+  kanaMode: 'hiragana' | 'katakana';
+  wordDirection: 'horizontal' | 'vertical';
 }
 
 type NumberInputHandler = (
@@ -80,13 +88,22 @@ export function useNumberKeyboard() {
     currentSchemaId,
     showConstraintLayer,
   } = usePuzzleStore();
+  const isPaintSchema = currentSchemaId === 'paint';
+  const panelMode = toolSettings.numberInputMode ?? 'number';
+  const isUpperCase = toolSettings.numberInputCase !== 'lower';
+  const kanaMode = toolSettings.numberInputKana === 'katakana' ? 'katakana' : 'hiragana';
+  const wordDirection = toolSettings.numberWordDirection ?? 'horizontal';
 
   const { findCellIdByRowCol } = useCellFinder();
 
   const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
 
+  const romajiBufferRef = useRef('');
+  const romajiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const romajiTargetRef = useRef<{ row: number; col: number } | null>(null);
+  const romajiContextRef = useRef<NumberKeyboardContext | null>(null);
+
   // Check if constraint mode number input is active
-  const isConstraintEnabled = showConstraintLayer && currentSchemaId !== null;
 
   // ============================================================================
   // Input Mode Detection
@@ -97,42 +114,28 @@ export function useNumberKeyboard() {
     isConstraintNumberInput: boolean;
     allowNonNumeric: boolean;
   } => {
-    if (!editableLayer) {
-      return { isNumberTool: false, isConstraintNumberInput: false, allowNonNumeric: false };
-    }
-
-    const tool = toolSettings.currentTool;
-    const isNumberTool = tool.startsWith('number');
-
-    let isConstraintNumberInput = false;
-    if (isConstraintEnabled) {
-      const isNumberInputMode = currentInputMode === 'number' || currentInputMode === 'number-';
-      const isDirecInputMode = currentInputMode === 'direc';
-      const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
-      const isEditMode = editableLayer === 'problem';
-      const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
-      const isAutoNumberMode = currentInputMode === 'auto' && autoConfig.type === 'number';
-      const isAutoDirecMode = currentInputMode === 'auto' && autoConfig.type === 'direc';
-      const isAutoBorderNumberMode = currentInputMode === 'auto' && autoConfig.type === 'border-number';
-      isConstraintNumberInput =
-        isNumberInputMode || isDirecInputMode || isAutoNumberMode || isAutoDirecMode || isAutoBorderNumberMode;
-    }
-    const allowNonNumeric = !isConstraintNumberInput && toolSettings.currentTool !== 'number-directional';
-    return { isNumberTool, isConstraintNumberInput, allowNonNumeric };
-  }, [currentInputMode, currentSchemaId, editableLayer, isConstraintEnabled, toolSettings.currentTool]);
+    return getNumberInputFlags({
+      editableLayer,
+      currentInputMode,
+      currentSchemaId,
+      showConstraintLayer,
+      tool: toolSettings.currentTool,
+      isPaintSchema,
+    });
+  }, [currentInputMode, currentSchemaId, editableLayer, showConstraintLayer, toolSettings.currentTool, isPaintSchema]);
 
   // ============================================================================
   // Max Digits Calculation
   // ============================================================================
 
   const getMaxDigits = useCallback((): number => {
-    const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
-    const isEditMode = editableLayer === 'problem';
-    const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
-    const isDirecType = currentInputMode === 'direc' ||
-      (currentInputMode === 'auto' && autoConfig.type === 'direc');
-
-    return getMaxDigitsForGrid(grid.rows, grid.cols, isDirecType);
+    return getNumberMaxDigits({
+      gridRows: grid.rows,
+      gridCols: grid.cols,
+      editableLayer,
+      currentInputMode,
+      currentSchemaId,
+    });
   }, [currentInputMode, currentSchemaId, editableLayer, grid.rows, grid.cols]);
 
   // ============================================================================
@@ -196,7 +199,7 @@ export function useNumberKeyboard() {
           direction: direction as 0 | 1 | 2 | 3 | 4,
           value: newValue ? parseInt(newValue, 10) : 0,
           layer: dataLayer,
-          color: existingNumber?.color,
+          color: isPaintSchema ? toolSettings.color : existingNumber?.color || toolSettings.color,
         });
       }
       return;
@@ -217,7 +220,7 @@ export function useNumberKeyboard() {
         char: keyValue,
         layer: dataLayer,
         angle: existingNumber?.angle,
-        color: existingNumber?.color || toolSettings.color,
+        color: isPaintSchema ? toolSettings.color : existingNumber?.color || toolSettings.color,
       });
       return;
     }
@@ -238,7 +241,7 @@ export function useNumberKeyboard() {
       value: parseInt(newValue, 10),
       layer: dataLayer,
       angle: existingNumber?.angle,
-      color: existingNumber?.color || toolSettings.color,
+      color: isPaintSchema ? toolSettings.color : existingNumber?.color || toolSettings.color,
     });
   }, [
     findCellIdByRowCol,
@@ -251,6 +254,7 @@ export function useNumberKeyboard() {
     removeNumber,
     toolSettings.arrowDirection,
     toolSettings.color,
+    isPaintSchema,
     getMaxDigits,
   ]);
 
@@ -289,7 +293,7 @@ export function useNumberKeyboard() {
         value: 0,
         char: keyValue,
         layer: dataLayer,
-        color: existingNumber?.color || toolSettings.color,
+        color: isPaintSchema ? toolSettings.color : existingNumber?.color || toolSettings.color,
       });
     } else {
       addDirectionalClue({
@@ -298,7 +302,7 @@ export function useNumberKeyboard() {
         direction,
         value: parseInt(keyValue, 10),
         layer: dataLayer,
-        color: existingNumber?.color || toolSettings.color,
+        color: isPaintSchema ? toolSettings.color : existingNumber?.color || toolSettings.color,
       });
     }
   }, [
@@ -311,6 +315,7 @@ export function useNumberKeyboard() {
     removeNumber,
     toolSettings.arrowDirection,
     toolSettings.color,
+    isPaintSchema,
   ]);
 
   const handleNormalNumber: NumberInputHandler = useCallback((
@@ -394,6 +399,190 @@ export function useNumberKeyboard() {
     updateNumber,
   ]);
 
+  const applyNumberInput = useCallback((
+    target: { row: number; col: number },
+    value: string,
+    options: { isDelete: boolean; isSingleCharInput: boolean },
+    context: NumberKeyboardContext
+  ) => {
+    if (context.isConstraintNumberInput) {
+      handleConstraintNumber(target, value, options.isDelete, options.isSingleCharInput);
+    } else if (toolSettings.currentTool === 'number-directional') {
+      handleDirectionalNumber(target, value, options.isDelete, options.isSingleCharInput);
+    } else if (context.isNumberTool) {
+      handleNormalNumber(target, value, options.isDelete, options.isSingleCharInput);
+    }
+  }, [handleConstraintNumber, handleDirectionalNumber, handleNormalNumber, toolSettings.currentTool]);
+
+  const applyTextInput = useCallback((
+    target: { row: number; col: number },
+    value: string,
+    context: NumberKeyboardContext
+  ) => {
+    applyNumberInput(target, value, { isDelete: false, isSingleCharInput: true }, context);
+  }, [applyNumberInput]);
+
+  const clearRomajiTimer = useCallback(() => {
+    if (romajiTimerRef.current) {
+      clearTimeout(romajiTimerRef.current);
+      romajiTimerRef.current = null;
+    }
+  }, []);
+
+  const flushRomajiBuffer = useCallback((
+    target: { row: number; col: number } | null,
+    context: NumberKeyboardContext,
+    commitN: boolean
+  ) => {
+    clearRomajiTimer();
+    if (!target) {
+      romajiBufferRef.current = '';
+      return;
+    }
+    if (commitN && romajiBufferRef.current === 'n') {
+      const output = normalizeKanaFromKatakana('ン', context.kanaMode);
+      applyTextInput(target, output, context);
+    }
+    romajiBufferRef.current = '';
+  }, [applyTextInput, clearRomajiTimer]);
+
+  const moveWordCursor = useCallback((
+    target: { row: number; col: number },
+    context: NumberKeyboardContext,
+    step: 1 | -1
+  ) => {
+    if (context.panelMode === 'number') return;
+    const delta = context.wordDirection === 'vertical' ? { dr: step, dc: 0 } : { dr: 0, dc: step };
+    const next = calculateNextPosition(target, delta, context.gridRows, context.gridCols);
+    if (next.row !== target.row || next.col !== target.col) {
+      setNumberSelection(next);
+    }
+  }, [setNumberSelection]);
+
+  const advanceWordCursor = useCallback((
+    target: { row: number; col: number },
+    context: NumberKeyboardContext
+  ) => {
+    moveWordCursor(target, context, 1);
+  }, [moveWordCursor]);
+
+  const retreatWordCursor = useCallback((
+    target: { row: number; col: number },
+    context: NumberKeyboardContext
+  ) => {
+    moveWordCursor(target, context, -1);
+  }, [moveWordCursor]);
+
+  const startRomajiConfirmTimer = useCallback((
+    target: { row: number; col: number },
+    context: NumberKeyboardContext
+  ) => {
+    clearRomajiTimer();
+    romajiTargetRef.current = target;
+    romajiContextRef.current = context;
+    romajiTimerRef.current = setTimeout(() => {
+      const currentTarget = romajiTargetRef.current;
+      const currentContext = romajiContextRef.current;
+      if (!currentTarget || !currentContext) return;
+      const output = normalizeKanaFromKatakana('ン', currentContext.kanaMode);
+      applyTextInput(currentTarget, output, currentContext);
+      advanceWordCursor(currentTarget, currentContext);
+      romajiBufferRef.current = '';
+      romajiTimerRef.current = null;
+    }, ROMAJI_N_CONFIRM_DELAY);
+  }, [advanceWordCursor, applyTextInput, clearRomajiTimer]);
+
+  const handleRomajiKeyInput = useCallback((
+    target: { row: number; col: number },
+    keyValue: string,
+    context: NumberKeyboardContext
+  ) => {
+    clearRomajiTimer();
+    const result = handleRomajiInput(romajiBufferRef.current, keyValue);
+    romajiBufferRef.current = result.buffer;
+    if (result.output) {
+      const normalized = normalizeKanaFromKatakana(result.output, context.kanaMode);
+      applyTextInput(target, normalized, context);
+      advanceWordCursor(target, context);
+    }
+    if (result.startNConfirm) {
+      startRomajiConfirmTimer(target, context);
+    }
+  }, [advanceWordCursor, applyTextInput, clearRomajiTimer, startRomajiConfirmTimer]);
+
+  const handleRomajiDeleteInput = useCallback((
+    target: { row: number; col: number },
+    context: NumberKeyboardContext
+  ): boolean => {
+    clearRomajiTimer();
+    const result = handleRomajiDelete(romajiBufferRef.current);
+    if (!result.handled) return false;
+    romajiBufferRef.current = result.buffer;
+    if (result.startNConfirm) {
+      startRomajiConfirmTimer(target, context);
+    }
+    return true;
+  }, [clearRomajiTimer, startRomajiConfirmTimer]);
+
+  const handleDirectKanaInput = useCallback((
+    target: { row: number; col: number },
+    keyValue: string,
+    context: NumberKeyboardContext
+  ) => {
+    clearRomajiTimer();
+    romajiBufferRef.current = '';
+    const normalized = normalizeKanaInput(keyValue, context.kanaMode);
+    applyTextInput(target, normalized, context);
+    advanceWordCursor(target, context);
+  }, [advanceWordCursor, applyTextInput, clearRomajiTimer]);
+
+  const handleDeleteInput = useCallback((
+    target: { row: number; col: number },
+    context: NumberKeyboardContext
+  ) => {
+    if (context.panelMode === 'hiragana' && handleRomajiDeleteInput(target, context)) {
+      return;
+    }
+    applyNumberInput(target, '', { isDelete: true, isSingleCharInput: false }, context);
+    retreatWordCursor(target, context);
+  }, [applyNumberInput, handleRomajiDeleteInput, retreatWordCursor]);
+
+  const clearRomajiState = useCallback(() => {
+    clearRomajiTimer();
+    romajiBufferRef.current = '';
+  }, [clearRomajiTimer]);
+
+  useEffect(() => {
+    if (panelMode !== 'hiragana') {
+      clearRomajiState();
+    }
+  }, [panelMode, clearRomajiState]);
+
+  useEffect(() => {
+    if (panelMode === 'number') return;
+    if (numberSelection) return;
+    if (grid.rows < 1 || grid.cols < 1) return;
+    setNumberSelection({ row: 0, col: 0 });
+  }, [grid.cols, grid.rows, numberSelection, panelMode, setNumberSelection]);
+
+  useEffect(() => {
+    if (!numberSelection) {
+      clearRomajiState();
+      return;
+    }
+    if (romajiBufferRef.current) {
+      clearRomajiState();
+    }
+  }, [numberSelection?.row, numberSelection?.col, clearRomajiState]);
+
+  useEffect(() => {
+    clearRomajiState();
+  }, [kanaMode, clearRomajiState]);
+
+  useEffect(() => {
+    return () => clearRomajiTimer();
+  }, [clearRomajiTimer]);
+
   // ============================================================================
   // Shortcut Definitions
   // ============================================================================
@@ -404,9 +593,13 @@ export function useNumberKeyboard() {
       keys: ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'],
       preventDefault: true,
       when: (ctx) => ctx.isNumberTool || ctx.isConstraintNumberInput,
-      run: (ctx, key) => {
-        const direction = getArrowDirection(key);
+      run: (ctx, _key) => {
+        const direction = getArrowDirection(_key);
         if (!direction) return;
+
+        if (ctx.panelMode === 'hiragana' && ctx.target) {
+          flushRomajiBuffer(ctx.target, ctx, true);
+        }
 
         const current = numberSelection || { row: 0, col: 0 };
         const next = calculateNextPosition(current, direction, ctx.gridRows, ctx.gridCols);
@@ -415,32 +608,24 @@ export function useNumberKeyboard() {
         }
       },
     },
-    // Delete/Backspace
-    // Note: allowNonNumeric gates *non-numeric character* entry only. Deletion must stay
-    // available for constraint number input and the directional number tool as well,
-    // otherwise entered numbers can only be removed via the number pad panel.
+    // Delete/Backspace: non-numeric character restrictions must not prevent deletion.
     {
       keys: ['Backspace', 'Delete'],
       preventDefault: true,
       when: (ctx) => (ctx.isNumberTool || ctx.isConstraintNumberInput) && ctx.target !== null,
       run: (ctx, key) => {
         if (!ctx.target) return;
-        const { isConstraintNumberInput, isNumberTool } = ctx;
-
-        if (isConstraintNumberInput) {
-          handleConstraintNumber(ctx.target, key, true, false);
-        } else if (toolSettings.currentTool === 'number-directional') {
-          handleDirectionalNumber(ctx.target, key, true, false);
-        } else if (isNumberTool) {
-          handleNormalNumber(ctx.target, key, true, false);
-        }
+        handleDeleteInput(ctx.target, ctx);
       },
     },
     // Digit input (0-9)
     {
       keys: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
       preventDefault: true,
-      when: (ctx) => (ctx.isNumberTool || ctx.isConstraintNumberInput) && ctx.target !== null,
+      when: (ctx) =>
+        (ctx.isNumberTool || ctx.isConstraintNumberInput) &&
+        ctx.panelMode === 'number' &&
+        ctx.target !== null,
       run: (ctx, key) => {
         if (!ctx.target) return;
         const { isConstraintNumberInput, isNumberTool } = ctx;
@@ -454,22 +639,55 @@ export function useNumberKeyboard() {
         }
       },
     },
-    // Single character input (non-digit)
+    // Marker entry also works in the numeric panel; keep word/kana input unchanged.
     {
-      keys: 'abcdefghijklmnopqrstuvwxyz'.split(''),
+      keys: [...MARKER_KEYS],
       preventDefault: true,
       when: (ctx) => (ctx.isNumberTool || ctx.isConstraintNumberInput) && ctx.target !== null,
       run: (ctx, key) => {
         if (!ctx.target) return;
-        const { isConstraintNumberInput, isNumberTool } = ctx;
-
-        if (isConstraintNumberInput) {
+        if (ctx.isConstraintNumberInput) {
           handleConstraintNumber(ctx.target, key, false, true);
         } else if (toolSettings.currentTool === 'number-directional') {
           handleDirectionalNumber(ctx.target, key, false, true);
-        } else if (isNumberTool) {
+        } else {
           handleNormalNumber(ctx.target, key, false, true);
         }
+      },
+    },
+    // Single character input (non-digit)
+    {
+      keys: 'abcdefghijklmnopqrstuvwxyz'.split(''),
+      preventDefault: true,
+      when: (ctx) =>
+        ctx.allowNonNumeric &&
+        (ctx.isNumberTool || ctx.isConstraintNumberInput) &&
+        ctx.target !== null &&
+        (ctx.panelMode === 'alphabet' || ctx.panelMode === 'hiragana'),
+      run: (ctx, key) => {
+        if (!ctx.target) return;
+        if (ctx.panelMode === 'hiragana') {
+          handleRomajiKeyInput(ctx.target, key, ctx);
+          return;
+        }
+
+        const letter = ctx.isUpperCase ? key.toUpperCase() : key.toLowerCase();
+        applyTextInput(ctx.target, letter, ctx);
+        advanceWordCursor(ctx.target, ctx);
+      },
+    },
+    // Romaji special input for long vowel (ー)
+    {
+      keys: ['-'],
+      preventDefault: true,
+      when: (ctx) =>
+        ctx.allowNonNumeric &&
+        (ctx.isNumberTool || ctx.isConstraintNumberInput) &&
+        ctx.panelMode === 'hiragana' &&
+        ctx.target !== null,
+      run: (ctx, key) => {
+        if (!ctx.target) return;
+        handleRomajiKeyInput(ctx.target, key, ctx);
       },
     },
   ], [
@@ -479,6 +697,11 @@ export function useNumberKeyboard() {
     handleConstraintNumber,
     handleDirectionalNumber,
     handleNormalNumber,
+    handleDeleteInput,
+    handleRomajiKeyInput,
+    applyTextInput,
+    flushRomajiBuffer,
+    advanceWordCursor,
   ]);
 
   // ============================================================================
@@ -500,12 +723,27 @@ export function useNumberKeyboard() {
         target: numberSelection,
         gridRows: grid.rows,
         gridCols: grid.cols,
+        panelMode,
+        isUpperCase,
+        kanaMode,
+        wordDirection,
       };
+
+      if (
+        context.allowNonNumeric &&
+        context.panelMode === 'hiragana' &&
+        context.target &&
+        (isHiraganaChar(e.key) || isKatakanaChar(e.key))
+      ) {
+        e.preventDefault();
+        handleDirectKanaInput(context.target, e.key, context);
+        return;
+      }
 
       executeMatchingShortcut(shortcuts, e, context);
     };
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [shortcuts, shouldHandleInput, numberSelection, grid.rows, grid.cols]);
+  }, [shortcuts, shouldHandleInput, numberSelection, grid.rows, grid.cols, panelMode, isUpperCase, kanaMode, wordDirection, handleDirectKanaInput]);
 }

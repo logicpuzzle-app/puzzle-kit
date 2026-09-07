@@ -6,6 +6,8 @@
  */
 
 import type { Point } from '../types';
+import type { GridTopology } from '../utils/gridTopology';
+import { getToolCategory } from '../utils/toolCategory';
 
 // ============================================================================
 // Types
@@ -88,7 +90,7 @@ export interface MouseStrategy {
  * Check if tool is a number tool
  */
 export function isNumberTool(tool: string): boolean {
-  return tool.startsWith('number');
+  return getToolCategory(tool) === 'number';
 }
 
 /**
@@ -102,42 +104,45 @@ export function isDirectionalNumberTool(tool: string): boolean {
  * Check if tool is a text tool
  */
 export function isTextTool(tool: string): boolean {
-  return tool.startsWith('text');
+  return getToolCategory(tool) === 'text';
 }
 
 /**
  * Check if tool is the select tool
  */
 export function isSelectTool(tool: string): boolean {
-  return tool === 'select';
+  return getToolCategory(tool) === 'select';
 }
 
 /**
  * Check if tool is a line tool
  */
 export function isLineTool(tool: string): boolean {
-  return tool.startsWith('line') || tool === 'edge' || tool === 'wall';
+  const category = getToolCategory(tool);
+  return category === 'line' || category === 'edge' || category === 'wall';
 }
 
 /**
  * Check if tool is a surface tool
  */
 export function isSurfaceTool(tool: string): boolean {
-  return tool === 'surface' || tool === 'surface-cycle';
+  const category = getToolCategory(tool);
+  return category === 'surface' || category === 'surface-cycle';
 }
 
 /**
  * Check if tool is a symbol tool
  */
 export function isSymbolTool(tool: string): boolean {
-  return tool.startsWith('symbol');
+  return getToolCategory(tool) === 'symbol';
 }
 
 /**
  * Check if tool is a special tool (thermo/arrow/cage/boxline)
  */
 export function isSpecialTool(tool: string): boolean {
-  return tool === 'thermo' || tool === 'arrow' || tool === 'cage' || tool === 'boxline';
+  const category = getToolCategory(tool);
+  return category === 'special-thermo' || category === 'special-arrow' || category === 'special-cage' || category === 'special-boxline';
 }
 
 // ============================================================================
@@ -273,6 +278,41 @@ export function calculateTopologyFlickDirection(
   }
 
   // Fallback to simple direction
+  const simple = calculateSimpleFlickDirection(dx, dy, threshold);
+  return { direction: simple.direction, angle: null };
+}
+
+/**
+ * Calculate flick direction with topology support
+ */
+export function calculateFlickDirection(
+  dx: number,
+  dy: number,
+  threshold: number,
+  cellId: string,
+  topology: GridTopology | null
+): { direction: 0 | 1 | 2 | 3 | 4; angle: number | null } {
+  if (topology) {
+    const cell = topology.cells.get(cellId);
+    if (cell && cell.boundaryVertices.length >= 3) {
+      const vertices: Point[] = [];
+      for (const vertexId of cell.boundaryVertices) {
+        const vertex = topology.vertices.get(vertexId);
+        if (vertex) {
+          vertices.push(vertex.position);
+        }
+      }
+
+      if (vertices.length >= 3) {
+        const cellInfo: TopologyCellInfo = {
+          center: cell.center,
+          vertices,
+        };
+        return calculateTopologyFlickDirection(dx, dy, threshold, cellInfo);
+      }
+    }
+  }
+
   const simple = calculateSimpleFlickDirection(dx, dy, threshold);
   return { direction: simple.direction, angle: null };
 }

@@ -252,7 +252,7 @@ function parseSlitherlink(puzzle: PuzzleState, rows: number, cols: number, parts
     }
   }
 
-  // Parse first edge section from pzprv3: VERTICAL edges (縦線)
+  // Parse first edge section from pzprv3: VERTICAL edges
   // Structure: rows lines, each with (cols+1) values
   // r = row index (0 to rows-1), c = column position of vertical edge (0 to cols)
   // Vertical edge at (r,c) connects vertex-(r)-(c) to vertex-(r+1)-(c)
@@ -291,7 +291,7 @@ function parseSlitherlink(puzzle: PuzzleState, rows: number, cols: number, parts
     }
   }
 
-  // Parse second edge section from pzprv3: HORIZONTAL edges (横線)
+  // Parse second edge section from pzprv3: HORIZONTAL edges
   // Structure: (rows+1) lines, each with cols values
   // r = row position of horizontal edge (0 to rows), c = column index (0 to cols-1)
   // Horizontal edge at (r,c) connects vertex-(r)-(c) to vertex-(r)-(c+1)

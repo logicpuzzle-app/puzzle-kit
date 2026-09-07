@@ -34,6 +34,7 @@
   ],
   "scripts": {
     "dev": "vite",
+    "build:npgen-wasm": "node scripts/build-npgen-wasm.mjs",
     "build": "tsc -b && vite build",
     "build:lib": "tsc -p tsconfig.lib.json",
     "lint": "eslint .",
@@ -41,13 +42,30 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "deploy": "npm run build && firebase deploy --only hosting"
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "deploy": "npm run build && firebase deploy --only hosting",
+    "test:unit": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:report": "playwright show-report",
+    "test:issues": "playwright test e2e/editor-issues.spec.ts",
+    "typecheck": "tsc -b",
+    "qa:capture": "node scripts/qa-capture.mjs",
+    "qa:check": "node scripts/qa-check.mjs",
+    "qa:doctor": "node scripts/qa-doctor.mjs",
+    "dev:harness": "vite --config vite.qa.config.ts --host 127.0.0.1 --port 4175 --strictPort",
+    "qa:compare": "node scripts/qa-compare.mjs",
+    "typecheck:e2e": "tsc -p tsconfig.e2e.json",
+    "qa:production": "playwright test --config playwright.production.config.ts"
   },
   "dependencies": {
     "firebase": "^12.6.0",
     "i18next": "^25.6.3",
     "lucide-react": "^0.556.0",
+    "lz-string": "^1.5.0",
     "pako": "^2.1.0",
+    "pdfjs-dist": "^4.10.38",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-i18next": "^16.3.5",
@@ -55,16 +73,9 @@
     "uuid": "^13.0.0",
     "zustand": "^5.0.8"
   },
-  "peerDependencies": {
-    "@logicpuzzle-app/solver-kit": "^0.2.1"
-  },
-  "peerDependenciesMeta": {
-    "@logicpuzzle-app/solver-kit": {
-      "optional": true
-    }
-  },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@playwright/test": "1.62.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@types/node": "^24.10.1",
@@ -73,6 +84,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^5.1.1",
+    "@vitest/coverage-v8": "4.1.11",
     "autoprefixer": "^10.4.22",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
@@ -84,6 +96,6 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "^7.2.7",
-    "vitest": "^4.0.14"
+    "vitest": "4.1.11"
   }
 }

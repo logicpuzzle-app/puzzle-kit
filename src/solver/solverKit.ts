@@ -1,9 +1,5 @@
-import * as solverKit from '@logicpuzzle-app/solver-kit';
-
-type SolverKitModule = typeof solverKit & { SOLVER_KIT_AVAILABLE?: boolean };
-
-export const solverKitAvailable =
-  (solverKit as SolverKitModule).SOLVER_KIT_AVAILABLE ?? true;
+// The tracked solver bundle is a required build input; there is no optional stub.
+export const solverKitAvailable = true;
 
 export {
   SlitherField,
@@ -24,6 +20,6 @@ export {
   NurikabeSolver,
   NurimisakiField,
   NurimisakiSolver,
-} from '@logicpuzzle-app/solver-kit';
+} from '../../solver/index.js';
 
-export type { HeyawakeRoom } from '@logicpuzzle-app/solver-kit';
+export type { HeyawakeRoom } from '../../solver/index.js';

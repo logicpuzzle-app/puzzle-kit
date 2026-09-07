@@ -1,0 +1,132 @@
+
+> puzzle-kit@0.0.0 test:unit
+> vitest run src/test/cspuzWorker.test.ts src/test/solverWorker.test.ts
+
+
+ RUN  v4.1.11 /Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality
+
+stdout | src/test/cspuzWorker.test.ts > cspuz reports HTTP errors and retries loading wasm
+[cspuz] Solving: https://puzz.link/p?nurikabe/3/3/1g1i1g1
+
+stdout | src/test/cspuzWorker.test.ts > cspuz reports HTTP errors and retries loading js
+[cspuz] Solving: https://puzz.link/p?nurikabe/3/3/1g1i1g1
+
+stdout | src/test/cspuzWorker.test.ts > cspuz preserves confirmed cells as a partial answer for multiple solutions
+[cspuz] Solving: https://puzz.link/p?nurikabe/3/3/1j4i
+
+stdout | src/test/cspuzWorker.test.ts > cspuz preserves confirmed cells as a partial answer for multiple solutions
+[cspuz] Result: ok
+
+ ❯ src/test/cspuzWorker.test.ts (3 tests | 3 failed) 29ms
+   × cspuz reports HTTP errors and retries loading wasm 26ms
+   × cspuz reports HTTP errors and retries loading js 1ms
+   × cspuz preserves confirmed cells as a partial answer for multiple solutions 1ms
+stdout | src/test/solverWorker.test.ts > bundled Heyawake respects canonical room walls
+[Heyawake Solver] Starting solve...
+[Heyawake Solver] Grid: 2 x 2
+[Heyawake Solver] Walls count: 3
+[Heyawake Solver] Numbers count: 3
+[Heyawake Solver] Rooms: 3
+[Heyawake Solver]   Room 0: blackCount=0, cells=2
+[Heyawake Solver]   Room 1: blackCount=1, cells=1
+[Heyawake Solver]   Room 2: blackCount=0, cells=1
+[Heyawake Solver] Result: solved
+
+stdout | src/test/solverWorker.test.ts > bundled Heyawake respects canonical room walls
+[Heyawake Solver] Starting solve...
+[Heyawake Solver] Grid: 2 x 2
+[Heyawake Solver] Walls count: 0
+[Heyawake Solver] Numbers count: 3
+[Heyawake Solver] Rooms: 1
+[Heyawake Solver]   Room 0: blackCount=0, cells=4
+[Heyawake Solver] Result: solved
+
+ ❯ src/test/solverWorker.test.ts (3 tests | 1 failed) 1080ms
+   × bundled Heyawake respects canonical room walls 34ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/cspuzWorker.test.ts > cspuz reports HTTP errors and retries loading wasm
+AssertionError: expected 'Invalid or unexpected token' to contain '503'
+
+Expected: "503"
+Received: "Invalid or unexpected token"
+
+ ❯ src/test/cspuzWorker.test.ts:23:35
+     21|     expect(response.id).toBe(id);
+     22|     expect(response.result).toMatchObject({ success: false, status: 'e…
+     23|     expect(response.result.error).toContain('503');
+       |                                   ^
+     24|   }
+     25|   expect(fetch.mock.calls.filter(([url]) => url.endsWith(extension))).…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/test/cspuzWorker.test.ts > cspuz reports HTTP errors and retries loading js
+AssertionError: expected 'unavailable is not defined' to contain '503'
+
+Expected: "503"
+Received: "unavailable is not defined"
+
+ ❯ src/test/cspuzWorker.test.ts:23:35
+     21|     expect(response.id).toBe(id);
+     22|     expect(response.result).toMatchObject({ success: false, status: 'e…
+     23|     expect(response.result.error).toContain('503');
+       |                                   ^
+     24|   }
+     25|   expect(fetch.mock.calls.filter(([url]) => url.endsWith(extension))).…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/test/cspuzWorker.test.ts > cspuz preserves confirmed cells as a partial answer for multiple solutions
+TypeError: Cannot read properties of undefined (reading 'surfaces')
+ ❯ src/test/cspuzWorker.test.ts:49:46
+     47|   const { result } = postMessage.mock.lastCall![0] as CspuzWorkerRespo…
+     48|   expect(result).toMatchObject({ status: 'multiple', success: false });
+     49|   expect(Object.values(result.partialAnswer!.surfaces).map(cell => cel…
+       |                                              ^
+     50| });
+     51|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/test/solverWorker.test.ts > bundled Heyawake respects canonical room walls
+AssertionError: expected { surfaces: {}, lines: {}, …(7) } to deeply equal { surfaces: { …(1) }, lines: {}, …(7) }
+
+- Expected
++ Received
+
+@@ -3,16 +3,9 @@
+    "cages": {},
+    "edges": {},
+    "lines": {},
+    "numbers": {},
+    "specials": {},
+-   "surfaces": {
+-     "surface-1": {
+-       "cellId": "cell-0-1",
+-       "color": "#374151",
+-       "id": "surface-1",
+-       "layer": "answer",
+-     },
+-   },
++   "surfaces": {},
+    "symbols": {},
+    "walls": {},
+  }
+
+ ❯ src/test/solverWorker.test.ts:46:28
+     44|   expect(Object.values(legacy.answer!.surfaces).map(cell => cell.cellI…
+     45|   expect(canonical.status).toBe('solved');
+     46|   expect(canonical.answer).toEqual(legacy.answer);
+       |                            ^
+     47| });
+     48|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  4 failed | 2 passed (6)
+   Start at  01:38:21
+   Duration  1.93s (transform 1.03s, setup 150ms, import 191ms, tests 1.11s, environment 968ms)
