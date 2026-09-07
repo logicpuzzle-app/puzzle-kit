@@ -65,4 +65,3 @@ export function SegmentedToggle<T extends string>({
     </div>
   );
 }
-
