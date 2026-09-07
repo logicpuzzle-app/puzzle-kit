@@ -1,15 +1,27 @@
 import { spawnSync } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const projectDir = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const outputDir = resolve(projectDir, 'src/wasm/npgen');
+const sourceArg = process.argv[2] ?? process.env.NPGEN_RUST_SOURCE;
+if (!sourceArg) {
+  console.error('Usage: npm run build:npgen-wasm -- /path/to/npgenerator/rust');
+  console.error('Normal builds use the committed Wasm; regeneration requires Rust sources and wasm-pack.');
+  process.exit(2);
+}
+const sourceDir = resolve(sourceArg);
+if (!existsSync(resolve(sourceDir, 'Cargo.toml'))) {
+  console.error(`No Cargo.toml found in ${sourceDir}`);
+  process.exit(2);
+}
+
 const result = spawnSync(
   'wasm-pack',
   [
     'build',
-    resolve(projectDir, '../../Puzzle/npgenerator/rust'),
+    sourceDir,
     '--target',
     'web',
     '--out-dir',
