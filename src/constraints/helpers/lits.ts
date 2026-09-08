@@ -5,7 +5,7 @@ import { getEdgeIndexById } from '../../utils/gridUtils';
 type Context = { puzzle: PuzzleState; grid: GridConfig; topology: GridTopology | null };
 const shades = new Set(['#000000', '#444444', '#808080']);
 export const isLitsShaded = (puzzle: PuzzleState, id: string) =>
-  Object.values(puzzle.answer.surfaces).some(s => s.cellId === id && shades.has(s.color));
+  Object.values(puzzle.answer.surfaces).some(s => s.cellId === id && s.displayMode !== 'dot' && shades.has(s.color));
 
 export function litsNeighbors(id: string): string[] {
   const match = /^cell-(\d+)-(\d+)$/.exec(id);
