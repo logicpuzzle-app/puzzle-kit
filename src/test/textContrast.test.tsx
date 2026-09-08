@@ -35,3 +35,13 @@ describe('cell text contrast', () => {
     expect(container.querySelector('text')?.getAttribute('fill')).toBe('#000000');
   });
 });
+
+it('respects grid backgrounds, trial opacity, and uniform multicolor overlays', () => {
+  const store=createPuzzleStore().useStore;
+  const empty=store.getState().puzzle;
+  expect(createTextColorResolver(empty,true,true,{backgroundColor:'#000000'})('cell-0-0','#000')).toBe('#ffffff');
+  store.getState().addSurface({cellId:'cell-0-0',color:'#000000',layer:'answer'});
+  expect(createTextColorResolver(store.getState().puzzle,true,true,{trialStage:1})('cell-0-0','#000')).toBe('#000000');
+  const puzzle={...store.getState().puzzle,multicolorSurfaces:{m:{id:'m',cellId:'cell-0-0',colors:[9],customColors:['#ffffff'],pattern:'cross' as const,layer:'answer' as const}}};
+  expect(createTextColorResolver(puzzle,true,true)('cell-0-0','#000')).toBe('#000000');
+});

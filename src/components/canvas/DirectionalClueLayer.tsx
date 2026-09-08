@@ -140,9 +140,9 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
   layer,
   arrowStyle = 'polygon'
 }) => {
-  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology } = usePuzzleStore();
+  const { grid, puzzle, showProblemLayer, showAnswerLayer, trialStage, trialStack, useTopology, topology } = usePuzzleStore();
   const highlightOutput = useHighlightOutput();
-  const textColor = useMemo(() => createTextColorResolver(puzzle, showProblemLayer, showAnswerLayer), [puzzle, showProblemLayer, showAnswerLayer]);
+  const textColor = useMemo(() => createTextColorResolver(puzzle, showProblemLayer, showAnswerLayer, { backgroundColor: grid.backgroundColor, trialStage, trialStack }), [puzzle, showProblemLayer, showAnswerLayer, grid.backgroundColor, trialStage, trialStack]);
 
   const isVisible = (layer === 'problem' && showProblemLayer) || (layer === 'answer' && showAnswerLayer);
 

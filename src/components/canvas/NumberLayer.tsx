@@ -26,10 +26,10 @@ const getFontSize = (size: 'large' | 'medium' | 'small', cellSize: number): numb
 type DominantBaseline = 'auto' | 'middle' | 'hanging' | 'ideographic';
 
 export const NumberLayer: React.FC<NumberLayerProps> = ({ layer }) => {
-  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology, currentSchemaId } = usePuzzleStore();
+  const { grid, puzzle, showProblemLayer, showAnswerLayer, trialStage, trialStack, useTopology, topology, currentSchemaId } = usePuzzleStore();
   const { cellSize } = grid;
 
-  const textColor = useMemo(() => createTextColorResolver(puzzle, showProblemLayer, showAnswerLayer), [puzzle, showProblemLayer, showAnswerLayer]);
+  const textColor = useMemo(() => createTextColorResolver(puzzle, showProblemLayer, showAnswerLayer, { backgroundColor: grid.backgroundColor, trialStage, trialStack }), [puzzle, showProblemLayer, showAnswerLayer, grid.backgroundColor, trialStage, trialStack]);
 
   const isVisible =
     (layer === 'problem' && showProblemLayer) ||

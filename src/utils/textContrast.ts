@@ -1,4 +1,5 @@
-import type { PuzzleState } from '../types';
+import type { PuzzleState, PuzzleElements } from '../types';
+import { getPenpaColor } from '../types/penpaElements';
 
 function rgba(color: string): number[] | null {
   let value = color.trim().toLowerCase();
@@ -12,22 +13,48 @@ function rgba(color: string): number[] | null {
 }
 
 /** Black/white text follows visible cell shading. Explicit chromatic colors remain literal. */
-export function createTextColorResolver(puzzle: PuzzleState, showProblem: boolean, showAnswer: boolean) {
+export function createTextColorResolver(puzzle: PuzzleState, showProblem: boolean, showAnswer: boolean, options: { backgroundColor?: string; trialStack?: PuzzleElements[]; trialStage?: number } = {}) {
   const backgrounds = new Map<string, number[]>();
+  const ambiguous = new Set<string>();
+  const base = rgba(options.backgroundColor ?? '#ffffff') ?? [255, 255, 255, 1];
+  const baseRGB = base.slice(0, 3).map(v => v * base[3] + 255 * (1 - base[3]));
+  const composite = (id: string, color: string, opacity: number) => {
+    const foreground = rgba(color);
+    if (!foreground) return;
+    const alpha = foreground[3] * opacity;
+    const background = backgrounds.get(id) ?? baseRGB;
+    backgrounds.set(id, background.map((v, i) => foreground[i] * alpha + v * (1 - alpha)));
+  };
+  const applySurfaces = (elements: PuzzleElements, opacity: number) => {
+    for (const surface of Object.values(elements.surfaces)) {
+      if (surface.displayMode !== 'dot') composite(surface.cellId, surface.color, opacity);
+    }
+  };
+  const answerOpacity = options.trialStage ? 0.5 : 1;
+  if (showProblem) applySurfaces(puzzle.problem, 1);
+  if (showAnswer) {
+    if (options.trialStage) options.trialStack?.forEach((elements, i) => applySurfaces(elements, i === 0 ? 1 : 0.75));
+    applySurfaces(puzzle.answer, answerOpacity);
+  }
+  // Uniform multicolor cells cover ordinary surfaces in the same order as the SVG.
+  // Mixed cells have no single background color; preserve their explicit text color.
   for (const layer of ['problem', 'answer'] as const) {
     if (!(layer === 'problem' ? showProblem : showAnswer)) continue;
-    for (const surface of Object.values(puzzle[layer].surfaces)) {
-      if (surface.displayMode === 'dot') continue;
-      const foreground = rgba(surface.color);
-      if (!foreground) continue;
-      const background = backgrounds.get(surface.cellId) ?? [255, 255, 255];
-      backgrounds.set(surface.cellId, background.map((v, i) => foreground[i] * foreground[3] + v * (1 - foreground[3])));
+    for (const surface of Object.values(puzzle.multicolorSurfaces ?? {})) {
+      if (surface.layer !== layer || !surface.colors.length) continue;
+      if (new Set(surface.colors).size !== 1) { ambiguous.add(surface.cellId); continue; }
+      const index = surface.colors[0];
+      if (!index) continue;
+      const color = index >= 9 ? surface.customColors?.[index - 9] ?? getPenpaColor(index) : getPenpaColor(index);
+      composite(surface.cellId, color, layer === 'answer' ? answerOpacity : 1);
+      ambiguous.delete(surface.cellId);
     }
   }
   return (cellId: string, savedColor: string): string => {
+    if (ambiguous.has(cellId)) return savedColor;
     const color = rgba(savedColor);
     if (!color || color[3] !== 1 || !([0, 255].includes(color[0]) && color[0] === color[1] && color[1] === color[2])) return savedColor;
-    const channels = (backgrounds.get(cellId) ?? [255, 255, 255]).map(v => {
+    const channels = (backgrounds.get(cellId) ?? baseRGB).map(v => {
       const c = v / 255;
       return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
     });
