@@ -599,6 +599,7 @@ export const ja = {
   'tool.symbol.gridPoint.edge': '辺中点',
 
   // Special tools
+  'special.edit.preview': '選択中の図形のプレビュー',
   'special.edit.object': '編集する図形',
   'special.edit.select': '図形を選択',
   'special.edit.empty': '先に矢印または温度計を描いてください',

@@ -599,6 +599,7 @@ export const en = {
   'tool.symbol.gridPoint.edge': 'Edge',
 
   // Special tools
+  'special.edit.preview': 'Selected object preview',
   'special.edit.object': 'Object to edit',
   'special.edit.select': 'Select an object',
   'special.edit.empty': 'Draw an arrow or thermo first',
