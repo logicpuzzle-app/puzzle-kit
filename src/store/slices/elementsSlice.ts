@@ -480,6 +480,23 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
     return id;
   },
 
+  shortenSpecial: (id) => {
+    const state = get();
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer) return;
+    const element = state.puzzle[layer].specials[id];
+    if (!element || !['arrow', 'thermo'].includes(element.type) || element.points.length <= 2) return;
+    const shortened = { ...element, points: element.points.slice(0, -1) };
+    set(state => ({
+      puzzle: { ...state.puzzle, [layer]: { ...state.puzzle[layer], specials: {
+        ...state.puzzle[layer].specials, [id]: shortened,
+      } } },
+    }));
+    get().historyManager.addAction(createBatchAction([
+      createRemoveSpecialAction(id, element), createAddSpecialAction(shortened),
+    ], 'Shorten special tip'));
+  },
+
   removeSpecial: (id) => {
     const state = get();
     const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
