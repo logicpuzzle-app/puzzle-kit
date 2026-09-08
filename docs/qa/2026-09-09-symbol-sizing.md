@@ -3,7 +3,7 @@
 Before application: `c0cb33a258ce24b7106b519dabea77933e53c8cf` (develop + initial QA runner improvements).
 Full-regression application/tests: `e4e050d4cab6e5ef6e5e9e13a306af3fc5f0a4e4` (integrated with PR #60 and PR #61).
 Final UI/evidence: `007363f5dc419f0e1c6782fa370dc5084a76e03f`. This subsequent change only draws the preview cell outline after the symbol, keeping it visible over fills. The final revision passed all 12 sizing E2E cases and all 48 production checks.
-Subsequent evidence commits do not modify application/test code. Related: #8.
+Final restoration-wait test correction: `f24cc9ee05f31b061bc058f6beef4bf726d80354`. This changes only the post-reload assertion to wait for the complete restored symbol; application/rendering and recorded UI are unchanged. Ten consecutive mobile WebKit runs passed at this correction, without retries. Related: #8.
 
 ## Results
 
@@ -22,6 +22,8 @@ Full run: `artifacts/check/2026-09-08T22-01-45-535Z`.
 Production: `artifacts/qa/symbol-sizing-production-preview-final`.
 Before: `artifacts/qa/symbol-sizing-before`; 4 expected failures at the missing Largest button or object selector, with no browser exceptions.
 The pre-integration full run `2026-09-08T21-58-14-119Z` was intentionally stopped to resolve overlap with PR #60. It is not final evidence.
+
+Restore-wait regression: `artifacts/qa/symbol-sizing-restore-stability` (10 passed). The initial PR CI read the store immediately after reload and received no symbol before restoration finished. The final test waits for all expected symbol fields, preserving the same assertions.
 
 ## Verified behavior
 
