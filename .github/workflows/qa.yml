@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -32,7 +32,7 @@ jobs:
         run: npm run qa:production
       - name: Preserve QA recordings and logs
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: qa-${{ github.run_id }}-${{ github.run_attempt }}
           path: artifacts/check/
