@@ -1,3 +1,4 @@
+import { createTextColorResolver } from '../../utils/textContrast';
 /**
  * Symbol rendering layer for puzzle canvas
  */
@@ -13,8 +14,10 @@ interface SymbolLayerProps {
 }
 
 export const SymbolLayer: React.FC<SymbolLayerProps> = ({ layer }) => {
-  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology } = usePuzzleStore();
+  const { grid, puzzle, showProblemLayer, showAnswerLayer, trialStage, trialStack, useTopology, topology } = usePuzzleStore();
   const { cellSize } = grid;
+
+  const textColor = useMemo(() => createTextColorResolver(puzzle, showProblemLayer, showAnswerLayer, { backgroundColor: grid.backgroundColor, trialStage, trialStack }), [puzzle, showProblemLayer, showAnswerLayer, grid.backgroundColor, trialStage, trialStack]);
 
   const isVisible =
     (layer === 'problem' && showProblemLayer) ||
@@ -77,7 +80,7 @@ export const SymbolLayer: React.FC<SymbolLayerProps> = ({ layer }) => {
             x: center.x,
             y: center.y,
             size: cellSize * sizeMultiplier,
-            color: symbol.color,
+            color: symbol.symbolType.startsWith('text-') ? textColor(symbol.cellId, symbol.color) : symbol.color,
             fillColor: symbol.fillColor,
             rotation: symbol.rotation,
             directions: symbol.directions,
@@ -88,7 +91,7 @@ export const SymbolLayer: React.FC<SymbolLayerProps> = ({ layer }) => {
     });
 
     return elements;
-  }, [puzzle, layer, grid, cellSize, isVisible, useTopology, topology]);
+  }, [puzzle, layer, grid, cellSize, isVisible, useTopology, topology, textColor]);
 
   if (!isVisible) return null;
 

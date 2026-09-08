@@ -36,6 +36,7 @@ function PlayerApp() {
   const { t } = useTranslation();
   const {
     addSymbol,
+    removeSymbol,
     activeLayer,
     toolSettings,
     setActiveLayer,
@@ -83,6 +84,7 @@ function PlayerApp() {
 
   const { handleTextClick, dialogProps: textDialogProps } = useTextSymbolDialog({
     addSymbol,
+    removeSymbol,
     toolSettings,
     activeLayer,
   });

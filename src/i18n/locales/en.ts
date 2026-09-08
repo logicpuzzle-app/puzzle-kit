@@ -908,6 +908,7 @@ export const en = {
   // Validation
   'validation.complete': 'Correct!',
   'validation.incorrect': 'Incorrect',
+  'validation.unavailable': 'Some required checks are unavailable. The answer cannot be confirmed.',
   'validation.undecided': 'Undecided',
   'validation.errorCount': '{{count}} error(s) found',
   'validation.errorCount_one': '{{count}} error found',

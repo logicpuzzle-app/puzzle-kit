@@ -80,6 +80,10 @@ function stripLayerFromPuzzleElements(elements: PuzzleElements): Record<string, 
   });
 
   return {
+    ...elements,
+    edges: stripLayerFromElements(elements.edges || {}),
+    walls: stripLayerFromElements(elements.walls || {}),
+    ...(elements.lineGroups ? { lineGroups: stripLayerFromElements(elements.lineGroups) } : {}),
     surfaces: stripLayerFromElements(elements.surfaces || {}),
     lines: stripLayerFromElements(elements.lines || {}),
     numbers: stripLayerFromElements(elements.numbers || {}),
@@ -123,6 +127,8 @@ export function restoreLayerToPuzzleElements(
     'wall'
   );
   const restored: PuzzleElements & { directionalClues?: Record<string, any> } = {
+    ...elements,
+    ...(elements.lineGroups ? { lineGroups: restoreLayerToElements(elements.lineGroups, layer) } : {}),
     surfaces: restoreLayerToElements(elements.surfaces || {}, layer),
     lines: mergedLines,
     edges: {},
@@ -168,36 +174,13 @@ export function restorePuzzleStateFromExport(data: Record<string, any>): PuzzleS
     return result;
   };
 
-  // Check if layer is missing from elements to determine format
-  const needsLayerRestore = (elements: Record<string, any>) => {
-    const firstElement = Object.values(elements)[0] as Record<string, any> | undefined;
-    return firstElement && !('layer' in firstElement);
-  };
-
-  const problemElements = (data.problem || {}) as Record<string, any>;
-  const answerElements = (data.answer || {}) as Record<string, any>;
-
-  const problemNeedsRestore = problemElements.surfaces &&
-    needsLayerRestore(problemElements.surfaces);
-  const answerNeedsRestore = answerElements.surfaces &&
-    needsLayerRestore(answerElements.surfaces);
-
-  if (problemNeedsRestore || answerNeedsRestore) {
-    return {
-      problem: restoreLayerToPuzzleElements(problemElements, 'problem'),
-      answer: restoreLayerToPuzzleElements(answerElements, 'answer'),
-      ...(data.multicolorSurfaces
-        ? { multicolorSurfaces: normalizeMulticolorSurfaces(data.multicolorSurfaces) }
-        : {}),
-      ...(data.solutionArea ? { solutionArea: data.solutionArea } : {}),
-    };
-  }
-
-  // Already has layer fields, return as-is
+  // Normalize every category, including boards with no surfaces and mixed legacy records.
   return {
-    ...(data as PuzzleState),
+    ...data,
+    problem: restoreLayerToPuzzleElements(data.problem || {}, 'problem'),
+    answer: restoreLayerToPuzzleElements(data.answer || {}, 'answer'),
     ...(data.multicolorSurfaces
-      ? { multicolorSurfaces: normalizeMulticolorSurfaces(data.multicolorSurfaces) as any }
+      ? { multicolorSurfaces: normalizeMulticolorSurfaces(data.multicolorSurfaces) }
       : {}),
   };
 }

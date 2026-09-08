@@ -49,6 +49,7 @@ import {
   normalizeSegmentEndpoints,
   generateLineId,
 } from '../../utils/lineNormalization';
+import { mergeLineOverlaps } from '../../utils/lineOverlap';
 import { canEditDataLayer, getEditableDataLayer } from '../../utils/editPolicy';
 import {
   getDirectionalClueDisplayValue,
@@ -167,22 +168,22 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
       return '';
     }
 
+    const state = get();
+    const merged = mergeLineOverlaps(normalizedElement, state.puzzle[element.layer].lines, state.grid, state.topology, state.puzzle[element.layer].lineGroups);
+    if (merged.removed.length === 1 && merged.line === merged.removed[0]) return merged.line.id;
+    normalizedElement = merged.line;
+    id = normalizedElement.id;
     set((state) => {
       const layer = normalizedElement.layer;
-      return {
-        puzzle: {
-          ...state.puzzle,
-          [layer]: {
-            ...state.puzzle[layer],
-            lines: {
-              ...state.puzzle[layer].lines,
-              [id]: normalizedElement,
-            },
-          },
-        },
-      };
+      const lines = { ...state.puzzle[layer].lines };
+      merged.removed.forEach(line => delete lines[line.id]);
+      lines[id] = normalizedElement;
+      return { puzzle: { ...state.puzzle, [layer]: { ...state.puzzle[layer], lines } } };
     });
-    get().historyManager.addAction(createAddLineAction(normalizedElement));
+    const addition = createAddLineAction(normalizedElement);
+    get().historyManager.addAction(merged.removed.length ? createBatchAction([
+      ...merged.removed.map(line => createRemoveLineAction(line.id, line)), addition,
+    ], 'Merge overlapping lines') : addition);
     return id;
   },
 
@@ -354,27 +355,24 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
 
   // Symbol operations
   addSymbol: (element) => {
-    const id = generateSymbolId();
+    if (!canEditLayer(element.layer)) return '';
+    // A cell has one editable text entry; other symbol kinds may coexist.
+    const previous = element.symbolType.startsWith('text-')
+      ? Object.values(get().puzzle[element.layer].symbols).filter(s => s.cellId === element.cellId && s.symbolType.startsWith('text-'))
+      : [];
+    const id = previous[0]?.id ?? generateSymbolId();
     const fullElement: SymbolElement = { ...element, id };
-    if (!canEditLayer(fullElement.layer)) {
-      return '';
-    }
+    if (previous.length === 1 && JSON.stringify(previous[0]) === JSON.stringify(fullElement)) return id;
     set((state) => {
-      const layer = fullElement.layer;
-      return {
-        puzzle: {
-          ...state.puzzle,
-          [layer]: {
-            ...state.puzzle[layer],
-            symbols: {
-              ...state.puzzle[layer].symbols,
-              [id]: fullElement,
-            },
-          },
-        },
-      };
+      const symbols = { ...state.puzzle[element.layer].symbols };
+      previous.forEach(s => delete symbols[s.id]);
+      symbols[id] = fullElement;
+      return { puzzle: { ...state.puzzle, [element.layer]: { ...state.puzzle[element.layer], symbols } } };
     });
-    get().historyManager.addAction(createAddSymbolAction(fullElement));
+    const addition = createAddSymbolAction(fullElement);
+    get().historyManager.addAction(previous.length ? createBatchAction([
+      ...previous.map(s => createRemoveSymbolAction(s.id, s)), addition,
+    ], 'Edit text') : addition);
     return id;
   },
 

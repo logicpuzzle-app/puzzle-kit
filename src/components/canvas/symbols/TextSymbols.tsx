@@ -3,6 +3,7 @@
  */
 
 import React from 'react';
+import { layoutCellText } from '../../../utils/textSymbols';
 import type { SymbolProps, TextSymbolProps } from './types';
 
 // Generic Unicode symbol renderer
@@ -23,9 +24,7 @@ export const UnicodeSymbol: React.FC<SymbolProps & { char: string }> = ({ x, y, 
 
 // Text symbol component for displaying text characters
 export const TextSymbol: React.FC<TextSymbolProps> = ({ x, y, size, color, text, rotation }) => {
-  // Calculate font size based on text length and cell size
-  const baseFontSize = size * 0.7;
-  const fontSize = text.length === 1 ? baseFontSize : baseFontSize / Math.min(text.length, 3);
+  const { lines, fontSize, lineHeight } = layoutCellText(text, size);
 
   return (
     <text
@@ -39,7 +38,9 @@ export const TextSymbol: React.FC<TextSymbolProps> = ({ x, y, size, color, text,
       fontWeight="500"
       transform={rotation ? `rotate(${rotation} ${x} ${y})` : undefined}
     >
-      {text}
+      {lines.map((line, index) => (
+        <tspan key={index} x={x} y={y + (index - (lines.length - 1) / 2) * lineHeight}>{line || '\u00a0'}</tspan>
+      ))}
     </text>
   );
 };

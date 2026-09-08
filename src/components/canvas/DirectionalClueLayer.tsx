@@ -1,3 +1,4 @@
+import { createTextColorResolver } from '../../utils/textContrast';
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { getCellCenter, getCellIndexById } from '../../utils/gridUtils';
@@ -139,8 +140,10 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
   layer,
   arrowStyle = 'polygon'
 }) => {
-  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology } = usePuzzleStore();
+  const { grid, puzzle, showProblemLayer, showAnswerLayer, trialStage, trialStack, useTopology, topology } = usePuzzleStore();
   const highlightOutput = useHighlightOutput();
+  const textColor = useMemo(() => createTextColorResolver(puzzle, showProblemLayer, showAnswerLayer, { backgroundColor: grid.backgroundColor, trialStage, trialStack }), [puzzle, showProblemLayer, showAnswerLayer, grid.backgroundColor, trialStage, trialStack]);
+
   const isVisible = (layer === 'problem' && showProblemLayer) || (layer === 'answer' && showAnswerLayer);
 
   const textStyleMap = useMemo(() => {
@@ -208,7 +211,7 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
       const hasArbitraryAngle = clue.angle !== null && clue.angle !== undefined;
       const highlightStyle = textStyleMap.get(cellId);
       // Use highlight override if present, then clue color, otherwise default to black
-      const clueColor = highlightStyle?.color || clue.color || '#000';
+      const clueColor = highlightStyle?.color || textColor(cellId, clue.color || '#000');
       const numberFontWeight = highlightStyle?.fontWeight || baseFontWeight;
 
       if (hasArbitraryAngle || hasDirection) {
@@ -262,7 +265,7 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
       }
     });
     return nodes;
-  }, [isVisible, puzzle, layer, grid, arrowStyle, useTopology, topology, textStyleMap]);
+  }, [isVisible, puzzle, layer, grid, arrowStyle, useTopology, topology, textStyleMap, textColor]);
 
   if (!elements) return null;
   return <g className={`directional-clue-layer ${layer}`}>{elements}</g>;

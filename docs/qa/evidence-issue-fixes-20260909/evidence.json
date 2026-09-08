@@ -1,0 +1,307 @@
+{
+  "beforeCommit": "cf8c60554a3bdcfda531e0dc90355fff2a288639",
+  "afterCommit": "b6a195a83773b6cc24e9fb64d941daea5362a844",
+  "fullQaRun": "artifacts/check/2026-09-08T16-33-46-132Z",
+  "videos": [
+    {
+      "case": "lits",
+      "profile": "chromium",
+      "stage": "before",
+      "file": "lits-chromium-before.webm",
+      "durationSeconds": 1.56,
+      "bytes": 56446,
+      "sha256": "1deff996cf7a04a0d9af3ee76bd0d7590ddacfa477408ff69bb115beb72bd6c5",
+      "fullyDecoded": true
+    },
+    {
+      "case": "lits",
+      "profile": "chromium",
+      "stage": "after",
+      "file": "lits-chromium-after.webm",
+      "durationSeconds": 2.84,
+      "bytes": 85100,
+      "sha256": "cb7f373e9c021e9572decf70a85207eecfbab8dfa3574859ef9b0eafadd96ed2",
+      "fullyDecoded": true
+    },
+    {
+      "case": "lits",
+      "profile": "mobile-chrome",
+      "stage": "before",
+      "file": "lits-mobile-chrome-before.webm",
+      "durationSeconds": 1.8,
+      "bytes": 75886,
+      "sha256": "71e7d36f7339298bd3028d1e1d686f41bd33b1fe9b42d44b0d5b9ac920918bd2",
+      "fullyDecoded": true
+    },
+    {
+      "case": "lits",
+      "profile": "mobile-chrome",
+      "stage": "after",
+      "file": "lits-mobile-chrome-after.webm",
+      "durationSeconds": 3.32,
+      "bytes": 113910,
+      "sha256": "b7b3b714e146d4c186041b5a0a344aec3a227f3d37452df820f7e6f17fa214e3",
+      "fullyDecoded": true
+    },
+    {
+      "case": "text",
+      "profile": "chromium",
+      "stage": "before",
+      "file": "text-chromium-before.webm",
+      "durationSeconds": 1.96,
+      "bytes": 124579,
+      "sha256": "e30ea5798e51177ee6817468c8daaa92be40a090b4a66af02c59ba0ed7e890da",
+      "fullyDecoded": true
+    },
+    {
+      "case": "text",
+      "profile": "chromium",
+      "stage": "after",
+      "file": "text-chromium-after.webm",
+      "durationSeconds": 7.0,
+      "bytes": 168095,
+      "sha256": "df769e7e21a6e1ef05a23047ba1bbeeef21c2550937fd84d1c8eb7c4479b2e53",
+      "fullyDecoded": true
+    },
+    {
+      "case": "text",
+      "profile": "mobile-chrome",
+      "stage": "before",
+      "file": "text-mobile-chrome-before.webm",
+      "durationSeconds": 1.8,
+      "bytes": 104027,
+      "sha256": "984481043b37c391fa326d442c6ce853c44296056a8eae5e0f4acafba77df48d",
+      "fullyDecoded": true
+    },
+    {
+      "case": "text",
+      "profile": "mobile-chrome",
+      "stage": "after",
+      "file": "text-mobile-chrome-after.webm",
+      "durationSeconds": 7.16,
+      "bytes": 214256,
+      "sha256": "6892716e8a2a0be72be01f263497d8c1c6348740f2447e4109e18a594ab53ce3",
+      "fullyDecoded": true
+    },
+    {
+      "case": "edit",
+      "profile": "chromium",
+      "stage": "before",
+      "file": "edit-chromium-before.webm",
+      "durationSeconds": 1.76,
+      "bytes": 90155,
+      "sha256": "8aa7b2655ba107fab953a5608226f55e0066470b0fbc43bcdf31095cf17346aa",
+      "fullyDecoded": true
+    },
+    {
+      "case": "edit",
+      "profile": "chromium",
+      "stage": "after",
+      "file": "edit-chromium-after.webm",
+      "durationSeconds": 3.84,
+      "bytes": 104782,
+      "sha256": "57b7db487a3fc4cc87bc83992531d07c982a9b97a36be58e21cd865ae63c0e03",
+      "fullyDecoded": true
+    },
+    {
+      "case": "edit",
+      "profile": "mobile-chrome",
+      "stage": "before",
+      "file": "edit-mobile-chrome-before.webm",
+      "durationSeconds": 1.96,
+      "bytes": 84952,
+      "sha256": "e1234d7940a7529fb2ad8f537e92d1f4a63223f0ddef55718eb7f381c1f7b964",
+      "fullyDecoded": true
+    },
+    {
+      "case": "edit",
+      "profile": "mobile-chrome",
+      "stage": "after",
+      "file": "edit-mobile-chrome-after.webm",
+      "durationSeconds": 3.56,
+      "bytes": 110942,
+      "sha256": "90c82472645f93f5b926cb215691c66b2cb1fc7c362898d171996eb33090d9b0",
+      "fullyDecoded": true
+    },
+    {
+      "case": "lines",
+      "profile": "chromium",
+      "stage": "before",
+      "file": "lines-chromium-before.webm",
+      "durationSeconds": 5.88,
+      "bytes": 161671,
+      "sha256": "0b03b8a18b649972e37b758dbd3c0306e4bd62e54e2324e9022f420a709f5684",
+      "fullyDecoded": true
+    },
+    {
+      "case": "lines",
+      "profile": "chromium",
+      "stage": "after",
+      "file": "lines-chromium-after.webm",
+      "durationSeconds": 8.8,
+      "bytes": 149042,
+      "sha256": "e9c8d949e0c461b87a826f9adcfb536c519eedf95803331ddb00a8ba758a0dde",
+      "fullyDecoded": true
+    },
+    {
+      "case": "lines",
+      "profile": "mobile-chrome",
+      "stage": "before",
+      "file": "lines-mobile-chrome-before.webm",
+      "durationSeconds": 5.44,
+      "bytes": 140717,
+      "sha256": "ae90877001ae3a45758803cbf45bffacbb7f8e61d24fe15fab4f6ee07118eb78",
+      "fullyDecoded": true
+    },
+    {
+      "case": "lines",
+      "profile": "mobile-chrome",
+      "stage": "after",
+      "file": "lines-mobile-chrome-after.webm",
+      "durationSeconds": 8.8,
+      "bytes": 135641,
+      "sha256": "53562588f8d761ffb572159d79984731eebe8a64661e7a53b051f9ef0f385953",
+      "fullyDecoded": true
+    },
+    {
+      "case": "half",
+      "profile": "chromium",
+      "stage": "before",
+      "file": "half-chromium-before.webm",
+      "durationSeconds": 1.88,
+      "bytes": 75850,
+      "sha256": "82cecee2e53ee8b42269124d7858ddefa112c996a6551c0ca4408a19d37d8557",
+      "fullyDecoded": true
+    },
+    {
+      "case": "half",
+      "profile": "chromium",
+      "stage": "after",
+      "file": "half-chromium-after.webm",
+      "durationSeconds": 4.08,
+      "bytes": 63487,
+      "sha256": "62710c79a5c10fff8750a296c7d5e48afc5b70d3fd14177c8999e168ec15f6c7",
+      "fullyDecoded": true
+    },
+    {
+      "case": "half",
+      "profile": "mobile-chrome",
+      "stage": "before",
+      "file": "half-mobile-chrome-before.webm",
+      "durationSeconds": 1.96,
+      "bytes": 48790,
+      "sha256": "c777d4535adf7b4e24073de6d247d48428c07239ade3f94efd158e46579f916b",
+      "fullyDecoded": true
+    },
+    {
+      "case": "half",
+      "profile": "mobile-chrome",
+      "stage": "after",
+      "file": "half-mobile-chrome-after.webm",
+      "durationSeconds": 3.2,
+      "bytes": 69560,
+      "sha256": "f899abc820efe440b0ea6b704446ecb7326c4a7c953f6a8bebd6f9c32b7480ed",
+      "fullyDecoded": true
+    },
+    {
+      "case": "contrast",
+      "profile": "chromium",
+      "stage": "before",
+      "file": "contrast-chromium-before.webm",
+      "durationSeconds": 1.6,
+      "bytes": 48548,
+      "sha256": "a840e19d42b8b524008cbb3dce277fab84fef036a7f2c710d1dfd7393ea04aa1",
+      "fullyDecoded": true
+    },
+    {
+      "case": "contrast",
+      "profile": "chromium",
+      "stage": "after",
+      "file": "contrast-chromium-after.webm",
+      "durationSeconds": 2.56,
+      "bytes": 39357,
+      "sha256": "5ad23f26b370131889b32a490457aa56fde7b7c034a360a415282af4d0bd01ba",
+      "fullyDecoded": true
+    },
+    {
+      "case": "contrast",
+      "profile": "mobile-chrome",
+      "stage": "before",
+      "file": "contrast-mobile-chrome-before.webm",
+      "durationSeconds": 1.52,
+      "bytes": 33982,
+      "sha256": "664c33fb4665ea12bb8b392eda6ef038da2e09024ee20454c6c9ec7f7eca39be",
+      "fullyDecoded": true
+    },
+    {
+      "case": "contrast",
+      "profile": "mobile-chrome",
+      "stage": "after",
+      "file": "contrast-mobile-chrome-after.webm",
+      "durationSeconds": 2.64,
+      "bytes": 65933,
+      "sha256": "6cd90a9d0cf75c1326c2b78b5b5ba400f183f814177640be0dabf2fc7140eb7c",
+      "fullyDecoded": true
+    },
+    {
+      "case": "highlights",
+      "profile": "chromium",
+      "stage": "before",
+      "file": "highlights-chromium-before.webm",
+      "durationSeconds": 1.56,
+      "bytes": 46364,
+      "sha256": "ea23cda98f3d10be88e859b1292dbb48300b90fa414864d33e9cef021206d421",
+      "fullyDecoded": true
+    },
+    {
+      "case": "highlights",
+      "profile": "chromium",
+      "stage": "after",
+      "file": "highlights-chromium-after.webm",
+      "durationSeconds": 2.76,
+      "bytes": 42143,
+      "sha256": "ea8b4bb38e602ada1ff4b36d77c7ad97f7261d6478eb946ffbb5afacdb1fb46a",
+      "fullyDecoded": true
+    },
+    {
+      "case": "highlights",
+      "profile": "mobile-chrome",
+      "stage": "before",
+      "file": "highlights-mobile-chrome-before.webm",
+      "durationSeconds": 1.64,
+      "bytes": 38732,
+      "sha256": "9a267a1b8b84bca4bb949f9dd3c25c29bf3de5dc2a63572fe4fb5c2a8cab6df1",
+      "fullyDecoded": true
+    },
+    {
+      "case": "highlights",
+      "profile": "mobile-chrome",
+      "stage": "after",
+      "file": "highlights-mobile-chrome-after.webm",
+      "durationSeconds": 3.08,
+      "bytes": 59918,
+      "sha256": "fe8ae2eed491e6fce994e38ad4f4b9249858aff362377191e82c0bc428b73821",
+      "fullyDecoded": true
+    },
+    {
+      "case": "controls",
+      "profile": "chromium",
+      "stage": "before",
+      "file": "controls-chromium-before.webm",
+      "durationSeconds": 3.44,
+      "bytes": 164131,
+      "sha256": "054c10e8f9d5230c788dbd3f3789396885b7a1ee8bdaa277e031bc0e16c5a378",
+      "fullyDecoded": true
+    },
+    {
+      "case": "controls",
+      "profile": "chromium",
+      "stage": "after",
+      "file": "controls-chromium-after.webm",
+      "durationSeconds": 5.64,
+      "bytes": 188066,
+      "sha256": "ff59029f61cad5c0c0a134ea2ebef344bfa808800b123048e39ae4875e71d6af",
+      "fullyDecoded": true
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import { createTextColorResolver } from '../../utils/textContrast';
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { getCellCenter, getCellCorners, getCellIndexById } from '../../utils/gridUtils';
@@ -25,8 +26,10 @@ const getFontSize = (size: 'large' | 'medium' | 'small', cellSize: number): numb
 type DominantBaseline = 'auto' | 'middle' | 'hanging' | 'ideographic';
 
 export const NumberLayer: React.FC<NumberLayerProps> = ({ layer }) => {
-  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology, currentSchemaId } = usePuzzleStore();
+  const { grid, puzzle, showProblemLayer, showAnswerLayer, trialStage, trialStack, useTopology, topology, currentSchemaId } = usePuzzleStore();
   const { cellSize } = grid;
+
+  const textColor = useMemo(() => createTextColorResolver(puzzle, showProblemLayer, showAnswerLayer, { backgroundColor: grid.backgroundColor, trialStage, trialStack }), [puzzle, showProblemLayer, showAnswerLayer, grid.backgroundColor, trialStage, trialStack]);
 
   const isVisible =
     (layer === 'problem' && showProblemLayer) ||
@@ -100,7 +103,7 @@ export const NumberLayer: React.FC<NumberLayerProps> = ({ layer }) => {
                 key={`${num.id}-${candidate}`}
                 x={candX}
                 y={candY}
-                fill={num.color}
+                fill={textColor(num.cellId, num.color)}
                 fontSize={candidateFontSize}
                 fontFamily="Helvetica, Verdana, Arial, sans-serif"
                 fontWeight="normal"
@@ -132,7 +135,7 @@ export const NumberLayer: React.FC<NumberLayerProps> = ({ layer }) => {
               key={num.id}
               x={candX}
               y={candY}
-              fill={num.color}
+              fill={textColor(num.cellId, num.color)}
               fontSize={candidateFontSize}
               fontFamily="Helvetica, Verdana, Arial, sans-serif"
               fontWeight="normal"
@@ -176,7 +179,7 @@ export const NumberLayer: React.FC<NumberLayerProps> = ({ layer }) => {
             key={num.id}
             x={x}
             y={y}
-            fill={num.color}
+            fill={textColor(num.cellId, num.color)}
             fontSize={fontSize}
             fontFamily="Helvetica, Verdana, Arial, sans-serif"
             fontWeight={layer === 'problem' ? 'bold' : 'normal'}
@@ -210,7 +213,7 @@ export const NumberLayer: React.FC<NumberLayerProps> = ({ layer }) => {
             key={num.id}
             x={x}
             y={y}
-            fill={num.color}
+            fill={textColor(num.cellId, num.color)}
             fontSize={fontSize}
             fontFamily="Helvetica, Verdana, Arial, sans-serif"
             fontWeight={layer === 'problem' ? 'bold' : 'normal'}
@@ -233,7 +236,7 @@ export const NumberLayer: React.FC<NumberLayerProps> = ({ layer }) => {
               cy={y}
               r={circleRadius}
               fill="none"
-              stroke={num.color}
+              stroke={textColor(num.cellId, num.color)}
               strokeWidth={strokeWidth}
             />
           );
@@ -243,7 +246,7 @@ export const NumberLayer: React.FC<NumberLayerProps> = ({ layer }) => {
             key={num.id}
             x={x}
             y={y + yOffset}
-            fill={num.color}
+            fill={textColor(num.cellId, num.color)}
             fontSize={fontSize}
             fontFamily="Helvetica, Verdana, Arial, sans-serif"
             fontWeight={layer === 'problem' ? 'bold' : 'normal'}
@@ -257,7 +260,7 @@ export const NumberLayer: React.FC<NumberLayerProps> = ({ layer }) => {
     });
 
     return elements;
-  }, [puzzle, layer, grid, cellSize, isVisible, useTopology, topology, currentSchemaId]);
+  }, [puzzle, layer, grid, cellSize, isVisible, useTopology, topology, currentSchemaId, textColor]);
 
   if (!isVisible) return null;
 

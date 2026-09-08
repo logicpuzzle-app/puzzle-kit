@@ -1,3 +1,4 @@
+import { getTextSymbolValue } from '../../../utils/textSymbols';
 /**
  * Main symbol rendering function
  */
@@ -103,7 +104,7 @@ const renderAnimalSymbol = (
 export const renderSymbol = (type: string, props: SymbolProps): React.ReactElement | null => {
   // Handle text symbols (format: text-{type}:{value})
   if (type.startsWith('text-') && type.includes(':')) {
-    const text = type.split(':')[1] || '';
+    const text = getTextSymbolValue(type);
     return <TextSymbol {...props} text={text} />;
   }
 
