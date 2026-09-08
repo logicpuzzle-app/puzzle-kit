@@ -12,8 +12,12 @@ export default defineConfig({
         embedded: resolve(__dirname, 'embedded.html'),
       },
       output: {
+        // Keep shared dependencies in Rollup's automatic chunks instead of
+        // absorbing them into whichever manual UI chunk is visited first.
+        onlyExplicitManualChunks: true,
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            if (id.includes('/node_modules/pdfjs-dist/')) return 'pdf';
             if (id.includes('i18next')) return 'i18n';
             if (id.includes('firebase')) return 'firebase';
             if (id.includes('lucide-react') || id.includes('react-icons')) return 'icons';
@@ -25,8 +29,9 @@ export default defineConfig({
           if (id.includes('/src/constraints/')) return 'constraints';
           if (id.includes('/src/components/dialogs/')) return 'dialogs';
           if (id.includes('/src/components/panels/')) return 'panels';
-          if (id.includes('/src/components/canvas/')) return 'canvas';
           if (id.includes('/src/components/toolbar/')) return 'toolbar';
+          // Layouts render the canvas; the canvas uses shared UI components.
+          // Keep those mutually dependent modules in the same chunk.
           if (id.includes('/src/components/')) return 'ui';
           return undefined;
         },
