@@ -1,0 +1,771 @@
+{
+  "registry": [
+    {
+      "pid": "slither",
+      "checks": [
+        {
+          "rule": "slither.line-exist",
+          "name": "checkEdgeExist",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "slither.no-branch",
+          "name": "checkEdgeBranch",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "slither.no-cross",
+          "name": "checkEdgeCross",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "slither.clue-count",
+          "name": "checkdir4BorderEdge",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "slither.single-loop",
+          "name": "checkEdgeOneLoop",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "slither.no-deadend",
+          "name": "checkEdgeDeadend",
+          "defaultOn": true,
+          "registered": true
+        }
+      ]
+    },
+    {
+      "pid": "mashu",
+      "checks": [
+        {
+          "rule": "mashu.line-exist",
+          "name": "checkLineExist",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "mashu.no-branch",
+          "name": "checkLineBranch",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "mashu.no-cross",
+          "name": "checkLineCross",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "mashu.white-straight",
+          "name": "checkWhitePearlStraight",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "mashu.black-turn",
+          "name": "checkBlackPearlTurn",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "mashu.black-extend",
+          "name": "checkBlackPearlExtend",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "mashu.white-turn-neighbor",
+          "name": "checkWhitePearlTurnNeighbor",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "mashu.pass-all-pearls",
+          "name": "checkNoLinePearl",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "mashu.no-deadend",
+          "name": "checkLineDeadend",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "mashu.single-loop",
+          "name": "checkLineOneLoop",
+          "defaultOn": true,
+          "registered": true
+        }
+      ]
+    },
+    {
+      "pid": "lightup",
+      "checks": [
+        {
+          "rule": "akari.no-light-conflict",
+          "name": "checkLightConflict",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "akari.all-cells-lit",
+          "name": "checkUnlit",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "akari.wall-number-count",
+          "name": "checkWallNumberNe",
+          "defaultOn": true,
+          "registered": true
+        }
+      ]
+    },
+    {
+      "pid": "lits",
+      "checks": [
+        {
+          "rule": "lits.no-2x2-shade",
+          "name": "check2x2ShadeCell",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "lits.shade-connected",
+          "name": "checkConnectShade",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "lits.tetromino-shape",
+          "name": "checkTetrominoInRoom",
+          "defaultOn": true,
+          "registered": false
+        },
+        {
+          "rule": "lits.no-same-adjacent",
+          "name": "checkAdjacentSameTetromino",
+          "defaultOn": true,
+          "registered": false
+        }
+      ]
+    },
+    {
+      "pid": "cbanana",
+      "checks": [
+        {
+          "rule": "cbanana.shade-rect",
+          "name": "checkShadeRect",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "cbanana.unshade-not-rect",
+          "name": "checkUnshadeNotRect",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "cbanana.number-size",
+          "name": "checkNumberSize",
+          "defaultOn": true,
+          "registered": true
+        }
+      ]
+    },
+    {
+      "pid": "norinori",
+      "checks": [
+        {
+          "rule": "norinori.shade-block-max",
+          "name": "checkOverShadeCell",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "norinori.shade-block-min",
+          "name": "checkSingleShadeCell",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "norinori.room-shade-max",
+          "name": "checkOverShadeCellInArea",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "norinori.room-shade-min",
+          "name": "checkSingleShadeCellInArea",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "norinori.room-shade-required",
+          "name": "checkNoShadeCellInArea",
+          "defaultOn": true,
+          "registered": true
+        }
+      ]
+    },
+    {
+      "pid": "nurimisaki",
+      "checks": [
+        {
+          "rule": "nurimisaki.shade-required",
+          "name": "checkShadeCellExist",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "nurimisaki.no-2x2-shade",
+          "name": "check2x2ShadeCell",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "nurimisaki.unshade-connected",
+          "name": "checkConnectUnshade",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "nurimisaki.view-count",
+          "name": "checkViewOfNumber",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "nurimisaki.no-2x2-unshade",
+          "name": "check2x2UnshadeCell",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "nurimisaki.circle-promontory",
+          "name": "checkCirclePromontory",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "nurimisaki.non-circle-not-promontory",
+          "name": "checkNonCircleNotPromontory",
+          "defaultOn": true,
+          "registered": true
+        }
+      ]
+    },
+    {
+      "pid": "yajilin",
+      "checks": [
+        {
+          "rule": "yajilin.no-branch",
+          "name": "checkLineBranch",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "yajilin.no-cross",
+          "name": "checkLineCross",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "yajilin.no-line-on-shade",
+          "name": "checkLineOnShadeCell",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "yajilin.no-adjacent-shade",
+          "name": "checkAdjacentShadeCell",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "yajilin.no-deadend",
+          "name": "checkLineDeadend",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "yajilin.arrow-count",
+          "name": "checkArrowNumber",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "yajilin.single-loop",
+          "name": "checkLineOneLoop",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "yajilin.no-empty-cell",
+          "name": "checkEmptyCell_yajilin",
+          "defaultOn": true,
+          "registered": true
+        }
+      ]
+    },
+    {
+      "pid": "nurikabe",
+      "checks": [
+        {
+          "rule": "nurikabe.no-2x2-shade",
+          "name": "check2x2ShadeCell",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "nurikabe.island-has-number",
+          "name": "checkNoNumberInUnshade",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "nurikabe.shade-connected",
+          "name": "checkConnectShade",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "nurikabe.one-number-per-island",
+          "name": "checkDoubleNumberInUnshade",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "nurikabe.island-size",
+          "name": "checkNumberAndUnshadeSize",
+          "defaultOn": true,
+          "registered": true
+        }
+      ]
+    },
+    {
+      "pid": "heyawake",
+      "checks": [
+        {
+          "rule": "heyawake.no-adjacent-shade",
+          "name": "checkAdjacentShadeCell",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "heyawake.white-connected",
+          "name": "checkConnectUnshadeRB",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "heyawake.room-shade-count",
+          "name": "checkShadeCellCount",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "heyawake.no-straight-through",
+          "name": "checkCountinuousUnshadeCell",
+          "defaultOn": true,
+          "registered": true
+        }
+      ]
+    },
+    {
+      "pid": "ayeheya",
+      "checks": [
+        {
+          "rule": "ayeheya.no-adjacent-shade",
+          "name": "checkAdjacentShadeCell",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "ayeheya.white-connected",
+          "name": "checkConnectUnshadeRB",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "ayeheya.shade-symmetry",
+          "name": "checkFractal",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "ayeheya.room-shade-count",
+          "name": "checkShadeCellCount",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "ayeheya.no-straight-through",
+          "name": "checkCountinuousUnshadeCell",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "ayeheya.room-symmetry",
+          "name": "checkRoomSymm",
+          "defaultOn": true,
+          "registered": true
+        }
+      ]
+    },
+    {
+      "pid": "akichi",
+      "checks": [
+        {
+          "rule": "akichi.no-adjacent-shade",
+          "name": "checkAdjacentShadeCell",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "akichi.white-connected",
+          "name": "checkConnectUnshadeRB",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "akichi.room-max-attained",
+          "name": "checkAttainedSize",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "akichi.room-max-limit",
+          "name": "checkUnshadedSize",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "akichi.no-straight-through",
+          "name": "checkCountinuousUnshadeCell",
+          "defaultOn": true,
+          "registered": true
+        }
+      ]
+    },
+    {
+      "pid": "numlin",
+      "checks": [
+        {
+          "rule": "numlin.line-exist",
+          "name": "checkLineExist",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "numlin.no-branch",
+          "name": "checkLineBranch",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "numlin.no-cross",
+          "name": "checkLineCross",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "numlin.no-triple-number",
+          "name": "checkTripleObject",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "numlin.same-number-link",
+          "name": "checkLinkSameNumber",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "numlin.no-line-over-number",
+          "name": "checkLineOverLetter",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "numlin.no-deadend",
+          "name": "checkDeadendConnectLine",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "numlin.line-connects-number",
+          "name": "checkDisconnectLine",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "numlin.number-has-line",
+          "name": "checkNoLineObject",
+          "defaultOn": true,
+          "registered": true
+        }
+      ]
+    },
+    {
+      "pid": "simpleloop",
+      "checks": [
+        {
+          "rule": "simpleloop.no-branch",
+          "name": "checkLineBranch",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "simpleloop.no-cross",
+          "name": "checkLineCross",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "simpleloop.no-deadend",
+          "name": "checkLineDeadend",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "simpleloop.single-loop",
+          "name": "checkLineOneLoop",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "simpleloop.no-empty-cell",
+          "name": "checkNoLine",
+          "defaultOn": true,
+          "registered": true
+        }
+      ]
+    },
+    {
+      "pid": "simplegako",
+      "checks": [
+        {
+          "rule": "simplegako.count-too-many",
+          "name": "checkRowsColsTooManyNumber",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "simplegako.count-not-enough",
+          "name": "checkRowsColsNotEnoughNumber",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "simplegako.complete",
+          "name": "checkNoNumCell",
+          "defaultOn": true,
+          "registered": true
+        }
+      ]
+    },
+    {
+      "pid": "nanro",
+      "checks": [
+        {
+          "rule": "nanro.no-2x2",
+          "name": "check2x2NumberCell",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "nanro.no-adjacent-same",
+          "name": "checkSideAreaNumber",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "nanro.single-number-per-room",
+          "name": "checkNotMultiNum",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "nanro.count-not-too-high",
+          "name": "checkNumCountOver",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "nanro.numbers-connected",
+          "name": "checkConnectNumber",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "nanro.count-not-too-low",
+          "name": "checkNumCountLack",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "nanro.no-empty-room",
+          "name": "checkNoEmptyArea",
+          "defaultOn": true,
+          "registered": true
+        }
+      ]
+    },
+    {
+      "pid": "paint",
+      "checks": []
+    },
+    {
+      "pid": "sudoku",
+      "checks": [
+        {
+          "rule": "sudoku.row-unique",
+          "name": "checkRowNumber",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "sudoku.column-unique",
+          "name": "checkColNumber",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "sudoku.box-unique",
+          "name": "checkBlockNumber",
+          "defaultOn": true,
+          "registered": true
+        },
+        {
+          "rule": "sudoku.complete",
+          "name": "checkEmptyCell",
+          "defaultOn": true,
+          "registered": true
+        }
+      ]
+    }
+  ],
+  "lits": [
+    {
+      "name": "two",
+      "cells": [
+        "cell-1-1",
+        "cell-1-2"
+      ],
+      "highlightFills": 0,
+      "result": {
+        "complete": true,
+        "undecided": false,
+        "errors": []
+      }
+    },
+    {
+      "name": "I",
+      "cells": [
+        "cell-1-1",
+        "cell-1-2",
+        "cell-1-3",
+        "cell-1-4"
+      ],
+      "highlightFills": 36,
+      "result": {
+        "complete": true,
+        "undecided": false,
+        "errors": []
+      }
+    },
+    {
+      "name": "O",
+      "cells": [
+        "cell-1-1",
+        "cell-1-2",
+        "cell-2-1",
+        "cell-2-2"
+      ],
+      "highlightFills": 36,
+      "result": {
+        "complete": false,
+        "undecided": false,
+        "errors": [
+          {
+            "ruleId": "lits.no-2x2-shade",
+            "failcode": "cs2x2",
+            "messageKey": "validation.lits.cs2x2",
+            "elements": [
+              "cell-1-1",
+              "cell-1-2",
+              "cell-2-1",
+              "cell-2-2"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "yajilin": [
+    {
+      "count": 0,
+      "output": {
+        "textStyles": []
+      },
+      "rendered": [
+        {
+          "text": "1",
+          "fill": "rgb(0, 0, 0)"
+        }
+      ]
+    },
+    {
+      "count": 1,
+      "output": {
+        "textStyles": [
+          {
+            "cellId": "cell-1-0",
+            "target": "directional",
+            "color": "#8c8c8c"
+          }
+        ]
+      },
+      "rendered": [
+        {
+          "text": "1",
+          "fill": "rgb(140, 140, 140)"
+        }
+      ]
+    },
+    {
+      "count": 2,
+      "output": {
+        "textStyles": []
+      },
+      "rendered": [
+        {
+          "text": "1",
+          "fill": "rgb(0, 0, 0)"
+        }
+      ]
+    }
+  ],
+  "warnings": [
+    "[Firebase] Not configured. Set VITE_FIREBASE_* environment variables to enable Firebase.",
+    "[runDataDrivenValidation] Check function not found: checkTetrominoInRoom",
+    "[runDataDrivenValidation] Check function not found: checkAdjacentSameTetromino",
+    "[Firebase] Not configured. Set VITE_FIREBASE_* environment variables to enable Firebase.",
+    "[runDataDrivenValidation] Check function not found: checkTetrominoInRoom",
+    "[runDataDrivenValidation] Check function not found: checkAdjacentSameTetromino",
+    "[Firebase] Not configured. Set VITE_FIREBASE_* environment variables to enable Firebase.",
+    "[runDataDrivenValidation] Check function not found: checkTetrominoInRoom",
+    "[runDataDrivenValidation] Check function not found: checkAdjacentSameTetromino",
+    "[Firebase] Not configured. Set VITE_FIREBASE_* environment variables to enable Firebase."
+  ],
+  "errors": []
+}
