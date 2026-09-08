@@ -424,7 +424,7 @@ export const SpecialLayer: React.FC<SpecialLayerProps> = ({ layer }) => {
         selectedElements.map(id => {
           const special = puzzle[layer].specials[id];
           if (!special || `special-${special.type}` !== toolSettings.currentTool) return null;
-          const points = special.points.map(id => resolveGridIdToPosition(id, grid, topology)).filter((p): p is { x: number; y: number } => p !== null);
+          const points = special.points.map(id => resolveGridIdToPosition(id, grid, useTopology ? topology : null)).filter((p): p is { x: number; y: number } => p !== null);
           if (points.length < 2) return null;
           const tip = points[points.length - 1];
           return <g key={id} className={`special-selection-${layer}`} data-preview="true" pointerEvents="none" aria-hidden="true">
