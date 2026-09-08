@@ -3,6 +3,7 @@
  */
 
 import React from 'react';
+import { SpecialEditPanel } from './SpecialEditPanel';
 import { useTranslation } from 'react-i18next';
 import { X, GitMerge, Minus, Scissors } from 'lucide-react';
 import { usePuzzleStore } from '../../../store/puzzleStoreContext';
@@ -491,6 +492,9 @@ export const ToolPropertiesPanel: React.FC = () => {
             )}
         </>
       )}
+
+      {toolSettings.currentCategory === 'special' &&
+        ['special-arrow', 'special-thermo'].includes(toolSettings.currentTool) && <SpecialEditPanel />}
 
       {/* Symbol size - toggle buttons */}
       {toolSettings.currentCategory === 'symbol' && (

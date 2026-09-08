@@ -599,6 +599,15 @@ export const en = {
   'tool.symbol.gridPoint.edge': 'Edge',
 
   // Special tools
+  'special.edit.object': 'Object to edit',
+  'special.edit.select': 'Select an object',
+  'special.edit.empty': 'Draw an arrow or thermo first',
+  'special.edit.points_one': '{{count}} point',
+  'special.edit.points_other': '{{count}} points',
+  'special.edit.hint': 'Select an object to highlight its path and tip on the board.',
+  'special.edit.shorten': 'Shorten tip',
+  'special.edit.delete': 'Delete object',
+  'special.edit.minimum': 'At least two points are required. Use Delete object to remove it.',
   'tool.special.thermo': 'Thermo',
   'tool.special.arrow': 'Arrow',
   'tool.special.cage': 'Cage',
