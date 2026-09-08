@@ -49,6 +49,7 @@ import {
   normalizeSegmentEndpoints,
   generateLineId,
 } from '../../utils/lineNormalization';
+import { mergeLineOverlaps } from '../../utils/lineOverlap';
 import { canEditDataLayer, getEditableDataLayer } from '../../utils/editPolicy';
 import {
   getDirectionalClueDisplayValue,
@@ -167,22 +168,22 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
       return '';
     }
 
+    const state = get();
+    const merged = mergeLineOverlaps(normalizedElement, state.puzzle[element.layer].lines, state.grid, state.topology, state.puzzle[element.layer].lineGroups);
+    if (merged.removed.length === 1 && merged.line === merged.removed[0]) return merged.line.id;
+    normalizedElement = merged.line;
+    id = normalizedElement.id;
     set((state) => {
       const layer = normalizedElement.layer;
-      return {
-        puzzle: {
-          ...state.puzzle,
-          [layer]: {
-            ...state.puzzle[layer],
-            lines: {
-              ...state.puzzle[layer].lines,
-              [id]: normalizedElement,
-            },
-          },
-        },
-      };
+      const lines = { ...state.puzzle[layer].lines };
+      merged.removed.forEach(line => delete lines[line.id]);
+      lines[id] = normalizedElement;
+      return { puzzle: { ...state.puzzle, [layer]: { ...state.puzzle[layer], lines } } };
     });
-    get().historyManager.addAction(createAddLineAction(normalizedElement));
+    const addition = createAddLineAction(normalizedElement);
+    get().historyManager.addAction(merged.removed.length ? createBatchAction([
+      ...merged.removed.map(line => createRemoveLineAction(line.id, line)), addition,
+    ], 'Merge overlapping lines') : addition);
     return id;
   },
 
