@@ -33,6 +33,7 @@
     "docs/embedded-example.md"
   ],
   "scripts": {
+    "check:solver-sourcemaps": "node scripts/check-solver-sourcemaps.mjs",
     "dev": "vite",
     "build:npgen-wasm": "node scripts/build-npgen-wasm.mjs",
     "build": "tsc -b && vite build",
