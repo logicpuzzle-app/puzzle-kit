@@ -91,17 +91,28 @@ test('contrast: neutral numbers and text follow dark cell backgrounds', async ({
 
 test('lits: incomplete and forbidden shapes are rejected without completion highlight', async ({ page }) => {
   await init(page);
-  for (const cells of [['cell-1-1','cell-1-2'], ['cell-1-1','cell-1-2','cell-2-1','cell-2-2']]) {
-    await page.evaluate(async cells => {
-      const path = '/src/store/puzzleStore.ts';const { usePuzzleStore } = await import(path);const s = usePuzzleStore.getState();
-      s.newPuzzle({ rows: 6, cols: 6, gridType: 'square' });s.setCurrentSchemaId('lits');s.setActiveLayer('answer');
-      s.setRoomMap(Object.fromEntries([...s.topology.cells.keys()].map(id => [id, 0])));
-      for (const cellId of cells) s.addSurface({ cellId, color: '#000000', layer: 'answer' });
-    }, cells);
-    await expect(page.locator('.highlight-layer > *')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Check Answer', exact: true }).click();
-    await expect(page.getByText('Incorrect', { exact: true })).toBeVisible();
-    await page.getByText('Close', { exact: true }).click();
+  const store = await page.evaluateHandle(async () => {
+    const path = '/src/store/puzzleStore.ts';
+    return (await import(path)).usePuzzleStore;
+  });
+  try {
+    for (const cells of [['cell-1-1', 'cell-1-2'], ['cell-1-1', 'cell-1-2', 'cell-2-1', 'cell-2-2']]) {
+      // Keep the store reachable and avoid asynchronous imports inside each mutation.
+      await store.evaluate((usePuzzleStore, cells) => {
+        const s = usePuzzleStore.getState();
+        s.newPuzzle({ rows: 6, cols: 6, gridType: 'square' });
+        s.setCurrentSchemaId('lits');
+        s.setActiveLayer('answer');
+        s.setRoomMap(Object.fromEntries([...s.topology.cells.keys()].map(id => [id, 0])));
+        for (const cellId of cells) s.addSurface({ cellId, color: '#000000', layer: 'answer' });
+      }, cells);
+      await expect(page.locator('.highlight-layer > *')).toHaveCount(0);
+      await page.getByRole('button', { name: 'Check Answer', exact: true }).click();
+      await expect(page.getByText('Incorrect', { exact: true })).toBeVisible();
+      await page.getByText('Close', { exact: true }).click();
+    }
+  } finally {
+    await store.dispose();
   }
 });
 
