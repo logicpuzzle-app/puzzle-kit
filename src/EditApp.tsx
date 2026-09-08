@@ -83,6 +83,7 @@ function EditApp() {
   const { t, i18n } = useTranslation();
   const {
     addSymbol,
+    removeSymbol,
     activeLayer,
     toolSettings,
     setActiveLayer,
@@ -135,6 +136,7 @@ function EditApp() {
 
   const { handleTextClick, dialogProps: textDialogProps } = useTextSymbolDialog({
     addSymbol,
+    removeSymbol,
     toolSettings,
     activeLayer,
   });

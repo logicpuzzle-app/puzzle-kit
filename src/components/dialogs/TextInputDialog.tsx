@@ -39,9 +39,9 @@ export const TextInputDialog: React.FC<TextInputDialogProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (value.trim()) {
+    {
       onSubmit({
-        value: value.trim(),
+        value,
         textType: normalizedType as TextInputType,
       });
     }

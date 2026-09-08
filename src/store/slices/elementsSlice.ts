@@ -354,27 +354,24 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
 
   // Symbol operations
   addSymbol: (element) => {
-    const id = generateSymbolId();
+    if (!canEditLayer(element.layer)) return '';
+    // A cell has one editable text entry; other symbol kinds may coexist.
+    const previous = element.symbolType.startsWith('text-')
+      ? Object.values(get().puzzle[element.layer].symbols).filter(s => s.cellId === element.cellId && s.symbolType.startsWith('text-'))
+      : [];
+    const id = previous[0]?.id ?? generateSymbolId();
     const fullElement: SymbolElement = { ...element, id };
-    if (!canEditLayer(fullElement.layer)) {
-      return '';
-    }
+    if (previous.length === 1 && JSON.stringify(previous[0]) === JSON.stringify(fullElement)) return id;
     set((state) => {
-      const layer = fullElement.layer;
-      return {
-        puzzle: {
-          ...state.puzzle,
-          [layer]: {
-            ...state.puzzle[layer],
-            symbols: {
-              ...state.puzzle[layer].symbols,
-              [id]: fullElement,
-            },
-          },
-        },
-      };
+      const symbols = { ...state.puzzle[element.layer].symbols };
+      previous.forEach(s => delete symbols[s.id]);
+      symbols[id] = fullElement;
+      return { puzzle: { ...state.puzzle, [element.layer]: { ...state.puzzle[element.layer], symbols } } };
     });
-    get().historyManager.addAction(createAddSymbolAction(fullElement));
+    const addition = createAddSymbolAction(fullElement);
+    get().historyManager.addAction(previous.length ? createBatchAction([
+      ...previous.map(s => createRemoveSymbolAction(s.id, s)), addition,
+    ], 'Edit text') : addition);
     return id;
   },
 
