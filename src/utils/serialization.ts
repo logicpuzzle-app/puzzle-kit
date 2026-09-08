@@ -401,6 +401,7 @@ export async function exportToPng(
 
       // Clone SVG and prepare for export
       const clone = svgElement.cloneNode(true) as SVGSVGElement;
+      clone.querySelectorAll('[data-preview]').forEach(element => element.remove());
       clone.setAttribute('width', String(width));
       clone.setAttribute('height', String(height));
       clone.setAttribute('viewBox', `0 0 ${width} ${height}`);

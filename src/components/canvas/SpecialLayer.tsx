@@ -427,7 +427,7 @@ export const SpecialLayer: React.FC<SpecialLayerProps> = ({ layer }) => {
           const points = special.points.map(id => resolveGridIdToPosition(id, grid, topology)).filter((p): p is { x: number; y: number } => p !== null);
           if (points.length < 2) return null;
           const tip = points[points.length - 1];
-          return <g key={id} className={`special-selection-${layer}`} pointerEvents="none" aria-hidden="true">
+          return <g key={id} className={`special-selection-${layer}`} data-preview="true" pointerEvents="none" aria-hidden="true">
             <polyline points={points.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="#0078d4" strokeWidth={5} opacity={0.45} />
             <circle cx={tip.x} cy={tip.y} r={5} fill="white" stroke="#0078d4" strokeWidth={2} />
           </g>;
