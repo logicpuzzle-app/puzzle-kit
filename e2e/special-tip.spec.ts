@@ -40,6 +40,7 @@ for (const type of ['arrow', 'thermo'] as const) {
     await expect(picker).toBeVisible();
     await picker.selectOption(before[0].id);
     await expect(page.locator('.special-selection-problem')).toHaveCount(1);
+    if (process.env.QA_ARTIFACT_DIR) await info.attach('selected-object', { body: await page.screenshot(), contentType: 'image/png' });
     await page.getByRole('button', { name: 'Shorten tip', exact: true })[info.project.name.startsWith('mobile') ? 'tap' : 'click']();
     await expect.poll(async () => (await target()).points.length).toBe(3);
     expect((await objects(page)).find(s => s.id === before[1].id)).toEqual(before[1]);
