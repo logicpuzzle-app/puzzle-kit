@@ -22,6 +22,7 @@ import type {
   BoxLineElement,
   LineGroup,
 } from '../../types';
+import { isSymbolSize } from '../../utils/symbolSize';
 import { toDataLayer, type DataLayerType } from '../../types';
 import type { ElementsSlice, SliceCreator } from './types';
 import {
@@ -374,6 +375,21 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
       ...previous.map(s => createRemoveSymbolAction(s.id, s)), addition,
     ], 'Edit text') : addition);
     return id;
+  },
+
+  resizeSymbol: (id, size) => {
+    const state = get();
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer || !isSymbolSize(size)) return;
+    const before = state.puzzle[layer].symbols[id];
+    if (!before || before.size === size) return;
+    const after = { ...before, size };
+    set({ puzzle: { ...state.puzzle, [layer]: { ...state.puzzle[layer],
+      symbols: { ...state.puzzle[layer].symbols, [id]: after },
+    } } });
+    state.historyManager.addAction(createBatchAction([
+      createRemoveSymbolAction(id, before), createAddSymbolAction(after),
+    ], 'Resize symbol'));
   },
 
   removeSymbol: (id) => {
