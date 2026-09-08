@@ -42,6 +42,8 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     globals: true,
     environment: 'jsdom',
+    // Bound jsdom/transform contention so the solver's cold import meets its timeout.
+    maxWorkers: 2,
     setupFiles: './src/test/setup.ts',
     coverage: {
       provider: 'v8',
