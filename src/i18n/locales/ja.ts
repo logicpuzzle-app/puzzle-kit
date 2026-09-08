@@ -2,6 +2,15 @@
  * Japanese translations for PuzzleKit
  */
 export const ja = {
+  "size.largest": "最大",
+  "symbol.size.object": "サイズを変更する記号",
+  "symbol.size.new": "新しく配置する記号",
+  "symbol.size.generic": "記号",
+  "symbol.size.hint": "既存の記号を選んでサイズを変更するか、新しく配置する記号のサイズを設定します。",
+  "symbol.size.preview": "選択した記号のプレビュー",
+  "symbol.size.percent": "サイズ（%）",
+  "symbol.size.apply": "サイズを適用",
+  "symbol.size.range": "1マスの10〜300%を1%刻みで指定できます。プレビューの枠は1マスを表します。",
   // App
   'app.title': 'PuzzleKit',
   'app.playerTitle': 'PuzzleKit Player',

@@ -3,6 +3,7 @@
  */
 
 import React from 'react';
+import { SymbolSizePanel } from './SymbolSizePanel';
 import { useTranslation } from 'react-i18next';
 import { X, GitMerge, Minus, Scissors } from 'lucide-react';
 import { usePuzzleStore } from '../../../store/puzzleStoreContext';
@@ -197,12 +198,6 @@ export const ToolPropertiesPanel: React.FC = () => {
     { value: 'normal', strokeWidth: 3 },
     { value: 'thick', strokeWidth: 5 },
     { value: 'thickest', strokeWidth: 8 },
-  ];
-
-  const sizes: { value: 'large' | 'medium' | 'small'; labelKey: string }[] = [
-    { value: 'large', labelKey: 'size.large' },
-    { value: 'medium', labelKey: 'size.medium' },
-    { value: 'small', labelKey: 'size.small' },
   ];
 
   // Rotation controls for icon mode (not arrow/direction mode)
@@ -492,29 +487,7 @@ export const ToolPropertiesPanel: React.FC = () => {
         </>
       )}
 
-      {/* Symbol size - toggle buttons */}
-      {toolSettings.currentCategory === 'symbol' && (
-        <div>
-          <label className="block text-xs text-office-text-secondary mb-1">
-            {t('prop.size')}
-          </label>
-          <div className="flex gap-1">
-            {sizes.map((size) => (
-              <button
-                key={size.value}
-                className={`flex-1 px-2 py-1.5 text-xs border rounded-sm transition-colors ${
-                  toolSettings.symbolSize === size.value
-                    ? 'bg-office-accent text-white border-office-accent'
-                    : 'bg-white border-office-border hover:bg-office-ribbon-hover'
-                }`}
-                onClick={() => setToolSettings({ symbolSize: size.value })}
-              >
-                {t(size.labelKey)}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {toolSettings.currentCategory === 'symbol' && <SymbolSizePanel />}
 
       {/* Rotation controls - only for icon submode */}
       {showRotationControls && (

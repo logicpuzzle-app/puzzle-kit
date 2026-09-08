@@ -2,6 +2,15 @@
  * English translations for PuzzleKit
  */
 export const en = {
+  "size.largest": "Largest",
+  "symbol.size.object": "Symbol to resize",
+  "symbol.size.new": "New symbols",
+  "symbol.size.generic": "Symbol",
+  "symbol.size.hint": "Choose a symbol to resize it, or set the size for new symbols.",
+  "symbol.size.preview": "Selected symbol preview",
+  "symbol.size.percent": "Size (%)",
+  "symbol.size.apply": "Apply size",
+  "symbol.size.range": "10–300% of a cell, in 1% steps. The preview outline represents one cell.",
   // App
   'app.title': 'PuzzleKit',
   'app.playerTitle': 'PuzzleKit Player',

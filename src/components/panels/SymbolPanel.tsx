@@ -1,3 +1,4 @@
+import { resolveSymbolSize } from '../../utils/symbolSize';
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
@@ -589,6 +590,7 @@ export const SymbolPanel: React.FC<SymbolPanelProps> = ({ filterCategory, filter
   // Get font size in pixels based on current symbol size setting
   // Button is 32px, so we use similar ratios as canvas (largest=1.3, large=1, medium=0.7, small=0.5)
   const getFontSize = () => {
+    if (typeof toolSettings.symbolSize === 'number') return Math.min(32, 28 * resolveSymbolSize(toolSettings.symbolSize));
     switch (toolSettings.symbolSize) {
       case 'largest': return 32; // Full button size (fills cell)
       case 'large': return 28;   // ~87% of button size
