@@ -74,3 +74,12 @@ describe('LITS validation', () => {
     }
   });
 });
+
+it('preserves multiple rooms and validation across JSON roundtrips', () => {
+  const store=setup(['cell-0-2','cell-1-2','cell-2-2','cell-3-2','cell-3-3','cell-3-4','cell-3-5','cell-2-5'],true);
+  const before=store.getState().puzzle.problem.roomMap;
+  expect(validate(store).complete).toBe(true);
+  expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
+  expect(store.getState().puzzle.problem.roomMap).toEqual(before);
+  expect(validate(store).complete).toBe(true);
+});

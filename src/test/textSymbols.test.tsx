@@ -49,3 +49,14 @@ it('wraps long text without splitting emoji graphemes and honors explicit newlin
   expect(layoutCellText(emoji.repeat(5), 28).lines).toEqual([emoji.repeat(4), emoji]);
   expect(layoutCellText('A:B\n日本語', 28).lines).toEqual(['A:B', '日本語']);
 });
+
+it('restores layer metadata on a text-only board and keeps post-load editing undoable', () => {
+  const store=createPuzzleStore().useStore;
+  store.getState().setActiveLayer('problem');
+  const element={cellId:'cell-0-0',symbolType:'text-free:A:B',size:'large' as const,rotation:0,color:'#000',layer:'problem' as const};
+  const id=store.getState().addSymbol(element);
+  expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
+  expect(store.getState().puzzle.problem.symbols[id].layer).toBe('problem');
+  store.getState().addSymbol({...element,symbolType:'text-free:edited'});
+  store.getState().undo();expect(store.getState().puzzle.problem.symbols[id].symbolType).toBe('text-free:A:B');
+});
