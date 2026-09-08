@@ -48,3 +48,14 @@ export function mergeLineOverlaps(
   const { edgeId: _edgeId, ...rest } = incoming;
   return { line: { ...rest, id: generateLineId(normFrom, normTo), from: normFrom, to: normTo }, removed };
 }
+
+/** Repair legacy overlap on load without changing grouped/directed/freehand records. */
+export function normalizeLineOverlaps(lines: Record<string, LineElement>, grid: GridConfig, topology: GridTopology | null, groups: Record<string, LineGroup> = {}) {
+  const normalized: Record<string, LineElement> = {};
+  for (const line of Object.values(lines)) {
+    const merged = mergeLineOverlaps(line, normalized, grid, topology, groups);
+    merged.removed.forEach(previous => delete normalized[previous.id]);
+    normalized[merged.line.id] = merged.line;
+  }
+  return normalized;
+}

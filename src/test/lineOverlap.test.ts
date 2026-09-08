@@ -46,3 +46,14 @@ describe('overlapping snapped segments', () => {
     expect(Object.keys(s.getState().puzzle.problem.lines)).toHaveLength(2);
   });
 });
+
+it('repairs legacy long/short overlaps on import and keeps repeated roundtrips stable', () => {
+  const store = setup();
+  const data = JSON.parse(store.getState().exportPuzzle());
+  data.state.problem.lines = { long: { ...line('cell-1-1','cell-1-3'), id:'long' }, short: { ...line('cell-1-1','cell-1-2', {edgeId:'edge-22'}), id:'short' } };
+  expect(store.getState().importPuzzle(JSON.stringify(data))).toBe(true);
+  expect(Object.keys(store.getState().puzzle.problem.lines)).toHaveLength(1);
+  const first = store.getState().puzzle.problem.lines;
+  expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
+  expect(store.getState().puzzle.problem.lines).toEqual(first);
+});

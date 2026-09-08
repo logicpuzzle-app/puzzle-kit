@@ -1,3 +1,4 @@
+import { normalizeLineOverlaps } from '../../utils/lineOverlap';
 /**
  * Puzzle IO Slice - New puzzle, export, and import operations
  */
@@ -162,6 +163,11 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
             }
           : puzzleState;
         const normalizedState = mergeDirectionalCluesIntoNumbers(remappedState);
+        for (const layer of ['problem', 'answer'] as const) {
+          normalizedState[layer] = { ...normalizedState[layer], lines: normalizeLineOverlaps(
+            normalizedState[layer].lines, data.grid, topology, normalizedState[layer].lineGroups,
+          ) };
+        }
 
         set({
           grid: data.grid,
