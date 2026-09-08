@@ -9,8 +9,8 @@ const artifactDir = resolve(process.env.QA_ARTIFACT_DIR ??=
 // Exercise shipped entrypoints and workers, without the dev harness.
 export default defineConfig({
   ...base,
-  testMatch: ['**/build-entrypoints.spec.ts', '**/number-history.spec.ts', '**/cursor-style.spec.ts', '**/persistence.spec.ts', '**/npgen.spec.ts', '**/solver.spec.ts', '**/symbol-sizing-production.spec.ts'],
-  grep: /symbol-ui:|build:|directional number insertion|marker keys|selection color|autosave survives|generates a seeded|solver:/,
+  testMatch: ['**/build-entrypoints.spec.ts', '**/number-history.spec.ts', '**/cursor-style.spec.ts', '**/persistence.spec.ts', '**/npgen.spec.ts', '**/solver.spec.ts', '**/symbol-sizing-production.spec.ts', '**/special-export.spec.ts'],
+  grep: /png:|symbol-ui:|build:|directional number insertion|marker keys|selection color|autosave survives|generates a seeded|solver:/,
   projects: base.projects?.filter(project => ['chromium', 'mobile-chrome'].includes(project.name!)),
   outputDir: resolve(artifactDir, 'test-results'),
   reporter: [

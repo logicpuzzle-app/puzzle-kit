@@ -608,6 +608,17 @@ export const ja = {
   'tool.symbol.gridPoint.edge': '辺中点',
 
   // Special tools
+  'special.edit.preview': '選択中の図形のプレビュー',
+  'special.edit.object': '編集する図形',
+  'special.edit.select': '図形を選択',
+  'special.edit.empty': '先に矢印または温度計を描いてください',
+  'special.edit.points': '{{count}}点',
+  'special.edit.points_one': '{{count}}点',
+  'special.edit.points_other': '{{count}}点',
+  'special.edit.hint': '図形を選ぶと、盤面上の経路と先端を強調します。',
+  'special.edit.shorten': '先端を短縮',
+  'special.edit.delete': '図形を削除',
+  'special.edit.minimum': '2点より短くできません。消す場合は「図形を削除」を選んでください。',
   'tool.special.thermo': 'サーモ',
   'tool.special.arrow': '矢印',
   'tool.special.cage': 'ケージ',

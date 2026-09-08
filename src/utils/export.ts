@@ -82,6 +82,7 @@ export async function exportSvgToPng(
 
   // Clone SVG and prepare for export
   const clonedSvg = svgElement.cloneNode(true) as SVGElement;
+  clonedSvg.querySelectorAll('[data-preview]').forEach(element => element.remove());
   clonedSvg.setAttribute('width', String(canvasWidth));
   clonedSvg.setAttribute('height', String(canvasHeight));
 
@@ -197,6 +198,7 @@ export function exportSvgToSvg(
   }
 
   const clonedSvg = svgElement.cloneNode(true) as SVGElement;
+  clonedSvg.querySelectorAll('[data-preview]').forEach(element => element.remove());
 
   // Set viewBox and dimensions
   clonedSvg.setAttribute(

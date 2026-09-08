@@ -3,6 +3,7 @@
  */
 
 import React from 'react';
+import { SpecialEditPanel } from './SpecialEditPanel';
 import { SymbolSizePanel } from './SymbolSizePanel';
 import { useTranslation } from 'react-i18next';
 import { X, GitMerge, Minus, Scissors } from 'lucide-react';
@@ -486,6 +487,9 @@ export const ToolPropertiesPanel: React.FC = () => {
             )}
         </>
       )}
+
+      {toolSettings.currentCategory === 'special' &&
+        ['special-arrow', 'special-thermo'].includes(toolSettings.currentTool) && <SpecialEditPanel />}
 
       {toolSettings.currentCategory === 'symbol' && <SymbolSizePanel />}
 
