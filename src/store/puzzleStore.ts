@@ -6,6 +6,7 @@
  */
 
 import { create } from 'zustand';
+import { syncLitsRoomMap } from './litsRoomSync';
 import type { StoreApi, UseBoundStore } from 'zustand';
 
 import type { PuzzleStore, PuzzleStateSlice } from './slices/types';
@@ -40,7 +41,16 @@ const buildPuzzleStore = (
   persistence: PersistenceManager
 ): PuzzleStoreHook =>
   create<PuzzleStore>((...args) => {
-    const [set] = args;
+    const [rawSet, get, api] = args;
+    // Apply the same derived-state update to direct edits and atomic history replay.
+    const set: typeof rawSet = (partial, replace) => {
+      if (replace) {
+        rawSet(partial as PuzzleStore | ((state: PuzzleStore) => PuzzleStore), true);
+      } else {
+        rawSet(state => syncLitsRoomMap(state, typeof partial === 'function' ? partial(state) : partial));
+      }
+    };
+    args = [set, get, api];
 
     // Connect ActionExecutor to this store synchronously
     const mutator = (
