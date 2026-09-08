@@ -577,6 +577,7 @@ export const ja = {
   'tool.text.hiragana': 'ひらがな',
   'tool.text.katakana': 'カタカナ',
   'tool.text.free': '自由入力',
+  'tool.text.editCellHint': 'セルを選択して文字を入力・編集します。',
   'tool.text.inputPlaceholder': '文字を入力...',
   'panel.inputGenre.number': '数字',
   'panel.inputGenre.word': '言葉',

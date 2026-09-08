@@ -60,6 +60,7 @@ export const mainCategories: CategoryDef[] = [
   { id: 'surface', icon: '■', labelKey: 'tools.surface', defaultTool: 'surface-fill' },
   { id: 'line', icon: '─', labelKey: 'tools.line', defaultTool: 'line-normal' },
   { id: 'number', icon: '1', labelKey: 'tools.number', defaultTool: 'number-normal' },
+  { id: 'text', icon: 'T', labelKey: 'tools.text', defaultTool: 'text-free' },
   { id: 'symbol', icon: '○', labelKey: 'tools.symbol', defaultTool: 'symbol-circle' },
   { id: 'special', icon: '⊞', labelKey: 'tools.special', defaultTool: 'special-cage' },
 ];

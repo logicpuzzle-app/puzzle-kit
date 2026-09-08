@@ -7,59 +7,10 @@ import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { LineGridPoint, LineDirection } from '../../types';
 
-// Text character picker for text tools
-export const TextCharacterPicker: React.FC = () => {
+// Text is entered in the cell dialog; avoid presenting inactive ribbon controls.
+export const TextInputHint: React.FC = () => {
   const { t } = useTranslation();
-  const { toolSettings } = usePuzzleStore();
-
-  const getCharacterSet = () => {
-    switch (toolSettings.currentTool) {
-      case 'text-alphabet':
-        return 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-      case 'text-hiragana':
-        return 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん'.split('');
-      case 'text-katakana':
-        return 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン'.split('');
-      default:
-        return [];
-    }
-  };
-
-  const chars = getCharacterSet();
-  const isFreeText = toolSettings.currentTool === 'text-free';
-
-  return (
-    <div className="flex flex-col items-center px-3 border-r border-office-border">
-      {isFreeText ? (
-        <>
-          <input
-            type="text"
-            className="w-24 px-2 py-1 text-sm border border-office-border rounded focus:border-office-accent focus:outline-none mb-1"
-            placeholder={t('tool.text.inputPlaceholder')}
-            maxLength={10}
-          />
-          <span className="text-[10px] text-office-text-secondary">{t('tool.text.free')}</span>
-        </>
-      ) : chars.length > 0 ? (
-        <>
-          <div className="flex flex-wrap gap-0.5 max-w-[180px] max-h-[60px] overflow-y-auto mb-1">
-            {chars.map((char) => (
-              <button
-                key={char}
-                className="w-5 h-5 text-xs border border-office-border rounded-sm hover:bg-office-ribbon-hover hover:border-office-accent transition-colors"
-                title={char}
-              >
-                {char}
-              </button>
-            ))}
-          </div>
-          <span className="text-[10px] text-office-text-secondary">
-            {t(`tool.text.${toolSettings.currentTool.replace('text-', '')}`)}
-          </span>
-        </>
-      ) : null}
-    </div>
-  );
+  return <span className="text-xs text-office-text-secondary">{t('tool.text.editCellHint')}</span>;
 };
 
 // Line settings picker for line tools
