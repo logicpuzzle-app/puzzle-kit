@@ -1,0 +1,170 @@
+[
+  {
+    "case": "lits",
+    "project": "chromium",
+    "phase": "before",
+    "head": "d683f056a4b18ed025af1e8c4e79b7da50e4f2c1",
+    "run": "artifacts/qa/room-text-before-verified",
+    "test": "LITS imported rooms follow a drawn divider through undo, redo and reload",
+    "status": "failed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "lits-chromium-before.webm",
+    "screenshot": "lits-chromium-before.png",
+    "durationSeconds": 13.96,
+    "bytes": 235891,
+    "sha256": "05f19d9f0003472cbd3dc71467c0b97cf51b4488e9bfee2c67f3b46372e8a116",
+    "dimensions": {
+      "width": 800,
+      "height": 450
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "text",
+    "project": "chromium",
+    "phase": "before",
+    "head": "d683f056a4b18ed025af1e8c4e79b7da50e4f2c1",
+    "run": "artifacts/qa/room-text-before-verified",
+    "test": "Free text is reachable from the toolbar and editable after reload",
+    "status": "failed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "text-chromium-before.webm",
+    "screenshot": "text-chromium-before.png",
+    "durationSeconds": 12.44,
+    "bytes": 200828,
+    "sha256": "38b01c1c9752ccf321e899832dc048756ef994cc89bfb83a5f00133ab61d63aa",
+    "dimensions": {
+      "width": 800,
+      "height": 450
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "lits",
+    "project": "mobile-chrome",
+    "phase": "before",
+    "head": "d683f056a4b18ed025af1e8c4e79b7da50e4f2c1",
+    "run": "artifacts/qa/room-text-before-verified",
+    "test": "LITS imported rooms follow a drawn divider through undo, redo and reload",
+    "status": "failed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "lits-mobile-chrome-before.webm",
+    "screenshot": "lits-mobile-chrome-before.png",
+    "durationSeconds": 12.12,
+    "bytes": 224131,
+    "sha256": "037b6cbf32f219f8ffdc874aef58b535e71d65ff363d38a2a46ad099a2261780",
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "text",
+    "project": "mobile-chrome",
+    "phase": "before",
+    "head": "d683f056a4b18ed025af1e8c4e79b7da50e4f2c1",
+    "run": "artifacts/qa/room-text-before-verified",
+    "test": "Free text is reachable from the toolbar and editable after reload",
+    "status": "failed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "text-mobile-chrome-before.webm",
+    "screenshot": "text-mobile-chrome-before.png",
+    "durationSeconds": 12.4,
+    "bytes": 160448,
+    "sha256": "a0414316401428faeda147cff6f3bb2801e72877b17041023d3c6ee333d4675c",
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "lits",
+    "project": "chromium",
+    "phase": "after",
+    "head": "146680af2d29e6d56177d86bf70c87235ad0827b",
+    "run": "artifacts/check/2026-09-08T19-47-00-544Z/e2e",
+    "test": "LITS imported rooms follow a drawn divider through undo, redo and reload",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "lits-chromium-after.webm",
+    "screenshot": "lits-chromium-after.png",
+    "durationSeconds": 5.76,
+    "bytes": 227084,
+    "sha256": "6227478996b87ac7ddfce45910850c6b77b6c292c9ca2f881098cccbffabbe93",
+    "dimensions": {
+      "width": 800,
+      "height": 450
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "text",
+    "project": "chromium",
+    "phase": "after",
+    "head": "146680af2d29e6d56177d86bf70c87235ad0827b",
+    "run": "artifacts/check/2026-09-08T19-47-00-544Z/e2e",
+    "test": "Free text is reachable from the toolbar and editable after reload",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "text-chromium-after.webm",
+    "screenshot": "text-chromium-after.png",
+    "durationSeconds": 5.24,
+    "bytes": 189880,
+    "sha256": "edd032d10ca816a8aacc5ba31c9f66ba56895065f235ddce988801c49be01e4a",
+    "dimensions": {
+      "width": 800,
+      "height": 450
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "lits",
+    "project": "mobile-chrome",
+    "phase": "after",
+    "head": "146680af2d29e6d56177d86bf70c87235ad0827b",
+    "run": "artifacts/check/2026-09-08T19-47-00-544Z/e2e",
+    "test": "LITS imported rooms follow a drawn divider through undo, redo and reload",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "lits-mobile-chrome-after.webm",
+    "screenshot": "lits-mobile-chrome-after.png",
+    "durationSeconds": 6.56,
+    "bytes": 227755,
+    "sha256": "95188589063bad0a145c0266a4ae1a22d71d680a6fbaeea373c44f62d07bea21",
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "text",
+    "project": "mobile-chrome",
+    "phase": "after",
+    "head": "146680af2d29e6d56177d86bf70c87235ad0827b",
+    "run": "artifacts/check/2026-09-08T19-47-00-544Z/e2e",
+    "test": "Free text is reachable from the toolbar and editable after reload",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "text-mobile-chrome-after.webm",
+    "screenshot": "text-mobile-chrome-after.png",
+    "durationSeconds": 6.44,
+    "bytes": 171150,
+    "sha256": "edcf190beafe7e7d930bb969e8e9a6afa82008e6e23303f35c381a175b35b9e4",
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    },
+    "fullyDecoded": true
+  }
+]
