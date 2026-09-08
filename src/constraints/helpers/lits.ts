@@ -41,28 +41,26 @@ export function getLitsShape(ids: string[]): string | null {
   return shapes.get(shapeKey(matches.map(m => [Number(m![1]), Number(m![2])])) ) ?? null;
 }
 
-/** Imported maps remain authoritative; newly drawn square boards derive rooms from borders. */
-export function getLitsRooms({ puzzle, grid, topology }: Context): Map<number, string[]> | null {
+export function getLitsCells(grid: GridConfig): string[] {
   const excluded = new Set([...(grid.disabledCells ?? []), ...(grid.voidCells ?? []), ...(grid.outboardCells ?? [])]);
   const cells: string[] = [];
   for (let r = 0; r < grid.rows; r++) for (let c = 0; c < grid.cols; c++) {
     const id = `cell-${r}-${c}`;
     if (!excluded.has(id)) cells.push(id);
   }
-  const rooms = new Map<number, string[]>();
-  const map = puzzle.problem.roomMap;
-  if (map && Object.keys(map).length) {
-    for (const id of cells) {
-      if (!Number.isInteger(map[id])) return null;
-      const room = map[id];
-      rooms.set(room, [...(rooms.get(room) ?? []), id]);
-    }
-    return rooms;
-  }
+  return cells;
+}
+
+export const litsBorderKey = (a: string, b: string) => [a, b].sort().join('|');
+
+/** Cell adjacencies blocked by square-grid problem borders, excluding annotations. */
+export function getLitsBorderKeys({ puzzle, grid, topology }: Context): Set<string> {
   const blocked = new Set<string>();
-  const key = (a: string, b: string) => [a, b].sort().join('|');
+  const grouped = new Set(Object.values(puzzle.problem.lineGroups ?? {}).flatMap(g => g.lineIds));
+  const key = litsBorderKey;
   for (const line of Object.values(puzzle.problem.lines)) {
-    if (line.lineTarget !== 'edge' && line.lineTarget !== 'wall' && !line.from?.startsWith('vertex-')) continue;
+    if (line.isFree || line.directed || grouped.has(line.id)) continue;
+    if (line.lineTarget ? !['edge', 'wall'].includes(line.lineTarget) : !line.from?.startsWith('vertex-')) continue;
     const edge = line.edgeId ? topology?.edges.get(line.edgeId) : undefined;
     if (edge?.adjacentCells.length === 2) { blocked.add(key(...edge.adjacentCells as [string, string])); continue; }
     const index = line.edgeId ? getEdgeIndexById(line.edgeId, grid) : null;
@@ -77,14 +75,35 @@ export function getLitsRooms({ puzzle, grid, topology }: Context): Map<number, s
     if (r1 === r2) for (let c = Math.min(c1, c2); c < Math.max(c1, c2); c++) blocked.add(key(`cell-${r1 - 1}-${c}`, `cell-${r1}-${c}`));
     if (c1 === c2) for (let r = Math.min(r1, r2); r < Math.max(r1, r2); r++) blocked.add(key(`cell-${r}-${c1 - 1}`, `cell-${r}-${c1}`));
   }
+  return blocked;
+}
+
+export function getLitsRoomsFromBorders(cells: string[], blocked: Set<string>): Map<number, string[]> {
+  const rooms = new Map<number, string[]>();
   const remaining = new Set(cells);
   for (const id of cells) {
     if (!remaining.delete(id)) continue;
     const room = [id];
     for (let i = 0; i < room.length; i++) for (const neighbor of litsNeighbors(room[i])) {
-      if (!blocked.has(key(room[i], neighbor)) && remaining.delete(neighbor)) room.push(neighbor);
+      if (!blocked.has(litsBorderKey(room[i], neighbor)) && remaining.delete(neighbor)) room.push(neighbor);
     }
     rooms.set(rooms.size, room);
   }
   return rooms;
+}
+
+/** Maps are synchronized on LITS border edits; unmapped boards derive rooms directly. */
+export function getLitsRooms(ctx: Context): Map<number, string[]> | null {
+  const cells = getLitsCells(ctx.grid);
+  const map = ctx.puzzle.problem.roomMap;
+  if (map && Object.keys(map).length) {
+    const rooms = new Map<number, string[]>();
+    for (const id of cells) {
+      if (!Number.isInteger(map[id])) return null;
+      const room = map[id];
+      rooms.set(room, [...(rooms.get(room) ?? []), id]);
+    }
+    return rooms;
+  }
+  return getLitsRoomsFromBorders(cells, getLitsBorderKeys(ctx));
 }

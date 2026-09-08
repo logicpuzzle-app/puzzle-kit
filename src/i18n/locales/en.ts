@@ -577,6 +577,7 @@ export const en = {
   'tool.text.hiragana': 'Hiragana',
   'tool.text.katakana': 'Katakana',
   'tool.text.free': 'Free Text',
+  'tool.text.editCellHint': 'Select a cell to enter or edit text.',
   'tool.text.inputPlaceholder': 'Enter text...',
   'panel.inputGenre.number': 'Number',
   'panel.inputGenre.word': 'Word',

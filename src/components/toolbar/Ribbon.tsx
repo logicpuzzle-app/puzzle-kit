@@ -4,7 +4,7 @@
  * Composed of:
  * - RibbonIcons: SVG icon components
  * - RibbonGridContent: Grid tab content (GridShapeContent, GridDisplayContent)
- * - RibbonPickers: Tool setting pickers (TextCharacterPicker, LineSettingsPicker, SymbolSettingsPicker)
+ * - RibbonPickers: Tool setting pickers (TextInputHint, LineSettingsPicker, SymbolSettingsPicker)
  * - RibbonToolDefs: Tool and category definitions
  */
 
@@ -32,7 +32,7 @@ import {
 import { ToolModeSelector } from './ToolModeSelector';
 // Note: CheckboxIcon/CheckboxEmptyIcon are used for Constraint layer toggle (enables/disables constraint checking)
 import { GridShapeContent, GridDisplayContent } from './RibbonGridContent';
-import { TextCharacterPicker, LineSettingsPicker, SymbolSettingsPicker } from './RibbonPickers';
+import { TextInputHint, LineSettingsPicker, SymbolSettingsPicker } from './RibbonPickers';
 import { toolGroups, mainCategories, CategoryDef } from './RibbonToolDefs';
 
 // Constraint sub-categories: Preset / Edit Settings / Play Settings / Check Settings
@@ -445,7 +445,7 @@ export const Ribbon: React.FC = () => {
                   }`}
                   onClick={() => handleCategoryClick(category)}
                 >
-                  {CategoryIcon ? <CategoryIcon size={14} /> : <span className="text-sm">{category.icon}</span>}
+                  {CategoryIcon ? <CategoryIcon size={14} /> : <span aria-hidden="true" className="text-sm">{category.icon}</span>}
                   <span>{t(category.labelKey)}</span>
                 </button>
               );
@@ -707,7 +707,7 @@ export const Ribbon: React.FC = () => {
                     {SvgIcon ? (
                       <SvgIcon size={16} />
                     ) : (
-                      <span className="text-base">{tool.icon}</span>
+                      <span aria-hidden="true" className="text-base">{tool.icon}</span>
                     )}
                     <span>{t(tool.labelKey)}</span>
                   </button>
@@ -726,7 +726,7 @@ export const Ribbon: React.FC = () => {
 
             {toolSettings.currentCategory === 'text' && (
               <div className="ml-4 border-l border-office-border pl-4">
-                <TextCharacterPicker />
+                <TextInputHint />
               </div>
             )}
           </>

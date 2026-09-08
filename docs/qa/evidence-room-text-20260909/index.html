@@ -1,0 +1,18 @@
+<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LITS・文字入力 QA比較</title><style>body{font:16px system-ui;margin:24px;background:#f4f6f8;color:#172b4d}section{margin:24px 0}article{background:white;padding:16px;min-width:0}main{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}video{width:100%;max-height:560px;background:#ddd}small{overflow-wrap:anywhere}a{color:#075baf}</style><h1>LITS境界・文字入力 before/after</h1><p>2026-09-09 JST。Chromium PC／Pixel 7エミュレーション（物理実機ではありません）。beforeは不具合を示す期待どおりの失敗、afterは回帰テスト成功です。内部APIは初期盤面の準備に使用し、編集・判定・履歴・再読み込みは画面操作で検証します。</p><p><a href="../2026-09-09-room-text-access.md">QA報告</a> · <a href="evidence.json">SHA-256・動画情報</a></p>
+<section><h2>境界で二分しても正解になる → 編集後の部屋で判定 — chromium</h2><main>
+<article><h3>before</h3><video controls preload="metadata" poster="lits-chromium-before.png" src="lits-chromium-before.webm"></video><p><a href="lits-chromium-before.webm">動画</a> · <a href="lits-chromium-before.png">最終画面</a></p><small>d683f056a4b18ed025af1e8c4e79b7da50e4f2c1 · 13.96s</small></article>
+<article><h3>after</h3><video controls preload="metadata" poster="lits-chromium-after.png" src="lits-chromium-after.webm"></video><p><a href="lits-chromium-after.webm">動画</a> · <a href="lits-chromium-after.png">最終画面</a></p><small>146680af2d29e6d56177d86bf70c87235ad0827b · 5.76s</small></article>
+</main></section>
+<section><h2>境界で二分しても正解になる → 編集後の部屋で判定 — mobile-chrome</h2><main>
+<article><h3>before</h3><video controls preload="metadata" poster="lits-mobile-chrome-before.png" src="lits-mobile-chrome-before.webm"></video><p><a href="lits-mobile-chrome-before.webm">動画</a> · <a href="lits-mobile-chrome-before.png">最終画面</a></p><small>d683f056a4b18ed025af1e8c4e79b7da50e4f2c1 · 12.12s</small></article>
+<article><h3>after</h3><video controls preload="metadata" poster="lits-mobile-chrome-after.png" src="lits-mobile-chrome-after.webm"></video><p><a href="lits-mobile-chrome-after.webm">動画</a> · <a href="lits-mobile-chrome-after.png">最終画面</a></p><small>146680af2d29e6d56177d86bf70c87235ad0827b · 6.56s</small></article>
+</main></section>
+<section><h2>文字入口がない → Textから入力・再編集 — chromium</h2><main>
+<article><h3>before</h3><video controls preload="metadata" poster="text-chromium-before.png" src="text-chromium-before.webm"></video><p><a href="text-chromium-before.webm">動画</a> · <a href="text-chromium-before.png">最終画面</a></p><small>d683f056a4b18ed025af1e8c4e79b7da50e4f2c1 · 12.44s</small></article>
+<article><h3>after</h3><video controls preload="metadata" poster="text-chromium-after.png" src="text-chromium-after.webm"></video><p><a href="text-chromium-after.webm">動画</a> · <a href="text-chromium-after.png">最終画面</a></p><small>146680af2d29e6d56177d86bf70c87235ad0827b · 5.24s</small></article>
+</main></section>
+<section><h2>文字入口がない → Textから入力・再編集 — mobile-chrome</h2><main>
+<article><h3>before</h3><video controls preload="metadata" poster="text-mobile-chrome-before.png" src="text-mobile-chrome-before.webm"></video><p><a href="text-mobile-chrome-before.webm">動画</a> · <a href="text-mobile-chrome-before.png">最終画面</a></p><small>d683f056a4b18ed025af1e8c4e79b7da50e4f2c1 · 12.40s</small></article>
+<article><h3>after</h3><video controls preload="metadata" poster="text-mobile-chrome-after.png" src="text-mobile-chrome-after.webm"></video><p><a href="text-mobile-chrome-after.webm">動画</a> · <a href="text-mobile-chrome-after.png">最終画面</a></p><small>146680af2d29e6d56177d86bf70c87235ad0827b · 6.44s</small></article>
+</main></section>
+</html>

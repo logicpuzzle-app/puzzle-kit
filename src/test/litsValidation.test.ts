@@ -83,3 +83,73 @@ it('preserves multiple rooms and validation across JSON roundtrips', () => {
   expect(store.getState().puzzle.problem.roomMap).toEqual(before);
   expect(validate(store).complete).toBe(true);
 });
+
+
+it('updates imported rooms after drawing a border, undo, redo and reload', () => {
+  const store = setup(['cell-1-1', 'cell-1-2', 'cell-1-3', 'cell-1-4']);
+  store.getState().setActiveLayer('problem');
+  expect(validate(store).complete).toBe(true);
+  const id = store.getState().addLine({ from: 'vertex-0-3', to: 'vertex-6-3', lineTarget: 'edge', layer: 'problem', style: 'solid', thickness: 'thick', color: '#000000' });
+  expect([...getLitsRooms(store.getState())!.values()].map(c => c.length)).toEqual([18, 18]);
+  expect(validate(store).complete).toBe(false);
+  store.getState().undo(); expect(validate(store).complete).toBe(true);
+  store.getState().redo(); expect(validate(store).complete).toBe(false);
+  expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
+  expect(validate(store).complete).toBe(false);
+  store.getState().removeLine(id); expect(validate(store).complete).toBe(true);
+  store.getState().undo(); expect(validate(store).complete).toBe(false);
+  store.getState().redo(); expect(validate(store).complete).toBe(true);
+});
+
+
+it('materializes map-only imports and can merge their rooms by erasing a border', () => {
+  const store = setup(['cell-1-1', 'cell-1-2', 'cell-1-3', 'cell-1-4'], true);
+  const data = JSON.parse(store.getState().exportPuzzle());
+  data.state.problem.lines = {}; // Legacy map-only payload.
+  expect(store.getState().importPuzzle(JSON.stringify(data))).toBe(true);
+  store.getState().setActiveLayer('problem');
+  expect(Object.keys(store.getState().puzzle.problem.lines)).toHaveLength(6);
+  expect(validate(store).complete).toBe(false);
+  const id = Object.keys(store.getState().puzzle.problem.lines)[0];
+  store.getState().removeLine(id);
+  expect(validate(store).complete).toBe(true);
+  store.getState().undo(); expect(validate(store).complete).toBe(false);
+  store.getState().redo(); expect(validate(store).complete).toBe(true);
+  expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
+  expect(validate(store).complete).toBe(true);
+  expect(Object.keys(store.getState().puzzle.problem.lines)).toHaveLength(5);
+});
+
+it('retains partial dividers until they close a room and reopens a deleted gap', () => {
+  const store = setup(['cell-1-1', 'cell-1-2', 'cell-1-3', 'cell-1-4']);
+  store.getState().setActiveLayer('problem');
+  const ids: string[] = [];
+  for (let r = 0; r < 6; r++) {
+    ids.push(store.getState().addLine({ from: `vertex-${r}-3`, to: `vertex-${r+1}-3`, lineTarget: 'edge', layer: 'problem', style: 'solid', thickness: 'normal', color: '#000000' }));
+    expect(validate(store).complete).toBe(r < 5);
+  }
+  store.getState().removeLine(ids[2]); expect(validate(store).complete).toBe(true);
+  store.getState().undo(); expect(validate(store).complete).toBe(false);
+  store.getState().redo(); expect(validate(store).complete).toBe(true);
+});
+
+it('keeps room labels for decorative/answer lines and does not change other genres', () => {
+  const store = setup([]);
+  const map = store.getState().puzzle.problem.roomMap;
+  const border = { from: 'vertex-0-3', to: 'vertex-6-3', lineTarget: 'edge' as const, layer: 'problem' as const, style: 'solid' as const, thickness: 'normal' as const, color: '#000000' };
+  store.getState().addLine({ ...border, layer: 'answer' });
+  store.getState().addLine({ ...border, isFree: true, fromX: 120, fromY: 0, toX: 120, toY: 240 });
+  expect(store.getState().puzzle.problem.roomMap).toBe(map);
+  store.getState().setCurrentSchemaId('heyawake');
+  store.getState().addLine(border);
+  expect(store.getState().puzzle.problem.roomMap).toBe(map);
+});
+
+it('keeps invalid maps invalid when borders are edited', () => {
+  const store = setup(['cell-1-1', 'cell-1-2', 'cell-1-3', 'cell-1-4']);
+  const map = { 'cell-1-1': 9 };
+  store.getState().setRoomMap(map);
+  store.getState().addLine({ from: 'vertex-0-3', to: 'vertex-6-3', lineTarget: 'edge', layer: 'problem', style: 'solid', thickness: 'normal', color: '#000000' });
+  expect(store.getState().puzzle.problem.roomMap).toBe(map);
+  expect(validate(store).complete).toBe(false);
+});
