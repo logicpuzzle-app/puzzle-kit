@@ -1,3 +1,4 @@
+import { resolveSymbolSize } from '../../utils/symbolSize';
 import { useCallback, useMemo, useRef } from 'react';
 import type { GridConfig, ToolSettings } from '../../types';
 import type { GridTopology } from '../../utils/gridTopology';
@@ -164,14 +165,7 @@ export function useSymbolArrowInput({
     if (!toolSettings.currentTool.startsWith('symbol-arrow')) return null;
     const flick = symbolArrowFlickRef.current;
     if (!flick.startCellCenter || flick.rotation === null) return null;
-    const sizeMultiplier =
-      toolSettings.symbolSize === 'largest'
-        ? 1.3
-        : toolSettings.symbolSize === 'large'
-        ? 1
-        : toolSettings.symbolSize === 'medium'
-        ? 0.7
-        : 0.5;
+    const sizeMultiplier = resolveSymbolSize(toolSettings.symbolSize);
     return {
       x: flick.startCellCenter.x,
       y: flick.startCellCenter.y,
