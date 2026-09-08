@@ -1,0 +1,5 @@
+
+> puzzle-kit@0.0.0 check:solver-sourcemaps
+> node scripts/check-solver-sourcemaps.mjs
+
+Solver sourcemaps: 221 embedded sources reproduce 442 artifacts and 442 maps.

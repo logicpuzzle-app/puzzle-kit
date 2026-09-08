@@ -6,7 +6,7 @@ const directory = resolve('artifacts/check', new Date().toISOString().replace(/[
 mkdirSync(directory, { recursive: true });
 const results = [];
 // Continue after a failure so type errors cannot hide browser regression results.
-for (const script of ['typecheck', 'typecheck:e2e', 'test:unit', 'test:e2e']) {
+for (const script of ['check:solver-sourcemaps', 'typecheck', 'typecheck:e2e', 'test:unit', 'test:e2e']) {
   console.log(`Running ${script}...`);
   const result = spawnSync('npm', ['run', script], {
     encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,

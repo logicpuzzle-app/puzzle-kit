@@ -1,0 +1,19 @@
+
+> puzzle-kit@0.0.0 test:unit
+> vitest run
+
+
+ RUN  v4.1.11 /Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality
+
+
+ Test Files  66 passed (66)
+      Tests  1030 passed (1030)
+   Start at  22:52:16
+   Duration  8.00s (transform 16.13s, setup 5.95s, import 22.18s, tests 6.10s, environment 47.38s)
+
+(node:4365) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:4357) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:4368) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)

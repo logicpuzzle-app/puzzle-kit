@@ -1,0 +1,22 @@
+[
+  {
+    "case": "missing-source",
+    "exitCode": 1,
+    "result": "rejected"
+  },
+  {
+    "case": "wrong-source",
+    "exitCode": 1,
+    "result": "rejected"
+  },
+  {
+    "case": "wrong-mappings",
+    "exitCode": 1,
+    "result": "rejected"
+  },
+  {
+    "case": "consistent-but-incorrect-source",
+    "exitCode": 1,
+    "result": "rejected by artifact comparison"
+  }
+]
