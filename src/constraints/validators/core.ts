@@ -341,6 +341,7 @@ export function runDataDrivenValidation(
   topology: GridTopology | null = null
 ): ValidationResult {
   const errors: ValidationError[] = [];
+  let unavailable = false;
   const normalizedPuzzle = mergeDirectionalCluesIntoNumbers(puzzle);
 
   // Build set of enabled rules
@@ -380,6 +381,8 @@ export function runDataDrivenValidation(
     for (const checkName of checklist) {
       const checkFn = getCheckFunction(checkName);
       if (!checkFn) {
+        unavailable = true;
+        errors.push({ ruleId: rule.id, failcode: 'unavailable', messageKey: 'validation.unavailable' });
         console.warn(`[runDataDrivenValidation] Check function not found: ${checkName}`);
         continue;
       }
@@ -415,7 +418,7 @@ export function runDataDrivenValidation(
     );
 
   const complete = errors.length === 0 && hasAnswerElements;
-  const undecided = !hasAnswerElements;
+  const undecided = unavailable || !hasAnswerElements;
 
   return { complete, undecided, errors };
 }

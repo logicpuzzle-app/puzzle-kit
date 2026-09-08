@@ -14,21 +14,15 @@ import {
   type CheckResult,
 } from './core';
 
-const SHADE_COLOR = '#000000';
+import { getLitsRooms, getLitsShape, isLitsShaded, litsNeighbors } from '../helpers/lits';
 
 /**
  * Check if a cell is shaded
  */
 function isShaded(ctx: ValidationContext, row: number, col: number): boolean {
   const cellId = `cell-${row}-${col}`;
-  const surfaces = ctx.puzzle.answer.surfaces || {};
-
-  for (const surface of Object.values(surfaces)) {
-    if (surface.cellId === cellId && surface.color === SHADE_COLOR) {
-      return true;
-    }
-  }
-  return false;
+  if (ctx.grid.disabledCells?.includes(cellId) || ctx.grid.voidCells?.includes(cellId) || ctx.grid.outboardCells?.includes(cellId)) return false;
+  return isLitsShaded(ctx.puzzle, cellId);
 }
 
 /**
@@ -119,70 +113,33 @@ function checkConnectShade_lits(ctx: ValidationContext): CheckResult {
   return { ok: true };
 }
 
-/**
- * Get tetromino type from its shape (L, I, T, S)
- */
-function getTetrominoType(cells: Array<{ row: number; col: number }>): string | null {
-  if (cells.length !== 4) return null;
-
-  // Normalize positions
-  const minRow = Math.min(...cells.map(c => c.row));
-  const minCol = Math.min(...cells.map(c => c.col));
-  const normalized = cells.map(c => ({ row: c.row - minRow, col: c.col - minCol }));
-  normalized.sort((a, b) => a.row * 100 + a.col - (b.row * 100 + b.col));
-
-  const key = normalized.map(c => `${c.row},${c.col}`).join('|');
-
-  // All possible L, I, T, S shapes in all rotations
-  const patterns: Record<string, string> = {
-    // I shapes
-    '0,0|0,1|0,2|0,3': 'I',
-    '0,0|1,0|2,0|3,0': 'I',
-    // L shapes (and J = rotated L)
-    '0,0|1,0|2,0|2,1': 'L',
-    '0,0|0,1|0,2|1,0': 'L',
-    '0,0|0,1|1,1|2,1': 'L',
-    '0,2|1,0|1,1|1,2': 'L',
-    '0,0|0,1|1,0|2,0': 'L',
-    '0,0|0,1|0,2|1,2': 'L',
-    '0,1|1,1|2,0|2,1': 'L',
-    '0,0|1,0|1,1|1,2': 'L',
-    // T shapes
-    '0,0|0,1|0,2|1,1': 'T',
-    '0,0|1,0|1,1|2,0': 'T',
-    '0,1|1,0|1,1|1,2': 'T',
-    '0,1|1,0|1,1|2,1': 'T',
-    // S shapes (and Z = rotated S)
-    '0,0|0,1|1,1|1,2': 'S',
-    '0,1|1,0|1,1|2,0': 'S',
-    '0,1|0,2|1,0|1,1': 'S',
-    '0,0|1,0|1,1|2,1': 'S',
-  };
-
-  return patterns[key] || null;
+function checkTetrominoInRoom_lits(ctx: ValidationContext): CheckResult {
+  const rooms = getLitsRooms(ctx);
+  if (!rooms) return { ok: false };
+  const invalid = [...rooms.values()].filter(cells => !getLitsShape(cells.filter(id => isLitsShaded(ctx.puzzle, id))));
+  return { ok: invalid.length === 0, elements: invalid.flat() };
 }
 
-/**
- * checkTetrominoInRoom_lits - Each room must contain exactly one tetromino
- * This is a simplified check - full implementation would need room borders
- */
-function checkTetrominoInRoom_lits(_ctx: ValidationContext): CheckResult {
-  // This would need room information from borders
-  // For now, just return ok - full implementation would check room borders
+function checkAdjacentSameTetromino_lits(ctx: ValidationContext): CheckResult {
+  const rooms = getLitsRooms(ctx);
+  if (!rooms) return { ok: false };
+  const owners = new Map<string, { room: number; shape: string }>();
+  for (const [room, cells] of rooms) {
+    const shaded = cells.filter(id => isLitsShaded(ctx.puzzle, id));
+    const shape = getLitsShape(shaded);
+    if (shape) shaded.forEach(id => owners.set(id, { room, shape }));
+  }
+  for (const [id, owner] of owners) {
+    for (const neighbor of litsNeighbors(id)) {
+      const other = owners.get(neighbor);
+      if (other && other.room !== owner.room && other.shape === owner.shape) {
+        return { ok: false, elements: [id, neighbor] };
+      }
+    }
+  }
   return { ok: true };
 }
 
-/**
- * checkAdjacentSameTetromino_lits - Same-shaped tetrominoes cannot be adjacent
- * This is a simplified check
- */
-function checkAdjacentSameTetromino_lits(_ctx: ValidationContext): CheckResult {
-  // This would need room information and tetromino identification
-  // For now, just return ok - full implementation would be more complex
-  return { ok: true };
-}
-
-// Register check functions
 registerCheckFunction('check2x2ShadeCell_lits', check2x2ShadeCell_lits);
 registerCheckFunction('checkConnectShade_lits', checkConnectShade_lits);
 registerCheckFunction('checkTetrominoInRoom_lits', checkTetrominoInRoom_lits);

@@ -60,7 +60,7 @@ export const litsSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'lits',
-        checklist: ['check2x2ShadeCell'],
+        checklist: ['check2x2ShadeCell_lits'],
         failcodes: ['cs2x2'],
       },
     },
@@ -73,7 +73,7 @@ export const litsSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'lits',
-        checklist: ['checkConnectShade'],
+        checklist: ['checkConnectShade_lits'],
         failcodes: ['csDivide'],
       },
     },
@@ -86,7 +86,7 @@ export const litsSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'lits',
-        checklist: ['checkTetrominoInRoom'],
+        checklist: ['checkTetrominoInRoom_lits'],
         failcodes: ['bkNotLits'],
       },
     },
@@ -99,7 +99,7 @@ export const litsSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'lits',
-        checklist: ['checkAdjacentSameTetromino'],
+        checklist: ['checkAdjacentSameTetromino_lits'],
         failcodes: ['bkSameTetro'],
       },
     },

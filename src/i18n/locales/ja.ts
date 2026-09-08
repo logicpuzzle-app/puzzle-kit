@@ -908,6 +908,7 @@ export const ja = {
   // Validation
   'validation.complete': '正解!',
   'validation.incorrect': '不正解',
+  'validation.unavailable': '必要な判定を実行できないため、正解か確認できません。',
   'validation.undecided': '未確定',
   'validation.errorCount': '{{count}}個のエラー',
   'validation.errorCount_one': '{{count}}個のエラー',
