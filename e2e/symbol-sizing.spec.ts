@@ -76,7 +76,7 @@ test('symbol sizing: resize only the selected object with atomic history and per
   await page.getByTitle(/Redo/).first().click();
   await expect.poll(() => page.evaluate(id => JSON.parse(localStorage.getItem('puzzlekit_autosave') || '{}').state?.problem?.symbols?.[id]?.size, target.id)).toBe(1.75);
   await page.reload();
-  expect((await symbols(page)).find(s => s.id === target.id)).toEqual({ ...target, size: 1.75 });
+  await expect.poll(async () => (await symbols(page)).find(s => s.id === target.id)).toEqual({ ...target, size: 1.75 });
   await page.getByRole('button', { name: 'Problem', exact: true }).click();
   await page.evaluate(async () => {
     const path = '/src/store/puzzleStore.ts';
