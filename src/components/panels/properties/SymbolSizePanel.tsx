@@ -43,9 +43,9 @@ export const SymbolSizePanel: React.FC = () => {
       {selected && <svg role="img" aria-label={t('symbol.size.preview')}
         className="w-full h-36 border border-office-border rounded-sm bg-white"
         viewBox={`${-previewWidth / 2} ${-previewWidth / 2} ${previewWidth} ${previewWidth}`}>
-        <rect x={-cell / 2} y={-cell / 2} width={cell} height={cell} fill="none" stroke="#cbd5e1" strokeWidth="1" />
         {renderSymbol(selected.symbolType, { x: 0, y: 0, size: cell * resolveSymbolSize(size), color: selected.color,
           fillColor: selected.fillColor, rotation: selected.rotation, directions: selected.directions, directionAngles: selected.directionAngles })}
+        <rect x={-cell / 2} y={-cell / 2} width={cell} height={cell} fill="none" stroke="#cbd5e1" strokeWidth="1" />
       </svg>}
       <div className="grid grid-cols-2 gap-1" role="group" aria-label={t('prop.size')}>
         {(Object.keys(SYMBOL_SIZE_PRESETS) as (keyof typeof SYMBOL_SIZE_PRESETS)[]).map(preset =>
