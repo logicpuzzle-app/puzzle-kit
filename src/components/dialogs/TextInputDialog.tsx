@@ -29,22 +29,19 @@ export const TextInputDialog: React.FC<TextInputDialogProps> = ({
   const { t } = useTranslation();
   const [value, setValue] = useState(initialValue);
   const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setValue(initialValue);
-      setTimeout(() => inputRef.current?.focus(), 50);
+      const timer = setTimeout(() => (textareaRef.current ?? inputRef.current)?.focus(), 50);
+      return () => clearTimeout(timer);
     }
   }, [isOpen, initialValue]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    {
-      onSubmit({
-        value,
-        textType: normalizedType as TextInputType,
-      });
-    }
+    onSubmit({ value, textType: normalizedType as TextInputType });
     onClose();
   };
 
@@ -92,18 +89,31 @@ export const TextInputDialog: React.FC<TextInputDialogProps> = ({
 
           {/* Value input */}
           <div className="mb-3">
-            <label className="block text-sm text-office-text mb-1">
+            <label htmlFor="text-symbol-value" className="block text-sm text-office-text mb-1">
               {t('tool.text.inputPlaceholder')}
             </label>
-            <input
-              ref={inputRef}
-              type="text"
-              className="input-office w-full text-lg"
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              placeholder={isFreeText ? t('tool.text.inputPlaceholder') : ''}
-              maxLength={isFreeText ? 20 : 2}
-            />
+            {isFreeText ? (
+              <textarea
+                id="text-symbol-value"
+                ref={textareaRef}
+                className="input-office w-full text-lg resize-y"
+                rows={4}
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                placeholder={t('tool.text.inputPlaceholder')}
+                maxLength={200}
+              />
+            ) : (
+              <input
+                id="text-symbol-value"
+                ref={inputRef}
+                type="text"
+                className="input-office w-full text-lg"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                maxLength={2}
+              />
+            )}
           </div>
 
           {/* Character picker for non-free text */}
