@@ -1,0 +1,456 @@
+{
+  "beforeCommit": "0d6dd6587beb26f0a3ccbde75acf2534f70cf4a1",
+  "afterImplementationCommit": "4afaee5",
+  "afterCiCommit": "c224a8a",
+  "runs": {
+    "before": {
+      "directory": "artifacts/qa/sourcemaps-before",
+      "stats": {
+        "startTime": "2026-09-08T13:48:21.863Z",
+        "duration": 8382.582,
+        "expected": 16,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    "after": {
+      "directory": "artifacts/qa/sourcemaps-after",
+      "stats": {
+        "startTime": "2026-09-08T13:53:32.041Z",
+        "duration": 38550.711,
+        "expected": 44,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    }
+  },
+  "cases": [
+    {
+      "phase": "before",
+      "title": "solver: solves Nurikabe and reports an impossible puzzle",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "solver-1-before-chromium.webm",
+      "durationSeconds": 1.8,
+      "sha256": "81c0de156dde9fe5ae2bd2e1f023a5e88bc2f13abe0ce3a9b08fbc37afe7db34",
+      "attachments": {
+        "final-screen": "solver-1-before-chromium-final-screen.png",
+        "runtime-errors": "solver-1-before-chromium-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "before",
+      "title": "solver: retries after the first Wasm download fails",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "solver-2-before-chromium.webm",
+      "durationSeconds": 1.48,
+      "sha256": "b54539f0d0682fec20fbe5335f4d5e5fab33b437de6b2e0a52dc4aeb3c3f077f",
+      "attachments": {
+        "final-screen": "solver-2-before-chromium-final-screen.png",
+        "runtime-errors": "solver-2-before-chromium-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "before",
+      "title": "solver: displays confirmed cells for multiple solutions",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "solver-3-before-chromium.webm",
+      "durationSeconds": 1.44,
+      "sha256": "45cb5054463237e98b0703403080681323a529bd8c5e39b706e5894e97fe574a",
+      "attachments": {
+        "final-screen": "solver-3-before-chromium-final-screen.png",
+        "runtime-errors": "solver-3-before-chromium-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "before",
+      "title": "solver: bundled Heyawake respects imported room walls",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "solver-4-before-chromium.webm",
+      "durationSeconds": 1.28,
+      "sha256": "18920122f440d27aa8ee6f56612cabd0a5c5d6131b8d425872dccdeb18fa82ce",
+      "attachments": {
+        "bundled-worker-result": "solver-4-before-chromium-bundled-worker-result.json",
+        "final-screen": "solver-4-before-chromium-final-screen.png",
+        "runtime-errors": "solver-4-before-chromium-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "before",
+      "title": "solver: cancels loading and solves again with a fresh worker",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "solver-5-before-chromium.webm",
+      "durationSeconds": 1.52,
+      "sha256": "bbb1c2242d9581d7a7aad20088e2c92186dc4ae365788fc3518857df3322fc19",
+      "attachments": {
+        "final-screen": "solver-5-before-chromium-final-screen.png",
+        "runtime-errors": "solver-5-before-chromium-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "before",
+      "title": "solver: toolbar URL import enables the correct solver",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "solver-6-before-chromium.webm",
+      "durationSeconds": 1.4,
+      "sha256": "7bf771e7e16986d2ce8dbf82669e282d6229bb670796f6b1ff442cc9911365f3",
+      "attachments": {
+        "final-screen": "solver-6-before-chromium-final-screen.png",
+        "runtime-errors": "solver-6-before-chromium-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "before",
+      "title": "solver: displays worker startup errors and recovers on retry",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "solver-7-before-chromium.webm",
+      "durationSeconds": 1.56,
+      "sha256": "4d260680e97af2cc5e6889192c14aba66621df39492d834220853533c907e8ce",
+      "attachments": {
+        "final-screen": "solver-7-before-chromium-final-screen.png",
+        "runtime-errors": "solver-7-before-chromium-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "before",
+      "title": "solver: solves Slitherlink and displays the complete loop",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "solver-8-before-chromium.webm",
+      "durationSeconds": 1.48,
+      "sha256": "32bfea7849b0981c17e60640d9e851b579372bb7ee6bd41c0871c9556d4635e0",
+      "attachments": {
+        "final-screen": "solver-8-before-chromium-final-screen.png",
+        "runtime-errors": "solver-8-before-chromium-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "before",
+      "title": "solver: solves Nurikabe and reports an impossible puzzle",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "solver-1-before-mobile-chrome.webm",
+      "durationSeconds": 2.0,
+      "sha256": "d11476146be371a2ad508f9545210437d5e384d4934a4c9accbccfafecdc7f93",
+      "attachments": {
+        "final-screen": "solver-1-before-mobile-chrome-final-screen.png",
+        "runtime-errors": "solver-1-before-mobile-chrome-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "before",
+      "title": "solver: retries after the first Wasm download fails",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "solver-2-before-mobile-chrome.webm",
+      "durationSeconds": 1.6,
+      "sha256": "66da8aa262be39439fbbfaf862983855eee57940e96ba4838da1731edcc03402",
+      "attachments": {
+        "final-screen": "solver-2-before-mobile-chrome-final-screen.png",
+        "runtime-errors": "solver-2-before-mobile-chrome-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "before",
+      "title": "solver: displays confirmed cells for multiple solutions",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "solver-3-before-mobile-chrome.webm",
+      "durationSeconds": 1.48,
+      "sha256": "d3ead8c06591a00fb03f63c21fe578be4b51475da6b14f72838a7785f58b5863",
+      "attachments": {
+        "final-screen": "solver-3-before-mobile-chrome-final-screen.png",
+        "runtime-errors": "solver-3-before-mobile-chrome-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "before",
+      "title": "solver: bundled Heyawake respects imported room walls",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "solver-4-before-mobile-chrome.webm",
+      "durationSeconds": 1.32,
+      "sha256": "8624a4edf8e1746c5f4e17be8185f6a6625f282fe61627d06ae195dc1447bf13",
+      "attachments": {
+        "bundled-worker-result": "solver-4-before-mobile-chrome-bundled-worker-result.json",
+        "final-screen": "solver-4-before-mobile-chrome-final-screen.png",
+        "runtime-errors": "solver-4-before-mobile-chrome-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "before",
+      "title": "solver: cancels loading and solves again with a fresh worker",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "solver-5-before-mobile-chrome.webm",
+      "durationSeconds": 1.56,
+      "sha256": "1b7b8e4449b996e7d60d0e10abe6d18f50dab2546b478a55472917aff611630c",
+      "attachments": {
+        "final-screen": "solver-5-before-mobile-chrome-final-screen.png",
+        "runtime-errors": "solver-5-before-mobile-chrome-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "before",
+      "title": "solver: toolbar URL import enables the correct solver",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "solver-6-before-mobile-chrome.webm",
+      "durationSeconds": 1.36,
+      "sha256": "28644f90430dc1e215365c24864e1568e9234f2877b29a6724bcc1f1fa418457",
+      "attachments": {
+        "final-screen": "solver-6-before-mobile-chrome-final-screen.png",
+        "runtime-errors": "solver-6-before-mobile-chrome-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "before",
+      "title": "solver: displays worker startup errors and recovers on retry",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "solver-7-before-mobile-chrome.webm",
+      "durationSeconds": 1.76,
+      "sha256": "b47166d96caba070d41abd3ba2eea5fc1c40a375cd2258e5831fb0b7183f18e2",
+      "attachments": {
+        "final-screen": "solver-7-before-mobile-chrome-final-screen.png",
+        "runtime-errors": "solver-7-before-mobile-chrome-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "before",
+      "title": "solver: solves Slitherlink and displays the complete loop",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "solver-8-before-mobile-chrome.webm",
+      "durationSeconds": 1.4,
+      "sha256": "ed8091c91ae9271e37b2034930c421313122f6f596cd20a49f6f3b244816367c",
+      "attachments": {
+        "final-screen": "solver-8-before-mobile-chrome-final-screen.png",
+        "runtime-errors": "solver-8-before-mobile-chrome-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "after",
+      "title": "solver: solves Nurikabe and reports an impossible puzzle",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "solver-1-after-chromium.webm",
+      "durationSeconds": 2.24,
+      "sha256": "b3cc1779270f1c1216e24cac95c32e775e6763259ebd136c71a9fc2a3b32b358",
+      "attachments": {
+        "final-screen": "solver-1-after-chromium-final-screen.png",
+        "runtime-errors": "solver-1-after-chromium-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "after",
+      "title": "solver: retries after the first Wasm download fails",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "solver-2-after-chromium.webm",
+      "durationSeconds": 1.84,
+      "sha256": "2aa91953d65cbd00a569d0970662b766f6916a9edb60feca1b2cb10a37a4e123",
+      "attachments": {
+        "final-screen": "solver-2-after-chromium-final-screen.png",
+        "runtime-errors": "solver-2-after-chromium-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "after",
+      "title": "solver: displays confirmed cells for multiple solutions",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "solver-3-after-chromium.webm",
+      "durationSeconds": 1.48,
+      "sha256": "31da1712bceb1bc279866733d49f9b13fafd399962289b59de6fa89a2bd8dfd5",
+      "attachments": {
+        "final-screen": "solver-3-after-chromium-final-screen.png",
+        "runtime-errors": "solver-3-after-chromium-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "after",
+      "title": "solver: bundled Heyawake respects imported room walls",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "solver-4-after-chromium.webm",
+      "durationSeconds": 1.4,
+      "sha256": "d792f7829bfe508c2fa0f0944c51176cd4ab2bdfa06a3ab5914fb301108613b4",
+      "attachments": {
+        "bundled-worker-result": "solver-4-after-chromium-bundled-worker-result.json",
+        "final-screen": "solver-4-after-chromium-final-screen.png",
+        "runtime-errors": "solver-4-after-chromium-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "after",
+      "title": "solver: cancels loading and solves again with a fresh worker",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "solver-5-after-chromium.webm",
+      "durationSeconds": 2.24,
+      "sha256": "79a06e660c11a58b8acd2a9e71cfed7f243d01574a2544ef2faf4a503317f47c",
+      "attachments": {
+        "final-screen": "solver-5-after-chromium-final-screen.png",
+        "runtime-errors": "solver-5-after-chromium-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "after",
+      "title": "solver: toolbar URL import enables the correct solver",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "solver-6-after-chromium.webm",
+      "durationSeconds": 1.8,
+      "sha256": "a3dab20f26847e797fb03415739e5d87d80413098eb5baaa15fc6b6130aa5886",
+      "attachments": {
+        "final-screen": "solver-6-after-chromium-final-screen.png",
+        "runtime-errors": "solver-6-after-chromium-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "after",
+      "title": "solver: displays worker startup errors and recovers on retry",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "solver-7-after-chromium.webm",
+      "durationSeconds": 2.2,
+      "sha256": "edf7be3cb397f3f4bfdf4ff6f226d8fb32fcaf5e916c703cd53780324ef2ee71",
+      "attachments": {
+        "final-screen": "solver-7-after-chromium-final-screen.png",
+        "runtime-errors": "solver-7-after-chromium-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "after",
+      "title": "solver: solves Slitherlink and displays the complete loop",
+      "profile": "chromium",
+      "status": "passed",
+      "video": "solver-8-after-chromium.webm",
+      "durationSeconds": 2.2,
+      "sha256": "3adb1c2a2132abd01e308713a36b077968d731dbd644bbfe305ee0fdb73af620",
+      "attachments": {
+        "final-screen": "solver-8-after-chromium-final-screen.png",
+        "runtime-errors": "solver-8-after-chromium-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "after",
+      "title": "solver: solves Nurikabe and reports an impossible puzzle",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "solver-1-after-mobile-chrome.webm",
+      "durationSeconds": 2.8,
+      "sha256": "fd1564ff1a34b1ca3c9a73092f7804c1ac3b2309f8df66437d02ec000cb6dec8",
+      "attachments": {
+        "final-screen": "solver-1-after-mobile-chrome-final-screen.png",
+        "runtime-errors": "solver-1-after-mobile-chrome-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "after",
+      "title": "solver: retries after the first Wasm download fails",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "solver-2-after-mobile-chrome.webm",
+      "durationSeconds": 2.32,
+      "sha256": "1fe2cda410abc6b1b4bb26531a865257c07237ab3a3eaa4f1b1dd42505097340",
+      "attachments": {
+        "final-screen": "solver-2-after-mobile-chrome-final-screen.png",
+        "runtime-errors": "solver-2-after-mobile-chrome-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "after",
+      "title": "solver: displays confirmed cells for multiple solutions",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "solver-3-after-mobile-chrome.webm",
+      "durationSeconds": 1.84,
+      "sha256": "45b232e137617b4cc37fc59a19ebd7b4b54dba14cbd1c99eec5454ea32be2c9c",
+      "attachments": {
+        "final-screen": "solver-3-after-mobile-chrome-final-screen.png",
+        "runtime-errors": "solver-3-after-mobile-chrome-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "after",
+      "title": "solver: bundled Heyawake respects imported room walls",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "solver-4-after-mobile-chrome.webm",
+      "durationSeconds": 1.52,
+      "sha256": "b2688c2f0c3c673e53f7109c08b60da167353e659d77b52c5c9155e040f033b5",
+      "attachments": {
+        "bundled-worker-result": "solver-4-after-mobile-chrome-bundled-worker-result.json",
+        "final-screen": "solver-4-after-mobile-chrome-final-screen.png",
+        "runtime-errors": "solver-4-after-mobile-chrome-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "after",
+      "title": "solver: cancels loading and solves again with a fresh worker",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "solver-5-after-mobile-chrome.webm",
+      "durationSeconds": 1.92,
+      "sha256": "12222ba72f4d3094a1f5427ab30755afbec759d4135735b99a7fe7af4ddb3388",
+      "attachments": {
+        "final-screen": "solver-5-after-mobile-chrome-final-screen.png",
+        "runtime-errors": "solver-5-after-mobile-chrome-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "after",
+      "title": "solver: toolbar URL import enables the correct solver",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "solver-6-after-mobile-chrome.webm",
+      "durationSeconds": 2.04,
+      "sha256": "2db6322597c1b369580b8648c735778a62b16e53d6f38f224a84eae59b15f333",
+      "attachments": {
+        "final-screen": "solver-6-after-mobile-chrome-final-screen.png",
+        "runtime-errors": "solver-6-after-mobile-chrome-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "after",
+      "title": "solver: displays worker startup errors and recovers on retry",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "solver-7-after-mobile-chrome.webm",
+      "durationSeconds": 1.8,
+      "sha256": "55f5def890a35ff920302119a63c58e198c2cca59b67943557fc185418a4769a",
+      "attachments": {
+        "final-screen": "solver-7-after-mobile-chrome-final-screen.png",
+        "runtime-errors": "solver-7-after-mobile-chrome-runtime-errors.json"
+      }
+    },
+    {
+      "phase": "after",
+      "title": "solver: solves Slitherlink and displays the complete loop",
+      "profile": "mobile-chrome",
+      "status": "passed",
+      "video": "solver-8-after-mobile-chrome.webm",
+      "durationSeconds": 2.28,
+      "sha256": "87e29ee13decb785a028571603ecc1cb124cca59ede628373b92ec3f7d87b82d",
+      "attachments": {
+        "final-screen": "solver-8-after-mobile-chrome-final-screen.png",
+        "runtime-errors": "solver-8-after-mobile-chrome-runtime-errors.json"
+      }
+    }
+  ],
+  "sourceHashes": {
+    "e2e/solver.spec.ts": "df681328f2c5100dbc599b4bcb546a5274650d23ad9ba633eece5f8d4c433d6b",
+    "scripts/check-solver-sourcemaps.mjs": "f2605f54b497a04237327082c0c5cf2515fb75d85aee1826eab00805695f513e",
+    ".github/workflows/qa.yml": "fb24069117465b9eeabfcf36134dcdc34669d196e3d6e4ce303dbc68ca3271d7"
+  }
+}

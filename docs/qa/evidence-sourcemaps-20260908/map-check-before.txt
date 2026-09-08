@@ -1,0 +1,25 @@
+
+> puzzle-kit@0.0.0 check:solver-sourcemaps
+> node scripts/check-solver-sourcemaps.mjs
+
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: constraints/index.d.ts.map: missing embedded source
+
+undefined !== 1
+
+    at file:///Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/scripts/check-solver-sourcemaps.mjs:19:10
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:654:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: undefined,
+  expected: 1,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v25.2.1
