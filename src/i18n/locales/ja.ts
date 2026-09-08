@@ -603,6 +603,8 @@ export const ja = {
   'special.edit.select': '図形を選択',
   'special.edit.empty': '先に矢印または温度計を描いてください',
   'special.edit.points': '{{count}}点',
+  'special.edit.points_one': '{{count}}点',
+  'special.edit.points_other': '{{count}}点',
   'special.edit.hint': '図形を選ぶと、盤面上の経路と先端を強調します。',
   'special.edit.shorten': '先端を短縮',
   'special.edit.delete': '図形を削除',
