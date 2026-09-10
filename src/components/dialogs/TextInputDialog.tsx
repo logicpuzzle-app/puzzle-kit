@@ -30,9 +30,11 @@ export const TextInputDialog: React.FC<TextInputDialogProps> = ({
   const [value, setValue] = useState(initialValue);
   const inputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const composingRef = useRef(false);
 
   useEffect(() => {
     if (isOpen) {
+      composingRef.current = false;
       setValue(initialValue);
       const timer = setTimeout(() => (textareaRef.current ?? inputRef.current)?.focus(), 50);
       return () => clearTimeout(timer);
@@ -41,11 +43,18 @@ export const TextInputDialog: React.FC<TextInputDialogProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (composingRef.current) return;
     onSubmit({ value, textType: normalizedType as TextInputType });
     onClose();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Enter/Escape belong to the IME while it is confirming/cancelling text.
+    // Some browsers report keyCode 229 after compositionend instead.
+    if (composingRef.current || e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) {
+      if (e.key === 'Enter') e.preventDefault();
+      return;
+    }
     if (e.key === 'Escape') {
       onClose();
     }
@@ -80,6 +89,8 @@ export const TextInputDialog: React.FC<TextInputDialogProps> = ({
         }`}
         style={isKana ? { width: 'min(640px, 96vw)', maxHeight: 'none', overflow: 'visible' } : undefined}
         onKeyDown={handleKeyDown}
+        onCompositionStart={() => { composingRef.current = true; }}
+        onCompositionEnd={() => { composingRef.current = false; }}
       >
         <form onSubmit={handleSubmit}>
           {/* Dialog title */}
