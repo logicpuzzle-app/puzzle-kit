@@ -9,6 +9,7 @@ import { useCanvasPoint } from './useCanvasPoint';
 import { shouldAllowOutboardForTool } from '../utils/outboardPolicy';
 import { createToolDispatchers, type ToolDispatchHandlers } from './toolDispatchers';
 import type { Point } from '../types';
+import type { TextClickInfo } from '../types/canvasInput';
 
 interface TouchState {
   isPinching: boolean;
@@ -28,6 +29,7 @@ type PointerInfo = { clientX: number; clientY: number; startX: number; startY: n
 interface UseTouchHandlersOptions {
   svgRef: React.RefObject<SVGSVGElement | null>;
   allowMultiTouchPanZoom?: boolean;
+  onTextClick?: (info: TextClickInfo) => void;
   gridHandlers?: {
     down: (point: Point) => void;
     move: (point: Point) => void;
@@ -38,7 +40,7 @@ interface UseTouchHandlersOptions {
     handleStraightLineEnd: (point: Point, isRightClick: boolean, isShiftKey: boolean) => void;
     resetFillModes: () => void;
     handleNumberTool?: (point: Point, isRightClick: boolean, options?: { cellId?: string }) => void;
-    handleTextTool?: (point: Point, isRightClick: boolean) => void;
+    handleTextTool?: (point: Point, isRightClick: boolean) => TextClickInfo | null;
   };
   drawStartPoint: string | null;
   setDrawStartPoint: (point: string | null) => void;
@@ -67,6 +69,7 @@ const getPinchCenter = (points: PointerInfo[]): Point => {
 export function useTouchHandlers({
   svgRef,
   allowMultiTouchPanZoom = true,
+  onTextClick,
   gridHandlers,
   toolHandlers,
   drawStartPoint,
@@ -254,7 +257,8 @@ export function useTouchHandlers({
     }
 
     if (tool.startsWith('text')) {
-      handleTextTool?.(point, false);
+      const result = handleTextTool?.(point, false);
+      if (result) onTextClick?.(result);
       return;
     }
 
@@ -265,6 +269,7 @@ export function useTouchHandlers({
     handleNumberTool,
     handleTextTool,
     setNumberSelection,
+    onTextClick,
     toolSettings.currentTool,
     toolSettings.numberInputMode,
   ]);
