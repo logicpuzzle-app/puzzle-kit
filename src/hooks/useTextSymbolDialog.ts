@@ -29,7 +29,10 @@ export function useTextSymbolDialog({
     setExistingText(info.existingText ?? undefined);
     const existingValue = getTextSymbolValue(info.existingText?.symbolType ?? '');
     setTextDialogInitialValue(existingValue);
-    setTextDialogType(info.textType as TextInputType);
+    // The selected tool controls new entries, not the kind of existing text.
+    const existingType = info.existingText?.symbolType.split(':', 1)[0].slice(5);
+    setTextDialogType((existingType && ['alphabet', 'hiragana', 'katakana', 'free'].includes(existingType)
+      ? existingType : info.textType) as TextInputType);
     setTextDialogOpen(true);
   }, []);
 
@@ -39,6 +42,7 @@ export function useTextSymbolDialog({
         removeSymbol(existingText.id);
       } else if (textDialogCellId && data.value) {
         addSymbol({
+          ...existingText,
           cellId: textDialogCellId,
           symbolType: `text-${data.textType}:${data.value}`,
           size: existingText?.size ?? toolSettings.symbolSize,

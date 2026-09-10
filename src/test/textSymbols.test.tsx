@@ -60,3 +60,29 @@ it('restores layer metadata on a text-only board and keeps post-load editing und
   store.getState().addSymbol({...element,symbolType:'text-free:edited'});
   store.getState().undo();expect(store.getState().puzzle.problem.symbols[id].symbolType).toBe('text-free:A:B');
 });
+
+it.each(['alphabet', 'hiragana', 'katakana'])('reopens existing free text via %s without converting it or losing metadata', textType => {
+  const store = createPuzzleStore().useStore;
+  store.getState().setActiveLayer('problem');
+  const id = store.getState().addSymbol({ cellId: 'cell-0-0', symbolType: 'text-free:A:B\n日本語',
+    size: 1.75, rotation: 30, color: '#123456', fillColor: '#abcdef', objectKey: 'keep', layer: 'problem' });
+  const original = store.getState().puzzle.problem.symbols[id];
+  store.getState().historyManager.clear();
+  const { result, unmount } = renderHook(() => useTextSymbolDialog(store.getState()));
+  act(() => result.current.handleTextClick({ cellId: original.cellId, textType, existingText: original }));
+  expect(result.current.dialogProps.textType).toBe('free');
+  act(() => result.current.dialogProps.onSubmit({ value: result.current.dialogProps.initialValue, textType: result.current.dialogProps.textType }));
+  expect(store.getState().puzzle.problem.symbols[id]).toEqual(original);
+  expect(store.getState().canUndo()).toBe(false);
+  act(() => result.current.dialogProps.onSubmit({ value: '編集:済\n長文', textType: 'free' }));
+  expect(store.getState().puzzle.problem.symbols[id]).toEqual({ ...original, symbolType: 'text-free:編集:済\n長文' });
+  store.getState().undo();
+  expect(store.getState().puzzle.problem.symbols[id]).toEqual(original);
+  expect(store.getState().canUndo()).toBe(false);
+  store.getState().redo();
+  expect(store.getState().puzzle.problem.symbols[id].symbolType).toBe('text-free:編集:済\n長文');
+  act(() => result.current.handleTextClick({ cellId: 'cell-1-1', textType, existingText: undefined }));
+  expect(result.current.dialogProps.textType).toBe(textType);
+  expect(result.current.dialogProps.initialValue).toBe('');
+  unmount();
+});
