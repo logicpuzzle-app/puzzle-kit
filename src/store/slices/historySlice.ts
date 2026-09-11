@@ -27,6 +27,14 @@ export const applyActionToState = (
   };
 
   switch (action.type) {
+    case 'ADD_BOXLINE':
+    case 'REMOVE_BOXLINE': {
+      const layer = action.element.layer;
+      const boxLines = { ...state.puzzle[layer].boxLines };
+      if (action.type === 'ADD_BOXLINE') boxLines[action.element.id] = action.element;
+      else delete boxLines[action.id];
+      return { puzzle: { ...state.puzzle, [layer]: { ...state.puzzle[layer], boxLines } } };
+    }
     case 'ADD_SURFACE': {
       const layer = action.element.layer;
       return {
