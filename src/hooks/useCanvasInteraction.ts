@@ -384,6 +384,7 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom, onTextCli
     setDrawStartPoint,
     setDrawStartPosition,
     setCurrentStrokeId,
+    setSpecialPath,
   });
 
   // Mouse down handler (state machine based)

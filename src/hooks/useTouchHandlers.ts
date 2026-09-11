@@ -46,6 +46,7 @@ interface UseTouchHandlersOptions {
   setDrawStartPoint: (point: string | null) => void;
   setDrawStartPosition: (point: Point | null) => void;
   setCurrentStrokeId: (id: string | null) => void;
+  setSpecialPath: (path: string[]) => void;
 }
 
 // Helper functions
@@ -76,6 +77,7 @@ export function useTouchHandlers({
   setDrawStartPoint,
   setDrawStartPosition,
   setCurrentStrokeId,
+  setSpecialPath,
 }: UseTouchHandlersOptions) {
   const {
     canvas,
@@ -178,6 +180,7 @@ export function useTouchHandlers({
         // Switching to a multi-finger gesture abandons pending shape previews,
         // while incremental edits remain in the current undo group.
         gridHandlers?.cancel();
+        setSpecialPath([]);
         setDrawStartPoint(null);
         setDrawStartPosition(null);
         setCurrentStrokeId(null);
@@ -225,6 +228,7 @@ export function useTouchHandlers({
       setDrawStartPoint,
       setDrawStartPosition,
       setCurrentStrokeId,
+      setSpecialPath,
       canvas.panMode,
       activeLayer,
       gridHandlers,
@@ -419,8 +423,9 @@ export function useTouchHandlers({
             if (allowedDirections.includes('straight') && drawStartPoint) {
               handleStraightLineEnd(point, false, false);
             }
-          } else if (tool === 'special-boxline') {
-            toolDispatchers.dispatchEnd(tool, point);
+          } else if (tool.startsWith('special-') && !(touchDuration > 500 && !touchState.isDragging)) {
+            // Long press already deleted its target; do not create it again.
+            toolDispatchers.dispatchEnd(tool, getCanvasPoint(e.clientX, e.clientY));
           }
         }
       }
@@ -444,6 +449,9 @@ export function useTouchHandlers({
       setDrawStartPoint(null);
       setDrawStartPosition(null);
       setCurrentStrokeId(null);
+      // Discard pending Special previews on cancellation, pan and completion,
+      // including releases outside a cell where the tool cannot finalize.
+      setSpecialPath([]);
       if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
         e.currentTarget.releasePointerCapture(e.pointerId);
       }
@@ -465,6 +473,7 @@ export function useTouchHandlers({
       setDrawStartPoint,
       setDrawStartPosition,
       setCurrentStrokeId,
+      setSpecialPath,
       toolDispatchers,
     ]
   );
