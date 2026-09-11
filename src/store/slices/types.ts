@@ -161,7 +161,7 @@ export interface ElementsSlice {
   removeWall: (id: string) => void;
   addNumber: (element: Omit<NumberElement, 'id'>) => string;
   removeNumber: (id: string) => void;
-  updateNumber: (id: string, value: string) => void;
+  updateNumber: (id: string, value: string, appearance?: Partial<Pick<NumberElement, 'color' | 'size'>>) => void;
   addSymbol: (element: Omit<SymbolElement, 'id'>) => string;
   removeSymbol: (id: string) => void;
   resizeSymbol: (id: string, size: SymbolElement['size']) => void;

@@ -326,7 +326,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
     }
   },
 
-  updateNumber: (id, value) => {
+  updateNumber: (id, value, appearance) => {
     const state = get();
     const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
     if (!layer) {
@@ -334,23 +334,34 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
     }
     const element = state.puzzle[layer].numbers[id];
     if (element) {
+      const updatedElement = {
+        ...element,
+        value,
+        color: appearance?.color ?? element.color,
+        size: appearance?.size ?? element.size,
+      };
+      const appearanceChanged = updatedElement.color !== element.color || updatedElement.size !== element.size;
+      if (element.value === value && !appearanceChanged) return;
       set((state) => {
-        const dataLayer = toDataLayer(state.activeLayer);
-        const updatedElement = { ...element, value };
         return {
           puzzle: {
             ...state.puzzle,
-            [dataLayer]: {
-              ...state.puzzle[dataLayer],
+            [layer]: {
+              ...state.puzzle[layer],
               numbers: {
-                ...state.puzzle[dataLayer].numbers,
+                ...state.puzzle[layer].numbers,
                 [id]: updatedElement,
               },
             },
           },
         };
       });
-      get().historyManager.addAction(createUpdateNumberAction(id, element.value, value, layer));
+      // Paint may apply its selected brush along with the value. Restore both
+      // in one undo step without ending a surrounding pointer history group.
+      get().historyManager.addAction(appearanceChanged ? createBatchAction([
+        createRemoveNumberAction(id, element),
+        createAddNumberAction(updatedElement),
+      ], 'Edit number') : createUpdateNumberAction(id, element.value, value, layer));
     }
   },
 
