@@ -1,0 +1,143 @@
+{
+  "beforeCommit": "623a530d2ca2cafda15bc2c23836abb082598669",
+  "afterCommit": "74cbf6faaf6ac6f71b0e2a4cd22aef1c61c1090a",
+  "browser": "Playwright Chromium / Pixel 7 emulation",
+  "build": "production",
+  "comparison": "after releasing the finger; before fails to commit, after creates an undoable object",
+  "beforeResults": [
+    {
+      "type": "Arrow",
+      "status": "failed",
+      "error": "Error: expect(locator).toHaveCount(expected) failed\n\nLocator:  locator('#puzzle-canvas .special-layer-problem path')\nExpected: 1\nReceived: 0\nTimeout:  5000ms\n\nCall log:\n  - Expect \"to.have.count\" with timeout 5000ms\n  - waiting for locator('#puzzle-canvas .special-layer-problem path')\n    14 × locator resolved to 0 elements\n       - unexpected value \"0\"\n",
+      "errors": []
+    },
+    {
+      "type": "Thermo",
+      "status": "failed",
+      "error": "Error: expect(locator).toHaveCount(expected) failed\n\nLocator:  locator('#puzzle-canvas .special-layer-problem path')\nExpected: 1\nReceived: 0\nTimeout:  5000ms\n\nCall log:\n  - Expect \"to.have.count\" with timeout 5000ms\n  - waiting for locator('#puzzle-canvas .special-layer-problem path')\n    14 × locator resolved to 0 elements\n       - unexpected value \"0\"\n",
+      "errors": []
+    }
+  ],
+  "afterResults": [
+    {
+      "type": "Arrow",
+      "status": "passed",
+      "initialLabel": "Arrow 1 — 4 points",
+      "afterLabel": "Arrow 1 — 3 points",
+      "before": "M 80 80M 80 80 L 120 80 L 160 80 L 200 80",
+      "after": "M 80 80M 80 80 L 120 80 L 160 80",
+      "errors": []
+    },
+    {
+      "type": "Thermo",
+      "status": "passed",
+      "initialLabel": "Thermo 1 — 4 points",
+      "afterLabel": "Thermo 1 — 3 points",
+      "before": "M 80 80 L 120 80 L 160 80 L 200 80",
+      "after": "M 80 80 L 120 80 L 160 80",
+      "errors": []
+    }
+  ],
+  "files": [
+    {
+      "path": "arrow-before.png",
+      "bytes": 79189,
+      "sha256": "db9cbb1dda52b9e27c57a54cb1f18d2783608108475233398182106f0ce5d62f"
+    },
+    {
+      "path": "arrow-before.webm",
+      "bytes": 136023,
+      "sha256": "72432a23f8daec15f1ef2386f704a22b5b3b8c7146fa03f8e3200629b19184ff",
+      "media": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "vp8",
+            "width": 392,
+            "height": 800
+          }
+        ],
+        "format": {
+          "duration": "7.400000"
+        }
+      },
+      "decode": "passed"
+    },
+    {
+      "path": "arrow-after.png",
+      "bytes": 79120,
+      "sha256": "4c1d01bd5658ce084d391bf41e6abb3c83a46cbb745fc1fb915d1911860e9953"
+    },
+    {
+      "path": "arrow-after.webm",
+      "bytes": 250963,
+      "sha256": "7675150ed3841b93313960c21dc280b835ccece47bf193e822691d1bfd1418c8",
+      "media": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "vp8",
+            "width": 392,
+            "height": 800
+          }
+        ],
+        "format": {
+          "duration": "6.400000"
+        }
+      },
+      "decode": "passed"
+    },
+    {
+      "path": "thermo-before.png",
+      "bytes": 78424,
+      "sha256": "d67a8f23b88a321eb572f226937df26ea47c63585dd0fb3070d12d4cbc13a35d"
+    },
+    {
+      "path": "thermo-before.webm",
+      "bytes": 182518,
+      "sha256": "8643cc712f405155bd7813fe1fa125d8876e5b9ccbbccdbd3c7f958cfeadb69a",
+      "media": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "vp8",
+            "width": 392,
+            "height": 800
+          }
+        ],
+        "format": {
+          "duration": "7.520000"
+        }
+      },
+      "decode": "passed"
+    },
+    {
+      "path": "thermo-after.png",
+      "bytes": 77388,
+      "sha256": "80f363876912915ce8f2b6a321d86716dd6a429a6eb55301af43e4fffb6c66b0"
+    },
+    {
+      "path": "thermo-after.webm",
+      "bytes": 181911,
+      "sha256": "def14d5e5c4302392084324f3af568899c0708ca2502bca16b499dded4f47459",
+      "media": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "vp8",
+            "width": 392,
+            "height": 800
+          }
+        ],
+        "format": {
+          "duration": "5.680000"
+        }
+      },
+      "decode": "passed"
+    }
+  ]
+}

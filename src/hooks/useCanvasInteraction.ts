@@ -44,14 +44,16 @@ import {
   type GridEditMode as StateMachineGridEditMode,
 } from './interactionStateMachine';
 import type { Point } from '../types';
+import type { TextClickInfo } from '../types/canvasInput';
 import { shouldAllowOutboardForTool } from '../utils/outboardPolicy';
 
 interface UseCanvasInteractionOptions {
   svgRef: React.RefObject<SVGSVGElement | null>;
   allowMultiTouchPanZoom?: boolean;
+  onTextClick?: (info: TextClickInfo) => void;
 }
 
-export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom }: UseCanvasInteractionOptions) {
+export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom, onTextClick }: UseCanvasInteractionOptions) {
   const {
     grid,
     canvas,
@@ -365,6 +367,7 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom }: UseCanv
   const { handlePointerDown, handlePointerMove, handlePointerUp } = useTouchHandlers({
     svgRef,
     allowMultiTouchPanZoom,
+    onTextClick,
     gridHandlers: isGridMode ? {
       down: (point) => executeGridDown(gridEditMode as StateMachineGridEditMode, point, false, false),
       move: (point) => executeGridMove(gridEditMode as StateMachineGridEditMode, point, false),
@@ -381,6 +384,7 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom }: UseCanv
     setDrawStartPoint,
     setDrawStartPosition,
     setCurrentStrokeId,
+    setSpecialPath,
   });
 
   // Mouse down handler (state machine based)
