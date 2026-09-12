@@ -1,0 +1,230 @@
+[
+  {
+    "case": "presets",
+    "project": "chromium",
+    "phase": "before",
+    "head": "c0cb33a258ce24b7106b519dabea77933e53c8cf",
+    "run": "artifacts/qa/symbol-sizing-before",
+    "test": "symbol sizing: all four presets and custom defaults are available",
+    "status": "timedOut",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "presets-chromium-before.webm",
+    "screenshot": "presets-chromium-before.png",
+    "exports": [],
+    "durationSeconds": 45.84,
+    "sha256": "d8387ef26a9088eada842509c76d0a5b6892763b663d9e81116f3c5495fe0f87",
+    "bytes": 556740,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 800,
+      "height": 450
+    }
+  },
+  {
+    "case": "resize",
+    "project": "chromium",
+    "phase": "before",
+    "head": "c0cb33a258ce24b7106b519dabea77933e53c8cf",
+    "run": "artifacts/qa/symbol-sizing-before",
+    "test": "symbol sizing: resize only the selected object with atomic history and persistence",
+    "status": "timedOut",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "resize-chromium-before.webm",
+    "screenshot": "resize-chromium-before.png",
+    "exports": [],
+    "durationSeconds": 46.96,
+    "sha256": "2ce8ac981f7e10a89f988364b600f3f6c0b4ed7ba81256303b144298938c425d",
+    "bytes": 624363,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 800,
+      "height": 450
+    }
+  },
+  {
+    "case": "presets",
+    "project": "mobile-chrome",
+    "phase": "before",
+    "head": "c0cb33a258ce24b7106b519dabea77933e53c8cf",
+    "run": "artifacts/qa/symbol-sizing-before",
+    "test": "symbol sizing: all four presets and custom defaults are available",
+    "status": "timedOut",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "presets-mobile-chrome-before.webm",
+    "screenshot": "presets-mobile-chrome-before.png",
+    "exports": [],
+    "durationSeconds": 46.84,
+    "sha256": "57861c3c92d931ff06132db49869c8db8b3dcfb9d6a41f0376a91760e2533aa4",
+    "bytes": 745990,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    }
+  },
+  {
+    "case": "resize",
+    "project": "mobile-chrome",
+    "phase": "before",
+    "head": "c0cb33a258ce24b7106b519dabea77933e53c8cf",
+    "run": "artifacts/qa/symbol-sizing-before",
+    "test": "symbol sizing: resize only the selected object with atomic history and persistence",
+    "status": "timedOut",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "resize-mobile-chrome-before.webm",
+    "screenshot": "resize-mobile-chrome-before.png",
+    "exports": [],
+    "durationSeconds": 47.0,
+    "sha256": "b83c0d527e2508bafc96d182665a9b71c04380fdc021c1b668632a52a1221be3",
+    "bytes": 767211,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    }
+  },
+  {
+    "case": "presets",
+    "project": "chromium",
+    "phase": "after",
+    "head": "007363f5dc419f0e1c6782fa370dc5084a76e03f",
+    "run": "artifacts/qa/symbol-sizing-preview-final",
+    "test": "symbol sizing: all four presets and custom defaults are available",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "presets-chromium-after.webm",
+    "screenshot": "presets-chromium-after.png",
+    "exports": [],
+    "durationSeconds": 3.28,
+    "sha256": "9b4f4abbfd26c40dcdc3f2a358d789dfb38ce2fd9b6347e932a029d0a2f034ac",
+    "bytes": 59617,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 800,
+      "height": 450
+    }
+  },
+  {
+    "case": "resize",
+    "project": "chromium",
+    "phase": "after",
+    "head": "007363f5dc419f0e1c6782fa370dc5084a76e03f",
+    "run": "artifacts/qa/symbol-sizing-preview-final",
+    "test": "symbol sizing: resize only the selected object with atomic history and persistence",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "resize-chromium-after.webm",
+    "screenshot": "resize-chromium-after.png",
+    "exports": [],
+    "durationSeconds": 6.0,
+    "sha256": "c251528eb20a38aecb2d8950555b14e1a9990af34b7430ec7ac9e4ead12f8121",
+    "bytes": 146509,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 800,
+      "height": 450
+    }
+  },
+  {
+    "case": "presets",
+    "project": "mobile-chrome",
+    "phase": "after",
+    "head": "007363f5dc419f0e1c6782fa370dc5084a76e03f",
+    "run": "artifacts/qa/symbol-sizing-preview-final",
+    "test": "symbol sizing: all four presets and custom defaults are available",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "presets-mobile-chrome-after.webm",
+    "screenshot": "presets-mobile-chrome-after.png",
+    "exports": [],
+    "durationSeconds": 2.68,
+    "sha256": "3437b197b87733e0555126147fe8e03d9ec00504fb254323e6c1106891a7e58c",
+    "bytes": 113713,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    }
+  },
+  {
+    "case": "resize",
+    "project": "mobile-chrome",
+    "phase": "after",
+    "head": "007363f5dc419f0e1c6782fa370dc5084a76e03f",
+    "run": "artifacts/qa/symbol-sizing-preview-final",
+    "test": "symbol sizing: resize only the selected object with atomic history and persistence",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "resize-mobile-chrome-after.webm",
+    "screenshot": "resize-mobile-chrome-after.png",
+    "exports": [],
+    "durationSeconds": 6.68,
+    "sha256": "b58b631d6ed519c8021a51c224b9225af2eebb8fba211c18d9ffeedf09c2fc56",
+    "bytes": 260666,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    }
+  },
+  {
+    "case": "placement-export",
+    "project": "chromium",
+    "phase": "production",
+    "head": "007363f5dc419f0e1c6782fa370dc5084a76e03f",
+    "run": "artifacts/qa/symbol-sizing-production-preview-final",
+    "test": "symbol-ui: custom-sized placement survives reload and SVG/PNG export",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "placement-export-chromium-production.webm",
+    "screenshot": "placement-export-chromium-production.png",
+    "exports": [
+      "placement-export-chromium-production-exported-svg.svg",
+      "placement-export-chromium-production-exported-png.png",
+      "placement-export-chromium-production-png-pixels.json"
+    ],
+    "durationSeconds": 3.76,
+    "sha256": "2dd183688bb4060192747a29d4171aaa66d5a1b9644f83cb320ed9e67d9beceb",
+    "bytes": 99701,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 800,
+      "height": 450
+    }
+  },
+  {
+    "case": "placement-export",
+    "project": "mobile-chrome",
+    "phase": "production",
+    "head": "007363f5dc419f0e1c6782fa370dc5084a76e03f",
+    "run": "artifacts/qa/symbol-sizing-production-preview-final",
+    "test": "symbol-ui: custom-sized placement survives reload and SVG/PNG export",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "placement-export-mobile-chrome-production.webm",
+    "screenshot": "placement-export-mobile-chrome-production.png",
+    "exports": [
+      "placement-export-mobile-chrome-production-exported-svg.svg",
+      "placement-export-mobile-chrome-production-exported-png.png",
+      "placement-export-mobile-chrome-production-png-pixels.json"
+    ],
+    "durationSeconds": 4.48,
+    "sha256": "48a2834550d2fcf5d982c1cffd89ba71c042218f934a07c63258429685830e73",
+    "bytes": 133105,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    }
+  }
+]

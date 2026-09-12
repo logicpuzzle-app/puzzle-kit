@@ -410,7 +410,7 @@ export const DirectionPanel: React.FC = () => {
     addSymbol({
       cellId: cursorCell,
       symbolType,
-      size: toolSettings.symbolSize,
+      size: existingSymbol?.size ?? toolSettings.symbolSize,
       rotation: normalized,
       color: toolSettings.color,
       layer: dataLayer,
@@ -442,7 +442,6 @@ export const DirectionPanel: React.FC = () => {
   const updateSymbolAtCursor = useCallback((options?: {
     newRotation?: number;
     newDirections?: boolean[];
-    newSize?: 'small' | 'medium' | 'large' | 'largest';
     newColor?: string;
   }) => {
     if (!cursorCell) return;
@@ -471,7 +470,7 @@ export const DirectionPanel: React.FC = () => {
       (s) => s.cellId === cursorCell && multiArrows.includes(s.symbolType)
     );
 
-    const size = options?.newSize ?? toolSettings.symbolSize;
+    const size = (arrowMode === 'single' ? existingSingle?.size : existingMulti?.size) ?? toolSettings.symbolSize;
     const color = options?.newColor ?? toolSettings.color;
 
     if (arrowMode === 'single') {
@@ -526,36 +525,8 @@ export const DirectionPanel: React.FC = () => {
     }
   }, [cursorCell, activeLayer, editableLayer, puzzle, arrowMode, toolSettings, addSymbol, removeSymbol, directionAngles]);
 
-  // When size changes, update symbol at cursor cell
-  const prevSizeRef = React.useRef(toolSettings.symbolSize);
-  React.useEffect(() => {
-    const prevSize = prevSizeRef.current;
-    prevSizeRef.current = toolSettings.symbolSize;
-
-    // Only update if size actually changed
-    if (prevSize === toolSettings.symbolSize) return;
-    if (!cursorCell) return;
-    // Only update when in direction sub-mode
-    if (toolSettings.symbolSubMode !== 'direction') return;
-
-    // Check if there's an arrow symbol at cursor cell
-    const dataLayer = readLayer;
-    const layerData = puzzle[dataLayer];
-    const singleArrows = ['arrow_N', 'arrow_B', 'arrow_S', 'arrow_Short', 'arrow_GP', 'arrow_double', 'triangle', 'triangle-filled'];
-    const multiArrows = ['arrow_cross', 'arrow_eight', 'arrow_fourtip', 'arrow_fouredge'];
-
-    const existingSingle = Object.values(layerData.symbols).find(
-      (s) => s.cellId === cursorCell && singleArrows.includes(s.symbolType)
-    );
-    const existingMulti = Object.values(layerData.symbols).find(
-      (s) => s.cellId === cursorCell && multiArrows.includes(s.symbolType)
-    );
-
-    // Only update if there's an existing symbol to update
-    if (!existingSingle && !existingMulti) return;
-
-    updateSymbolAtCursor({ newSize: toolSettings.symbolSize });
-  }, [toolSettings.symbolSize, cursorCell, readLayer, puzzle, toolSettings.symbolSubMode, updateSymbolAtCursor]);
+  // Size edits are explicit in SymbolSizePanel; changing the placement default
+  // must not silently replace a different symbol at the cursor.
 
   // When color changes, update symbol at cursor cell
   const prevColorRef = React.useRef(toolSettings.color);

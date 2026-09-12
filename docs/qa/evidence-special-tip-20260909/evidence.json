@@ -1,0 +1,254 @@
+[
+  {
+    "case": "arrow",
+    "project": "chromium",
+    "phase": "before",
+    "head": "355232b53991a5a8459a804fb610e41c0fcfb7b2",
+    "run": "artifacts/qa/special-tip-before",
+    "test": "arrow: shorten only the selected tip and retain history across reload",
+    "status": "failed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "arrow-chromium-before.webm",
+    "screenshot": "arrow-chromium-before.png",
+    "durationSeconds": 13.48,
+    "bytes": 161940,
+    "sha256": "f740a024a68836fb0854c3b540d98378b4fe0f5fab23cd0613ffc096d0291f4c",
+    "dimensions": {
+      "width": 800,
+      "height": 450
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "thermo",
+    "project": "chromium",
+    "phase": "before",
+    "head": "355232b53991a5a8459a804fb610e41c0fcfb7b2",
+    "run": "artifacts/qa/special-tip-before",
+    "test": "thermo: shorten only the selected tip and retain history across reload",
+    "status": "failed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "thermo-chromium-before.webm",
+    "screenshot": "thermo-chromium-before.png",
+    "durationSeconds": 12.56,
+    "bytes": 213559,
+    "sha256": "a21a6fb73c995e55d3e9ef18c5ec62eb26ab188f71421d317f233199b5a15c70",
+    "dimensions": {
+      "width": 800,
+      "height": 450
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "arrow",
+    "project": "mobile-chrome",
+    "phase": "before",
+    "head": "355232b53991a5a8459a804fb610e41c0fcfb7b2",
+    "run": "artifacts/qa/special-tip-before",
+    "test": "arrow: shorten only the selected tip and retain history across reload",
+    "status": "failed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "arrow-mobile-chrome-before.webm",
+    "screenshot": "arrow-mobile-chrome-before.png",
+    "durationSeconds": 12.68,
+    "bytes": 137286,
+    "sha256": "c9e071c53f5a09dca4490e1524917939362b524a83fd17c847ee43630d6ed915",
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "thermo",
+    "project": "mobile-chrome",
+    "phase": "before",
+    "head": "355232b53991a5a8459a804fb610e41c0fcfb7b2",
+    "run": "artifacts/qa/special-tip-before",
+    "test": "thermo: shorten only the selected tip and retain history across reload",
+    "status": "failed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "thermo-mobile-chrome-before.webm",
+    "screenshot": "thermo-mobile-chrome-before.png",
+    "durationSeconds": 12.56,
+    "bytes": 171375,
+    "sha256": "8b4c4ca3c8730c7c346c11cbb0bc698c01b223dcd5352cdf29adcd3542efe8e4",
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "png",
+    "project": "chromium",
+    "phase": "before",
+    "head": "5fdbbeb6e646700b15f30c81c7e346b8aa32242d",
+    "run": "artifacts/qa/special-png-before",
+    "test": "png: toolbar exports the board and excludes special selection",
+    "status": "failed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "png-chromium-before.webm",
+    "screenshot": "png-chromium-before.png",
+    "durationSeconds": 2.8,
+    "bytes": 54008,
+    "sha256": "f2f6b9051a4aa42577d1b18d8e5085d68195b1cd304a4fd97ab96b57084a7e3b",
+    "dimensions": {
+      "width": 800,
+      "height": 450
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "png",
+    "project": "mobile-chrome",
+    "phase": "before",
+    "head": "5fdbbeb6e646700b15f30c81c7e346b8aa32242d",
+    "run": "artifacts/qa/special-png-before",
+    "test": "png: toolbar exports the board and excludes special selection",
+    "status": "failed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "png-mobile-chrome-before.webm",
+    "screenshot": "png-mobile-chrome-before.png",
+    "durationSeconds": 2.84,
+    "bytes": 67770,
+    "sha256": "0837d23a00b50074d95a81a9b3a73c5894fbdb325701a1b5c24c9cdd118a058f",
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "png",
+    "project": "chromium",
+    "phase": "after",
+    "head": "996d78c573786336b02d2209a6297fd000a453ff",
+    "run": "artifacts/check/2026-09-08T20-49-30-595Z/e2e",
+    "test": "png: toolbar exports the board and excludes special selection",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "png-chromium-after.webm",
+    "screenshot": "png-chromium-after.png",
+    "durationSeconds": 2.4,
+    "bytes": 56833,
+    "sha256": "7d9e438b89edf9402317b08b3232d310214846c336b279e922123f9e5fbf447a",
+    "dimensions": {
+      "width": 800,
+      "height": 450
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "png",
+    "project": "mobile-chrome",
+    "phase": "after",
+    "head": "996d78c573786336b02d2209a6297fd000a453ff",
+    "run": "artifacts/check/2026-09-08T20-49-30-595Z/e2e",
+    "test": "png: toolbar exports the board and excludes special selection",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "png-mobile-chrome-after.webm",
+    "screenshot": "png-mobile-chrome-after.png",
+    "durationSeconds": 2.4,
+    "bytes": 68623,
+    "sha256": "37f99815ad555312cdb972e8cf041bb16e080b7e71772b4c896327621061d3ec",
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "arrow",
+    "project": "chromium",
+    "phase": "after",
+    "head": "996d78c573786336b02d2209a6297fd000a453ff",
+    "run": "artifacts/check/2026-09-08T20-49-30-595Z/e2e",
+    "test": "arrow: shorten only the selected tip and retain history across reload",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "arrow-chromium-after.webm",
+    "screenshot": "arrow-chromium-after.png",
+    "durationSeconds": 6.12,
+    "bytes": 134842,
+    "sha256": "eef8354473dbe36073e4fa2bab08e0be15259e37085fdf25e9b0ccaa4ce4776b",
+    "dimensions": {
+      "width": 800,
+      "height": 450
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "thermo",
+    "project": "chromium",
+    "phase": "after",
+    "head": "996d78c573786336b02d2209a6297fd000a453ff",
+    "run": "artifacts/check/2026-09-08T20-49-30-595Z/e2e",
+    "test": "thermo: shorten only the selected tip and retain history across reload",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "thermo-chromium-after.webm",
+    "screenshot": "thermo-chromium-after.png",
+    "durationSeconds": 6.32,
+    "bytes": 130410,
+    "sha256": "39e116f2509cfd585cf42f28b45fbbb1436ff422e6ebf4df9fc1792fbcbc7399",
+    "dimensions": {
+      "width": 800,
+      "height": 450
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "arrow",
+    "project": "mobile-chrome",
+    "phase": "after",
+    "head": "996d78c573786336b02d2209a6297fd000a453ff",
+    "run": "artifacts/check/2026-09-08T20-49-30-595Z/e2e",
+    "test": "arrow: shorten only the selected tip and retain history across reload",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "arrow-mobile-chrome-after.webm",
+    "screenshot": "arrow-mobile-chrome-after.png",
+    "durationSeconds": 6.0,
+    "bytes": 195178,
+    "sha256": "4dd58a40e38c21c3c921d75fb3a4449f3f92c8f5b9e95e9e951b9c5b6c132628",
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "thermo",
+    "project": "mobile-chrome",
+    "phase": "after",
+    "head": "996d78c573786336b02d2209a6297fd000a453ff",
+    "run": "artifacts/check/2026-09-08T20-49-30-595Z/e2e",
+    "test": "thermo: shorten only the selected tip and retain history across reload",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "thermo-mobile-chrome-after.webm",
+    "screenshot": "thermo-mobile-chrome-after.png",
+    "durationSeconds": 6.12,
+    "bytes": 192814,
+    "sha256": "fbf038ad09525c78ee7f5a6b3478e6155c2826cbdce15758ca53035fe4e2b7ae",
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    },
+    "fullyDecoded": true
+  }
+]

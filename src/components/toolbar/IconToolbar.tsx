@@ -9,6 +9,7 @@ import {
   exportToPng,
   downloadAsPng,
 } from '../../utils/serialization';
+import { getExportDimensions, prepareSvgForExport } from './menu/exportHandlers';
 import { createImportHandlers } from './menu/importHandlers';
 import { NewPuzzleDialog } from '../dialogs/NewPuzzleDialog';
 
@@ -195,10 +196,13 @@ export const IconToolbar: React.FC = () => {
   };
 
   const handleExportPng = async () => {
-    const svg = document.querySelector('svg');
-    if (!svg) return;
+    const svg = document.getElementById('puzzle-canvas');
+    if (!(svg instanceof SVGSVGElement)) return;
 
-    const blob = await exportToPng(svg as SVGSVGElement, 2);
+    const { topology, useTopology } = store.getState();
+    const { width, height } = getExportDimensions(grid, topology, useTopology);
+    const clone = prepareSvgForExport(svg, width, height);
+    const blob = await exportToPng(clone, 2);
     if (blob) {
       downloadAsPng(blob, 'puzzle.png');
     }

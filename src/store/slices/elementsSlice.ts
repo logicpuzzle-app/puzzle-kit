@@ -22,6 +22,7 @@ import type {
   BoxLineElement,
   LineGroup,
 } from '../../types';
+import { isSymbolSize } from '../../utils/symbolSize';
 import { toDataLayer, type DataLayerType } from '../../types';
 import type { ElementsSlice, SliceCreator } from './types';
 import {
@@ -376,6 +377,21 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
     return id;
   },
 
+  resizeSymbol: (id, size) => {
+    const state = get();
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer || !isSymbolSize(size)) return;
+    const before = state.puzzle[layer].symbols[id];
+    if (!before || before.size === size) return;
+    const after = { ...before, size };
+    set({ puzzle: { ...state.puzzle, [layer]: { ...state.puzzle[layer],
+      symbols: { ...state.puzzle[layer].symbols, [id]: after },
+    } } });
+    state.historyManager.addAction(createBatchAction([
+      createRemoveSymbolAction(id, before), createAddSymbolAction(after),
+    ], 'Resize symbol'));
+  },
+
   removeSymbol: (id) => {
     const state = get();
     const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
@@ -478,6 +494,23 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
     });
     get().historyManager.addAction(createAddSpecialAction(fullElement));
     return id;
+  },
+
+  shortenSpecial: (id) => {
+    const state = get();
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer) return;
+    const element = state.puzzle[layer].specials[id];
+    if (!element || !['arrow', 'thermo'].includes(element.type) || element.points.length <= 2) return;
+    const shortened = { ...element, points: element.points.slice(0, -1) };
+    set(state => ({
+      puzzle: { ...state.puzzle, [layer]: { ...state.puzzle[layer], specials: {
+        ...state.puzzle[layer].specials, [id]: shortened,
+      } } },
+    }));
+    get().historyManager.addAction(createBatchAction([
+      createRemoveSpecialAction(id, element), createAddSpecialAction(shortened),
+    ], 'Shorten special tip'));
   },
 
   removeSpecial: (id) => {

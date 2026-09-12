@@ -2,6 +2,15 @@
  * Japanese translations for PuzzleKit
  */
 export const ja = {
+  "size.largest": "最大",
+  "symbol.size.object": "サイズを変更する記号",
+  "symbol.size.new": "新しく配置する記号",
+  "symbol.size.generic": "記号",
+  "symbol.size.hint": "既存の記号を選んでサイズを変更するか、新しく配置する記号のサイズを設定します。",
+  "symbol.size.preview": "選択した記号のプレビュー",
+  "symbol.size.percent": "サイズ（%）",
+  "symbol.size.apply": "サイズを適用",
+  "symbol.size.range": "1マスの10〜300%を1%刻みで指定できます。プレビューの枠は1マスを表します。",
   // App
   'app.title': 'PuzzleKit',
   'app.playerTitle': 'PuzzleKit Player',
@@ -599,6 +608,17 @@ export const ja = {
   'tool.symbol.gridPoint.edge': '辺中点',
 
   // Special tools
+  'special.edit.preview': '選択中の図形のプレビュー',
+  'special.edit.object': '編集する図形',
+  'special.edit.select': '図形を選択',
+  'special.edit.empty': '先に矢印または温度計を描いてください',
+  'special.edit.points': '{{count}}点',
+  'special.edit.points_one': '{{count}}点',
+  'special.edit.points_other': '{{count}}点',
+  'special.edit.hint': '図形を選ぶと、盤面上の経路と先端を強調します。',
+  'special.edit.shorten': '先端を短縮',
+  'special.edit.delete': '図形を削除',
+  'special.edit.minimum': '2点より短くできません。消す場合は「図形を削除」を選んでください。',
   'tool.special.thermo': 'サーモ',
   'tool.special.arrow': '矢印',
   'tool.special.cage': 'ケージ',

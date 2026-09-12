@@ -1,3 +1,5 @@
+import { getEditableDataLayer } from '../../utils/editPolicy';
+import { resolveGridIdToPosition } from '../../utils/gridIds';
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { getCellCenter, getCellCorners, getCellIndexById } from '../../utils/gridUtils';
@@ -379,7 +381,7 @@ const PolygonRenderer: React.FC<{
 };
 
 export const SpecialLayer: React.FC<SpecialLayerProps> = ({ layer }) => {
-  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology } = usePuzzleStore();
+  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology, selectedElements, activeLayer, isPlayerMode, toolSettings } = usePuzzleStore();
 
   const isVisible =
     (layer === 'problem' && showProblemLayer) ||
@@ -418,6 +420,18 @@ export const SpecialLayer: React.FC<SpecialLayerProps> = ({ layer }) => {
     <g className={`special-layer-${layer}`}>
       {cages}
       {specials}
+      {getEditableDataLayer(activeLayer, isPlayerMode) === layer && toolSettings.currentCategory === 'special' &&
+        selectedElements.map(id => {
+          const special = puzzle[layer].specials[id];
+          if (!special || `special-${special.type}` !== toolSettings.currentTool) return null;
+          const points = special.points.map(id => resolveGridIdToPosition(id, grid, useTopology ? topology : null)).filter((p): p is { x: number; y: number } => p !== null);
+          if (points.length < 2) return null;
+          const tip = points[points.length - 1];
+          return <g key={id} className={`special-selection-${layer}`} data-preview="true" pointerEvents="none" aria-hidden="true">
+            <polyline points={points.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="#0078d4" strokeWidth={5} opacity={0.45} />
+            <circle cx={tip.x} cy={tip.y} r={5} fill="white" stroke="#0078d4" strokeWidth={2} />
+          </g>;
+        })}
     </g>
   );
 };

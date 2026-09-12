@@ -164,10 +164,12 @@ export interface ElementsSlice {
   updateNumber: (id: string, value: string) => void;
   addSymbol: (element: Omit<SymbolElement, 'id'>) => string;
   removeSymbol: (id: string) => void;
+  resizeSymbol: (id: string, size: SymbolElement['size']) => void;
   addCage: (element: Omit<CageElement, 'id'>) => string;
   removeCage: (id: string) => void;
   addSpecial: (element: Omit<SpecialElement, 'id'>) => string;
   removeSpecial: (id: string) => void;
+  shortenSpecial: (id: string) => void;
   addBoxLine: (element: Omit<BoxLineElement, 'id'>) => string;
   removeBoxLine: (id: string) => void;
   updateBoxLine: (id: string, cells: string[]) => void;

@@ -2,6 +2,15 @@
  * English translations for PuzzleKit
  */
 export const en = {
+  "size.largest": "Largest",
+  "symbol.size.object": "Symbol to resize",
+  "symbol.size.new": "New symbols",
+  "symbol.size.generic": "Symbol",
+  "symbol.size.hint": "Choose a symbol to resize it, or set the size for new symbols.",
+  "symbol.size.preview": "Selected symbol preview",
+  "symbol.size.percent": "Size (%)",
+  "symbol.size.apply": "Apply size",
+  "symbol.size.range": "10–300% of a cell, in 1% steps. The preview outline represents one cell.",
   // App
   'app.title': 'PuzzleKit',
   'app.playerTitle': 'PuzzleKit Player',
@@ -599,6 +608,17 @@ export const en = {
   'tool.symbol.gridPoint.edge': 'Edge',
 
   // Special tools
+  'special.edit.preview': 'Selected object preview',
+  'special.edit.object': 'Object to edit',
+  'special.edit.select': 'Select an object',
+  'special.edit.empty': 'Draw an arrow or thermo first',
+  'special.edit.points': '{{count}} points',
+  'special.edit.points_one': '{{count}} point',
+  'special.edit.points_other': '{{count}} points',
+  'special.edit.hint': 'Select an object to highlight its path and tip on the board.',
+  'special.edit.shorten': 'Shorten tip',
+  'special.edit.delete': 'Delete object',
+  'special.edit.minimum': 'At least two points are required. Use Delete object to remove it.',
   'tool.special.thermo': 'Thermo',
   'tool.special.arrow': 'Arrow',
   'tool.special.cage': 'Cage',

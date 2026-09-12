@@ -356,11 +356,14 @@ export interface NumberElement {
   objectKey?: string;
 }
 
+/** Presets retain legacy values; numbers are cell-relative scales from 0.1 to 3. */
+export type SymbolSize = 'largest' | 'large' | 'medium' | 'small' | number;
+
 export interface SymbolElement {
   id: string;
   cellId: string;
   symbolType: string;
-  size: 'largest' | 'large' | 'medium' | 'small';
+  size: SymbolSize;
   rotation: number;  // degrees
   color: string;
   fillColor?: string;
@@ -635,7 +638,7 @@ export interface ToolSettings {
   cursorCellThickness: number;
   lineStyle: LineStyle;
   lineThickness: LineThickness;
-  symbolSize: 'largest' | 'large' | 'medium' | 'small';
+  symbolSize: SymbolSize;
   numberSize: 'large' | 'medium' | 'small';
   symbolRotation: number; // degrees
   // Number tool submode settings
