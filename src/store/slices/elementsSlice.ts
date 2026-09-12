@@ -45,6 +45,8 @@ import {
   createRemoveCageAction,
   createAddSpecialAction,
   createRemoveSpecialAction,
+  createAddBoxLineAction,
+  createRemoveBoxLineAction,
 } from '../actions';
 import {
   normalizeSegmentEndpoints,
@@ -572,6 +574,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
         },
       };
     });
+    get().historyManager.addAction(createAddBoxLineAction(fullElement));
     return id;
   },
 
@@ -597,6 +600,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
           },
         };
       });
+      get().historyManager.addAction(createRemoveBoxLineAction(id, boxLines[id]));
     }
   },
 
@@ -609,6 +613,8 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
     const boxLines = state.puzzle[layer].boxLines || {};
     const element = boxLines[id];
     if (element) {
+      if (element.cells.length === cells.length && element.cells.every((cell, index) => cell === cells[index])) return;
+      const updated = { ...element, cells: [...cells] };
       set((state) => {
         const dataLayer = toDataLayer(state.activeLayer);
         return {
@@ -618,12 +624,15 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
               ...state.puzzle[dataLayer],
               boxLines: {
                 ...state.puzzle[dataLayer].boxLines,
-                [id]: { ...element, cells },
+                [id]: updated,
               },
             },
           },
         };
       });
+      get().historyManager.addAction(createBatchAction([
+        createRemoveBoxLineAction(id, element), createAddBoxLineAction(updated),
+      ], 'Edit boxline'));
     }
   },
 
