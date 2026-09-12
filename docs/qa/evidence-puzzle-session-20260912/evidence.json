@@ -1,0 +1,234 @@
+[
+  {
+    "case": "file-open",
+    "project": "chromium",
+    "phase": "before",
+    "appRevision": "888827354c2bd72a509d537717383bc6edce731f",
+    "run": "puzzle-session-before",
+    "status": "failed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "file-open-chromium-before.webm",
+    "screenshot": "file-open-chromium-before.png",
+    "sha256": "a4ca22c41685658208d004c6e35bcf7e76e0a3bd1c42f9988a1467699ac48ef2",
+    "screenshotSha256": "a5ed21f9b452b807c56565c943dc56c24f6f2ff7ff2448573da034347a539908",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "12.480000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "new-trial",
+    "project": "chromium",
+    "phase": "before",
+    "appRevision": "888827354c2bd72a509d537717383bc6edce731f",
+    "run": "puzzle-session-before",
+    "status": "failed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "new-trial-chromium-before.webm",
+    "screenshot": "new-trial-chromium-before.png",
+    "sha256": "775932f0c29bdad311056c4d9345f8488cd70c5830ecf591532add6a67466da9",
+    "screenshotSha256": "e7663c0e1f1a96f944036a80618f576a063de21d688d20405532d40098ad847d",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "12.320000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "file-open",
+    "project": "mobile-chrome",
+    "phase": "before",
+    "appRevision": "888827354c2bd72a509d537717383bc6edce731f",
+    "run": "puzzle-session-before",
+    "status": "failed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "file-open-mobile-chrome-before.webm",
+    "screenshot": "file-open-mobile-chrome-before.png",
+    "sha256": "a58211f8245f9e79ce8fb46036d956afc840c9664dc7bd1ee3cb542f0fdabd44",
+    "screenshotSha256": "dc0504e1b31f40f8e10cc3de610f8f6791d473f4008bc19417e166624ce4ac72",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "11.600000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "new-trial",
+    "project": "mobile-chrome",
+    "phase": "before",
+    "appRevision": "888827354c2bd72a509d537717383bc6edce731f",
+    "run": "puzzle-session-before",
+    "status": "failed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "new-trial-mobile-chrome-before.webm",
+    "screenshot": "new-trial-mobile-chrome-before.png",
+    "sha256": "41b00dc133de06f0753fcd35de2fa71723acbc24e5a573345a2d1b63e414b3e3",
+    "screenshotSha256": "390def87638f5cc51151e8348210907682808ab4e14558071aa2513c8f65fc4f",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "12.480000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "file-open",
+    "project": "chromium",
+    "phase": "after",
+    "appRevision": "b8086e83c1825bd47bc6efb8a2a0c96167d89ed4",
+    "run": "puzzle-session-production-final",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "file-open-chromium-after.webm",
+    "screenshot": "file-open-chromium-after.png",
+    "sha256": "2aee7b91ea62859b859a8429b06b71373e83c76c5c7dc3d379747c6655dafddd",
+    "screenshotSha256": "f74b2fd405c0026e7231e518ac80338e41539120bc545015d90050d73985d2b7",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.520000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "new-trial",
+    "project": "chromium",
+    "phase": "after",
+    "appRevision": "b8086e83c1825bd47bc6efb8a2a0c96167d89ed4",
+    "run": "puzzle-session-production-final",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "new-trial-chromium-after.webm",
+    "screenshot": "new-trial-chromium-after.png",
+    "sha256": "8bf9b1b2e01962b225f9c8349f31f9cc823fe31617c98a0c0b23a7e8eb46fe62",
+    "screenshotSha256": "a0c0e8603d77b1e849692eea0ba86d81218f525ff454a0f32e316f3e1b1cf132",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.520000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "file-open",
+    "project": "mobile-chrome",
+    "phase": "after",
+    "appRevision": "b8086e83c1825bd47bc6efb8a2a0c96167d89ed4",
+    "run": "puzzle-session-production-final",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "file-open-mobile-chrome-after.webm",
+    "screenshot": "file-open-mobile-chrome-after.png",
+    "sha256": "61481cff0337f7876c99c8a3033bdfa410062d3393f30e118285bf1cfc61ab61",
+    "screenshotSha256": "26b423efcde97293d260ff1a6e1e2c4f5297d0020f126aaad669d52f08414129",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "1.960000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "new-trial",
+    "project": "mobile-chrome",
+    "phase": "after",
+    "appRevision": "b8086e83c1825bd47bc6efb8a2a0c96167d89ed4",
+    "run": "puzzle-session-production-final",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "new-trial-mobile-chrome-after.webm",
+    "screenshot": "new-trial-mobile-chrome-after.png",
+    "sha256": "b3183dbd08b2031bffef2b42e50ba15585745845eb59c2ed5027ff28d473155d",
+    "screenshotSha256": "e96b6147b968c21ce517a40c513075d00536d3781638cec8f7f3458c8c8a08d5",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "1.920000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]

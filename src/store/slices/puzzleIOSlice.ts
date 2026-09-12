@@ -15,6 +15,8 @@ import {
 import { PUZZLE_EXPORT_VERSION } from '../../constants/version';
 import { migrationRegistry } from '../../migrations';
 import { mergeDirectionalCluesIntoNumbers } from '../../utils/legacyDirectionalClues';
+import { syncCountersFromPuzzleState } from '../../utils/idGenerator';
+import { freshPuzzleSession } from '../puzzleSession';
 
 export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
   newPuzzle: (options = {}) => {
@@ -60,6 +62,7 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
       : null;
 
     set({
+      ...freshPuzzleSession(state),
       grid: baseGrid,
       puzzle: createEmptyState(),
       canvas: {
@@ -71,9 +74,6 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
         selection: [],
         panMode: false,
       },
-      selectedElements: [],
-      hoverCell: null,
-      numberSelection: null,
       toolSettings: { ...DEFAULT_TOOL_SETTINGS },
       activeLayer: 'grid',
       topology,
@@ -169,7 +169,9 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
           ) };
         }
 
+        syncCountersFromPuzzleState(normalizedState);
         set({
+          ...freshPuzzleSession(get()),
           grid: data.grid,
           puzzle: normalizedState,
           useTopology,

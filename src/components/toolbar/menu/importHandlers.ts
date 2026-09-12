@@ -20,6 +20,7 @@ import { mergeDirectionalCluesIntoNumbers } from '../../../utils/legacyDirection
 import type { GridConfig, PuzzleState } from '../../../types';
 import type { PuzzleStore } from '../../../store/slices/types';
 import type { ModalStore } from '../../../store/modalStore';
+import { freshPuzzleSession } from '../../../store/puzzleSession';
 
 type PuzzleStoreHook = UseBoundStore<StoreApi<PuzzleStore>>;
 type ModalStoreHook = UseBoundStore<StoreApi<ModalStore>>;
@@ -51,9 +52,6 @@ export const loadPuzzleData = (
   const storeState = store.getState();
   const normalizedState = mergeDirectionalCluesIntoNumbers(data.state);
 
-  // Sync ID counters to avoid collisions
-  syncCountersFromPuzzleState(normalizedState);
-
   // Use saved settings or fall back to current store settings
   const loadedUseTopology = data.topologySettings?.useTopology ?? storeState.useTopology;
   const loadedTopologyPreset = (data.topologySettings?.topologyPreset ?? storeState.topologyPreset) as typeof storeState.topologyPreset;
@@ -68,7 +66,9 @@ export const loadPuzzleData = (
       })
     : baseTopology;
 
+  syncCountersFromPuzzleState(normalizedState);
   store.setState({
+    ...freshPuzzleSession(store.getState()),
     grid: data.grid,
     puzzle: normalizedState,
     topology: loadedTopology,
@@ -76,6 +76,7 @@ export const loadPuzzleData = (
     topologyPreset: loadedTopologyPreset,
     topologyIntensity: loadedTopologyIntensity,
   });
+  store.getState().historyManager.clear();
 };
 
 /**
@@ -146,13 +147,12 @@ export const createImportHandlers = (options: ImportHandlersOptions) => {
           try {
             const content = e.target?.result as string;
             const data = JSON.parse(content);
-            if (data.grid && data.state) {
-              loadPuzzleData(store, {
-                grid: data.grid,
-                state: data.state,
-                topologySettings: data.topologySettings,
-              });
-            }
+            if (!data?.grid || !data?.state) throw new Error('Invalid puzzle file');
+            loadPuzzleData(store, {
+              grid: data.grid,
+              state: data.state,
+              topologySettings: data.topologySettings,
+            });
           } catch {
             showAlert({
               title: t('error.invalidFile'),
@@ -195,16 +195,15 @@ export const createImportHandlers = (options: ImportHandlersOptions) => {
       }
 
       if (result) {
-        // Sync ID counters to avoid collisions
         syncCountersFromPuzzleState(result.state);
-
         if (result.topology) {
-          store.setState({ grid: result.grid, puzzle: result.state, topology: result.topology, useTopology: true });
+          store.setState({ ...freshPuzzleSession(store.getState()), grid: result.grid, puzzle: result.state, topology: result.topology, useTopology: true });
         } else {
           // Rebuild the topology when the imported grid dimensions change.
           store.getState().setGrid(result.grid);
-          store.setState({ puzzle: result.state });
+          store.setState({ ...freshPuzzleSession(store.getState()), puzzle: result.state });
         }
+        store.getState().historyManager.clear();
 
         // If puzz.link puzzle type is known, enable constraint mode
         if (puzzleType) {
