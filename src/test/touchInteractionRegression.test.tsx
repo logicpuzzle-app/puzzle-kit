@@ -1,11 +1,11 @@
 import { act, renderHook } from '@testing-library/react';
 import type { PointerEvent, ReactNode } from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createPuzzleStore } from '../store/puzzleStore';
 import { PuzzleStoreProvider } from '../store/puzzleStoreContext';
 import { useCanvasInteraction } from '../hooks/useCanvasInteraction';
 
-function setup() {
+function setup(onTextClick = vi.fn()) {
   const { useStore } = createPuzzleStore();
   useStore.getState().newPuzzle({ rows: 6, cols: 6 });
   useStore.getState().setActiveLayer('problem');
@@ -15,12 +15,12 @@ function setup() {
   svg.setPointerCapture = () => {};
   svg.hasPointerCapture = () => false;
   const wrapper = ({ children }: { children: ReactNode }) => <PuzzleStoreProvider store={useStore}>{children}</PuzzleStoreProvider>;
-  const { result } = renderHook(() => useCanvasInteraction({ svgRef: { current: svg } }), { wrapper });
+  const { result } = renderHook(() => useCanvasInteraction({ svgRef: { current: svg }, onTextClick }), { wrapper });
   const event = (x: number, type = 'pointerup') => ({
     clientX: x, clientY: 80, button: 0, pointerId: 1, pointerType: 'touch',
     type, currentTarget: svg, preventDefault() {},
   }) as PointerEvent;
-  return { useStore, result, event };
+  return { useStore, result, event, onTextClick };
 }
 
 describe('touch interaction completion', () => {
@@ -91,5 +91,33 @@ describe('touch interaction completion', () => {
     const before = useStore.getState().puzzle;
     act(() => result.current.handlePointerUp(event(80)));
     expect(useStore.getState().puzzle).toBe(before);
+  });
+});
+
+
+describe('text touch dialog routing', () => {
+  it('opens once for a completed tap and closes the touch history group', () => {
+    const { useStore, result, event, onTextClick } = setup();
+    act(() => useStore.getState().setTool('text-free', 'text'));
+    act(() => result.current.handlePointerDown(event(80, 'pointerdown')));
+    act(() => result.current.handlePointerUp(event(80)));
+    expect(onTextClick).toHaveBeenCalledTimes(1);
+    expect(onTextClick.mock.calls[0][0]).toMatchObject({ textType: 'free', cellId: expect.any(String) });
+    expect(useStore.getState().historyManager.isInGroup()).toBe(false);
+    act(() => result.current.handlePointerUp(event(80)));
+    expect(onTextClick).toHaveBeenCalledTimes(1);
+  });
+  it.each(['cancel', 'pan', 'player-problem', 'drag'])('does not open for %s', mode => {
+    const { useStore, result, event, onTextClick } = setup();
+    act(() => {
+      useStore.getState().setTool('text-free', 'text');
+      if (mode === 'pan') useStore.getState().setPanMode(true);
+      if (mode === 'player-problem') useStore.setState({ isPlayerMode: true, activeLayer: 'problem' });
+    });
+    act(() => result.current.handlePointerDown(event(80, 'pointerdown')));
+    if (mode === 'drag') act(() => result.current.handlePointerMove(event(160, 'pointermove')));
+    act(() => result.current.handlePointerUp(event(mode === 'drag' ? 160 : 80, mode === 'cancel' ? 'pointercancel' : 'pointerup')));
+    expect(onTextClick).not.toHaveBeenCalled();
+    expect(useStore.getState().historyManager.isInGroup()).toBe(false);
   });
 });

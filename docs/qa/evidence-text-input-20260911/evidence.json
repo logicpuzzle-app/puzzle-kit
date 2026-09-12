@@ -1,0 +1,355 @@
+[
+  {
+    "case": "cross-tool",
+    "project": "chromium",
+    "phase": "before",
+    "appRevision": "2b3407a1b97cba6aa59f2f94a8a349854975658d",
+    "run": "artifacts/qa/text-editing-before-final",
+    "test": "text-ui: long text remains multiline when reopened through Alphabet",
+    "status": "failed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "cross-tool-chromium-before.webm",
+    "screenshot": "cross-tool-chromium-before.png",
+    "exports": [],
+    "durationSeconds": 22.6,
+    "sha256": "6c3308c13f308cfa6b0511f31bf0deb72b7872f7d50c42129e12fc9b9a62b7af",
+    "screenshotSha256": "3059fe8427d0aa892ae699e40ec7a5af43209c465828d7218537b4acc35770ec",
+    "bytes": 323068,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 800,
+      "height": 450
+    }
+  },
+  {
+    "case": "composition",
+    "project": "chromium",
+    "phase": "before",
+    "appRevision": "2b3407a1b97cba6aa59f2f94a8a349854975658d",
+    "run": "artifacts/qa/text-editing-before-final",
+    "test": "text-ui: composition Escape preserves the draft until explicit cancel",
+    "status": "failed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "composition-chromium-before.webm",
+    "screenshot": "composition-chromium-before.png",
+    "exports": [],
+    "durationSeconds": 16.72,
+    "sha256": "d721b50cfb9b1c9b0e84de0e80e405de93652779b3a029a318d1f872b21323ed",
+    "screenshotSha256": "707769a0671f7f6779fbf1df4d6357c3e9e296c934a247cf9c376bb9e2c4a096",
+    "bytes": 226636,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 800,
+      "height": 450
+    }
+  },
+  {
+    "case": "cross-tool",
+    "project": "mobile-chrome",
+    "phase": "before",
+    "appRevision": "2b3407a1b97cba6aa59f2f94a8a349854975658d",
+    "run": "artifacts/qa/text-editing-before-final",
+    "test": "text-ui: long text remains multiline when reopened through Alphabet",
+    "status": "failed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "cross-tool-mobile-chrome-before.webm",
+    "screenshot": "cross-tool-mobile-chrome-before.png",
+    "exports": [],
+    "durationSeconds": 22.64,
+    "sha256": "639f0c44a1fc8e1314534f706a8303e9d4af0b0144501029d88ae40ca24cda64",
+    "screenshotSha256": "bebea96d8610431aff38ac71421a6621870ea07af54c1267fd780e669289f82b",
+    "bytes": 415116,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    }
+  },
+  {
+    "case": "composition",
+    "project": "mobile-chrome",
+    "phase": "before",
+    "appRevision": "2b3407a1b97cba6aa59f2f94a8a349854975658d",
+    "run": "artifacts/qa/text-editing-before-final",
+    "test": "text-ui: composition Escape preserves the draft until explicit cancel",
+    "status": "failed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "composition-mobile-chrome-before.webm",
+    "screenshot": "composition-mobile-chrome-before.png",
+    "exports": [],
+    "durationSeconds": 16.36,
+    "sha256": "2279794ae04abdc3bf9daf6b76740f812b5ba33d77cb3b1e9b9fd9e594288dfb",
+    "screenshotSha256": "0aa9e67a2c618667540acfd876291f604fd9d9b8fd3eca10bb791505de24030a",
+    "bytes": 285439,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    }
+  },
+  {
+    "case": "touch",
+    "project": "mobile-chrome",
+    "phase": "before",
+    "appRevision": "2b3407a1b97cba6aa59f2f94a8a349854975658d",
+    "run": "artifacts/qa/text-editing-before-final",
+    "test": "text-touch: a finger tap opens text input and reopens saved text",
+    "status": "failed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "touch-mobile-chrome-before.webm",
+    "screenshot": "touch-mobile-chrome-before.png",
+    "exports": [],
+    "durationSeconds": 16.48,
+    "sha256": "675f1b237b9372fa35546c5e7abc433ef26e2604391b862ded40867b956f4ef4",
+    "screenshotSha256": "0aa9e67a2c618667540acfd876291f604fd9d9b8fd3eca10bb791505de24030a",
+    "bytes": 273597,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    }
+  },
+  {
+    "case": "cross-tool",
+    "project": "chromium",
+    "phase": "after",
+    "appRevision": "f0ba9e9a26d7e2f40cc97955b4d025064041d7a8",
+    "run": "artifacts/qa/text-editing-after-final",
+    "test": "text-ui: long text remains multiline when reopened through Alphabet",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "cross-tool-chromium-after.webm",
+    "screenshot": "cross-tool-chromium-after.png",
+    "exports": [
+      "cross-tool-chromium-after-export.svg"
+    ],
+    "durationSeconds": 14.44,
+    "sha256": "6b70fd2ec32df39b492d9ca0fb2bc851bb87333c5bd97028dfb3bb4d19000d30",
+    "screenshotSha256": "673d4f3b3643ce8dd080a08d64f8de923b814b0e7d02f40a40220b44f5e947a8",
+    "bytes": 220271,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 800,
+      "height": 450
+    }
+  },
+  {
+    "case": "composition",
+    "project": "chromium",
+    "phase": "after",
+    "appRevision": "f0ba9e9a26d7e2f40cc97955b4d025064041d7a8",
+    "run": "artifacts/qa/text-editing-after-final",
+    "test": "text-ui: composition Escape preserves the draft until explicit cancel",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "composition-chromium-after.webm",
+    "screenshot": "composition-chromium-after.png",
+    "exports": [],
+    "durationSeconds": 5.28,
+    "sha256": "2b9a239916fce33f7403398ee185429d5158181d948db7574f22c6210f8acb7b",
+    "screenshotSha256": "fe7b614233a5e1578c53a0729df17c6e01fff3b7734b34da445c8cecf6cfac03",
+    "bytes": 94923,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 800,
+      "height": 450
+    }
+  },
+  {
+    "case": "cross-tool",
+    "project": "mobile-chrome",
+    "phase": "after",
+    "appRevision": "f0ba9e9a26d7e2f40cc97955b4d025064041d7a8",
+    "run": "artifacts/qa/text-editing-after-final",
+    "test": "text-ui: long text remains multiline when reopened through Alphabet",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "cross-tool-mobile-chrome-after.webm",
+    "screenshot": "cross-tool-mobile-chrome-after.png",
+    "exports": [
+      "cross-tool-mobile-chrome-after-export.svg"
+    ],
+    "durationSeconds": 15.2,
+    "sha256": "187dc18f7483796b5089c9b8a5e22f0566daa15f81c7d191c59284f73febe6bf",
+    "screenshotSha256": "31d1c2f8ceba15957b3af86dd5d1b86652b6d8a5e41cff09e6ee1b5cc2057660",
+    "bytes": 324679,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    }
+  },
+  {
+    "case": "composition",
+    "project": "mobile-chrome",
+    "phase": "after",
+    "appRevision": "f0ba9e9a26d7e2f40cc97955b4d025064041d7a8",
+    "run": "artifacts/qa/text-editing-after-final",
+    "test": "text-ui: composition Escape preserves the draft until explicit cancel",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "composition-mobile-chrome-after.webm",
+    "screenshot": "composition-mobile-chrome-after.png",
+    "exports": [],
+    "durationSeconds": 5.08,
+    "sha256": "5f54d1327c6884bfa0f2c2c7d93216e4c9b7e0347f1e9f2ad01951f7fb26d906",
+    "screenshotSha256": "463bfb9d8ba629f0f479c582920d2128d5b6f832f4fc4f9ed2d8d9b7bbbe1680",
+    "bytes": 115813,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    }
+  },
+  {
+    "case": "touch",
+    "project": "mobile-chrome",
+    "phase": "after",
+    "appRevision": "f0ba9e9a26d7e2f40cc97955b4d025064041d7a8",
+    "run": "artifacts/qa/text-editing-after-final",
+    "test": "text-touch: a finger tap opens text input and reopens saved text",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "touch-mobile-chrome-after.webm",
+    "screenshot": "touch-mobile-chrome-after.png",
+    "exports": [],
+    "durationSeconds": 6.92,
+    "sha256": "18c6d7528f9c04ae6202b7ee80cbcc1fa8c478cd5ef58971ea143f358ba361a7",
+    "screenshotSha256": "65293f04a1f85a2de93ee83d018b14662ddba5223f453b8a0002940128773c3b",
+    "bytes": 165877,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    }
+  },
+  {
+    "case": "cross-tool",
+    "project": "chromium",
+    "phase": "production",
+    "appRevision": "f0ba9e9a26d7e2f40cc97955b4d025064041d7a8",
+    "run": "artifacts/qa/text-editing-production",
+    "test": "text-ui: long text remains multiline when reopened through Alphabet",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "cross-tool-chromium-production.webm",
+    "screenshot": "cross-tool-chromium-production.png",
+    "exports": [
+      "cross-tool-chromium-production-export.svg"
+    ],
+    "durationSeconds": 10.28,
+    "sha256": "c5c4dfea8828c3169fe714ebaf419b35e48604931ccc84a877060e5e5355fa7e",
+    "screenshotSha256": "8cb0d2a11824d7dfc5f8fdfe9668425b5b08e3defab98e48afed236cbb10c772",
+    "bytes": 268207,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 800,
+      "height": 450
+    }
+  },
+  {
+    "case": "composition",
+    "project": "chromium",
+    "phase": "production",
+    "appRevision": "f0ba9e9a26d7e2f40cc97955b4d025064041d7a8",
+    "run": "artifacts/qa/text-editing-production",
+    "test": "text-ui: composition Escape preserves the draft until explicit cancel",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "composition-chromium-production.webm",
+    "screenshot": "composition-chromium-production.png",
+    "exports": [],
+    "durationSeconds": 4.28,
+    "sha256": "0b6d8546e2a99cecd349b5c4d883750d436cc5791aa7f265e9d209df2421ef12",
+    "screenshotSha256": "fe7b614233a5e1578c53a0729df17c6e01fff3b7734b34da445c8cecf6cfac03",
+    "bytes": 102076,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 800,
+      "height": 450
+    }
+  },
+  {
+    "case": "cross-tool",
+    "project": "mobile-chrome",
+    "phase": "production",
+    "appRevision": "f0ba9e9a26d7e2f40cc97955b4d025064041d7a8",
+    "run": "artifacts/qa/text-editing-production",
+    "test": "text-ui: long text remains multiline when reopened through Alphabet",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "cross-tool-mobile-chrome-production.webm",
+    "screenshot": "cross-tool-mobile-chrome-production.png",
+    "exports": [
+      "cross-tool-mobile-chrome-production-export.svg"
+    ],
+    "durationSeconds": 10.8,
+    "sha256": "b67272710cc631ee5d132a49f4fcdf05b01023699de1bf9159c4dda9607a6edc",
+    "screenshotSha256": "31d1c2f8ceba15957b3af86dd5d1b86652b6d8a5e41cff09e6ee1b5cc2057660",
+    "bytes": 380399,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    }
+  },
+  {
+    "case": "composition",
+    "project": "mobile-chrome",
+    "phase": "production",
+    "appRevision": "f0ba9e9a26d7e2f40cc97955b4d025064041d7a8",
+    "run": "artifacts/qa/text-editing-production",
+    "test": "text-ui: composition Escape preserves the draft until explicit cancel",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "composition-mobile-chrome-production.webm",
+    "screenshot": "composition-mobile-chrome-production.png",
+    "exports": [],
+    "durationSeconds": 4.12,
+    "sha256": "75a27d76dfc1cf590d5538cf01efddb984d2622b0dcd5b90d85e7d62b0e9d643",
+    "screenshotSha256": "463bfb9d8ba629f0f479c582920d2128d5b6f832f4fc4f9ed2d8d9b7bbbe1680",
+    "bytes": 129456,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    }
+  },
+  {
+    "case": "touch",
+    "project": "mobile-chrome",
+    "phase": "production",
+    "appRevision": "f0ba9e9a26d7e2f40cc97955b4d025064041d7a8",
+    "run": "artifacts/qa/text-editing-production",
+    "test": "text-touch: a finger tap opens text input and reopens saved text",
+    "status": "passed",
+    "retry": 0,
+    "runtimeErrors": [],
+    "video": "touch-mobile-chrome-production.webm",
+    "screenshot": "touch-mobile-chrome-production.png",
+    "exports": [],
+    "durationSeconds": 4.84,
+    "sha256": "6b7341e4deb8477bdee6c02494254a2c36b81dad548a2b0d0ccf24dc15a0bfea",
+    "screenshotSha256": "bbbcf1dbfe21a570c9aaa2fecf1c40dd81ee7c42d8013f60895a9cb45b0e68e4",
+    "bytes": 172038,
+    "fullyDecoded": true,
+    "dimensions": {
+      "width": 392,
+      "height": 800
+    }
+  }
+]

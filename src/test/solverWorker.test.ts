@@ -25,12 +25,13 @@ async function solve(path: string, canonicalWalls = false) {
   return (postMessage.mock.calls[0][0] as SolverWorkerResponse).result;
 }
 
+// This case includes the cold transform/import of the bundled solver modules.
 test('bundled Nurikabe returns the unique cross of shaded cells', async () => {
   const result = await solve('nurikabe/3/3/1g1i1g1');
   expect(result.status).toBe('solved');
   expect(Object.values(result.answer!.surfaces).map(cell => cell.cellId).sort())
     .toEqual(['cell-0-1', 'cell-1-0', 'cell-1-1', 'cell-1-2', 'cell-2-1']);
-});
+}, 15_000);
 
 test('bundled Nurikabe rejects adjacent single-cell islands', async () => {
   expect((await solve('nurikabe/2/2/1111')).status).toBe('unsolvable');
