@@ -78,6 +78,9 @@ export function createToolDispatchers(handlers: ToolDispatchHandlers) {
   };
 
   const toolEndDispatchers: Partial<Record<ToolCategory, ToolEndDispatcher>> = {
+    'special-thermo': (point) => handlers.handleSpecialTool(point, false, true, false),
+    'special-arrow': (point) => handlers.handleSpecialTool(point, false, true, false),
+    'special-cage': (point) => handlers.handleCageTool(point, false, true, false),
     'special-boxline': (point) => handlers.handleBoxLineTool(point, false, true, false),
   };
 

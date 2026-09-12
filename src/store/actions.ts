@@ -20,6 +20,7 @@ import type {
   SymbolElement,
   CageElement,
   SpecialElement,
+  BoxLineElement,
   GridConfig,
   PuzzleState,
 } from '../types';
@@ -38,6 +39,7 @@ type ElementTypeMap = {
   SYMBOL: SymbolElement;
   CAGE: CageElement;
   SPECIAL: SpecialElement;
+  BOXLINE: BoxLineElement;
 };
 
 type ElementName = keyof ElementTypeMap;
@@ -76,6 +78,8 @@ export type AddCageAction = AddElementAction<'CAGE'>;
 export type RemoveCageAction = RemoveElementAction<'CAGE'>;
 export type AddSpecialAction = AddElementAction<'SPECIAL'>;
 export type RemoveSpecialAction = RemoveElementAction<'SPECIAL'>;
+export type AddBoxLineAction = AddElementAction<'BOXLINE'>;
+export type RemoveBoxLineAction = RemoveElementAction<'BOXLINE'>;
 
 // Special action for number updates
 export interface UpdateNumberAction {
@@ -162,6 +166,8 @@ export type PuzzleAction =
   | RemoveCageAction
   | AddSpecialAction
   | RemoveSpecialAction
+  | AddBoxLineAction
+  | RemoveBoxLineAction
   // Layer operations
   | SetActiveLayerAction
   | ClearLayerAction
@@ -209,6 +215,8 @@ export const createAddCageAction = createAddActionCreator('CAGE');
 export const createRemoveCageAction = createRemoveActionCreator('CAGE');
 export const createAddSpecialAction = createAddActionCreator('SPECIAL');
 export const createRemoveSpecialAction = createRemoveActionCreator('SPECIAL');
+export const createAddBoxLineAction = createAddActionCreator('BOXLINE');
+export const createRemoveBoxLineAction = createRemoveActionCreator('BOXLINE');
 
 // Special action creators
 export const createUpdateNumberAction = (
@@ -348,6 +356,8 @@ const ELEMENT_ACTION_DESCRIPTIONS: Record<string, string> = {
   REMOVE_CAGE: 'Remove cage',
   ADD_SPECIAL: 'Add special',
   REMOVE_SPECIAL: 'Remove special',
+  ADD_BOXLINE: 'Add boxline',
+  REMOVE_BOXLINE: 'Remove boxline',
 };
 
 export function getActionDescription(action: PuzzleAction): string {

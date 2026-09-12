@@ -9,6 +9,7 @@ import { useCanvasPoint } from './useCanvasPoint';
 import { shouldAllowOutboardForTool } from '../utils/outboardPolicy';
 import { createToolDispatchers, type ToolDispatchHandlers } from './toolDispatchers';
 import type { Point } from '../types';
+import type { TextClickInfo } from '../types/canvasInput';
 
 interface TouchState {
   isPinching: boolean;
@@ -28,6 +29,7 @@ type PointerInfo = { clientX: number; clientY: number; startX: number; startY: n
 interface UseTouchHandlersOptions {
   svgRef: React.RefObject<SVGSVGElement | null>;
   allowMultiTouchPanZoom?: boolean;
+  onTextClick?: (info: TextClickInfo) => void;
   gridHandlers?: {
     down: (point: Point) => void;
     move: (point: Point) => void;
@@ -38,12 +40,13 @@ interface UseTouchHandlersOptions {
     handleStraightLineEnd: (point: Point, isRightClick: boolean, isShiftKey: boolean) => void;
     resetFillModes: () => void;
     handleNumberTool?: (point: Point, isRightClick: boolean, options?: { cellId?: string }) => void;
-    handleTextTool?: (point: Point, isRightClick: boolean) => void;
+    handleTextTool?: (point: Point, isRightClick: boolean) => TextClickInfo | null;
   };
   drawStartPoint: string | null;
   setDrawStartPoint: (point: string | null) => void;
   setDrawStartPosition: (point: Point | null) => void;
   setCurrentStrokeId: (id: string | null) => void;
+  setSpecialPath: (path: string[]) => void;
 }
 
 // Helper functions
@@ -67,12 +70,14 @@ const getPinchCenter = (points: PointerInfo[]): Point => {
 export function useTouchHandlers({
   svgRef,
   allowMultiTouchPanZoom = true,
+  onTextClick,
   gridHandlers,
   toolHandlers,
   drawStartPoint,
   setDrawStartPoint,
   setDrawStartPosition,
   setCurrentStrokeId,
+  setSpecialPath,
 }: UseTouchHandlersOptions) {
   const {
     canvas,
@@ -175,6 +180,7 @@ export function useTouchHandlers({
         // Switching to a multi-finger gesture abandons pending shape previews,
         // while incremental edits remain in the current undo group.
         gridHandlers?.cancel();
+        setSpecialPath([]);
         setDrawStartPoint(null);
         setDrawStartPosition(null);
         setCurrentStrokeId(null);
@@ -222,6 +228,7 @@ export function useTouchHandlers({
       setDrawStartPoint,
       setDrawStartPosition,
       setCurrentStrokeId,
+      setSpecialPath,
       canvas.panMode,
       activeLayer,
       gridHandlers,
@@ -254,7 +261,8 @@ export function useTouchHandlers({
     }
 
     if (tool.startsWith('text')) {
-      handleTextTool?.(point, false);
+      const result = handleTextTool?.(point, false);
+      if (result) onTextClick?.(result);
       return;
     }
 
@@ -265,6 +273,7 @@ export function useTouchHandlers({
     handleNumberTool,
     handleTextTool,
     setNumberSelection,
+    onTextClick,
     toolSettings.currentTool,
     toolSettings.numberInputMode,
   ]);
@@ -414,8 +423,9 @@ export function useTouchHandlers({
             if (allowedDirections.includes('straight') && drawStartPoint) {
               handleStraightLineEnd(point, false, false);
             }
-          } else if (tool === 'special-boxline') {
-            toolDispatchers.dispatchEnd(tool, point);
+          } else if (tool.startsWith('special-') && !(touchDuration > 500 && !touchState.isDragging)) {
+            // Long press already deleted its target; do not create it again.
+            toolDispatchers.dispatchEnd(tool, getCanvasPoint(e.clientX, e.clientY));
           }
         }
       }
@@ -439,6 +449,9 @@ export function useTouchHandlers({
       setDrawStartPoint(null);
       setDrawStartPosition(null);
       setCurrentStrokeId(null);
+      // Discard pending Special previews on cancellation, pan and completion,
+      // including releases outside a cell where the tool cannot finalize.
+      setSpecialPath([]);
       if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
         e.currentTarget.releasePointerCapture(e.pointerId);
       }
@@ -460,6 +473,7 @@ export function useTouchHandlers({
       setDrawStartPoint,
       setDrawStartPosition,
       setCurrentStrokeId,
+      setSpecialPath,
       toolDispatchers,
     ]
   );

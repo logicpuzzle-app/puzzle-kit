@@ -146,7 +146,7 @@ export function useCanvasInputRouter({
     sculptHover,
     updateSculptHover,
     getSculptHoverPolygons,
-  } = useCanvasInteraction({ svgRef, allowMultiTouchPanZoom });
+  } = useCanvasInteraction({ svgRef, allowMultiTouchPanZoom, onTextClick });
 
   const {
     recordMouseDown: recordLineSelectionMouseDown,

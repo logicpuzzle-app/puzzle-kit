@@ -52,6 +52,7 @@ export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChan
     activeLayer,
     isPlayerMode,
     addNumber,
+    updateNumber,
     removeNumber,
     addDirectionalClue,
     toolSettings,
@@ -147,30 +148,29 @@ export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChan
       // For directional mode, use directionalClue
       if (cellIndex === null) return;
 
-      // Remove existing directional number
+      // Update the existing clue so its ID, direction and styling survive.
       const existingNumberEntry = effectiveCellId
         ? findDirectionalNumberByCellId(puzzle[dataLayer].numbers, effectiveCellId)
         : null;
-      if (existingNumberEntry?.id) {
-        removeNumber(existingNumberEntry.id);
+      if (existingNumberEntry) {
+        if (!newValue) removeNumber(existingNumberEntry.id);
+        else updateNumber(existingNumberEntry.id, String(parseInt(newValue, 10)),
+          isPaintSchema ? { color: toolSettings.color, size: 'large' } : undefined);
+        return;
       }
 
       // Add new directional number if value is not empty
       if (newValue) {
         // Use 0 for no direction (will display as centered number without arrow)
-        const direction = existingNumberEntry?.number.direction ??
-          toPenpaDirection(toolSettings.arrowDirection);
-        const nextColor = isPaintSchema
-          ? toolSettings.color
-          : existingNumberEntry?.number.color ?? toolSettings.color;
+        const direction = toPenpaDirection(toolSettings.arrowDirection);
         addDirectionalClue({
           cellId: effectiveCellId || `cell-${numberSelection!.row}-${numberSelection!.col}`,
           cell: cellIndex,
           direction: direction as 0 | 1 | 2 | 3 | 4,
           value: parseInt(newValue, 10),
           layer: dataLayer,
-          angle: existingNumberEntry?.number.angle ?? null,
-          color: nextColor,
+          angle: null,
+          color: toolSettings.color,
         });
       }
       return;
@@ -182,14 +182,17 @@ export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChan
     const cornerIndex = toolSettings.cornerIndex ?? 0;
     const sideIndex = toolSettings.sideIndex ?? 0;
 
-    // Remove existing number at current position
+    // Other positions and entries in this cell are independent editing targets.
     const existingEntry = findNumberEntry(puzzle[dataLayer].numbers, effectiveCellId, position, {
       cornerIndex,
       sideIndex,
     });
 
     if (existingEntry) {
-      removeNumber(existingEntry.id);
+      if (!newValue) removeNumber(existingEntry.id);
+      else updateNumber(existingEntry.id, newValue,
+        isPaintSchema ? { color: toolSettings.color, size: toolSettings.numberSize || 'large' } : undefined);
+      return;
     }
 
     // Add new number if value is not empty
