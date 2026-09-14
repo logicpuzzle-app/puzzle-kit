@@ -16,7 +16,7 @@ async function openFile(page: Page, buffer: Buffer) {
   await (await pending).setFiles({ name: 'puzzle.json', mimeType: 'application/json', buffer });
 }
 
-test('session: File Open starts new history and keeps the imported clue', async ({ page }, info) => {
+test('session: File Open starts new history and keeps the imported clue', { tag: '@production' }, async ({ page }, info) => {
   await page.goto('/master');
   await page.getByRole('button', { name: 'Problem', exact: true }).click();
   await page.getByRole('button', { name: 'Number', exact: true }).click();
@@ -50,7 +50,7 @@ test('session: File Open starts new history and keeps the imported clue', async 
   await expect(numbers).toHaveCount(2);
 });
 
-test('session: New discards a previous puzzle trial snapshot', async ({ page }, info) => {
+test('session: New discards a previous puzzle trial snapshot', { tag: '@production' }, async ({ page }, info) => {
   await page.goto('/master');
   await page.getByRole('button', { name: 'Answer', exact: true }).click();
   await page.getByRole('button', { name: 'Surface', exact: true }).click();
@@ -79,7 +79,7 @@ test('session: New discards a previous puzzle trial snapshot', async ({ page }, 
   await expect(surfaces).toHaveCount(0);
 });
 
-test('session: invalid File Open preserves the board, trial and undo history', async ({ page }) => {
+test('session: invalid File Open preserves the board, trial and undo history', { tag: '@production' }, async ({ page }) => {
   await page.goto('/master');
   await page.getByRole('button', { name: 'Answer', exact: true }).click();
   await page.getByRole('button', { name: 'Surface', exact: true }).click();

@@ -24,7 +24,7 @@ async function start(page: Page) {
   await page.getByRole('button', { name: 'Problem', exact: true }).click();
 }
 
-test('text-ui: long text remains multiline when reopened through Alphabet', async ({ page }, info) => {
+test('text-ui: long text remains multiline when reopened through Alphabet', { tag: '@production' }, async ({ page }, info) => {
   await start(page);
   await selectTool(page, 'Free Text');
   await openCell(page, info);
@@ -68,7 +68,7 @@ test('text-ui: long text remains multiline when reopened through Alphabet', asyn
   await info.attach('exported-svg', { body: svg, contentType: 'image/svg+xml' });
 });
 
-test('text-ui: composition Escape preserves the draft until explicit cancel', async ({ page }, info) => {
+test('text-ui: composition Escape preserves the draft until explicit cancel', { tag: '@production' }, async ({ page }, info) => {
   await start(page);
   await selectTool(page, 'Free Text');
   await openCell(page, info);
@@ -86,7 +86,7 @@ test('text-ui: composition Escape preserves the draft until explicit cancel', as
 });
 
 
-test('text-touch: a finger tap opens text input and reopens saved text', async ({ page }, info) => {
+test('text-touch: a finger tap opens text input and reopens saved text', { tag: '@production' }, async ({ page }, info) => {
   test.skip(!info.project.use.hasTouch, 'Requires a touch-enabled browser profile');
   await start(page);
   await selectTool(page, 'Free Text');

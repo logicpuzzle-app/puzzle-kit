@@ -28,7 +28,7 @@ async function expectStyle(page: Page, tool: 'Surface' | 'Number') {
 }
 
 for (const tool of ['Surface', 'Number'] as const) {
-  test(`${tool} selection color and width survive reload`, async ({ page }) => {
+  test(`${tool} selection color and width survive reload`, { tag: '@production' }, async ({ page }) => {
     await page.goto('/master');
     await page.getByRole('button', { name: 'Problem', exact: true }).click();
     await page.getByRole('button', { name: 'Grid', exact: true }).click();

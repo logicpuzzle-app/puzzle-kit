@@ -3,7 +3,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { extname, resolve } from 'node:path';
 
 const qaVariant = process.env.QA_VARIANT;
-const screenshotDirectory = resolve(process.cwd(), 'docs/qa/npgen-ui');
+const screenshotDirectory = resolve(process.env.QA_ARTIFACT_DIR ?? 'artifacts/qa/manual-capture', 'screenshots');
 
 function screenshotPath(filename: string) {
   return resolve(screenshotDirectory, filename);

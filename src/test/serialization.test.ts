@@ -62,14 +62,6 @@ const createTestState = (): PuzzleState => ({
 
 describe('serialization', () => {
   describe('serializePuzzle', () => {
-    it('produces a non-empty string', () => {
-      const grid = createTestGrid();
-      const state = createTestState();
-      const result = serializePuzzle(grid, state);
-
-      expect(typeof result).toBe('string');
-      expect(result.length).toBeGreaterThan(0);
-    });
 
     it('produces URL-safe base64', () => {
       const grid = createTestGrid();
@@ -84,39 +76,6 @@ describe('serialization', () => {
   });
 
   describe('deserializePuzzle', () => {
-    it('correctly deserializes serialized puzzle', () => {
-      const grid = createTestGrid();
-      const state = createTestState();
-      const serialized = serializePuzzle(grid, state);
-      const result = deserializePuzzle(serialized);
-
-      expect(result).not.toBeNull();
-      expect(result?.grid.rows).toBe(grid.rows);
-      expect(result?.grid.cols).toBe(grid.cols);
-      expect(result?.grid.cellSize).toBe(grid.cellSize);
-    });
-
-    it('preserves surface elements', () => {
-      const grid = createTestGrid();
-      const state = createTestState();
-      const serialized = serializePuzzle(grid, state);
-      const result = deserializePuzzle(serialized);
-
-      expect(result?.state.problem.surfaces['s1']).toBeDefined();
-      expect(result?.state.problem.surfaces['s1'].color).toBe('#808080');
-      expect(result?.state.problem.surfaces['s1'].cellId).toBe('cell-0-0');
-    });
-
-    it('preserves number elements', () => {
-      const grid = createTestGrid();
-      const state = createTestState();
-      const serialized = serializePuzzle(grid, state);
-      const result = deserializePuzzle(serialized);
-
-      expect(result?.state.problem.numbers['n1']).toBeDefined();
-      expect(result?.state.problem.numbers['n1'].value).toBe('5');
-      expect(result?.state.problem.numbers['n1'].position).toBe('center');
-    });
 
     it('returns null for invalid input', () => {
       expect(deserializePuzzle('')).toBeNull();
@@ -176,22 +135,8 @@ describe('serialization', () => {
       const result = deserializePuzzle(serialized);
 
       expect(result).not.toBeNull();
-
-      // Check surfaces
-      expect(Object.keys(result!.state.problem.surfaces)).toHaveLength(2);
-      expect(result!.state.problem.surfaces['s1'].color).toBe('#ff0000');
-
-      // Check lines
-      expect(Object.keys(result!.state.problem.lines)).toHaveLength(1);
-      expect(result!.state.problem.lines['l1'].from).toBe('cell-0-0');
-      expect(result!.state.problem.lines['l1'].to).toBe('cell-0-1');
-
-      // Check numbers
-      expect(result!.state.problem.numbers['n1'].value).toBe('42');
-      expect(result!.state.problem.numbers['n1'].size).toBe('large');
-
-      // Check symbols
-      expect(result!.state.problem.symbols['sym1'].symbolType).toBe('circle');
+      expect(result!.grid).toEqual(grid);
+      expect(result!.state).toEqual(state);
     });
   });
 });

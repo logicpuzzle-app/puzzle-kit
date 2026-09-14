@@ -14,7 +14,8 @@
 - `e2e/grid-sculpt.spec.ts`: Sculpt Rotate/CutとUndo/Redoを全4projectのtouchscreen.tapで検証。
 - `e2e/properties-drawer.spec.ts`: 狭幅Propertiesの開閉・設定・フォーカス・リサイズ・エラー通知を4projectで検証。
 - `e2e/editor-quality.spec.ts`: Edit起動とPaint/Masterの最低限の盤面寸法。
-- `e2e/ui-audit.spec.ts`: Home / Master / Edit / Paint / 開発ハーネスの起動、画面寸法、スクリーンショット。表示スモークテストの成功は操作性やアクセシビリティの適合を意味しない。
+- `e2e/ui-audit.spec.ts`: 開発ハーネスのシナリオ切替とJSON検査。
+- `e2e/qa-*-capture.spec.ts`: 人が確認する画面寸法・スクリーンショット。通常CIから分離し、`playwright.capture.config.ts` で任意に実行する。
 - `e2e/fixtures.ts`: uncaught browser exception を失敗として扱い、エラーを添付。QAでは成功時も画面を保存。
 - `vite.qa.config.ts`: `.env` を読み込まないローカルQA用Vite設定。シェルから明示的に渡した `VITE_*` は有効なので、Firebase値をexportしている場合は解除する。
 
@@ -54,13 +55,14 @@ npm run qa:doctor
 | `npm run test:coverage` | utils/store/hooks/npgenのカバレッジ。`coverage/index.html` |
 | `npm run typecheck:e2e` | Playwright設定とE2Eテストの型チェック |
 | `npm run typecheck` | アプリの型チェック |
-| `npm run test:e2e` | 全E2E、Chromium / WebKitのdesktop・mobile設定 |
+| `npm run test:e2e` | 開発版E2E。Chromiumは製品版と重複するケースを除外、WebKitは従来の回帰を実行 |
+| `QA_INCLUDE_PRODUCTION_TESTS=1 npm run test:e2e -- --project=chromium` | 製品版に割り当てたケースも開発サーバーで再現 |
 | `npm run test:issues -- --project=chromium` | デスクトップのIssue回帰 |
 | `npm run test:e2e -- --grep '#40' --project=chromium` | 1つのIssueに絞る |
 | `npm run test:e2e:ui` / `npm run test:e2e:debug` | UI / ステップ実行 |
 | `npm run test:e2e:report` | 最後の通常実行のHTMLレポート |
 | `npm run build` → `npm run qa:production` | ビルド済みアプリを4176番で配信し、ChromiumのPC/モバイル操作を録画検証 |
-| `npm run qa:check` | 型チェック→unit→E2Eをすべて実行しログを保存 |
+| `npm run qa:check` | source map確認→型チェック→unit→開発版E2Eを実行しログを保存 |
 
 `qa:check` は途中で失敗しても残りの検査を実行し、どれかが失敗した場合は終了コード1を返す。結果は `artifacts/check/<timestamp>/summary.json`。テストの期待値による失敗と、依存やサーバーの起動失敗は保存ログで区別する。
 
@@ -106,11 +108,23 @@ npx playwright show-trace artifacts/qa/<run>/test-results/<test>/trace.zip
 
 `artifacts/` と `coverage/` はGit対象外。証跡は作業フォルダに残るがGit pushでは共有されない。共有する場合はbefore/after/comparisonを相対位置を保ったまままとめて渡す。初期ハーネスの証跡に加え、[修正後の9フロー・18動画](qa/evidence-editor-quality-20260906/README.md) と[複数指・Gridの7フロー・14動画](qa/evidence-multitouch-grid-20260906/README.md)をGit管理している。
 
-既存の `qa-npgen-capture.spec.ts` は `QA_VARIANT=before|after` の手動スクリーンショット用途。通常は4件skipされる。旧 `QA_STATIC_DIR` はそのファイル専用の静的ルーティングなので、全E2Eには設定しない。録画には新しい `qa:capture` を使う。
+撮影用の `qa-ui-capture.spec.ts` / `qa-npgen-capture.spec.ts` は通常CIでは収集しない。必要な画面を次のように撮影する。
+
+```bash
+npm run qa:capture -- before --config=playwright.capture.config.ts e2e/qa-ui-capture.spec.ts
+npm run qa:capture -- after --config=playwright.capture.config.ts e2e/qa-ui-capture.spec.ts
+npm run qa:capture -- after --config=playwright.capture.config.ts e2e/qa-npgen-capture.spec.ts --project=chromium
+```
+
+`qa:capture` はphaseから `QA_VARIANT` を設定し、開発版でも `@production` ケースを録画できる。NPGenerator画像も各runの `screenshots/` に保存し、既存の公開証跡を上書きしない。撮影configはChromiumのPC/モバイルに限定する。旧 `QA_STATIC_DIR` はNPGenerator撮影ファイル専用の静的ルーティングなので、全E2Eには設定しない。
 
 ## テスト追加時の判断
 
 純粋な変換/境界条件はunit、状態・Undo/Redo・フック連携はintegration、実ポインター入力/画面/WorkerはE2Eで検証する。Issue番号と望ましい動作をテスト名に書き、先にbeforeが実際の不具合で失敗することを確認する。セレクターの誤りによる失敗をbeforeの根拠にしない。例外を握りつぶしたり、固定sleepで通したりしない。
+
+追加・維持の判断は「削除するとどんな現実的な不具合を見逃すか」。本番処理のコピー、モックや型付きfixtureの自己確認、同一経路の存在確認を増やさない。重複を統合するときは固有の入力境界・出力の期待値を残し、テスト件数やカバレッジを維持すること自体を目標にしない。
+
+製品版Chromiumで保証するケースは `test('...', { tag: '@production' }, ...)` とする。製品configはタグで収集し、開発版のChromium二環境は同じタグを除外する。WebKitの検証は開発版に残る。タグを外すと開発版へ戻るため、配布chunkやWorkerを確認するケースからは外さない。全回帰の検証は `qa:check` → `build` → `qa:production` の組合せで行う。
 
 ## CI
 

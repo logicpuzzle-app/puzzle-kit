@@ -64,6 +64,7 @@ describe('Export Utilities', () => {
       expect(parsed.format).toBe('puzzle-kit');
       expect(parsed.grid).toEqual(mockGrid);
       expect(parsed.state).toEqual(mockState);
+      expect(parsed.metadata).toBeDefined();
     });
 
     it('includes metadata', () => {
@@ -74,50 +75,19 @@ describe('Export Utilities', () => {
       expect(parsed.metadata.author).toBe('Test');
       expect(parsed.metadata.exportedAt).toBeDefined();
     });
-
-    it('produces valid JSON', () => {
-      const json = exportToJson(mockState, mockGrid);
-      expect(() => JSON.parse(json)).not.toThrow();
-    });
-
-    it('preserves nested state structure', () => {
-      const json = exportToJson(mockState, mockGrid);
-      const parsed = JSON.parse(json);
-
-      expect(parsed.state.problem.numbers['num-1']).toBeDefined();
-      expect(parsed.state.problem.numbers['num-1'].value).toBe('5');
-    });
   });
 
   describe('generateShareUrl', () => {
-    it('generates URL with base URL', () => {
+    it('generates a default edit URL with decodable puzzle data', () => {
       const url = generateShareUrl(mockState, mockGrid);
-      expect(url).toContain('https://swaroopg92.github.io/penpa-edit/');
+      expect(url).toMatch(/^https:\/\/swaroopg92\.github\.io\/penpa-edit\/#m=edit&p=/);
+      const encoded = new URLSearchParams(new URL(url).hash.slice(1)).get('p')!;
+      expect(JSON.parse(atob(encoded))).toMatchObject({ rows: 9, cols: 9 });
     });
 
     it('generates URL with custom base URL', () => {
       const url = generateShareUrl(mockState, mockGrid, 'https://example.com/puzzle/');
       expect(url).toContain('https://example.com/puzzle/');
-    });
-
-    it('includes encoded data parameter', () => {
-      const url = generateShareUrl(mockState, mockGrid);
-      expect(url).toContain('#m=edit&p=');
-    });
-
-    it('generates decodable data', () => {
-      const url = generateShareUrl(mockState, mockGrid);
-      const match = url.match(/p=(.+)$/);
-      expect(match).not.toBeNull();
-
-      if (match) {
-        const encoded = match[1];
-        expect(() => atob(encoded)).not.toThrow();
-
-        const decoded = JSON.parse(atob(encoded));
-        expect(decoded.rows).toBe(9);
-        expect(decoded.cols).toBe(9);
-      }
     });
   });
 
@@ -149,73 +119,5 @@ describe('Export Utilities', () => {
       const result = await copyToClipboard('test text');
       expect(result).toBe(false);
     });
-  });
-});
-
-describe('Export format compatibility', () => {
-  it('JSON export matches expected schema', () => {
-    const state: PuzzleState = {
-      problem: {
-        surfaces: {},
-        lines: {},
-        edges: {},
-        walls: {},
-        numbers: {},
-        symbols: {},
-        cages: {},
-        specials: {},
-      },
-      answer: {
-        surfaces: {},
-        lines: {},
-        edges: {},
-        walls: {},
-        numbers: {},
-        symbols: {},
-        cages: {},
-        specials: {},
-      },
-    };
-
-    const grid: GridConfig = {
-      rows: 5,
-      cols: 5,
-      cellSize: 40,
-      outerPadding: 20,
-      showGrid: true,
-      gridStyle: 'normal',
-      gridType: 'square',
-      marginTop: 0,
-      marginBottom: 0,
-      marginLeft: 0,
-      marginRight: 0,
-      frameStyle: 'normal',
-      frameColor: '#000',
-      gridColor: '#ccc',
-      backgroundColor: '#fff',
-    };
-
-    const json = exportToJson(state, grid);
-    const parsed = JSON.parse(json);
-
-    // Verify schema
-    expect(parsed).toHaveProperty('version');
-    expect(parsed).toHaveProperty('format');
-    expect(parsed).toHaveProperty('grid');
-    expect(parsed).toHaveProperty('state');
-    expect(parsed).toHaveProperty('metadata');
-
-    // Verify grid properties
-    expect(parsed.grid).toHaveProperty('rows');
-    expect(parsed.grid).toHaveProperty('cols');
-    expect(parsed.grid).toHaveProperty('cellSize');
-    expect(parsed.grid).toHaveProperty('gridType');
-
-    // Verify state properties
-    expect(parsed.state).toHaveProperty('problem');
-    expect(parsed.state).toHaveProperty('answer');
-    expect(parsed.state.problem).toHaveProperty('surfaces');
-    expect(parsed.state.problem).toHaveProperty('numbers');
-    expect(parsed.state.problem).toHaveProperty('symbols');
   });
 });

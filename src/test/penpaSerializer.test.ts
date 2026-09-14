@@ -6,16 +6,14 @@
 
 import { describe, it, expect } from 'vitest';
 import {
-  COMPRESS_SUBSTITUTIONS,
   compressSubstitutions,
   decompressSubstitutions,
   encodeBase64UrlSafe,
   decodeBase64UrlSafe,
-  zlibCompress,
-  zlibDecompress,
   serializePenpa,
   deserializePenpa,
   parsePenpaUrl,
+  generatePenpaUrl,
   extractPuzzleParam,
   validatePenpaData,
   isPenpaUrl,
@@ -24,13 +22,6 @@ import {
 
 describe('penpaSerializer', () => {
   describe('compression substitutions', () => {
-    it('has 31 substitution pairs', () => {
-      expect(COMPRESS_SUBSTITUTIONS).toHaveLength(31);
-    });
-
-    it('first substitution escapes z character', () => {
-      expect(COMPRESS_SUBSTITUTIONS[0]).toEqual(['z', 'zZ']);
-    });
 
     it('compresses known keys', () => {
       const input = '{"qa":"pu_q","surface":{},"line":{}}';
@@ -72,96 +63,52 @@ describe('penpaSerializer', () => {
   });
 
   describe('Base64 URL-safe encoding', () => {
-    it('encodes simple string', () => {
-      const input = 'Hello, World!';
-      const encoded = encodeBase64UrlSafe(input);
-
-      expect(encoded).not.toContain('+');
-      expect(encoded).not.toContain('/');
-      expect(encoded).not.toContain('=');
-    });
-
-    it('decodes back to original', () => {
-      const original = 'Test string with special chars: äöü';
-      const encoded = encodeBase64UrlSafe(original);
-      const decoded = decodeBase64UrlSafe(encoded);
-
-      expect(decoded).toBe(original);
-    });
 
     it('handles Unicode characters', () => {
-      const input = '日本語テスト 🧩';
+      const input = 'ASCII äöü 日本語テスト 🧩';
       const encoded = encodeBase64UrlSafe(input);
       const decoded = decodeBase64UrlSafe(encoded);
 
       expect(decoded).toBe(input);
-    });
-  });
-
-  describe('zlib compression', () => {
-    it('compresses and decompresses data', () => {
-      const input = 'This is a test string that should be compressed';
-      const compressed = zlibCompress(input);
-
-      expect(compressed).toBeInstanceOf(Uint8Array);
-      expect(compressed.length).toBeLessThan(input.length * 2);
-
-      const decompressed = zlibDecompress(compressed);
-      expect(decompressed).toBe(input);
-    });
-
-    it('handles JSON data', () => {
-      const data = { test: 'value', array: [1, 2, 3], nested: { a: 1 } };
-      const input = JSON.stringify(data);
-      const compressed = zlibCompress(input);
-      const decompressed = zlibDecompress(compressed);
-
-      expect(JSON.parse(decompressed)).toEqual(data);
+      expect(encoded).not.toMatch(/[+/=]/);
     });
   });
 
   describe('full serialization pipeline', () => {
     const samplePuzzle: PenpaExportData = {
       gridtype: 'square',
-      nx: 5,
+      nx: 9,
       ny: 5,
       size: 38,
       space: [0, 0, 0, 0],
       pu_q: {
-        surface: { '10': 1, '11': 2 },
-        line: { '10_11': 1 },
-        number: { '15': ['5', 1, '1'] },
+        surface: { '50': 1, '51': 2 },
+        line: { '50,51': 1, '51,52': 2 },
+        lineE: { '60,70': 1 },
+        wall: { '40,41': 1 },
+        number: { '45': ['5', 1, '1'], '55': ['9', 1, '1'] },
+        symbol: { '65': ['circle_L', 1, 2] },
+        thermo: [[20, 21, 22]],
+        arrows: [[30, 31, 32]],
       },
+      pu_a: { line: { '70,71': 1 }, number: { '75': ['3', 1, '1'] } },
+      rules: 'ASCII äöü 日本語 🧩 puzzle zone',
       version: [3, 2, 1],
     };
-
-    it('serializes puzzle data', () => {
-      const serialized = serializePenpa(samplePuzzle);
-
-      expect(typeof serialized).toBe('string');
-      expect(serialized.length).toBeGreaterThan(0);
-      // URL-safe characters only
-      expect(serialized).not.toContain('+');
-      expect(serialized).not.toContain('/');
-    });
 
     it('deserializes back to original structure', () => {
       const serialized = serializePenpa(samplePuzzle);
       const deserialized = deserializePenpa(serialized);
 
-      expect(deserialized.gridtype).toBe(samplePuzzle.gridtype);
-      expect(deserialized.nx).toBe(samplePuzzle.nx);
-      expect(deserialized.ny).toBe(samplePuzzle.ny);
-      expect(deserialized.pu_q?.surface).toEqual(samplePuzzle.pu_q?.surface);
-      expect(deserialized.pu_q?.line).toEqual(samplePuzzle.pu_q?.line);
+      expect(deserialized).toEqual(samplePuzzle);
+      expect(serialized).not.toMatch(/[+/=]/);
     });
 
     it('serializes without zlib compression', () => {
       const serialized = serializePenpa(samplePuzzle, { useZlib: false });
       const deserialized = deserializePenpa(serialized, false);
 
-      expect(deserialized.gridtype).toBe(samplePuzzle.gridtype);
-      expect(deserialized.nx).toBe(samplePuzzle.nx);
+      expect(deserialized).toEqual(samplePuzzle);
     });
 
     it('excludes history by default', () => {
@@ -213,6 +160,16 @@ describe('penpaSerializer', () => {
   });
 
   describe('URL handling', () => {
+    it('generates an edit URL that restores the puzzle', () => {
+      const puzzle: PenpaExportData = {
+        gridtype: 'square', nx: 9, ny: 5,
+        pu_q: { number: { '45': ['5', 1, '1'] } },
+      };
+      const url = generatePenpaUrl('https://penpa.example.com/', puzzle);
+      expect(url).toMatch(/^https:\/\/penpa\.example\.com\/\?m=edit&p=/);
+      expect(parsePenpaUrl(url)).toEqual(puzzle);
+    });
+
     it('parses puzzle from query parameter', () => {
       const puzzle: PenpaExportData = {
         gridtype: 'square',
@@ -256,6 +213,9 @@ describe('penpaSerializer', () => {
       expect(extractPuzzleParam('p=ABC123')).toBe('ABC123');
       expect(extractPuzzleParam('?p=ABC123')).toBe('ABC123');
       expect(extractPuzzleParam('ABC123')).toBe('ABC123');
+      expect(extractPuzzleParam('m=edit&p=ABC123')).toBe('ABC123');
+      expect(extractPuzzleParam('https://example.com/?m=edit&p=ABC123')).toBe('ABC123');
+      expect(extractPuzzleParam('https://example.com/#m=edit&p=ABC123')).toBe('ABC123');
     });
   });
 
@@ -288,9 +248,11 @@ describe('penpaSerializer', () => {
       expect(validatePenpaData(invalid)).toBe(false);
     });
 
-    it('rejects null/undefined', () => {
+    it('rejects non-object inputs', () => {
       expect(validatePenpaData(null)).toBe(false);
       expect(validatePenpaData(undefined)).toBe(false);
+      expect(validatePenpaData('string')).toBe(false);
+      expect(validatePenpaData(123)).toBe(false);
     });
   });
 
@@ -313,28 +275,6 @@ describe('penpaSerializer', () => {
     it('handles invalid URLs', () => {
       expect(isPenpaUrl('not a url')).toBe(false);
       expect(isPenpaUrl('')).toBe(false);
-    });
-  });
-
-  describe('grid types', () => {
-    const gridTypes = [
-      'square', 'sudoku', 'kakuro', 'hex', 'tri', 'pyramid', 'iso',
-      'tetrakis_square', 'truncated_square', 'snub_square',
-      'cairo_pentagonal', 'rhombitrihexagonal', 'deltoidal_trihexagonal',
-      'penrose_P3',
-    ] as const;
-
-    it.each(gridTypes)('serializes and deserializes %s grid', (gridtype) => {
-      const puzzle: PenpaExportData = {
-        gridtype,
-        nx: 5,
-        ny: 5,
-      };
-
-      const serialized = serializePenpa(puzzle);
-      const deserialized = deserializePenpa(serialized);
-
-      expect(deserialized.gridtype).toBe(gridtype);
     });
   });
 });

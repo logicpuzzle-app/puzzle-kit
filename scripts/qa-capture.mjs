@@ -30,7 +30,8 @@ const metadata = {
 };
 writeFileSync(resolve(directory, 'metadata.json'), JSON.stringify(metadata, null, 2));
 const result = spawnSync(metadata.command[0], metadata.command.slice(1), {
-  env: { ...process.env, QA_ARTIFACT_DIR: directory }, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
+  env: { ...process.env, QA_ARTIFACT_DIR: directory, QA_VARIANT: phase, QA_INCLUDE_PRODUCTION_TESTS: '1' },
+  encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
 });
 writeFileSync(resolve(directory, 'run.log'), (result.stdout ?? '') + (result.stderr ?? '') + (result.error?.message ?? ''));
 metadata.exitCode = result.status ?? 1;

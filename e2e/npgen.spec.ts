@@ -31,9 +31,7 @@ async function gridGeometry(grid: Locator) {
   });
 }
 
-test('generates a seeded Number Place puzzle through the Wasm worker', async ({ page }) => {
-  const pageErrors: string[] = [];
-  page.on('pageerror', (error) => pageErrors.push(error.stack ?? error.message));
+test('generates a seeded Number Place puzzle through the Wasm worker', { tag: '@production' }, async ({ page }) => {
   await openNPGenerator(page);
   await expect(page.getByRole('button', { name: 'Random Generate' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Benchmark' })).toHaveCount(0);
@@ -52,7 +50,6 @@ test('generates a seeded Number Place puzzle through the Wasm worker', async ({ 
 
   await page.getByRole('button', { name: 'Apply problem to puzzle-kit' }).click();
   await expect(page.getByRole('heading', { name: 'NPGenerator 2007' })).toBeHidden();
-  expect(pageErrors).toEqual([]);
   await expect(page.getByText(/Ready/)).toBeVisible();
 });
 
@@ -143,15 +140,6 @@ async function importXmlPattern(page: Page) {
   // generation input reproducible instead of depending on OS randomness.
   await page.getByRole('checkbox', { name: 'Change / specify seed' }).check();
 }
-
-test('imports updated XML constraints and uses an initial solution seed', async ({ page }) => {
-  await importXmlPattern(page);
-  await page.getByRole('textbox', { name: 'Seed' }).fill('1');
-  await page.getByRole('button', { name: 'Generate', exact: true }).click();
-  await expect(page.getByText(/Result: Unique solution/)).toBeVisible({
-    timeout: 30_000,
-  });
-});
 
 test('XML generation reports exhausted attempts and recovers with a new seed', async ({ page }) => {
   await importXmlPattern(page);

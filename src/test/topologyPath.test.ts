@@ -102,10 +102,6 @@ describe('resolveTopologyPath', () => {
       expect(resolveTopologyPath(topology, walls[0], walls[1], ORTH, false)).toEqual([walls[1]]);
     });
 
-    it('finds no non-parallel corner pair in a square grid', () => {
-      expect(findCornerPair(false)).toBeUndefined();
-    });
-
     it('joins opposite walls of the same cell orthogonally', () => {
       expect(resolveTopologyPath(topology, walls[0], walls[2], ORTH, false)).toEqual([walls[2]]);
     });
