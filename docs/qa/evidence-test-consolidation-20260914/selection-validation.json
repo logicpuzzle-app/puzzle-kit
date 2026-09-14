@@ -1,0 +1,527 @@
+{
+  "baseline": "7a2d3877a24d1ba2847b168e7352849aea015679",
+  "baseline_dev_slots": 359,
+  "after_dev_slots": 256,
+  "production_slots": 71,
+  "capture_slots": 14,
+  "dev_production_overlap": [],
+  "removed_dev_slots": [
+    {
+      "file": "build-entrypoints.spec.ts",
+      "title": "build: Paint renders and imports a PDF through its worker",
+      "project": "chromium"
+    },
+    {
+      "file": "build-entrypoints.spec.ts",
+      "title": "build: Paint renders and imports a PDF through its worker",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "build-entrypoints.spec.ts",
+      "title": "build: opens /",
+      "project": "chromium"
+    },
+    {
+      "file": "build-entrypoints.spec.ts",
+      "title": "build: opens /",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "build-entrypoints.spec.ts",
+      "title": "build: opens /edit",
+      "project": "chromium"
+    },
+    {
+      "file": "build-entrypoints.spec.ts",
+      "title": "build: opens /edit",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "build-entrypoints.spec.ts",
+      "title": "build: opens /embedded.html",
+      "project": "chromium"
+    },
+    {
+      "file": "build-entrypoints.spec.ts",
+      "title": "build: opens /embedded.html",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "build-entrypoints.spec.ts",
+      "title": "build: opens /master",
+      "project": "chromium"
+    },
+    {
+      "file": "build-entrypoints.spec.ts",
+      "title": "build: opens /master",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "build-entrypoints.spec.ts",
+      "title": "build: opens /paint",
+      "project": "chromium"
+    },
+    {
+      "file": "build-entrypoints.spec.ts",
+      "title": "build: opens /paint",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "build-entrypoints.spec.ts",
+      "title": "build: opens /play",
+      "project": "chromium"
+    },
+    {
+      "file": "build-entrypoints.spec.ts",
+      "title": "build: opens /play",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "cursor-style.spec.ts",
+      "title": "Number selection color and width survive reload",
+      "project": "chromium"
+    },
+    {
+      "file": "cursor-style.spec.ts",
+      "title": "Number selection color and width survive reload",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "cursor-style.spec.ts",
+      "title": "Surface selection color and width survive reload",
+      "project": "chromium"
+    },
+    {
+      "file": "cursor-style.spec.ts",
+      "title": "Surface selection color and width survive reload",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "npgen.spec.ts",
+      "title": "generates a seeded Number Place puzzle through the Wasm worker",
+      "project": "chromium"
+    },
+    {
+      "file": "npgen.spec.ts",
+      "title": "generates a seeded Number Place puzzle through the Wasm worker",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "npgen.spec.ts",
+      "title": "imports updated XML constraints and uses an initial solution seed",
+      "project": "chromium"
+    },
+    {
+      "file": "npgen.spec.ts",
+      "title": "imports updated XML constraints and uses an initial solution seed",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "npgen.spec.ts",
+      "title": "imports updated XML constraints and uses an initial solution seed",
+      "project": "mobile-webkit"
+    },
+    {
+      "file": "npgen.spec.ts",
+      "title": "imports updated XML constraints and uses an initial solution seed",
+      "project": "webkit"
+    },
+    {
+      "file": "number-history.spec.ts",
+      "title": "directional marker keys support replacement, deletion and Undo/Redo",
+      "project": "chromium"
+    },
+    {
+      "file": "number-history.spec.ts",
+      "title": "directional marker keys support replacement, deletion and Undo/Redo",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "number-history.spec.ts",
+      "title": "directional number insertion, replacement and deletion support Undo/Redo",
+      "project": "chromium"
+    },
+    {
+      "file": "number-history.spec.ts",
+      "title": "directional number insertion, replacement and deletion support Undo/Redo",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "number-history.spec.ts",
+      "title": "normal marker keys support replacement, deletion and Undo/Redo",
+      "project": "chromium"
+    },
+    {
+      "file": "number-history.spec.ts",
+      "title": "normal marker keys support replacement, deletion and Undo/Redo",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "number-pad-history.spec.ts",
+      "title": "number-pad: Nurikabe replacement restores the previous clue in one undo",
+      "project": "chromium"
+    },
+    {
+      "file": "number-pad-history.spec.ts",
+      "title": "number-pad: Nurikabe replacement restores the previous clue in one undo",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "number-pad-history.spec.ts",
+      "title": "number-pad: Yajilin replacement restores the previous clue in one undo",
+      "project": "chromium"
+    },
+    {
+      "file": "number-pad-history.spec.ts",
+      "title": "number-pad: Yajilin replacement restores the previous clue in one undo",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "persistence.spec.ts",
+      "title": "autosave survives reload with problem clues, answer content and subsequent undo",
+      "project": "chromium"
+    },
+    {
+      "file": "persistence.spec.ts",
+      "title": "autosave survives reload with problem clues, answer content and subsequent undo",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "puzzle-session.spec.ts",
+      "title": "session: File Open starts new history and keeps the imported clue",
+      "project": "chromium"
+    },
+    {
+      "file": "puzzle-session.spec.ts",
+      "title": "session: File Open starts new history and keeps the imported clue",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "puzzle-session.spec.ts",
+      "title": "session: New discards a previous puzzle trial snapshot",
+      "project": "chromium"
+    },
+    {
+      "file": "puzzle-session.spec.ts",
+      "title": "session: New discards a previous puzzle trial snapshot",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "puzzle-session.spec.ts",
+      "title": "session: invalid File Open preserves the board, trial and undo history",
+      "project": "chromium"
+    },
+    {
+      "file": "puzzle-session.spec.ts",
+      "title": "session: invalid File Open preserves the board, trial and undo history",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "qa-npgen-capture.spec.ts",
+      "title": "captures a generated 6x6 puzzle with 3x2 block lines",
+      "project": "chromium"
+    },
+    {
+      "file": "qa-npgen-capture.spec.ts",
+      "title": "captures a generated 6x6 puzzle with 3x2 block lines",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "qa-npgen-capture.spec.ts",
+      "title": "captures a generated 6x6 puzzle with 3x2 block lines",
+      "project": "mobile-webkit"
+    },
+    {
+      "file": "qa-npgen-capture.spec.ts",
+      "title": "captures a generated 6x6 puzzle with 3x2 block lines",
+      "project": "webkit"
+    },
+    {
+      "file": "qa-npgen-capture.spec.ts",
+      "title": "captures the seeded NPGenerator QA flow",
+      "project": "chromium"
+    },
+    {
+      "file": "qa-npgen-capture.spec.ts",
+      "title": "captures the seeded NPGenerator QA flow",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "qa-npgen-capture.spec.ts",
+      "title": "captures the seeded NPGenerator QA flow",
+      "project": "mobile-webkit"
+    },
+    {
+      "file": "qa-npgen-capture.spec.ts",
+      "title": "captures the seeded NPGenerator QA flow",
+      "project": "webkit"
+    },
+    {
+      "file": "solver.spec.ts",
+      "title": "solver: bundled Heyawake respects imported room walls",
+      "project": "chromium"
+    },
+    {
+      "file": "solver.spec.ts",
+      "title": "solver: bundled Heyawake respects imported room walls",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "solver.spec.ts",
+      "title": "solver: cancels loading and solves again with a fresh worker",
+      "project": "chromium"
+    },
+    {
+      "file": "solver.spec.ts",
+      "title": "solver: cancels loading and solves again with a fresh worker",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "solver.spec.ts",
+      "title": "solver: displays confirmed cells for multiple solutions",
+      "project": "chromium"
+    },
+    {
+      "file": "solver.spec.ts",
+      "title": "solver: displays confirmed cells for multiple solutions",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "solver.spec.ts",
+      "title": "solver: displays worker startup errors and recovers on retry",
+      "project": "chromium"
+    },
+    {
+      "file": "solver.spec.ts",
+      "title": "solver: displays worker startup errors and recovers on retry",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "solver.spec.ts",
+      "title": "solver: retries after the first Wasm download fails",
+      "project": "chromium"
+    },
+    {
+      "file": "solver.spec.ts",
+      "title": "solver: retries after the first Wasm download fails",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "solver.spec.ts",
+      "title": "solver: solves Nurikabe and reports an impossible puzzle",
+      "project": "chromium"
+    },
+    {
+      "file": "solver.spec.ts",
+      "title": "solver: solves Nurikabe and reports an impossible puzzle",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "solver.spec.ts",
+      "title": "solver: solves Slitherlink and displays the complete loop",
+      "project": "chromium"
+    },
+    {
+      "file": "solver.spec.ts",
+      "title": "solver: solves Slitherlink and displays the complete loop",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "solver.spec.ts",
+      "title": "solver: toolbar URL import enables the correct solver",
+      "project": "chromium"
+    },
+    {
+      "file": "solver.spec.ts",
+      "title": "solver: toolbar URL import enables the correct solver",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "special-export.spec.ts",
+      "title": "png: toolbar exports the board and excludes special selection",
+      "project": "chromium"
+    },
+    {
+      "file": "special-export.spec.ts",
+      "title": "png: toolbar exports the board and excludes special selection",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "special-touch.chromium-touch.spec.ts",
+      "title": "special-touch: Arrow creates, edits, exports and reloads with touch",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "special-touch.chromium-touch.spec.ts",
+      "title": "special-touch: BoxLine creates one undoable object",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "special-touch.chromium-touch.spec.ts",
+      "title": "special-touch: Cage creates one undoable object",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "special-touch.chromium-touch.spec.ts",
+      "title": "special-touch: Thermo creates, edits, exports and reloads with touch",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "special-touch.chromium-touch.spec.ts",
+      "title": "special-touch: cancel discards the pending arrow and allows the next stroke",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "special-touch.chromium-touch.spec.ts",
+      "title": "special-touch: multitouch discards the pending arrow and allows the next stroke",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "special-touch.chromium-touch.spec.ts",
+      "title": "special-touch: pan discards the pending arrow and allows the next stroke",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "symbol-sizing-production.spec.ts",
+      "title": "symbol-ui: custom-sized placement survives reload and SVG/PNG export",
+      "project": "chromium"
+    },
+    {
+      "file": "symbol-sizing-production.spec.ts",
+      "title": "symbol-ui: custom-sized placement survives reload and SVG/PNG export",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "text-editing.spec.ts",
+      "title": "text-touch: a finger tap opens text input and reopens saved text",
+      "project": "chromium"
+    },
+    {
+      "file": "text-editing.spec.ts",
+      "title": "text-touch: a finger tap opens text input and reopens saved text",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "text-editing.spec.ts",
+      "title": "text-ui: composition Escape preserves the draft until explicit cancel",
+      "project": "chromium"
+    },
+    {
+      "file": "text-editing.spec.ts",
+      "title": "text-ui: composition Escape preserves the draft until explicit cancel",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "text-editing.spec.ts",
+      "title": "text-ui: long text remains multiline when reopened through Alphabet",
+      "project": "chromium"
+    },
+    {
+      "file": "text-editing.spec.ts",
+      "title": "text-ui: long text remains multiline when reopened through Alphabet",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "ui-audit.spec.ts",
+      "title": "UI audit: /",
+      "project": "chromium"
+    },
+    {
+      "file": "ui-audit.spec.ts",
+      "title": "UI audit: /",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "ui-audit.spec.ts",
+      "title": "UI audit: /",
+      "project": "mobile-webkit"
+    },
+    {
+      "file": "ui-audit.spec.ts",
+      "title": "UI audit: /",
+      "project": "webkit"
+    },
+    {
+      "file": "ui-audit.spec.ts",
+      "title": "UI audit: /edit",
+      "project": "chromium"
+    },
+    {
+      "file": "ui-audit.spec.ts",
+      "title": "UI audit: /edit",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "ui-audit.spec.ts",
+      "title": "UI audit: /edit",
+      "project": "mobile-webkit"
+    },
+    {
+      "file": "ui-audit.spec.ts",
+      "title": "UI audit: /edit",
+      "project": "webkit"
+    },
+    {
+      "file": "ui-audit.spec.ts",
+      "title": "UI audit: /harness.html",
+      "project": "chromium"
+    },
+    {
+      "file": "ui-audit.spec.ts",
+      "title": "UI audit: /harness.html",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "ui-audit.spec.ts",
+      "title": "UI audit: /harness.html",
+      "project": "mobile-webkit"
+    },
+    {
+      "file": "ui-audit.spec.ts",
+      "title": "UI audit: /harness.html",
+      "project": "webkit"
+    },
+    {
+      "file": "ui-audit.spec.ts",
+      "title": "UI audit: /master",
+      "project": "chromium"
+    },
+    {
+      "file": "ui-audit.spec.ts",
+      "title": "UI audit: /master",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "ui-audit.spec.ts",
+      "title": "UI audit: /master",
+      "project": "mobile-webkit"
+    },
+    {
+      "file": "ui-audit.spec.ts",
+      "title": "UI audit: /master",
+      "project": "webkit"
+    },
+    {
+      "file": "ui-audit.spec.ts",
+      "title": "UI audit: /paint",
+      "project": "chromium"
+    },
+    {
+      "file": "ui-audit.spec.ts",
+      "title": "UI audit: /paint",
+      "project": "mobile-chrome"
+    },
+    {
+      "file": "ui-audit.spec.ts",
+      "title": "UI audit: /paint",
+      "project": "mobile-webkit"
+    },
+    {
+      "file": "ui-audit.spec.ts",
+      "title": "UI audit: /paint",
+      "project": "webkit"
+    }
+  ],
+  "unexpected_new_dev_slots": [],
+  "runtime_source_diff": ""
+}

@@ -1,0 +1,118 @@
+[
+  {
+    "case": "#40 Free Segment completes on pointer release and supports Undo/Redo",
+    "phase": "before",
+    "project": "chromium",
+    "revision": "7a2d3877a24d1ba2847b168e7352849aea015679",
+    "workingTree": "",
+    "command": "npm run qa:capture -- before e2e/editor-issues.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "free-segment-before.webm",
+    "screenshot": "free-segment-before.png",
+    "videoSha256": "85f2c4d592c53730e0538d4e7a5c055d8b07bb68e2fca2b203994fec3aace522",
+    "screenshotSha256": "653b14bebea74aef82cea8b0fcc0f39c56828776265b3e652b37aea10cf8cc4c",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.680000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "#19 a click-entered number can be deleted with Backspace",
+    "phase": "before",
+    "project": "chromium",
+    "revision": "7a2d3877a24d1ba2847b168e7352849aea015679",
+    "workingTree": "",
+    "command": "npm run qa:capture -- before e2e/editor-issues.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "number-delete-before.webm",
+    "screenshot": "number-delete-before.png",
+    "videoSha256": "d5d8333dba35139bb0bdd4009a5f871f6b531bc8822a4175bc55a3730265c9db",
+    "screenshotSha256": "7afd760c7ad82b1941a02d248a41e73e075c9e15da514ce98da1bada4a9243e7",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.640000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "#40 Free Segment completes on pointer release and supports Undo/Redo",
+    "phase": "after",
+    "project": "chromium",
+    "revision": "35898806d1e38125580351899073f1ddac2c88bc",
+    "workingTree": "",
+    "command": "npm run qa:capture -- after e2e/editor-issues.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "free-segment-after.webm",
+    "screenshot": "free-segment-after.png",
+    "videoSha256": "c68b61f5a450ad5e42b081da592ca66ed346e992cd785b9de9b59a361d717902",
+    "screenshotSha256": "653b14bebea74aef82cea8b0fcc0f39c56828776265b3e652b37aea10cf8cc4c",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.800000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "#19 a click-entered number can be deleted with Backspace",
+    "phase": "after",
+    "project": "chromium",
+    "revision": "35898806d1e38125580351899073f1ddac2c88bc",
+    "workingTree": "",
+    "command": "npm run qa:capture -- after e2e/editor-issues.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "number-delete-after.webm",
+    "screenshot": "number-delete-after.png",
+    "videoSha256": "53d6ca02136b515312a8101ac54a81cefe96cfaf42c1476591706c6379e2c32b",
+    "screenshotSha256": "85ef97a2489f8c95ba01270ce2ef615ea9814f2d610fc6ab11e3b7e758836c2c",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.640000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]
