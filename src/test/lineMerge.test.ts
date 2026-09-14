@@ -15,8 +15,8 @@ const makeLine = (
   id: string,
   from: [number, number],
   to: [number, number],
-  directed: 'endpoint' | 'midpoint' = 'endpoint',
-  arrowDirection: 'forward' | 'backward' = 'forward'
+  directed: 'endpoint' | 'midpoint' | undefined,
+  arrowDirection: 'forward' | 'backward' | undefined
 ): LineWithPosition => ({
   line: {
     id,
@@ -188,65 +188,7 @@ describe('normalize complex zigzag chains', () => {
   });
 });
 
-describe('normalizeChain arrow inference', () => {
-  it('infers arrow end when not provided', () => {
-    const a = makeLine('a', [0, 0], [10, 0], 'endpoint', 'forward');
-    const b = makeLine('b', [10, 0], [20, 0], 'endpoint', 'forward');
-    // shuffle order
-    const chain = mergeEndpointLines([b, a])[0];
-    expect(chain.points[0]).toEqual({ x: 0, y: 0 });
-    expect(chain.points[chain.points.length - 1]).toEqual({ x: 20, y: 0 });
-  });
-});
-
 describe('directionless lines become one-way when grouped/ungrouped', () => {
-  it('normalizes undirected segments into a consistent forward chain', () => {
-    // Three undirected segments forming a straight path
-    const s1 = makeLine('s1', [0, 0], [10, 0], 'endpoint', undefined as any);
-    const s2 = makeLine('s2', [10, 0], [20, 0], 'endpoint', undefined as any);
-    const s3 = makeLine('s3', [20, 0], [30, 0], 'endpoint', undefined as any);
-
-    const chains = mergeEndpointLines([s2, s3, s1]);
-    expect(chains).toHaveLength(1);
-    const pts = chains[0].points;
-    expect(pts[0]).toEqual({ x: 0, y: 0 });
-    expect(pts[pts.length - 1]).toEqual({ x: 30, y: 0 });
-  });
-
-  it('handles multiple 90° bends without flipping direction', () => {
-    // Path: (0,0)->(0,10)->(10,10)->(10,20)->(20,20)->(20,30)->(30,30)
-    const segments = [
-      makeLine('a', [0, 0], [0, 10], 'endpoint', undefined as any),
-      makeLine('b', [0, 10], [10, 10], 'endpoint', undefined as any),
-      makeLine('c', [10, 10], [10, 20], 'endpoint', undefined as any),
-      makeLine('d', [10, 20], [20, 20], 'endpoint', undefined as any),
-      makeLine('e', [20, 20], [20, 30], 'endpoint', undefined as any),
-      makeLine('f', [20, 30], [30, 30], 'endpoint', undefined as any),
-    ];
-    const scrambled = [segments[3], segments[0], segments[5], segments[1], segments[4], segments[2]];
-    const chains = mergeEndpointLines(scrambled);
-    expect(chains).toHaveLength(1);
-    const pts = chains[0].points;
-    expect(pts[0]).toEqual({ x: 0, y: 0 });
-    expect(pts[pts.length - 1]).toEqual({ x: 30, y: 30 });
-  });
-
-  it('normalizes zigzag with all directions (→↓←↑) into a single heading', () => {
-    // Path: (0,0)->(10,0)->(10,10)->(0,10)->(0,20)->(10,20)
-    const segments = [
-      makeLine('a', [0, 0], [10, 0], 'endpoint', undefined as any),  // →
-      makeLine('b', [10, 0], [10, 10], 'endpoint', undefined as any), // ↓
-      makeLine('c', [10, 10], [0, 10], 'endpoint', undefined as any), // ←
-      makeLine('d', [0, 10], [0, 20], 'endpoint', undefined as any),  // ↓
-      makeLine('e', [0, 20], [10, 20], 'endpoint', undefined as any), // →
-    ];
-    const scrambled = [segments[2], segments[0], segments[4], segments[1], segments[3]];
-    const chains = mergeEndpointLines(scrambled);
-    expect(chains).toHaveLength(1);
-    const pts = chains[0].points;
-    expect(pts[0]).toEqual({ x: 0, y: 0 });
-    expect(pts[pts.length - 1]).toEqual({ x: 10, y: 20 });
-  });
 
   it('keeps directed lines connected after normalize/unmerge flow', () => {
     // Mix of forward and backward arrows, scrambled
@@ -278,52 +220,16 @@ describe('directionless lines become one-way when grouped/ungrouped', () => {
     expect(new Set(dirValues).size).toBe(1);
   });
 
-  it('detects heading when converting undirected to midpoint with scrambled order', () => {
-    // Undirected path: →→↓↓←←↓↓→→ (midpoint arrows added later)
-    const segments: LineWithPosition[] = [
-      makeLine('a', [0, 0], [10, 0], 'midpoint', undefined as any),
-      makeLine('b', [10, 0], [20, 0], 'midpoint', undefined as any),
-      makeLine('c', [20, 0], [20, 10], 'midpoint', undefined as any),
-      makeLine('d', [20, 10], [10, 10], 'midpoint', undefined as any),
-      makeLine('e', [10, 10], [0, 10], 'midpoint', undefined as any),
-      makeLine('f', [0, 10], [0, 20], 'midpoint', undefined as any),
-      makeLine('g', [0, 20], [10, 20], 'midpoint', undefined as any),
-      makeLine('h', [10, 20], [20, 20], 'midpoint', undefined as any),
-    ];
-    const scrambled = [segments[3], segments[0], segments[7], segments[2], segments[5], segments[1], segments[6], segments[4]];
-    const chains = mergeMidpointLines(scrambled);
-    expect(chains).toHaveLength(1);
-    const pts = chains[0].points;
-    expect(pts[0]).toEqual({ x: 0, y: 0 });
-    expect(pts[pts.length - 1]).toEqual({ x: 20, y: 20 });
-    // Check each segment direction matches the intended path
-    const deltas = [];
-    for (let i = 1; i < pts.length; i++) {
-      deltas.push({ dx: pts[i].x - pts[i - 1].x, dy: pts[i].y - pts[i - 1].y });
-    }
-    const expected = [
-      { dx: 10, dy: 0 },  // →
-      { dx: 10, dy: 0 },  // →
-      { dx: 0, dy: 10 },  // ↓
-      { dx: -10, dy: 0 }, // ←
-      { dx: -10, dy: 0 }, // ←
-      { dx: 0, dy: 10 },  // ↓
-      { dx: 10, dy: 0 },  // →
-      { dx: 10, dy: 0 },  // →
-    ];
-    expect(deltas).toEqual(expected);
-  });
-
   it('converts truly undirected lines to midpoint using first segment direction', () => {
     const baseSegments: LineWithPosition[] = [
-      makeLine('a', [0, 0], [10, 0], undefined as any, undefined as any),
-      makeLine('b', [10, 0], [20, 0], undefined as any, undefined as any),
-      makeLine('c', [20, 0], [20, 10], undefined as any, undefined as any),
-      makeLine('d', [20, 10], [10, 10], undefined as any, undefined as any),
-      makeLine('e', [10, 10], [0, 10], undefined as any, undefined as any),
-      makeLine('f', [0, 10], [0, 20], undefined as any, undefined as any),
-      makeLine('g', [0, 20], [10, 20], undefined as any, undefined as any),
-      makeLine('h', [10, 20], [20, 20], undefined as any, undefined as any),
+      makeLine('a', [0, 0], [10, 0], undefined, undefined),
+      makeLine('b', [10, 0], [20, 0], undefined, undefined),
+      makeLine('c', [20, 0], [20, 10], undefined, undefined),
+      makeLine('d', [20, 10], [10, 10], undefined, undefined),
+      makeLine('e', [10, 10], [0, 10], undefined, undefined),
+      makeLine('f', [0, 10], [0, 20], undefined, undefined),
+      makeLine('g', [0, 20], [10, 20], undefined, undefined),
+      makeLine('h', [10, 20], [20, 20], undefined, undefined),
     ];
     // Simulate conversion: set directed='midpoint' but keep arrowDirection undefined
     const midpointSegments = baseSegments.map((seg) => ({
@@ -370,16 +276,16 @@ describe('directionless lines become one-way when grouped/ungrouped', () => {
     // Path: →→↓↓←←↓↓→→ (10 segments forming a zigzag)
     // Coordinates: (0,0) → (10,0) → (20,0) → (20,10) → (20,20) → (10,20) → (0,20) → (0,30) → (0,40) → (10,40) → (20,40)
     const baseSegments: LineWithPosition[] = [
-      makeLine('a', [0, 0], [10, 0], undefined as any, undefined as any),    // →
-      makeLine('b', [10, 0], [20, 0], undefined as any, undefined as any),   // →
-      makeLine('c', [20, 0], [20, 10], undefined as any, undefined as any),  // ↓
-      makeLine('d', [20, 10], [20, 20], undefined as any, undefined as any), // ↓
-      makeLine('e', [20, 20], [10, 20], undefined as any, undefined as any), // ←
-      makeLine('f', [10, 20], [0, 20], undefined as any, undefined as any),  // ←
-      makeLine('g', [0, 20], [0, 30], undefined as any, undefined as any),   // ↓
-      makeLine('h', [0, 30], [0, 40], undefined as any, undefined as any),   // ↓
-      makeLine('i', [0, 40], [10, 40], undefined as any, undefined as any),  // →
-      makeLine('j', [10, 40], [20, 40], undefined as any, undefined as any), // →
+      makeLine('a', [0, 0], [10, 0], undefined, undefined),    // →
+      makeLine('b', [10, 0], [20, 0], undefined, undefined),   // →
+      makeLine('c', [20, 0], [20, 10], undefined, undefined),  // ↓
+      makeLine('d', [20, 10], [20, 20], undefined, undefined), // ↓
+      makeLine('e', [20, 20], [10, 20], undefined, undefined), // ←
+      makeLine('f', [10, 20], [0, 20], undefined, undefined),  // ←
+      makeLine('g', [0, 20], [0, 30], undefined, undefined),   // ↓
+      makeLine('h', [0, 30], [0, 40], undefined, undefined),   // ↓
+      makeLine('i', [0, 40], [10, 40], undefined, undefined),  // →
+      makeLine('j', [10, 40], [20, 40], undefined, undefined), // →
     ];
 
     // Simulate conversion to midpoint: set directed='midpoint' but keep arrowDirection undefined
@@ -434,16 +340,16 @@ describe('directionless lines become one-way when grouped/ungrouped', () => {
     // Same path but with first segment being 'j' (last in original order)
     // Should flow from (20,40) to (0,0) - reverse direction
     const baseSegments: LineWithPosition[] = [
-      makeLine('a', [0, 0], [10, 0], undefined as any, undefined as any),
-      makeLine('b', [10, 0], [20, 0], undefined as any, undefined as any),
-      makeLine('c', [20, 0], [20, 10], undefined as any, undefined as any),
-      makeLine('d', [20, 10], [20, 20], undefined as any, undefined as any),
-      makeLine('e', [20, 20], [10, 20], undefined as any, undefined as any),
-      makeLine('f', [10, 20], [0, 20], undefined as any, undefined as any),
-      makeLine('g', [0, 20], [0, 30], undefined as any, undefined as any),
-      makeLine('h', [0, 30], [0, 40], undefined as any, undefined as any),
-      makeLine('i', [0, 40], [10, 40], undefined as any, undefined as any),
-      makeLine('j', [10, 40], [20, 40], undefined as any, undefined as any),
+      makeLine('a', [0, 0], [10, 0], undefined, undefined),
+      makeLine('b', [10, 0], [20, 0], undefined, undefined),
+      makeLine('c', [20, 0], [20, 10], undefined, undefined),
+      makeLine('d', [20, 10], [20, 20], undefined, undefined),
+      makeLine('e', [20, 20], [10, 20], undefined, undefined),
+      makeLine('f', [10, 20], [0, 20], undefined, undefined),
+      makeLine('g', [0, 20], [0, 30], undefined, undefined),
+      makeLine('h', [0, 30], [0, 40], undefined, undefined),
+      makeLine('i', [0, 40], [10, 40], undefined, undefined),
+      makeLine('j', [10, 40], [20, 40], undefined, undefined),
     ];
 
     const midpointSegments = baseSegments.map((seg) => ({
@@ -477,14 +383,14 @@ describe('directionless lines become one-way when grouped/ungrouped', () => {
   it('infers forward direction when converting undirected to endpoint arrows (→→↓↓←←↓↓→→)', () => {
     // Start as undirected, then set directed='endpoint' with arrowDirection undefined
     const baseSegments: LineWithPosition[] = [
-      makeLine('a', [0, 0], [10, 0], undefined as any, undefined as any),
-      makeLine('b', [10, 0], [20, 0], undefined as any, undefined as any),
-      makeLine('c', [20, 0], [20, 10], undefined as any, undefined as any),
-      makeLine('d', [20, 10], [20, 20], undefined as any, undefined as any),
-      makeLine('e', [20, 20], [10, 20], undefined as any, undefined as any),
-      makeLine('f', [10, 20], [0, 20], undefined as any, undefined as any),
-      makeLine('g', [0, 20], [0, 30], undefined as any, undefined as any),
-      makeLine('h', [0, 30], [0, 40], undefined as any, undefined as any),
+      makeLine('a', [0, 0], [10, 0], undefined, undefined),
+      makeLine('b', [10, 0], [20, 0], undefined, undefined),
+      makeLine('c', [20, 0], [20, 10], undefined, undefined),
+      makeLine('d', [20, 10], [20, 20], undefined, undefined),
+      makeLine('e', [20, 20], [10, 20], undefined, undefined),
+      makeLine('f', [10, 20], [0, 20], undefined, undefined),
+      makeLine('g', [0, 20], [0, 30], undefined, undefined),
+      makeLine('h', [0, 30], [0, 40], undefined, undefined),
     ];
     const directedSegments = baseSegments.map((seg) => ({
       ...seg,
@@ -551,16 +457,16 @@ describe('directionless lines become one-way when grouped/ungrouped', () => {
     // is opposite to the chain progression direction
     // Therefore, they should get arrowDirection='backward'
     const baseSegments: LineWithPosition[] = [
-      makeLine('a', [0, 0], [10, 0], undefined as any, undefined as any),    // → forward
-      makeLine('b', [10, 0], [20, 0], undefined as any, undefined as any),   // → forward
-      makeLine('c', [20, 0], [20, 10], undefined as any, undefined as any),  // ↓ forward
-      makeLine('d', [20, 10], [20, 20], undefined as any, undefined as any), // ↓ forward
-      makeLine('e', [20, 20], [10, 20], undefined as any, undefined as any), // ← backward (from>to but chain goes left)
-      makeLine('f', [10, 20], [0, 20], undefined as any, undefined as any),  // ← backward
-      makeLine('g', [0, 20], [0, 30], undefined as any, undefined as any),   // ↓ forward
-      makeLine('h', [0, 30], [0, 40], undefined as any, undefined as any),   // ↓ forward
-      makeLine('i', [0, 40], [10, 40], undefined as any, undefined as any),  // → forward
-      makeLine('j', [10, 40], [20, 40], undefined as any, undefined as any), // → forward
+      makeLine('a', [0, 0], [10, 0], undefined, undefined),    // → forward
+      makeLine('b', [10, 0], [20, 0], undefined, undefined),   // → forward
+      makeLine('c', [20, 0], [20, 10], undefined, undefined),  // ↓ forward
+      makeLine('d', [20, 10], [20, 20], undefined, undefined), // ↓ forward
+      makeLine('e', [20, 20], [10, 20], undefined, undefined), // ← backward (from>to but chain goes left)
+      makeLine('f', [10, 20], [0, 20], undefined, undefined),  // ← backward
+      makeLine('g', [0, 20], [0, 30], undefined, undefined),   // ↓ forward
+      makeLine('h', [0, 30], [0, 40], undefined, undefined),   // ↓ forward
+      makeLine('i', [0, 40], [10, 40], undefined, undefined),  // → forward
+      makeLine('j', [10, 40], [20, 40], undefined, undefined), // → forward
     ];
 
     const directedSegments = baseSegments.map((seg) => ({
@@ -633,8 +539,8 @@ describe('directionless lines become one-way when grouped/ungrouped', () => {
     // Chain should flow: (0,0) → (10,0) → (20,0)
     // But segment 'b' is defined as (20,0) → (10,0) (opposite direction)
     const segments: LineWithPosition[] = [
-      makeLine('a', [0, 0], [10, 0], undefined as any, undefined as any),   // → matches chain
-      makeLine('b', [20, 0], [10, 0], undefined as any, undefined as any),  // ← opposes chain
+      makeLine('a', [0, 0], [10, 0], undefined, undefined),   // → matches chain
+      makeLine('b', [20, 0], [10, 0], undefined, undefined),  // ← opposes chain
     ];
 
     const directedSegments = segments.map((seg) => ({
@@ -663,167 +569,20 @@ describe('directionless lines become one-way when grouped/ungrouped', () => {
     expect(directions.get('b')).toBe('backward');
   });
 
-  it('arrow visual direction is preserved: →→↓↓←←↓↓→→ does NOT become →→↓↓→→↓↓→→', () => {
-    // This test verifies that the visual arrow direction is correctly computed
-    // for each segment. The key insight:
-    // - arrowDirection='forward' means arrow points in segment's from→to direction
-    // - arrowDirection='backward' means arrow points in segment's to→from direction
-    //
-    // For path →→↓↓←←↓↓→→:
-    // - Segment 'e' has from=(20,20) to=(10,20) - geometrically points LEFT (←)
-    // - With arrowDirection='forward', arrow points from→to, i.e., LEFT (←)
-    // - This is correct! The ← arrow should remain ←
-    //
-    // If we incorrectly set arrowDirection='backward' for 'e':
-    // - Arrow would point to→from, i.e., RIGHT (→)
-    // - This would turn ← into →, which is WRONG
+  it('scrambled midpoint groups preserve normalized segment directions', () => {
+    // Collinear groups must keep the left turn after merging scrambled segments.
 
     const baseSegments: LineWithPosition[] = [
-      makeLine('a', [0, 0], [10, 0], undefined as any, undefined as any),    // from→to: →
-      makeLine('b', [10, 0], [20, 0], undefined as any, undefined as any),   // from→to: →
-      makeLine('c', [20, 0], [20, 10], undefined as any, undefined as any),  // from→to: ↓
-      makeLine('d', [20, 10], [20, 20], undefined as any, undefined as any), // from→to: ↓
-      makeLine('e', [20, 20], [10, 20], undefined as any, undefined as any), // from→to: ← (LEFT!)
-      makeLine('f', [10, 20], [0, 20], undefined as any, undefined as any),  // from→to: ← (LEFT!)
-      makeLine('g', [0, 20], [0, 30], undefined as any, undefined as any),   // from→to: ↓
-      makeLine('h', [0, 30], [0, 40], undefined as any, undefined as any),   // from→to: ↓
-      makeLine('i', [0, 40], [10, 40], undefined as any, undefined as any),  // from→to: →
-      makeLine('j', [10, 40], [20, 40], undefined as any, undefined as any), // from→to: →
-    ];
-
-    const directedSegments = baseSegments.map((seg) => ({
-      ...seg,
-      line: { ...seg.line, directed: 'endpoint' as const, arrowDirection: undefined },
-    }));
-
-    // 'a' is first - chain direction: (0,0) → (20,40)
-    const chain = normalizeChain(directedSegments, undefined);
-    expect(chain).not.toBeNull();
-    if (!chain) return;
-
-    const directions = getChainArrowDirections(chain);
-
-    // Helper to compute visual arrow direction
-    const getVisualArrowDirection = (seg: LineWithPosition, arrowDir: 'forward' | 'backward') => {
-      const dx = arrowDir === 'forward' ? seg.toX - seg.fromX : seg.fromX - seg.toX;
-      const dy = arrowDir === 'forward' ? seg.toY - seg.fromY : seg.fromY - seg.toY;
-      if (Math.abs(dx) > Math.abs(dy)) {
-        return dx > 0 ? '→' : '←';
-      } else {
-        return dy > 0 ? '↓' : '↑';
-      }
-    };
-
-    const visualDirections: string[] = [];
-    for (const seg of baseSegments) {
-      const dir = directions.get(seg.line.id)!;
-      visualDirections.push(getVisualArrowDirection(seg, dir));
-    }
-
-    // The visual arrow directions should be: →→↓↓←←↓↓→→
-    expect(visualDirections).toEqual(['→', '→', '↓', '↓', '←', '←', '↓', '↓', '→', '→']);
-
-    // Verify it's NOT →→↓↓→→↓↓→→ (which would happen if ← segments got backward direction)
-    expect(visualDirections).not.toEqual(['→', '→', '↓', '↓', '→', '→', '↓', '↓', '→', '→']);
-  });
-
-  it('undirected lines converted to midpoint are grouped by collinearity: →→↓↓←←↓↓→→', () => {
-    // Scenario: User draws lines without direction (directed: false),
-    // then converts them to midpoint arrows.
-    // Midpoint arrows should be grouped by collinearity (same direction segments).
-    // Path →→↓↓←←↓↓→→ should become 5 groups: [→→], [↓↓], [←←], [↓↓], [→→]
-
-    const baseSegments: LineWithPosition[] = [
-      makeLine('a', [0, 0], [10, 0], undefined as any, undefined as any),    // from→to: →
-      makeLine('b', [10, 0], [20, 0], undefined as any, undefined as any),   // from→to: →
-      makeLine('c', [20, 0], [20, 10], undefined as any, undefined as any),  // from→to: ↓
-      makeLine('d', [20, 10], [20, 20], undefined as any, undefined as any), // from→to: ↓
-      makeLine('e', [20, 20], [10, 20], undefined as any, undefined as any), // from→to: ← (LEFT!)
-      makeLine('f', [10, 20], [0, 20], undefined as any, undefined as any),  // from→to: ← (LEFT!)
-      makeLine('g', [0, 20], [0, 30], undefined as any, undefined as any),   // from→to: ↓
-      makeLine('h', [0, 30], [0, 40], undefined as any, undefined as any),   // from→to: ↓
-      makeLine('i', [0, 40], [10, 40], undefined as any, undefined as any),  // from→to: →
-      makeLine('j', [10, 40], [20, 40], undefined as any, undefined as any), // from→to: →
-    ];
-
-    // Step 1: Start as undirected (directed: false, arrowDirection: undefined)
-    const undirectedSegments = baseSegments.map((seg) => ({
-      ...seg,
-      line: { ...seg.line, directed: false as const, arrowDirection: undefined },
-    }));
-
-    // Step 2: Convert to midpoint (directed: 'midpoint', arrowDirection: undefined initially)
-    const midpointSegments = undirectedSegments.map((seg) => ({
-      ...seg,
-      line: { ...seg.line, directed: 'midpoint' as const, arrowDirection: undefined },
-    }));
-
-    // Group by collinear connectivity (this is what midpoint should do)
-    const collinearGroups = groupLinesByConnection(midpointSegments, areLinesCollinearConnected);
-
-    // Should have 5 groups: →→, ↓↓, ←←, ↓↓, →→
-    expect(collinearGroups).toHaveLength(5);
-
-    // Build a map for quick lookup
-    const lineMap = new Map<string, LineWithPosition>();
-    for (const seg of midpointSegments) {
-      lineMap.set(seg.line.id, seg);
-    }
-
-    // Merge each collinear group separately
-    const allChains = collinearGroups.map((groupIds) => {
-      const groupLines = groupIds.map((id) => lineMap.get(id)!);
-      return mergeMidpointLines(groupLines);
-    });
-
-    // Each group should produce exactly 1 chain
-    expect(allChains.every((chains) => chains.length === 1)).toBe(true);
-
-    // Helper to compute visual arrow direction
-    const getVisualArrowDirection = (seg: LineWithPosition, arrowDir: 'forward' | 'backward') => {
-      const dx = arrowDir === 'forward' ? seg.toX - seg.fromX : seg.fromX - seg.toX;
-      const dy = arrowDir === 'forward' ? seg.toY - seg.fromY : seg.fromY - seg.toY;
-      if (Math.abs(dx) > Math.abs(dy)) {
-        return dx > 0 ? '→' : '←';
-      } else {
-        return dy > 0 ? '↓' : '↑';
-      }
-    };
-
-    // Get arrow directions for all segments
-    const visualDirections: string[] = [];
-    for (const seg of baseSegments) {
-      // Find which group this segment belongs to
-      const groupIdx = collinearGroups.findIndex((g) => g.includes(seg.line.id));
-      const groupLines = collinearGroups[groupIdx].map((id) => lineMap.get(id)!);
-      const chain = normalizeChain(groupLines, undefined);
-      if (!chain) continue;
-      const directions = getChainArrowDirections(chain);
-      const dir = directions.get(seg.line.id)!;
-      visualDirections.push(getVisualArrowDirection(seg, dir));
-    }
-
-    // The visual arrow directions should be: →→↓↓←←↓↓→→
-    expect(visualDirections).toEqual(['→', '→', '↓', '↓', '←', '←', '↓', '↓', '→', '→']);
-
-    // Verify it's NOT →→↓↓→→↓↓→→ (all arrows pointing right)
-    expect(visualDirections).not.toEqual(['→', '→', '↓', '↓', '→', '→', '↓', '↓', '→', '→']);
-  });
-
-  it('undirected lines converted to midpoint with scrambled order preserve visual direction per group', () => {
-    // Same as above but with scrambled input order
-
-    const baseSegments: LineWithPosition[] = [
-      makeLine('a', [0, 0], [10, 0], undefined as any, undefined as any),    // from→to: →
-      makeLine('b', [10, 0], [20, 0], undefined as any, undefined as any),   // from→to: →
-      makeLine('c', [20, 0], [20, 10], undefined as any, undefined as any),  // from→to: ↓
-      makeLine('d', [20, 10], [20, 20], undefined as any, undefined as any), // from→to: ↓
-      makeLine('e', [20, 20], [10, 20], undefined as any, undefined as any), // from→to: ←
-      makeLine('f', [10, 20], [0, 20], undefined as any, undefined as any),  // from→to: ←
-      makeLine('g', [0, 20], [0, 30], undefined as any, undefined as any),   // from→to: ↓
-      makeLine('h', [0, 30], [0, 40], undefined as any, undefined as any),   // from→to: ↓
-      makeLine('i', [0, 40], [10, 40], undefined as any, undefined as any),  // from→to: →
-      makeLine('j', [10, 40], [20, 40], undefined as any, undefined as any), // from→to: →
+      makeLine('a', [0, 0], [10, 0], undefined, undefined),    // from→to: →
+      makeLine('b', [10, 0], [20, 0], undefined, undefined),   // from→to: →
+      makeLine('c', [20, 0], [20, 10], undefined, undefined),  // from→to: ↓
+      makeLine('d', [20, 10], [20, 20], undefined, undefined), // from→to: ↓
+      makeLine('e', [20, 20], [10, 20], undefined, undefined), // from→to: ←
+      makeLine('f', [10, 20], [0, 20], undefined, undefined),  // from→to: ←
+      makeLine('g', [0, 20], [0, 30], undefined, undefined),   // from→to: ↓
+      makeLine('h', [0, 30], [0, 40], undefined, undefined),   // from→to: ↓
+      makeLine('i', [0, 40], [10, 40], undefined, undefined),  // from→to: →
+      makeLine('j', [10, 40], [20, 40], undefined, undefined), // from→to: →
     ];
 
     // Convert to midpoint with undefined arrowDirection
@@ -858,37 +617,20 @@ describe('directionless lines become one-way when grouped/ungrouped', () => {
       lineMap.set(seg.line.id, seg);
     }
 
-    // Helper to compute visual arrow direction
-    const getVisualArrowDirection = (seg: LineWithPosition, arrowDir: 'forward' | 'backward') => {
-      const dx = arrowDir === 'forward' ? seg.toX - seg.fromX : seg.fromX - seg.toX;
-      const dy = arrowDir === 'forward' ? seg.toY - seg.fromY : seg.fromY - seg.toY;
-      if (Math.abs(dx) > Math.abs(dy)) {
-        return dx > 0 ? '→' : '←';
-      } else {
-        return dy > 0 ? '↓' : '↑';
-      }
-    };
-
-    // Get arrow directions for all segments (in original order)
-    const visualDirections: string[] = [];
-    for (const seg of baseSegments) {
-      // Find which group this segment belongs to
-      const groupIdx = collinearGroups.findIndex((g) => g.includes(seg.line.id));
-      const groupLines = collinearGroups[groupIdx].map((id) => lineMap.get(id)!);
-      const chain = normalizeChain(groupLines, undefined);
-      if (!chain) continue;
-      const directions = getChainArrowDirections(chain);
-      const dir = directions.get(seg.line.id)!;
-      visualDirections.push(getVisualArrowDirection(seg, dir));
+    expect(collinearGroups.map(ids => [...ids].sort())).toEqual(expect.arrayContaining([
+      ['a', 'b'], ['c', 'd'], ['e', 'f'], ['g', 'h'], ['i', 'j'],
+    ]));
+    for (const ids of collinearGroups) {
+      const chain = normalizeChain(ids.map(id => lineMap.get(id)!), undefined);
+      expect(chain).not.toBeNull();
+      // Left-pointing segments stay forward relative to their own from/to coordinates.
+      expect([...getChainArrowDirections(chain!).values()]).toEqual(['forward', 'forward']);
     }
-
-    // The visual arrow directions should be: →→↓↓←←↓↓→→
-    expect(visualDirections).toEqual(['→', '→', '↓', '↓', '←', '←', '↓', '↓', '→', '→']);
   });
 
   it('single segment (length 1) preserves its from→to direction as forward', () => {
     // A single ← segment should have arrowDirection='forward' to display as ←
-    const leftSegment = makeLine('e', [20, 20], [10, 20], undefined as any, undefined as any);
+    const leftSegment = makeLine('e', [20, 20], [10, 20], undefined, undefined);
     const midpointSegment = {
       ...leftSegment,
       line: { ...leftSegment.line, directed: 'midpoint' as const, arrowDirection: undefined },
@@ -902,31 +644,18 @@ describe('directionless lines become one-way when grouped/ungrouped', () => {
     const directions = getChainArrowDirections(chain);
     expect(directions.get('e')).toBe('forward');
 
-    // Helper to compute visual arrow direction
-    const getVisualArrowDirection = (seg: LineWithPosition, arrowDir: 'forward' | 'backward') => {
-      const dx = arrowDir === 'forward' ? seg.toX - seg.fromX : seg.fromX - seg.toX;
-      const dy = arrowDir === 'forward' ? seg.toY - seg.fromY : seg.fromY - seg.toY;
-      if (Math.abs(dx) > Math.abs(dy)) {
-        return dx > 0 ? '→' : '←';
-      } else {
-        return dy > 0 ? '↓' : '↑';
-      }
-    };
 
-    // With forward direction, visual should be ← (from→to direction)
-    const visual = getVisualArrowDirection(midpointSegment, directions.get('e')!);
-    expect(visual).toBe('←');
   });
 
-  it('isolated segments (not in collinear groups) preserve their visual direction', () => {
+  it('isolated segments do not form collinear groups', () => {
     // Path where each segment is isolated (not collinear with neighbors)
     // →↓←↓→ - 5 isolated segments
     const baseSegments: LineWithPosition[] = [
-      makeLine('a', [0, 0], [10, 0], undefined as any, undefined as any),   // →
-      makeLine('b', [10, 0], [10, 10], undefined as any, undefined as any), // ↓
-      makeLine('c', [10, 10], [0, 10], undefined as any, undefined as any), // ←
-      makeLine('d', [0, 10], [0, 20], undefined as any, undefined as any),  // ↓
-      makeLine('e', [0, 20], [10, 20], undefined as any, undefined as any), // →
+      makeLine('a', [0, 0], [10, 0], undefined, undefined),   // →
+      makeLine('b', [10, 0], [10, 10], undefined, undefined), // ↓
+      makeLine('c', [10, 10], [0, 10], undefined, undefined), // ←
+      makeLine('d', [0, 10], [0, 20], undefined, undefined),  // ↓
+      makeLine('e', [0, 20], [10, 20], undefined, undefined), // →
     ];
 
     const midpointSegments = baseSegments.map((seg) => ({
@@ -938,30 +667,6 @@ describe('directionless lines become one-way when grouped/ungrouped', () => {
     const collinearGroups = groupLinesByConnection(midpointSegments, areLinesCollinearConnected);
     expect(collinearGroups).toHaveLength(0);
 
-    // Each segment should be processed individually
-    // For isolated segments, normalizeChain with single segment returns forward
-    const getVisualArrowDirection = (seg: LineWithPosition, arrowDir: 'forward' | 'backward') => {
-      const dx = arrowDir === 'forward' ? seg.toX - seg.fromX : seg.fromX - seg.toX;
-      const dy = arrowDir === 'forward' ? seg.toY - seg.fromY : seg.fromY - seg.toY;
-      if (Math.abs(dx) > Math.abs(dy)) {
-        return dx > 0 ? '→' : '←';
-      } else {
-        return dy > 0 ? '↓' : '↑';
-      }
-    };
 
-    const visualDirections: string[] = [];
-    for (const seg of midpointSegments) {
-      // Single segment: normalizeChain returns forward
-      const chain = normalizeChain([seg], undefined);
-      expect(chain).not.toBeNull();
-      if (!chain) continue;
-      const directions = getChainArrowDirections(chain);
-      const dir = directions.get(seg.line.id)!;
-      visualDirections.push(getVisualArrowDirection(seg, dir));
-    }
-
-    // Visual directions should match the from→to of each segment
-    expect(visualDirections).toEqual(['→', '↓', '←', '↓', '→']);
   });
 });

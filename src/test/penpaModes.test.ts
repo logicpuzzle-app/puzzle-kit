@@ -242,14 +242,6 @@ describe('Penpa Modes', () => {
       'symbol', 'special', 'cage', 'combi', 'sudoku', 'board', 'move',
     ];
 
-    it('all modes have submodes or are leaf modes', () => {
-      for (const mode of allModes) {
-        const submodes = getSubmodes(mode);
-        // Either has submodes or is a special mode
-        expect(submodes.length >= 0).toBe(true);
-      }
-    });
-
     it('all main modes have shortcuts', () => {
       const mainModes: PenpaEditMode[] = [
         'surface', 'line', 'lineE', 'wall', 'number', 'symbol', 'special', 'cage',
