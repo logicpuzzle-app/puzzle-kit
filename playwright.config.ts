@@ -3,9 +3,14 @@ import { resolve } from 'node:path';
 
 const artifactDir = process.env.QA_ARTIFACT_DIR;
 const externalBaseURL = process.env.QA_EXTERNAL_BASE_URL;
+// Chromium runs these cases against built assets in playwright.production.config.ts.
+// Opt back in for local debugging or before/after capture against the dev server.
+const devGrepInvert = process.env.QA_INCLUDE_PRODUCTION_TESTS === '1' ? undefined : /@production/;
+const desktopTestIgnore = ['**/*.chromium-touch.spec.ts', '**/qa-*-capture.spec.ts'];
 
 export default defineConfig({
   testDir: './e2e',
+  testIgnore: '**/qa-*-capture.spec.ts',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   workers: 2,
@@ -34,15 +39,17 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      testIgnore: '**/*.chromium-touch.spec.ts',
+      grepInvert: devGrepInvert,
+      testIgnore: desktopTestIgnore,
       use: { ...devices['Desktop Chrome'] },
     },
     {
       name: 'mobile-chrome',
+      grepInvert: devGrepInvert,
       use: { ...devices['Pixel 7'] },
     },
-    { name: 'webkit', testIgnore: '**/*.chromium-touch.spec.ts', use: { ...devices['Desktop Safari'] } },
-    { name: 'mobile-webkit', testIgnore: '**/*.chromium-touch.spec.ts', use: { ...devices['iPhone 13'] } },
+    { name: 'webkit', testIgnore: desktopTestIgnore, use: { ...devices['Desktop Safari'] } },
+    { name: 'mobile-webkit', testIgnore: desktopTestIgnore, use: { ...devices['iPhone 13'] } },
   ],
   webServer: externalBaseURL || process.env.QA_STATIC_DIR
     ? undefined

@@ -27,7 +27,7 @@ async function clickSolve(page: Page) {
   await page.getByRole('button', { name: 'Solve', exact: true }).click();
 }
 
-test('solver: solves Nurikabe and reports an impossible puzzle', async ({ page }) => {
+test('solver: solves Nurikabe and reports an impossible puzzle', { tag: '@production' }, async ({ page }) => {
   await importPuzzle(page);
   await clickSolve(page);
   await expect(page.getByText('Solved', { exact: true })).toBeVisible();
@@ -38,7 +38,7 @@ test('solver: solves Nurikabe and reports an impossible puzzle', async ({ page }
   await expect(page.locator('.solver-layer')).toHaveCount(0);
 });
 
-test('solver: retries after the first Wasm download fails', async ({ page, context }) => {
+test('solver: retries after the first Wasm download fails', { tag: '@production' }, async ({ page, context }) => {
   let requests = 0;
   await context.route('**/solver/cspuz_solver_backend.wasm', async route => {
     requests++;
@@ -53,7 +53,7 @@ test('solver: retries after the first Wasm download fails', async ({ page, conte
   expect(requests).toBe(2);
 });
 
-test('solver: displays confirmed cells for multiple solutions', async ({ page }) => {
+test('solver: displays confirmed cells for multiple solutions', { tag: '@production' }, async ({ page }) => {
   // The single-cell island forces two black neighbours; the size-four island has alternatives.
   await importPuzzle(page, 'nurikabe/3/3/1j4i');
   await clickSolve(page);
@@ -62,7 +62,7 @@ test('solver: displays confirmed cells for multiple solutions', async ({ page })
   await expect(page.locator('.solver-layer [fill="#F97316"]').first()).toBeVisible();
 });
 
-test('solver: bundled Heyawake respects imported room walls', async ({ page }, testInfo) => {
+test('solver: bundled Heyawake respects imported room walls', { tag: '@production' }, async ({ page }, testInfo) => {
   const path = 'heyawake/2/2/o8010';
   await importPuzzle(page, path);
   const puzzle = parsePuzzlinkUrl(`https://puzz.link/p?${path}`)!;
@@ -87,7 +87,7 @@ test('solver: bundled Heyawake respects imported room walls', async ({ page }, t
   expect(Object.values(result.answer!.surfaces).map(cell => cell.cellId)).toEqual(['cell-0-1']);
 });
 
-test('solver: cancels loading and solves again with a fresh worker', async ({ page, context }) => {
+test('solver: cancels loading and solves again with a fresh worker', { tag: '@production' }, async ({ page, context }) => {
   let started!: () => void;
   const requestStarted = new Promise<void>(resolve => { started = resolve; });
   let release!: () => void;
@@ -112,14 +112,14 @@ test('solver: cancels loading and solves again with a fresh worker', async ({ pa
   }
 });
 
-test('solver: toolbar URL import enables the correct solver', async ({ page }) => {
+test('solver: toolbar URL import enables the correct solver', { tag: '@production' }, async ({ page }) => {
   await importPuzzle(page, 'nurikabe/3/3/1g1i1g1', true);
   await expect(page.getByRole('button', { name: 'Solve', exact: true })).toBeVisible();
   await clickSolve(page);
   await expect(page.getByText('Solved', { exact: true })).toBeVisible();
 });
 
-test('solver: displays worker startup errors and recovers on retry', async ({ page, context }) => {
+test('solver: displays worker startup errors and recovers on retry', { tag: '@production' }, async ({ page, context }) => {
   await context.route(url => url.pathname.includes('/cspuz.worker') &&
     (url.searchParams.has('worker_file') || url.pathname.startsWith('/assets/')), route =>
     route.fulfill({ contentType: 'text/javascript', body: 'throw new Error("QA worker startup failure");' }),
@@ -132,7 +132,7 @@ test('solver: displays worker startup errors and recovers on retry', async ({ pa
   await expect(page.getByText('Solved', { exact: true })).toBeVisible();
 });
 
-test('solver: solves Slitherlink and displays the complete loop', async ({ page }) => {
+test('solver: solves Slitherlink and displays the complete loop', { tag: '@production' }, async ({ page }) => {
   await importPuzzle(page, 'slither/5/5/cbcbcddad');
   await clickSolve(page);
   await expect(page.getByText('Solved', { exact: true })).toBeVisible();

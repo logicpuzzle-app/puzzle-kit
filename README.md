@@ -63,13 +63,18 @@ Generation runs in a Web Worker so the editor UI remains responsive.
 
 ### Browser test
 
-Install the Playwright-managed Chromium binary once, then run the NPGenerator
-end-to-end test:
+Install the Playwright-managed browsers once, then run the development and built-app
+end-to-end tests:
 
 ```bash
 npx playwright install chromium webkit
 npm run test:e2e
+npm run build
+npm run qa:production
 ```
+
+The built-app Chromium cases use `@production` and run once against the build.
+See [testing and before/after capture](docs/testing.md) for development debugging and optional UI recordings.
 
 ## Library Usage
 

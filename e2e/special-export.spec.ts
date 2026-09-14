@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures';
 import { readFile } from 'node:fs/promises';
 
-test('png: toolbar exports the board and excludes special selection', async ({ page }, info) => {
+test('png: toolbar exports the board and excludes special selection', { tag: '@production' }, async ({ page }, info) => {
   await page.goto('/master');
   await page.getByRole('button', { name: 'Problem', exact: true }).click();
   await page.getByRole('button', { name: 'Special', exact: true }).click();

@@ -40,7 +40,7 @@ async function exportSvg(page: Page, savePath: string) {
 }
 
 for (const tool of ['Arrow', 'Thermo']) {
-  test(`special-touch: ${tool} creates, edits, exports and reloads with touch`, async ({ page }, info) => {
+  test(`special-touch: ${tool} creates, edits, exports and reloads with touch`, { tag: '@production' }, async ({ page }, info) => {
     await openTool(page, tool);
     await draw(page);
     await info.attach('after-release', { body: await page.screenshot(), contentType: 'image/png' });
@@ -78,7 +78,7 @@ for (const tool of ['Arrow', 'Thermo']) {
 }
 
 for (const tool of ['Cage', 'BoxLine']) {
-  test(`special-touch: ${tool} creates one undoable object`, async ({ page }, info) => {
+  test(`special-touch: ${tool} creates one undoable object`, { tag: '@production' }, async ({ page }, info) => {
     await openTool(page, tool);
     await draw(page);
     await info.attach('after-release', { body: await page.screenshot(), contentType: 'image/png' });
@@ -97,7 +97,7 @@ for (const tool of ['Cage', 'BoxLine']) {
 }
 
 for (const interruption of ['cancel', 'multitouch', 'pan'] as const) {
-  test(`special-touch: ${interruption} discards the pending arrow and allows the next stroke`, async ({ page }) => {
+  test(`special-touch: ${interruption} discards the pending arrow and allows the next stroke`, { tag: '@production' }, async ({ page }) => {
     await openTool(page, 'Arrow');
     if (interruption === 'pan') await page.getByTitle('Pan Mode', { exact: true }).tap();
     await draw(page, interruption === 'pan' ? 'release' : interruption);

@@ -7,7 +7,7 @@ async function activate(button: Locator, info: TestInfo) {
 }
 
 for (const preset of ['Nurikabe', 'Yajilin']) {
-  test(`number-pad: ${preset} replacement restores the previous clue in one undo`, async ({ page }, info) => {
+  test(`number-pad: ${preset} replacement restores the previous clue in one undo`, { tag: '@production' }, async ({ page }, info) => {
     await page.goto('/edit');
     await page.getByRole('combobox').selectOption({ label: preset });
     await activate(page.getByRole('button', { name: 'Problem', exact: true }), info);

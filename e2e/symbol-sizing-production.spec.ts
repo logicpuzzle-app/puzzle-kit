@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures';
 import { readFile } from 'node:fs/promises';
 
-test('symbol-ui: custom-sized placement survives reload and SVG/PNG export', async ({ page }, info) => {
+test('symbol-ui: custom-sized placement survives reload and SVG/PNG export', { tag: '@production' }, async ({ page }, info) => {
   await page.goto('/master');
   await page.getByRole('button', { name: 'Problem', exact: true }).click();
   await page.getByRole('button', { name: 'Symbol', exact: true }).click();
