@@ -1,0 +1,126 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "number-pad: Nurikabe replacement restores the previous clue in one undo",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_INCLUDE_PRODUCTION_TESTS=1 QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/number-pad-history.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "normal-undo-before.webm",
+    "screenshot": "normal-undo-before.png",
+    "videoSha256": "ad3bbc1eadf0a31f78d3c668c46ac56c6149465c5518a60307e13975ff90f76b",
+    "screenshotSha256": "84c7c4f2c77288765e7fcfda02d6fbc3a650d3ef250220c5f050d7335defcf97",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "3.520000"
+      }
+    },
+    "fullyDecoded": true,
+    "screenshotAttachment": "after-undo"
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "number-pad: Yajilin replacement restores the previous clue in one undo",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_INCLUDE_PRODUCTION_TESTS=1 QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/number-pad-history.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "directional-undo-before.webm",
+    "screenshot": "directional-undo-before.png",
+    "videoSha256": "a39f49be3d0515fdf517bd0f9393853a7b37b367e9599103cb2b303e835d369c",
+    "screenshotSha256": "2d5e32897346a64507338a279c943d082f2e2db210c73407eadf7d1bdafe96f5",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.960000"
+      }
+    },
+    "fullyDecoded": true,
+    "screenshotAttachment": "after-undo"
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "number-pad: Nurikabe replacement restores the previous clue in one undo",
+    "project": "chromium",
+    "revision": "57afce03c25af90031d1d8e1b402ccb09019932e",
+    "workingTree": "",
+    "command": "QA_INCLUDE_PRODUCTION_TESTS=1 QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/number-pad-history.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "normal-undo-after.webm",
+    "screenshot": "normal-undo-after.png",
+    "videoSha256": "a30fe23ff098cfed5941b7247aa5b92dd81eb8b9c5520ca4eed816a29d1cf56b",
+    "screenshotSha256": "b3513dc50bc5af6b5a1cdf2e8ddf680a1a7935939cc9c09d55d44f3f6a89e0c4",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.040000"
+      }
+    },
+    "fullyDecoded": true,
+    "screenshotAttachment": "after-undo"
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "number-pad: Yajilin replacement restores the previous clue in one undo",
+    "project": "chromium",
+    "revision": "57afce03c25af90031d1d8e1b402ccb09019932e",
+    "workingTree": "",
+    "command": "QA_INCLUDE_PRODUCTION_TESTS=1 QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/number-pad-history.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "directional-undo-after.webm",
+    "screenshot": "directional-undo-after.png",
+    "videoSha256": "1c9a175e7b99778469b998e0f8b7270f6bb4efea97633d8f69f0c07f3f41e807",
+    "screenshotSha256": "faa7c5063b68a0e11449c5d2881d9544ee3e789d95ca330ac0d1de2de70870ee",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.000000"
+      }
+    },
+    "fullyDecoded": true,
+    "screenshotAttachment": "after-undo"
+  }
+]
