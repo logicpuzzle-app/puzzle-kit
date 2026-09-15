@@ -5,12 +5,8 @@ import {
   normalizeKey,
   getModifiers,
   matchesShortcut,
-  isArrowKey,
   getArrowDirection,
   calculateNextPosition,
-  isDigit,
-  isSingleChar,
-  isDeleteKey,
   getMaxDigitsForGrid,
   appendDigit,
   removeLastChar,
@@ -38,21 +34,6 @@ describe('keyboardUtils', () => {
     it('preserves already lowercase', () => {
       expect(normalizeKey('a')).toBe('a');
       expect(normalizeKey('1')).toBe('1');
-    });
-  });
-
-  describe('isArrowKey', () => {
-    it('returns true for arrow keys', () => {
-      expect(isArrowKey('ArrowUp')).toBe(true);
-      expect(isArrowKey('arrowdown')).toBe(true);
-      expect(isArrowKey('ArrowLeft')).toBe(true);
-      expect(isArrowKey('ARROWRIGHT')).toBe(true);
-    });
-
-    it('returns false for non-arrow keys', () => {
-      expect(isArrowKey('a')).toBe(false);
-      expect(isArrowKey('Enter')).toBe(false);
-      expect(isArrowKey('Up')).toBe(false);
     });
   });
 
@@ -97,49 +78,6 @@ describe('keyboardUtils', () => {
       const current = { row: 0, col: 0 };
       expect(calculateNextPosition(current, { dr: -1, dc: 0 }, 10, 10)).toEqual({ row: 0, col: 0 });
       expect(calculateNextPosition(current, { dr: 0, dc: -1 }, 10, 10)).toEqual({ row: 0, col: 0 });
-    });
-  });
-
-  describe('isDigit', () => {
-    it('returns true for digits', () => {
-      for (let i = 0; i <= 9; i++) {
-        expect(isDigit(String(i))).toBe(true);
-      }
-    });
-
-    it('returns false for non-digits', () => {
-      expect(isDigit('a')).toBe(false);
-      expect(isDigit('')).toBe(false);
-      expect(isDigit('10')).toBe(false);
-    });
-  });
-
-  describe('isSingleChar', () => {
-    it('returns true for single non-digit characters', () => {
-      expect(isSingleChar('a')).toBe(true);
-      expect(isSingleChar('Z')).toBe(true);
-      expect(isSingleChar('!')).toBe(true);
-    });
-
-    it('returns false for digits', () => {
-      expect(isSingleChar('5')).toBe(false);
-    });
-
-    it('returns false for multi-character strings', () => {
-      expect(isSingleChar('ab')).toBe(false);
-      expect(isSingleChar('Enter')).toBe(false);
-    });
-  });
-
-  describe('isDeleteKey', () => {
-    it('returns true for delete keys', () => {
-      expect(isDeleteKey('Backspace')).toBe(true);
-      expect(isDeleteKey('Delete')).toBe(true);
-    });
-
-    it('returns false for other keys', () => {
-      expect(isDeleteKey('a')).toBe(false);
-      expect(isDeleteKey('Enter')).toBe(false);
     });
   });
 

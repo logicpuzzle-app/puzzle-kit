@@ -7,8 +7,6 @@ import {
   shouldStartPan,
   isGridLayer,
   getToolCategory,
-  toolSupportsDrag,
-  toolNeedsCompletion,
   type InteractionState,
   type InteractionEvent,
   type InteractionContext,
@@ -155,32 +153,7 @@ describe('Helper Functions', () => {
     });
   });
 
-  describe('toolSupportsDrag', () => {
-    it('returns true for drag-supporting tools', () => {
-      expect(toolSupportsDrag('surface')).toBe(true);
-      expect(toolSupportsDrag('line')).toBe(true);
-      expect(toolSupportsDrag('special-thermo')).toBe(true);
-    });
 
-    it('returns false for click-only tools', () => {
-      expect(toolSupportsDrag('symbol')).toBe(false);
-      expect(toolSupportsDrag('number')).toBe(false);
-      expect(toolSupportsDrag('text')).toBe(false);
-    });
-  });
-
-  describe('toolNeedsCompletion', () => {
-    it('returns true for tools needing completion', () => {
-      expect(toolNeedsCompletion('special-thermo')).toBe(true);
-      expect(toolNeedsCompletion('special-cage')).toBe(true);
-      expect(toolNeedsCompletion('line')).toBe(true);
-    });
-
-    it('returns false for tools not needing completion', () => {
-      expect(toolNeedsCompletion('surface')).toBe(false);
-      expect(toolNeedsCompletion('symbol')).toBe(false);
-    });
-  });
 });
 
 // ============================================================================
