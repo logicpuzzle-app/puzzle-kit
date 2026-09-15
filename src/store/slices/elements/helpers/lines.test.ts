@@ -66,8 +66,8 @@ describe('normalizeLineGroup', () => {
     const result = normalizeLineGroup([c, a, b], false);
     // Conflicting arrows have no preferred winner, but must form one ordered path.
     expect([
-      { lineIds: ['a', 'b', 'c'], arrowDirections: new Map([['a', 'forward'], ['b', 'forward'], ['c', 'forward']]) },
-      { lineIds: ['c', 'b', 'a'], arrowDirections: new Map([['a', 'backward'], ['b', 'backward'], ['c', 'backward']]) },
-    ]).toContainEqual({ lineIds: result?.lineIds, arrowDirections: result?.arrowDirections });
+      { lineIds: ['a', 'b', 'c'], arrowDirections: { a: 'forward', b: 'forward', c: 'forward' } },
+      { lineIds: ['c', 'b', 'a'], arrowDirections: { a: 'backward', b: 'backward', c: 'backward' } },
+    ]).toContainEqual({ lineIds: result?.lineIds, arrowDirections: Object.fromEntries(result!.arrowDirections) });
   });
 });
