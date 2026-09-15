@@ -24,6 +24,9 @@ jobs:
       - run: node --test scripts/qa-check.test.mjs
       - run: npm run qa:doctor
       - run: npm run qa:check
+      - name: Library build
+        if: ${{ !cancelled() }}
+        run: npm run build:lib
       - name: Production build
         id: build
         if: ${{ !cancelled() }}
