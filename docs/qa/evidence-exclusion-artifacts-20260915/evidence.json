@@ -1,0 +1,122 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "#18/#23 square excluded cell disappears immediately and can be restored",
+    "project": "chromium",
+    "revision": "11ad8b75e2669c4245b6a484764f711417febe53",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/cell-exclusion.mouse.spec.ts",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "square-before.webm",
+    "screenshot": "square-before.png",
+    "videoSha256": "2b89d1a14a5334895ac3f0e4e6345a8ab2bebcaf1aeefaed94460715c5d905db",
+    "screenshotSha256": "13ed2633458595c9f33eae54700455793086508aeb01d7a51806f64e5e918f13",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "3.880000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "#18/#23 hex excluded cell disappears immediately and can be restored",
+    "project": "chromium",
+    "revision": "11ad8b75e2669c4245b6a484764f711417febe53",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/cell-exclusion.mouse.spec.ts",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "hex-before.webm",
+    "screenshot": "hex-before.png",
+    "videoSha256": "687f5e1e91b3e0bb9d466d0ef391e826e9bb06a53d929f2e10f9648d8234c885",
+    "screenshotSha256": "542cac8aec12bdbd711cb63009af597affff5976e3f6a7d77c3a8e1ac9ceb3c8",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.600000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "#18/#23 square excluded cell disappears immediately and can be restored",
+    "project": "chromium",
+    "revision": "21add01d60b6fe6ce66a9270a25c994ede4bc987",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/cell-exclusion.mouse.spec.ts",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "square-after.webm",
+    "screenshot": "square-after.png",
+    "videoSha256": "995d143741c93edbab1483487f344835f1b45d3b184ed823f8d989c9199a6d41",
+    "screenshotSha256": "13ed2633458595c9f33eae54700455793086508aeb01d7a51806f64e5e918f13",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.040000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "#18/#23 hex excluded cell disappears immediately and can be restored",
+    "project": "chromium",
+    "revision": "21add01d60b6fe6ce66a9270a25c994ede4bc987",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/cell-exclusion.mouse.spec.ts",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "hex-after.webm",
+    "screenshot": "hex-after.png",
+    "videoSha256": "36d4a56af9dd7776ff37ad0cf06508b54ee84d350e05372714d13c1eda96c062",
+    "screenshotSha256": "542cac8aec12bdbd711cb63009af597affff5976e3f6a7d77c3a8e1ac9ceb3c8",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.560000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]

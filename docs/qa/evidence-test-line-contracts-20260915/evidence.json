@@ -1,0 +1,118 @@
+[
+  {
+    "case": "#40 Free Segment completes on pointer release and supports Undo/Redo",
+    "phase": "before",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4188 npm run qa:capture -- before e2e/editor-issues.spec.ts --project=chromium --grep '#40|#20'",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "free-segment-before.webm",
+    "screenshot": "free-segment-before.png",
+    "videoSha256": "a8d0c46231dcb8ce0d6b43c45fc27f2e3e363c1015aee447eec287ab9699de2e",
+    "screenshotSha256": "653b14bebea74aef82cea8b0fcc0f39c56828776265b3e652b37aea10cf8cc4c",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "3.400000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "#20 re-dragging an orthogonal route erases it",
+    "phase": "before",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4188 npm run qa:capture -- before e2e/editor-issues.spec.ts --project=chromium --grep '#40|#20'",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "orthogonal-erase-before.webm",
+    "screenshot": "orthogonal-erase-before.png",
+    "videoSha256": "98a9d3a990558a3165737d734c47175eb5d9dd61c9506af92fab4f2261509e84",
+    "screenshotSha256": "3d1194204c0a7befe5985e84f3e958e99f7b3ce0a29bc4043f8b73c8c034b68e",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.920000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "#40 Free Segment completes on pointer release and supports Undo/Redo",
+    "phase": "after",
+    "project": "chromium",
+    "revision": "a87f8d0ed052516660565cf573b2db3638401243",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4188 npm run qa:capture -- after e2e/editor-issues.spec.ts --project=chromium --grep '#40|#20'",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "free-segment-after.webm",
+    "screenshot": "free-segment-after.png",
+    "videoSha256": "b56d68f868b4228d9b1513bcecffc846d99fd5615e9ac48768124310e8542d4c",
+    "screenshotSha256": "3d44dda39fd6a1f3debe19c4adf4fa2b334810573314436a7eee7f1f714a5f8a",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.800000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "#20 re-dragging an orthogonal route erases it",
+    "phase": "after",
+    "project": "chromium",
+    "revision": "a87f8d0ed052516660565cf573b2db3638401243",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4188 npm run qa:capture -- after e2e/editor-issues.spec.ts --project=chromium --grep '#40|#20'",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "orthogonal-erase-after.webm",
+    "screenshot": "orthogonal-erase-after.png",
+    "videoSha256": "f6508fdac9d088f69db2426230bd50df176342ae46b2e4eb62ac1d13cead4d9f",
+    "screenshotSha256": "3d1194204c0a7befe5985e84f3e958e99f7b3ce0a29bc4043f8b73c8c034b68e",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.720000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]

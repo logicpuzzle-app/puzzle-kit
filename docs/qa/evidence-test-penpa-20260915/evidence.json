@@ -1,0 +1,78 @@
+[
+  {
+    "case": "Penpa: imports the fixed Penrose solve URL through the toolbar",
+    "phase": "before",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before --config=.work/playwright-penpa-capture.config.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "penrose-import-before.webm",
+    "screenshot": "penrose-import-before.png",
+    "videoSha256": "3e93dd82b0ec48b31d2b274b4486e9d6d3269ef9d2e82658c47ae2703d35ee96",
+    "screenshotSha256": "0cf831168773b8551273802fece23e17840a2ed671e2b1e31e5be68387f0bb2f",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.800000"
+      }
+    },
+    "fullyDecoded": true,
+    "captureScriptSha256": "f29f9d16bd4928528a1f8b63ec6a9247c9285e1b6551539e4f625fd437ce4350",
+    "assertions": {
+      "surfaceCount": 10,
+      "fixedCellCenter": {
+        "x": 269.5681092382,
+        "y": 203.5992602519
+      },
+      "color": "#ffffa3"
+    }
+  },
+  {
+    "case": "Penpa: imports the fixed Penrose solve URL through the toolbar",
+    "phase": "after",
+    "project": "chromium",
+    "revision": "6771da08171493acb8f6c597ac633461a97c9cc7",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after --config=.work/playwright-penpa-capture.config.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "penrose-import-after.webm",
+    "screenshot": "penrose-import-after.png",
+    "videoSha256": "780d31d55329c6abe57d6da2b650ca0c01010bfbdc3d3e2192929df08bc90665",
+    "screenshotSha256": "0cf831168773b8551273802fece23e17840a2ed671e2b1e31e5be68387f0bb2f",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.720000"
+      }
+    },
+    "fullyDecoded": true,
+    "captureScriptSha256": "f29f9d16bd4928528a1f8b63ec6a9247c9285e1b6551539e4f625fd437ce4350",
+    "assertions": {
+      "surfaceCount": 10,
+      "fixedCellCenter": {
+        "x": 269.5681092382,
+        "y": 203.5992602519
+      },
+      "color": "#ffffa3"
+    }
+  }
+]

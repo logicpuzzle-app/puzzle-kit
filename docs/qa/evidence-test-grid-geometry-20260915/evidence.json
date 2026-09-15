@@ -1,0 +1,118 @@
+[
+  {
+    "case": "#18/#23 hex excluded cell disappears immediately and can be restored",
+    "phase": "before",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4184 npm run qa:capture -- before e2e/topology-issues.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "hex-exclusion-before.webm",
+    "screenshot": "hex-exclusion-before.png",
+    "videoSha256": "a320333247a497bec707a0126bbf477ee680aafa94592cbbb5b1a1cf12498fd0",
+    "screenshotSha256": "542cac8aec12bdbd711cb63009af597affff5976e3f6a7d77c3a8e1ac9ceb3c8",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.680000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "#21 half-lines draws a segment and supports Undo/Redo",
+    "phase": "before",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4184 npm run qa:capture -- before e2e/topology-issues.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "half-lines-before.webm",
+    "screenshot": "half-lines-before.png",
+    "videoSha256": "ee80edc8d10d2bc9683b8119c0faabbaaa4a2910139741183ec3539258d959fc",
+    "screenshotSha256": "76cda161e7ccbead1d1087eebca3196d25fe5fc2c75c8298bd72d5443c051eff",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.400000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "#18/#23 hex excluded cell disappears immediately and can be restored",
+    "phase": "after",
+    "project": "chromium",
+    "revision": "f98908a838a1693b84105f3a6d42606c379b422e",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4184 npm run qa:capture -- after e2e/topology-issues.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "hex-exclusion-after.webm",
+    "screenshot": "hex-exclusion-after.png",
+    "videoSha256": "b510712314b6cee20f0cfd28837c0005f8704252beee8cbbd695aac247b6eb7c",
+    "screenshotSha256": "542cac8aec12bdbd711cb63009af597affff5976e3f6a7d77c3a8e1ac9ceb3c8",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.600000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "#21 half-lines draws a segment and supports Undo/Redo",
+    "phase": "after",
+    "project": "chromium",
+    "revision": "f98908a838a1693b84105f3a6d42606c379b422e",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4184 npm run qa:capture -- after e2e/topology-issues.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "half-lines-after.webm",
+    "screenshot": "half-lines-after.png",
+    "videoSha256": "c90db1d90b32b585f85c8c727809a34ebfb30723256bad67c7307766d2770708",
+    "screenshotSha256": "76cda161e7ccbead1d1087eebca3196d25fe5fc2c75c8298bd72d5443c051eff",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.160000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]
