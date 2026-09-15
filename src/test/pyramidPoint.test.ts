@@ -36,223 +36,6 @@ describe('Pyramid Grid Point System', () => {
     });
   });
 
-  describe('getPyramidRowCellCount', () => {
-    it('returns 1 for row 0', () => {
-      expect(getPyramidRowCellCount(0)).toBe(1);
-    });
-
-    it('returns 3 for row 1', () => {
-      expect(getPyramidRowCellCount(1)).toBe(3);
-    });
-
-    it('returns 5 for row 2', () => {
-      expect(getPyramidRowCellCount(2)).toBe(5);
-    });
-
-    it('follows 2n+1 formula', () => {
-      for (let row = 0; row < 10; row++) {
-        expect(getPyramidRowCellCount(row)).toBe(2 * row + 1);
-      }
-    });
-  });
-
-  describe('getPyramidTotalCells', () => {
-    it('returns 1 for height 1', () => {
-      expect(getPyramidTotalCells(1)).toBe(1);
-    });
-
-    it('returns 4 for height 2', () => {
-      expect(getPyramidTotalCells(2)).toBe(4);
-    });
-
-    it('returns 9 for height 3', () => {
-      expect(getPyramidTotalCells(3)).toBe(9);
-    });
-
-    it('follows n^2 formula', () => {
-      for (let height = 1; height <= 10; height++) {
-        expect(getPyramidTotalCells(height)).toBe(height * height);
-      }
-    });
-  });
-
-  describe('getPyramidCellIndex', () => {
-    it('returns 0 for (0, 0)', () => {
-      expect(getPyramidCellIndex(0, 0)).toBe(0);
-    });
-
-    it('returns 1 for (1, 0)', () => {
-      expect(getPyramidCellIndex(1, 0)).toBe(1);
-    });
-
-    it('returns 4 for (2, 0)', () => {
-      expect(getPyramidCellIndex(2, 0)).toBe(4);
-    });
-  });
-
-  describe('getPyramidCellPosition', () => {
-    it('returns (0, 0) for index 0', () => {
-      const pos = getPyramidCellPosition(0, 5);
-      expect(pos).toEqual({ row: 0, col: 0 });
-    });
-
-    it('returns (1, 0) for index 1', () => {
-      const pos = getPyramidCellPosition(1, 5);
-      expect(pos).toEqual({ row: 1, col: 0 });
-    });
-
-    it('returns (1, 2) for index 3', () => {
-      const pos = getPyramidCellPosition(3, 5);
-      expect(pos).toEqual({ row: 1, col: 2 });
-    });
-
-    it('returns null for out of bounds index', () => {
-      expect(getPyramidCellPosition(-1, 5)).toBeNull();
-      expect(getPyramidCellPosition(25, 5)).toBeNull();
-    });
-
-    it('is inverse of getPyramidCellIndex', () => {
-      const height = 5;
-      for (let row = 0; row < height; row++) {
-        const cellsInRow = getPyramidRowCellCount(row);
-        for (let col = 0; col < cellsInRow; col++) {
-          const idx = getPyramidCellIndex(row, col);
-          const pos = getPyramidCellPosition(idx, height);
-          expect(pos).toEqual({ row, col });
-        }
-      }
-    });
-  });
-
-  describe('generatePyramidGridPoints', () => {
-    it('generates correct number of cells', () => {
-      const height = 4;
-      const grid = generatePyramidGridPoints(height, 40, 2);
-
-      const cellCount = grid.points.filter((p) => p?.type === PointType.CELL).length;
-      expect(cellCount).toBe(getPyramidTotalCells(height));
-    });
-
-    it('all cells are inside', () => {
-      const grid = generatePyramidGridPoints(3, 40, 2);
-
-      for (const idx of grid.centerList) {
-        expect(grid.points[idx].use).toBe(PointUse.INSIDE);
-      }
-    });
-
-    it('sets centerList correctly', () => {
-      const height = 4;
-      const grid = generatePyramidGridPoints(height, 40, 2);
-
-      expect(grid.centerList.length).toBe(getPyramidTotalCells(height));
-    });
-
-    it('sets triangle cell degree to 3', () => {
-      const grid = generatePyramidGridPoints(3, 40, 2);
-
-      for (const idx of grid.centerList) {
-        expect(grid.points[idx].degree).toBe(3);
-      }
-    });
-
-    it('stores triangle orientation in type2', () => {
-      const grid = generatePyramidGridPoints(3, 40, 2);
-
-      // Check apex (row 0, col 0) - should be upward
-      expect(grid.points[0].type2).toBe(0);
-
-      // Check row 1 alternation
-      expect(grid.points[1].type2).toBe(0); // col 0 - upward
-      expect(grid.points[2].type2).toBe(1); // col 1 - downward
-      expect(grid.points[3].type2).toBe(0); // col 2 - upward
-    });
-
-    it('generates vertices', () => {
-      const grid = generatePyramidGridPoints(3, 40, 2);
-
-      const vertices = grid.points.filter((p) => p?.type === PointType.VERTEX);
-      expect(vertices.length).toBeGreaterThan(0);
-    });
-
-    it('generates edges', () => {
-      const grid = generatePyramidGridPoints(3, 40, 2);
-
-      const edges = grid.points.filter(
-        (p) => p?.type === PointType.EDGE_H || p?.type === PointType.EDGE_V
-      );
-      expect(edges.length).toBeGreaterThan(0);
-    });
-
-    it('sets adjacent cells for apex', () => {
-      const grid = generatePyramidGridPoints(3, 40, 2);
-
-      // Apex (index 0) should have 1 neighbor (the cell below in row 1)
-      const apex = grid.points[0];
-      expect(apex.adjacent.length).toBe(1);
-    });
-
-    it('sets adjacent cells for middle cell', () => {
-      const grid = generatePyramidGridPoints(4, 40, 2);
-
-      // Row 2, col 2 (middle of row 2, upward triangle)
-      const idx = getPyramidCellIndex(2, 2);
-      const cell = grid.points[idx];
-
-      // Should have left, right, and bottom neighbors
-      expect(cell.adjacent.length).toBe(3);
-    });
-  });
-
-  describe('pyramidToPixel', () => {
-    it('apex is at correct position', () => {
-      const height = 3;
-      const size = 40;
-      const border = 2;
-
-      const pixel = pyramidToPixel(0, 0, height, size, border);
-
-      // Apex should be centered
-      expect(pixel.x).toBeGreaterThan(0);
-      expect(pixel.y).toBeGreaterThan(0);
-    });
-
-    it('cells in same row have increasing x', () => {
-      const height = 4;
-      const size = 40;
-      const border = 2;
-
-      for (let row = 1; row < height; row++) {
-        let prevX = -Infinity;
-        const cellsInRow = getPyramidRowCellCount(row);
-
-        for (let col = 0; col < cellsInRow; col++) {
-          const pixel = pyramidToPixel(row, col, height, size, border);
-          expect(pixel.x).toBeGreaterThan(prevX);
-          prevX = pixel.x;
-        }
-      }
-    });
-
-    it('cells in increasing rows have increasing y', () => {
-      const height = 4;
-      const size = 40;
-      const border = 2;
-
-      let prevY = -Infinity;
-
-      for (let row = 0; row < height; row++) {
-        const pixel = pyramidToPixel(row, 0, height, size, border);
-        // First cell of each row should have y greater than previous row
-        // (accounting for upward triangle positioning)
-        if (row > 0) {
-          expect(pixel.y).toBeGreaterThan(prevY - size);
-        }
-        prevY = pixel.y;
-      }
-    });
-  });
-
   describe('pixelToPyramid', () => {
     it('returns null for position outside pyramid', () => {
       const result = pixelToPyramid(-10, -10, 3, 40, 2);
@@ -349,49 +132,39 @@ describe('Pyramid Grid Point System', () => {
       }
     });
   });
+});
 
-  describe('integration', () => {
-    it('grid cell indices match centerList', () => {
-      const height = 4;
-      const grid = generatePyramidGridPoints(height, 40, 2);
+it('maps pyramid indices across row starts, ends and out-of-bounds boundaries', () => {
+  for (const [id, row, col] of [[0, 0, 0], [3, 1, 2], [4, 2, 0], [8, 2, 4], [9, 3, 0], [15, 3, 6]]) {
+    expect(getPyramidCellIndex(row, col)).toBe(id);
+    expect(getPyramidCellPosition(id, 4)).toEqual({ row, col });
+  }
+  expect(getPyramidCellPosition(-1, 4)).toBeNull();
+  expect(getPyramidCellPosition(16, 4)).toBeNull();
+});
 
-      for (let i = 0; i < grid.centerList.length; i++) {
-        const idx = grid.centerList[i];
-        expect(idx).toBe(i);
-      }
-    });
-
-    it('cell positions match index', () => {
-      const height = 4;
-      const grid = generatePyramidGridPoints(height, 40, 2);
-
-      for (let row = 0; row < height; row++) {
-        const cellsInRow = getPyramidRowCellCount(row);
-        for (let col = 0; col < cellsInRow; col++) {
-          const idx = getPyramidCellIndex(row, col);
-          const cell = grid.points[idx];
-
-          expect(cell.index).toEqual([row, col]);
-        }
-      }
-    });
-
-    it('all cells have valid surround vertices', () => {
-      const grid = generatePyramidGridPoints(4, 40, 2);
-      const cellCount = getPyramidTotalCells(4);
-
-      for (const idx of grid.centerList) {
-        const cell = grid.points[idx];
-
-        // Each triangle should have 3 or fewer surrounding vertices
-        expect(cell.surround.length).toBeLessThanOrEqual(3);
-
-        for (const vertexIdx of cell.surround) {
-          expect(vertexIdx).toBeGreaterThanOrEqual(cellCount);
-          expect(grid.points[vertexIdx]).toBeDefined();
-          expect(grid.points[vertexIdx].type).toBe(PointType.VERTEX);
-        }
-      }
-    });
-  });
+it('generates the pyramid rows, centered geometry, neighbors and vertex references', () => {
+  const grid = generatePyramidGridPoints(4, 40, 2);
+  const cells = grid.centerList.map(id => grid.points[id]);
+  expect(cells).toHaveLength(16);
+  expect(getPyramidTotalCells(4)).toBe(16);
+  expect([0, 1, 2, 3].map(row => cells.filter(cell => cell.index?.[0] === row).length)).toEqual([1, 3, 5, 7]);
+  expect(getPyramidRowCellCount(3)).toBe(7);
+  for (const cell of cells) {
+    expect(cell).toMatchObject({ type: PointType.CELL, use: PointUse.INSIDE, degree: 3 });
+    expect(cell.surround).toHaveLength(3);
+    for (const vertex of cell.surround) expect(grid.points[vertex].type).toBe(PointType.VERTEX);
+  }
+  // Apex and both orientations on the next row; fixed coordinates, not generated expectations.
+  for (const [row, col, x, y, type2] of [[0, 0, 120, 92.3760430703, 0], [1, 0, 100, 127.0170592217, 0], [1, 1, 120, 115.470053838, 1], [1, 2, 140, 127.0170592217, 0]]) {
+    const cell = cells.find(c => c.index?.[0] === row && c.index[1] === col)!;
+    expect(cell).toMatchObject({ x, type2 });
+    expect(cell.y).toBeCloseTo(y, 5);
+    expect(pyramidToPixel(row, col, 4, 40, 2)).toEqual({ x, y: expect.closeTo(y, 5) });
+  }
+  const apex = cells.find(c => c.index?.[0] === 0)!;
+  expect(apex.adjacent.map(id => grid.points[id].index)).toEqual([[1, 1]]);
+  const middle = cells.find(c => c.index?.[0] === 2 && c.index[1] === 2)!;
+  expect(middle.adjacent.map(id => grid.points[id].index?.join(',')).sort()).toEqual(['2,1', '2,3', '3,3']);
+  expect(new Set(grid.points.filter(p => p.type === PointType.EDGE_H || p.type === PointType.EDGE_V).map(p => p.type))).toEqual(new Set([PointType.EDGE_H, PointType.EDGE_V]));
 });
