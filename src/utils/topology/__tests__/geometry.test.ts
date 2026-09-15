@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { GridTopology } from '../types';
+import type { SplitPoint } from '../../../types';
 import { gridConfigToTopology } from '../converter';
 import {
   getOrthogonallyAdjacentCells,
@@ -180,22 +181,65 @@ describe('topology geometry sanity', () => {
     Array.from(topo.cells.values()).forEach(c => expect(c.boundaryVertices.length).toBe(3));
   });
 
-  it('edge split creates two polygons from a square (edge midpoints)', () => {
-    const topo = gridConfigToTopology({
-      ...baseConfig,
-      gridType: 'square',
-      rows: 1,
-      cols: 1,
-      splitLines: [
-        {
-          cellId: 'cell-0-0',
-          startPoint: { type: 'edge', edgeId: 'edge-0', t: 0.5 },
-          endPoint: { type: 'edge', edgeId: 'edge-2', t: 0.5 },
-        },
+  it.each([
+    {
+      name: 'opposite edge midpoints',
+      start: { type: 'edge', edgeId: 'edge-0', t: 0.5 },
+      end: { type: 'edge', edgeId: 'edge-2', t: 0.5 },
+      shapes: [
+        { corners: [[0, 0], [0, 20], [10, 0], [10, 20]], area: 200 },
+        { corners: [[10, 0], [10, 20], [20, 0], [20, 20]], area: 200 },
       ],
-    });
+    },
+    {
+      name: 'a vertex and a reversed boundary edge',
+      start: { type: 'vertex', vertexId: 'vertex-2' },
+      end: { type: 'edge', edgeId: 'edge-3', t: 0.25 },
+      shapes: [
+        { corners: [[0, 5], [0, 20], [20, 20]], area: 150 },
+        { corners: [[0, 0], [0, 5], [20, 0], [20, 20]], area: 250 },
+      ],
+    },
+    {
+      name: 'edge endpoints that coincide with existing vertices',
+      start: { type: 'edge', edgeId: 'edge-0', t: 0 },
+      end: { type: 'edge', edgeId: 'edge-2', t: 0 },
+      shapes: [
+        { corners: [[0, 0], [0, 20], [20, 20]], area: 200 },
+        { corners: [[0, 0], [20, 0], [20, 20]], area: 200 },
+      ],
+    },
+  ] satisfies { name: string; start: SplitPoint; end: SplitPoint; shapes: { corners: number[][]; area: number }[] }[])(
+    'splits a square through $name into the expected regions', ({ start, end, shapes }) => {
+      const topo = gridConfigToTopology({
+        ...baseConfig, gridType: 'square', rows: 1, cols: 1,
+        splitLines: [{ cellId: 'cell-0-0', startPoint: start, endPoint: end }],
+      });
+      const actual = [...topo.cells.values()].map(cell => {
+        const points = cell.boundaryVertices.map(id => topo.vertices.get(id)!.position);
+        const area = Math.abs(points.reduce((sum, p, i) => {
+          const next = points[(i + 1) % points.length];
+          return sum + p.x * next.y - next.x * p.y;
+        }, 0)) / 2;
+        return { corners: points.map(p => [p.x, p.y]).sort((a, b) => a[0] - b[0] || a[1] - b[1]), area };
+      });
+      expect(actual).toHaveLength(shapes.length);
+      expect(actual).toEqual(expect.arrayContaining(shapes));
+    }
+  );
 
-    expect(topo.cells.size).toBe(2);
-    Array.from(topo.cells.values()).forEach(c => expect(c.boundaryVertices.length).toBeGreaterThanOrEqual(2));
+  it.each([
+    { name: 'an existing boundary', edgeId: 'edge-0', t: 1 },
+    { name: 'an edge belonging to another cell', edgeId: 'edge-5', t: 0.5 },
+  ])('ignores a split ending on $name', ({ edgeId, t }) => {
+    const config = { ...baseConfig, gridType: 'square' as const, rows: 1, cols: 2 };
+    const original = gridConfigToTopology(config);
+    const actual = gridConfigToTopology({
+      ...config,
+      splitLines: [{ cellId: 'cell-0-0', startPoint: { type: 'edge', edgeId: 'edge-0', t: 0 }, endPoint: { type: 'edge', edgeId, t } }],
+    });
+    expect(actual.cells).toEqual(original.cells);
+    expect(actual.vertices).toEqual(original.vertices);
+    expect(actual.edges).toEqual(original.edges);
   });
 });

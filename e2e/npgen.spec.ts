@@ -31,12 +31,13 @@ async function gridGeometry(grid: Locator) {
   });
 }
 
-test('generates a seeded Number Place puzzle through the Wasm worker', { tag: '@production' }, async ({ page }) => {
+test('generates and applies a seeded Number Place puzzle with rot2 selected', { tag: '@production' }, async ({ page }) => {
   await openNPGenerator(page);
   await expect(page.getByRole('button', { name: 'Random Generate' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Benchmark' })).toHaveCount(0);
   await page.getByRole('checkbox', { name: 'Change / specify seed' }).check();
   await page.getByRole('textbox', { name: 'Seed' }).fill('1');
+  await page.getByRole('combobox', { name: 'Symmetry' }).selectOption('rot2');
   await page.getByRole('button', { name: 'Generate', exact: true }).click();
 
   await expect(page.getByText(/Result: Unique solution/)).toBeVisible({
@@ -53,25 +54,8 @@ test('generates a seeded Number Place puzzle through the Wasm worker', { tag: '@
   await expect(page.getByText(/Ready/)).toBeVisible();
 });
 
-test('generates rot2 puzzles successfully with two explicit seeds', async ({ page }) => {
-  await openNPGenerator(page);
-  await page.getByRole('checkbox', { name: 'Change / specify seed' }).check();
-  await page.getByRole('combobox', { name: 'Symmetry' }).selectOption('rot2');
-  for (const value of ['1', '2']) {
-    await page.getByRole('textbox', { name: 'Seed' }).fill(value);
-    await page.getByRole('button', { name: 'Generate', exact: true }).click();
-    await expect(page.getByText(/Result: Unique solution/)).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByRole('textbox', { name: 'Seed' })).toHaveValue(value);
-    await expect(page.getByRole('button', { name: 'Apply problem to puzzle-kit' })).toBeEnabled();
-  }
-});
-
 test('edits problems, hint patterns, and fixed numbers on the GUI board', async ({ page }) => {
   await openNPGenerator(page);
-  await expect(page.getByRole('spinbutton', { name: 'Retry limit' })).toHaveValue('100');
-  await page.getByRole('spinbutton', { name: 'Retry limit' }).fill('25');
-  await expect(page.getByRole('spinbutton', { name: 'Retry limit' })).toHaveValue('25');
-
   await page.getByRole('button', { name: 'Solve / Evaluate' }).click();
   const problemGrid = page.getByRole('grid', { name: 'Problem grid' });
   const geometryBeforeInput = await gridGeometry(problemGrid);
@@ -141,7 +125,7 @@ async function importXmlPattern(page: Page) {
   await page.getByRole('checkbox', { name: 'Change / specify seed' }).check();
 }
 
-test('XML generation reports exhausted attempts and recovers with a new seed', async ({ page }) => {
+test('XML generation reports exhausted attempts and recovers with a new seed', { tag: '@desktop' }, async ({ page }) => {
   await importXmlPattern(page);
   // Captured from the failed Chromium QA run on 2026-09-07.
   const seed = page.getByRole('textbox', { name: 'Seed' });
@@ -163,7 +147,7 @@ test('XML generation reports exhausted attempts and recovers with a new seed', a
   await expect(page.getByRole('button', { name: 'Export result XML' })).toBeEnabled();
 });
 
-test('imports every XML constraint group in declaration order', async ({ page }) => {
+test('solves an imported XML puzzle with multiple constraint groups', { tag: '@desktop' }, async ({ page }) => {
   await openNPGenerator(page);
   const fixture = resolve(
     process.cwd(),

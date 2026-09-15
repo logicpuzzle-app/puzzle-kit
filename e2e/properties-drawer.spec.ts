@@ -56,19 +56,7 @@ for (const width of [360, 412]) {
   });
 }
 
-test('Properties closes with Escape and restores its opener', async ({
-  page,
-}) => {
-  await openLineEditor(page, 360);
-  const opener = page.getByTitle('Properties', { exact: true });
-  await opener.tap();
-  await page.getByTitle('Close', { exact: true }).focus();
-  await page.keyboard.press('Escape');
-  await expect(opener).toBeVisible();
-  await expect(opener).toBeFocused();
-});
-
-test('Properties keeps focus and shortcuts inside, and saves color on backdrop dismissal', async ({
+test('Properties keeps focus and shortcuts inside, saves color and supports Escape dismissal', async ({
   page,
 }) => {
   await openLineEditor(page, 360);
@@ -94,7 +82,11 @@ test('Properties keeps focus and shortcuts inside, and saves color on backdrop d
   await expect(opener).toBeFocused();
   await opener.tap();
   await expect(dialog.locator('input[type="color"]')).toHaveValue('#ff0000');
-  await close.tap();
+  await close.focus();
+  await page.keyboard.press('Escape');
+  await expect(dialog).not.toBeVisible();
+  await expect(opener).toBeVisible();
+  await expect(opener).toBeFocused();
 });
 
 test('Properties changes between sidebar and drawer without losing its setting', async ({

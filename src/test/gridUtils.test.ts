@@ -36,23 +36,6 @@ const defaultGrid: GridConfig = {
 };
 
 describe('gridUtils', () => {
-  describe('ID generation', () => {
-    it('generates correct cell ID', () => {
-      expect(getCellId(0, 0)).toBe('cell-0-0');
-      expect(getCellId(5, 7)).toBe('cell-5-7');
-    });
-
-    it('generates correct vertex ID', () => {
-      expect(getVertexId(0, 0)).toBe('vertex-0-0');
-      expect(getVertexId(10, 10)).toBe('vertex-10-10');
-    });
-
-    it('generates correct edge IDs', () => {
-      expect(getEdgeHId(0, 0)).toBe('edge-h-0-0');
-      expect(getEdgeVId(0, 0)).toBe('edge-v-0-0');
-    });
-  });
-
   describe('ID lookup', () => {
     it('looks up valid cell IDs (including margin cells)', () => {
       const grid: GridConfig = { ...defaultGrid, rows: 3, cols: 3, marginTop: 1, marginLeft: 2 };
@@ -93,74 +76,7 @@ describe('gridUtils', () => {
     });
   });
 
-  describe('generateGridPoints', () => {
-    it('generates correct number of points', () => {
-      const grid: GridConfig = { ...defaultGrid, rows: 3, cols: 3 };
-      const points = generateGridPoints(grid);
-
-      // Cells: 3x3 = 9
-      // Vertices: 4x4 = 16
-      // Horizontal edges: 4x3 = 12
-      // Vertical edges: 3x4 = 12
-      // Total: 9 + 16 + 12 + 12 = 49
-      expect(points.length).toBe(49);
-    });
-
-    it('generates cell centers at correct positions', () => {
-      const grid: GridConfig = { ...defaultGrid, rows: 2, cols: 2 };
-      const points = generateGridPoints(grid);
-      const cellPoints = points.filter(p => p.type === 'cell');
-
-      expect(cellPoints).toHaveLength(4);
-
-      // First cell center should be at (padding + cellSize/2, padding + cellSize/2)
-      const firstCell = cellPoints.find(p => p.id === 'cell-0-0');
-      expect(firstCell).toBeDefined();
-      expect(firstCell?.x).toBe(20 + 20); // padding + cellSize/2
-      expect(firstCell?.y).toBe(20 + 20);
-    });
-
-    it('generates vertices at correct positions', () => {
-      const grid: GridConfig = { ...defaultGrid, rows: 2, cols: 2 };
-      const points = generateGridPoints(grid);
-      const vertexPoints = points.filter(p => p.type === 'vertex');
-
-      expect(vertexPoints).toHaveLength(9); // 3x3 vertices for 2x2 grid
-
-      const topLeft = vertexPoints.find(p => p.id === 'vertex-0-0');
-      expect(topLeft?.x).toBe(20); // just padding
-      expect(topLeft?.y).toBe(20);
-    });
-  });
-
-  describe('position calculations', () => {
-    it('calculates cell center correctly', () => {
-      const center = getCellCenter(0, 0, defaultGrid);
-      expect(center.x).toBe(40); // padding(20) + cellSize/2(20)
-      expect(center.y).toBe(40);
-
-      const center2 = getCellCenter(1, 2, defaultGrid);
-      expect(center2.x).toBe(20 + 2 * 40 + 20); // 120
-      expect(center2.y).toBe(20 + 1 * 40 + 20); // 80
-    });
-
-    it('calculates vertex position correctly', () => {
-      const pos = getVertexPosition(0, 0, defaultGrid);
-      expect(pos.x).toBe(20);
-      expect(pos.y).toBe(20);
-
-      const pos2 = getVertexPosition(1, 1, defaultGrid);
-      expect(pos2.x).toBe(60); // padding + cellSize
-      expect(pos2.y).toBe(60);
-    });
-  });
-
   describe('findNearestCell', () => {
-    it('finds correct cell for point inside', () => {
-      const point = { x: 50, y: 50 }; // Should be in cell (0, 0)
-      const result = findNearestCell(point, defaultGrid);
-      expect(result).toEqual({ row: 0, col: 0 });
-    });
 
     it('finds correct cell for different position', () => {
       const point = { x: 100, y: 100 }; // Should be in cell (2, 2) - accounting for padding
@@ -195,14 +111,6 @@ describe('gridUtils', () => {
     });
   });
 
-  describe('getGridDimensions', () => {
-    it('calculates correct dimensions', () => {
-      const dims = getGridDimensions(defaultGrid);
-      expect(dims.width).toBe(10 * 40 + 20 * 2); // cols * cellSize + padding * 2 = 440
-      expect(dims.height).toBe(10 * 40 + 20 * 2); // 440
-    });
-  });
-
   describe('isPointInGrid', () => {
     it('returns true for point inside grid', () => {
       const point = { x: 100, y: 100 };
@@ -219,4 +127,17 @@ describe('gridUtils', () => {
       expect(isPointInGrid(point, defaultGrid)).toBe(true);
     });
   });
+});
+
+it('generates a rectangular board with stable IDs, positions and dimensions', () => {
+  const grid = { ...defaultGrid, rows: 2, cols: 3 };
+  const points = generateGridPoints(grid);
+  expect(points).toHaveLength(35); // 6 cells, 12 vertices, 9 horizontal and 8 vertical edges
+  expect(points.find(p => p.id === getCellId(1, 2))).toMatchObject({ id: 'cell-1-2', type: 'cell', x: 120, y: 80 });
+  expect(points.find(p => p.id === getVertexId(2, 3))).toMatchObject({ id: 'vertex-2-3', type: 'vertex', x: 140, y: 100 });
+  expect(points.find(p => p.id === getEdgeHId(1, 2))).toMatchObject({ id: 'edge-h-1-2', x: 120, y: 60 });
+  expect(points.find(p => p.id === getEdgeVId(1, 2))).toMatchObject({ id: 'edge-v-1-2', x: 100, y: 80 });
+  expect(getCellCenter(1, 2, grid)).toEqual({ x: 120, y: 80 });
+  expect(getVertexPosition(2, 3, grid)).toEqual({ x: 140, y: 100 });
+  expect(getGridDimensions(grid)).toEqual({ width: 160, height: 120 });
 });

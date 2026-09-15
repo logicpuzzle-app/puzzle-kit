@@ -1,0 +1,302 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "touch pan mode moves the viewport without drawing",
+    "project": "mobile-chrome",
+    "revision": "aa89a6802d1be460e39640737a1a188a77fd7f06",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/gestures.chromium-touch.spec.ts e2e/pinch-anchor.chromium-touch.spec.ts e2e/multitouch-grid.chromium-touch.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "pan-before.webm",
+    "screenshot": "pan-before.png",
+    "videoSha256": "abb350b44c1c534374c8063115542a3f3a644c2cb756858d36d2815ebab01ace",
+    "screenshotSha256": "7acfd7cae273f29d5990078f6334009b1c071279937c09e27e12228ad5cb9247",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "1.800000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "cancelled touch discards a pending free segment and allows the next stroke",
+    "project": "mobile-chrome",
+    "revision": "aa89a6802d1be460e39640737a1a188a77fd7f06",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/gestures.chromium-touch.spec.ts e2e/pinch-anchor.chromium-touch.spec.ts e2e/multitouch-grid.chromium-touch.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "line-before.webm",
+    "screenshot": "line-before.png",
+    "videoSha256": "b3e1068666e3c2628cc0dc8df8a0d3c0e16ebb27d080490d3c39097c0336b6ea",
+    "screenshotSha256": "8a3b0bcf33bf5d67e9afaab65e0170056f616ad0a0b433697a47e7c5dd898175",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.040000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "touch merge commits and undoes grid geometry",
+    "project": "mobile-chrome",
+    "revision": "aa89a6802d1be460e39640737a1a188a77fd7f06",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/gestures.chromium-touch.spec.ts e2e/pinch-anchor.chromium-touch.spec.ts e2e/multitouch-grid.chromium-touch.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "merge-before.webm",
+    "screenshot": "merge-before.png",
+    "videoSha256": "86e004d72f4c5fdde97b08434958e80a5a9d3011daf635403a6d3cee2877b1ee",
+    "screenshotSha256": "2e690d5f52074819906acfa97f73cd6ddc634a031e54f2b6de3dedb28b29795a",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.000000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "touch split commits and undoes grid geometry",
+    "project": "mobile-chrome",
+    "revision": "aa89a6802d1be460e39640737a1a188a77fd7f06",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/gestures.chromium-touch.spec.ts e2e/pinch-anchor.chromium-touch.spec.ts e2e/multitouch-grid.chromium-touch.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "split-before.webm",
+    "screenshot": "split-before.png",
+    "videoSha256": "ec46ca3740579b175c38d2e6eca8f72b576c60c13edce9534195eaecb9060bdf",
+    "screenshotSha256": "46114ce7bf1390471fb078679ed38cce5e927f6714d21540d5585856ec839fcf",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "1.960000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "pinch anchors the board under a prezoomed midpoint",
+    "project": "mobile-chrome",
+    "revision": "aa89a6802d1be460e39640737a1a188a77fd7f06",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/gestures.chromium-touch.spec.ts e2e/pinch-anchor.chromium-touch.spec.ts e2e/multitouch-grid.chromium-touch.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "pinch-before.webm",
+    "screenshot": "pinch-before.png",
+    "videoSha256": "279f14cd3dd549e38986541cfd7254e1721408d44e6f7ec5a2708eb5214f5891",
+    "screenshotSha256": "ab59fbec7d87097cd9744f19b238d9d7a75f1743e9aceddcc949134981ad0248",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "1.600000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "touch pan mode moves the viewport without drawing",
+    "project": "mobile-chrome",
+    "revision": "fcef1c5f0575a14ad408ea3d34f3131a05e69bf4",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/gestures.chromium-touch.spec.ts e2e/pinch-anchor.chromium-touch.spec.ts e2e/multitouch-grid.chromium-touch.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "pan-after.webm",
+    "screenshot": "pan-after.png",
+    "videoSha256": "052b5264636b96fed02ddf0ab7749a39b2e79cbb1c9f33f63726a6a97ae9f57c",
+    "screenshotSha256": "e1fcf0119f42b118f89cfb31b1449fe37785626a8b289c2c956366be89f4ca83",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.920000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "cancelled touch discards a pending free segment and allows the next stroke",
+    "project": "mobile-chrome",
+    "revision": "fcef1c5f0575a14ad408ea3d34f3131a05e69bf4",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/gestures.chromium-touch.spec.ts e2e/pinch-anchor.chromium-touch.spec.ts e2e/multitouch-grid.chromium-touch.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "line-after.webm",
+    "screenshot": "line-after.png",
+    "videoSha256": "cd7853f8444a6783dd8ca3632d92b8a69338301e73c9d8a73c480f401c499347",
+    "screenshotSha256": "3374594553ac3ec97e3e8d4b07ef501913e16a7c428572a627ca18627091fcaa",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.880000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "cancelled touch merge preserves geometry and the next edit supports Undo/Redo",
+    "project": "mobile-chrome",
+    "revision": "fcef1c5f0575a14ad408ea3d34f3131a05e69bf4",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/gestures.chromium-touch.spec.ts e2e/pinch-anchor.chromium-touch.spec.ts e2e/multitouch-grid.chromium-touch.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "merge-after.webm",
+    "screenshot": "merge-after.png",
+    "videoSha256": "3451a28f89fd578a2afa733d338a0d1816e357fb33e2f308966c79b9834cee33",
+    "screenshotSha256": "f2300bb0471e38d67e923f0613414344220be6667560a1f5f6401a1362085bdc",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.760000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "cancelled touch split preserves geometry and the next edit supports Undo/Redo",
+    "project": "mobile-chrome",
+    "revision": "fcef1c5f0575a14ad408ea3d34f3131a05e69bf4",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/gestures.chromium-touch.spec.ts e2e/pinch-anchor.chromium-touch.spec.ts e2e/multitouch-grid.chromium-touch.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "split-after.webm",
+    "screenshot": "split-after.png",
+    "videoSha256": "fcbbfb8a04c53468d78e2ac5f083b4841dcdda9ec0b89c7a2699ead70ecad292",
+    "screenshotSha256": "abecd03465ff0bbf3e180924354030a2216c32f7e4d130aa175162747c807bfb",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.600000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "pinch anchors and scales the prezoomed board under a moving midpoint",
+    "project": "mobile-chrome",
+    "revision": "fcef1c5f0575a14ad408ea3d34f3131a05e69bf4",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/gestures.chromium-touch.spec.ts e2e/pinch-anchor.chromium-touch.spec.ts e2e/multitouch-grid.chromium-touch.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "pinch-after.webm",
+    "screenshot": "pinch-after.png",
+    "videoSha256": "94c81c4682565b7607bde2a9de8b68aa76d1b11be30848275a0ac826a10a5220",
+    "screenshotSha256": "8edb5465672ab13c1fe8f750e15f0d71fe4080ba4ab068866a1779424b4922cb",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.280000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]

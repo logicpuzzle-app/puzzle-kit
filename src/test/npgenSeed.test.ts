@@ -1,17 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createRandomNpgenSeed } from '../npgen/seed';
 
-describe('NPGenerator random seed', () => {
-  it('creates changing signed 64-bit values', () => {
-    const seeds = Array.from({ length: 8 }, () => createRandomNpgenSeed());
-    const minimum = -(1n << 63n);
-    const maximum = (1n << 63n) - 1n;
+afterEach(() => vi.unstubAllGlobals());
 
-    for (const seed of seeds) {
-      const value = BigInt(seed);
-      expect(value).toBeGreaterThanOrEqual(minimum);
-      expect(value).toBeLessThanOrEqual(maximum);
-    }
-    expect(new Set(seeds).size).toBeGreaterThan(1);
+describe('NPGenerator random seed', () => {
+  it('combines both entropy words in order into a signed 64-bit decimal seed', () => {
+    vi.stubGlobal('crypto', {
+      getRandomValues: (words: Uint32Array) => {
+        words.set([0x89abcdef, 0x01234567]);
+        return words;
+      },
+    });
+    expect(createRandomNpgenSeed()).toBe('-8526495043095935641');
   });
 });
