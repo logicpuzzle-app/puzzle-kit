@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures';
+import { test, expect, isRecordingQA } from './fixtures';
 import type { Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
@@ -43,7 +43,7 @@ for (const tool of ['Arrow', 'Thermo']) {
   test(`special-touch: ${tool} creates, edits, exports and reloads with touch`, { tag: '@production' }, async ({ page }, info) => {
     await openTool(page, tool);
     await draw(page);
-    await info.attach('after-release', { body: await page.screenshot(), contentType: 'image/png' });
+    if (isRecordingQA(info)) await info.attach('after-release', { body: await page.screenshot(), contentType: 'image/png' });
     const path = page.locator('#puzzle-canvas .special-layer-problem path');
     await expect(path).toHaveCount(1);
     const original = (await path.getAttribute('d'))!;
@@ -81,7 +81,7 @@ for (const tool of ['Cage', 'BoxLine']) {
   test(`special-touch: ${tool} creates one undoable object`, { tag: '@production' }, async ({ page }, info) => {
     await openTool(page, tool);
     await draw(page);
-    await info.attach('after-release', { body: await page.screenshot(), contentType: 'image/png' });
+    if (isRecordingQA(info)) await info.attach('after-release', { body: await page.screenshot(), contentType: 'image/png' });
     const shapes = page.locator(tool === 'Cage' ? '#puzzle-canvas .special-layer-problem line' : '#puzzle-canvas .boxline-layer-problem polygon');
     await expect(shapes).not.toHaveCount(0);
     const count = await shapes.count();
@@ -89,7 +89,7 @@ for (const tool of ['Cage', 'BoxLine']) {
     // Capture the old BoxLine failure at the same comparison point even when
     // the missing history leaves Undo disabled. The shape assertion still fails.
     if (await undo.isEnabled()) await undo.tap();
-    await info.attach('after-undo', { body: await page.screenshot(), contentType: 'image/png' });
+    if (isRecordingQA(info)) await info.attach('after-undo', { body: await page.screenshot(), contentType: 'image/png' });
     await expect(shapes).toHaveCount(0);
     await page.getByTitle(/Redo/).first().tap();
     await expect(shapes).toHaveCount(count);

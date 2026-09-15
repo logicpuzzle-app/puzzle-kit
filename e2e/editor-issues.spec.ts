@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures';
+import { test, expect, isRecordingQA } from './fixtures';
 import type { Page } from '@playwright/test';
 
 async function openEditor(page: Page) {
@@ -37,7 +37,7 @@ test('#40 Free Segment completes on pointer release and supports Undo/Redo', asy
   await expect(lines).toHaveCount(0);
   await page.getByTitle('Free Segment', { exact: true }).click();
   await drag(page);
-  await page.screenshot({ path: info.outputPath('drawn.png') });
+  if (isRecordingQA(info)) await page.screenshot({ path: info.outputPath('drawn.png') });
   await expect(lines).not.toHaveCount(0);
   const count = await lines.count();
   await page.getByTitle(/Undo \(Ctrl\+Z\)/).first().click();

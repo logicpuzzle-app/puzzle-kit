@@ -93,6 +93,16 @@ QA用Viteは `.work`・`docs/qa`・テスト成果物を監視しない。`.work
 
 QAの依存キャッシュは各worktreeの `.work/node_modules/.vite-qa` に作成する。トップレベルの `node_modules` を別worktreeと共有しても、最適化済み依存を相互に上書きしない。通常の `npm run dev` は通常のVite設定を使う。外部QAサーバーを使う場合は `vite.qa.config.ts` を指定し、ソースのブランチ切替後はサーバーを再起動してからE2Eを実行する。
 
+通常の `qa:check` / `qa:production` は、失敗時だけ動画・trace・自動画面を保存する。成功時の結果JSON・ログ・SVG/PNGエクスポート等の検査対象データは残す。`QA_ARTIFACT_DIR` は保存先の指定で、成功時の録画を有効にする指定ではない。
+
+| 実行方法 | 成功時 | 失敗時 |
+|---|---|---|
+| 通常の回帰テスト | 動画・trace・画面撮影を保存しない | 動画・trace・失敗画面を保存 |
+| `qa:capture -- before/after` / 撮影専用config | 動画・trace・途中/最終画面を保存 | 同左＋失敗画面 |
+| `QA_RECORD_SUCCESS=1 npm run qa:check` 等 | 全件の動画・trace・途中/最終画面を保存 | 同左＋失敗画面 |
+
+`retain-on-failure` は実行中の動画・trace記録自体を停止する設定ではない。主に成功証跡の保存・アップロードを減らすもので、ブラウザーの実行時間が同じ割合で短縮するとは限らない。成功後にその実行の動画を遡って確認する必要がある場合は、事前に `QA_RECORD_SUCCESS=1` を指定する。
+
 ## before / after の動画証跡
 
 ```bash

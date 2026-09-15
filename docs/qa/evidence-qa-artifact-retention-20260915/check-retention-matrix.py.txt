@@ -1,0 +1,33 @@
+from pathlib import Path
+import subprocess, os, json, base64
+modes=[('development',{},False),('production',{},False),('development-phase',{'QA_VARIANT':'after'},True),('production-phase',{'QA_VARIANT':'after'},True),('capture',{},True),('explicit',{'QA_RECORD_SUCCESS':'1'},True)]
+proof=[]
+for name, extra, record in modes:
+ config='production' if name.startswith('production') else 'capture' if name=='capture' else 'development'
+ directory=Path('artifacts/check')/('retention-after-'+name)
+ env=dict(os.environ)
+ for key in ['QA_VARIANT','QA_RECORD_SUCCESS','QA_STATIC_DIR','QA_INCLUDE_PRODUCTION_TESTS']:env.pop(key,None)
+ env.update(extra,QA_ARTIFACT_DIR=str(directory))
+ result=subprocess.run(['npx','playwright','test','--config',f'.work/retention-probe/{config}.config.ts'],env=env,text=True,capture_output=True)
+ Path('.work/retention-after-'+name+'.log').write_text(result.stdout+result.stderr)
+ assert result.returncode==1,(name,result.returncode)
+ report=json.loads((directory/'results.json').read_text())
+ assert report['stats']['expected']==1 and report['stats']['unexpected']==2 and report['stats']['skipped']==0,(name,report['stats'])
+ cases=[]
+ def visit(s):
+  for spec in s.get('specs',[]):
+   for test in spec['tests']:
+    result=test['results'][-1];items={a['name']:a for a in result['attachments']};failed=result['status']=='failed'
+    for key in ['video','trace']:
+     assert (key in items)==(record or failed),(name,spec['title'],key,list(items))
+     if key in items: assert Path(items[key]['path']).stat().st_size>0
+    assert ('final-screen' in items)==record,(name,spec['title'],list(items))
+    assert ('screenshot' in items)==failed,(name,spec['title'],list(items))
+    if record:assert base64.b64decode(items['final-screen']['body']).startswith(b'\x89PNG')
+    cases.append({'title':spec['title'],'status':result['status'],'attachments':list(items)})
+  for child in s.get('suites',[]):visit(child)
+ visit(report)
+ item={'mode':name,'recordSuccess':record,'exit':result.returncode,'cases':cases,'outputBytes':sum(p.stat().st_size for p in directory.rglob('*') if p.is_file())}
+ proof.append(item)
+ print(name, 'verified', flush=True)
+Path('.work/retention-matrix-proof.json').write_text(json.dumps(proof,indent=2)+'\n')

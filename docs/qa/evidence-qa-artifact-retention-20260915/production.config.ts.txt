@@ -1,0 +1,10 @@
+import { defineConfig } from '@playwright/test';
+import base from '../../playwright.production.config';
+export default defineConfig({
+  ...base,
+  testDir: '.',
+  testMatch: 'retention-cases.spec.ts',
+  testIgnore: [],
+  projects: [{ ...base.projects![0], testIgnore: [], grepInvert: undefined }],
+  webServer: undefined,
+});

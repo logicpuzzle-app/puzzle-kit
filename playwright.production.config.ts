@@ -19,7 +19,7 @@ export default defineConfig({
     ['html', { outputFolder: resolve(artifactDir, 'report'), open: 'never' }],
     ['json', { outputFile: resolve(artifactDir, 'results.json') }],
   ],
-  use: { ...base.use, baseURL: 'http://127.0.0.1:4176', video: 'on', trace: 'on' },
+  use: { ...base.use, baseURL: 'http://127.0.0.1:4176' },
   webServer: {
     command: 'npm run preview -- --config vite.qa.config.ts --host 127.0.0.1 --port 4176 --strictPort',
     url: 'http://127.0.0.1:4176/master',

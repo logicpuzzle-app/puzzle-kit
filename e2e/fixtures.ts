@@ -1,4 +1,7 @@
 import { test as base, expect } from '@playwright/test';
+import type { TestInfo } from '@playwright/test';
+
+export const isRecordingQA = (info: TestInfo) => info.config.metadata.recordSuccessArtifacts === true;
 
 // Each test gets a new browser context; fail on uncaught application exceptions.
 export const test = base.extend<{ runtimeErrors: string[] }>({
@@ -6,7 +9,7 @@ export const test = base.extend<{ runtimeErrors: string[] }>({
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.stack ?? error.message));
     await use(errors);
-    if (process.env.QA_ARTIFACT_DIR && !page.isClosed()) {
+    if (isRecordingQA(testInfo) && !page.isClosed()) {
       await testInfo.attach('final-screen', {
         body: await page.screenshot(), contentType: 'image/png',
       });

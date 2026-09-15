@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures';
+import { test, expect, isRecordingQA } from './fixtures';
 import type { Page } from '@playwright/test';
 import { openPuzzleFile, savePuzzleFile } from './puzzle-file';
 
@@ -26,7 +26,7 @@ test('session: File Open starts new history and keeps the imported clue', { tag:
   const undo = page.getByTitle(/Undo \(Ctrl\+Z\)/).first();
   // Capture the actual effect of stale history in the Before recording.
   if (await undo.isEnabled()) await undo.click();
-  await page.screenshot({ path: info.outputPath('comparison.png') });
+  if (isRecordingQA(info)) await page.screenshot({ path: info.outputPath('comparison.png') });
   await expect(numbers).toHaveText(['9']);
   await expect(undo).toBeDisabled();
   await expect(page.getByTitle(/Redo/).first()).toBeDisabled();
@@ -56,7 +56,7 @@ test('session: New discards a previous puzzle trial snapshot', { tag: '@producti
   await expect(surfaces).toHaveCount(0);
   const reject = page.getByRole('button', { name: 'Reject', exact: true });
   if (await reject.isVisible()) await reject.click();
-  await page.screenshot({ path: info.outputPath('comparison.png') });
+  if (isRecordingQA(info)) await page.screenshot({ path: info.outputPath('comparison.png') });
   await expect(surfaces).toHaveCount(0);
   await expect(reject).toHaveCount(0);
   await expect(page.getByTitle(/Undo \(Ctrl\+Z\)/).first()).toBeDisabled();

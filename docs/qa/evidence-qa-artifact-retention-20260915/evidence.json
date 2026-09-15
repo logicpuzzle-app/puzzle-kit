@@ -1,0 +1,62 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "harness resets the scenario and exposes an inspectable puzzle snapshot",
+    "project": "mobile-chrome",
+    "revision": "44d1f0037cece199f3963c7fd4b77ef962bc39f8",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/ui-audit.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "qa-harness-before.webm",
+    "screenshot": "qa-harness-before.png",
+    "videoSha256": "db436eee97cd035a68386b6ac61729989ba356b73f7ac6d4cd9652f0bec22761",
+    "screenshotSha256": "a3fc9be0d3ca750ac730514207a2f68856015f8ef43bf804dfedc3bb4e92a81a",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "3.080000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "harness resets the scenario and exposes an inspectable puzzle snapshot",
+    "project": "mobile-chrome",
+    "revision": "0440d1ba55549f3c777c3cc6431ab0b2e148a7a9",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/ui-audit.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "qa-harness-after.webm",
+    "screenshot": "qa-harness-after.png",
+    "videoSha256": "0c4a6d52a904ef0a1313739dd01c6708bd4408c73964d7355e2c2311f564bd24",
+    "screenshotSha256": "a3fc9be0d3ca750ac730514207a2f68856015f8ef43bf804dfedc3bb4e92a81a",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.240000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]
