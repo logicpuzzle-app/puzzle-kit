@@ -1,8 +1,7 @@
-import type { GridConfig, Point } from '../../types';
+import type { GridConfig, Point, SplitLine, SplitPoint } from '../../types';
 import type { CellDefinition, GridTopology, TopologyCell, TopologyVertex } from './types';
 import { buildTopologyFromCells } from './builder';
 import { calculateCentroid } from './helpers';
-import type { SplitLine } from '../../types';
 
 function sortVerticesClockwise(vertices: TopologyVertex[]): TopologyVertex[] {
   const centroid = vertices.reduce(
@@ -295,92 +294,71 @@ export function applyMergedCells(topology: GridTopology, config: GridConfig): Gr
 
 function splitCellByPoints(
   cell: TopologyCell,
-  p1: { type: 'vertex'; vertexId: string } | { type: 'edge'; edgeId: string; t: number },
-  p2: { type: 'vertex'; vertexId: string } | { type: 'edge'; edgeId: string; t: number },
+  p1: SplitPoint,
+  p2: SplitPoint,
   topology: GridTopology
 ): CellDefinition[] | null {
   const vIds = cell.boundaryVertices;
-  const polygon: { id: string; point: Point }[] = [];
-  const edgeIds = cell.boundaryEdges;
+  type BoundaryPoint = { id: string; point: Point; side?: number; fraction?: number };
 
-  const resolveEdgeId = (edgeId: string, sideIndex: number): string | null => {
-    // First try exact match
-    if (topology.edges.has(edgeId)) return edgeId;
-    // Fallback: if edgeId looks like "edge-<n>", map to boundary edge by index
-    const m = edgeId.match(/^edge-(\d+)$/);
-    if (m && edgeIds && edgeIds.length > 0) {
-      const idx = parseInt(m[1], 10) % edgeIds.length;
-      return edgeIds[idx] ?? null;
+  const resolvePoint = (p: SplitPoint): BoundaryPoint | null => {
+    if (p.type === 'vertex') {
+      const vertex = topology.vertices.get(p.vertexId);
+      return vertex && vIds.includes(p.vertexId)
+        ? { id: p.vertexId, point: vertex.position }
+        : null;
     }
-    // Finally, use boundary edge at sideIndex if available
-    if (edgeIds && edgeIds[sideIndex]) return edgeIds[sideIndex];
-    return null;
-  };
-
-  // Build polygon sequence, injecting edge split points when needed
-  const maybeAddEdgePoint = (
-    edgeIdRaw: string,
-    t: number,
-    startId: string,
-    endId: string,
-    sideIndex: number
-  ): { id: string; point: Point } | null => {
-    const resolvedId = resolveEdgeId(edgeIdRaw, sideIndex);
-    if (!resolvedId) return null;
-    const edge = topology.edges.get(resolvedId);
-    if (!edge) return null;
-    const vStart = topology.vertices.get(edge.startVertex);
-    const vEnd = topology.vertices.get(edge.endVertex);
-    if (!vStart || !vEnd) return null;
-    return {
-      id: `edgept-${resolvedId}-${t.toFixed(3)}`,
-      point: {
-        x: vStart.position.x + (vEnd.position.x - vStart.position.x) * t,
-        y: vStart.position.y + (vEnd.position.y - vStart.position.y) * t,
-      },
-    };
-  };
-
-  for (let i = 0; i < vIds.length; i++) {
-    const currId = vIds[i];
-    const nextId = vIds[(i + 1) % vIds.length];
-    const v = topology.vertices.get(currId);
-    if (v) polygon.push({ id: currId, point: { x: v.position.x, y: v.position.y } });
-
-    // If p1 or p2 lies on this edge, inject it after current vertex
-    const edgeId = edgeIds && edgeIds[i] ? edgeIds[i] : `${currId}-${nextId}`;
-    const addIfMatch = (p: typeof p1) => {
-      if (p.type === 'edge') {
-        const ep = maybeAddEdgePoint(p.edgeId, Math.min(Math.max(p.t, 0), 1), currId, nextId, i);
-        if (ep && !polygon.find(pt => pt.id === ep.id)) polygon.push(ep);
-      }
-    };
-    addIfMatch(p1);
-    addIfMatch(p2);
-  }
-
-  const findIndex = (p: typeof p1) => {
-    if (p.type === 'vertex') return polygon.findIndex(pt => pt.id === p.vertexId);
-    return polygon.findIndex(pt => pt.id.includes(p.edgeId));
-  };
-
-  const idx1 = findIndex(p1);
-  const idx2 = findIndex(p2);
-  if (idx1 === -1 || idx2 === -1) {
-    console.warn('[split] start/end not found in polygon', {
-      cellId: cell.id,
-      boundary: polygon.map(p => p.id),
-      start: p1,
-      end: p2,
+    const edge = topology.edges.get(p.edgeId);
+    if (!edge || !Number.isFinite(p.t)) return null;
+    const side = vIds.findIndex((id, i) => {
+      const next = vIds[(i + 1) % vIds.length];
+      return (id === edge.startVertex && next === edge.endVertex)
+        || (id === edge.endVertex && next === edge.startVertex);
     });
-    return null;
-  }
-  const n = polygon.length;
-  if (n < 4) return null;
+    // A reference to another cell's edge must not inject a point into this polygon.
+    if (side === -1) return null;
+    const start = topology.vertices.get(edge.startVertex);
+    const end = topology.vertices.get(edge.endVertex);
+    if (!start || !end) return null;
+    const t = Math.min(Math.max(p.t, 0), 1);
+    // Reuse corner identities instead of inserting coincident polygon vertices.
+    if (t === 0) return { id: edge.startVertex, point: start.position };
+    if (t === 1) return { id: edge.endVertex, point: end.position };
+    return {
+      id: `edgept-${p.edgeId}-${t}`,
+      point: {
+        x: start.position.x + (end.position.x - start.position.x) * t,
+        y: start.position.y + (end.position.y - start.position.y) * t,
+      },
+      side,
+      fraction: vIds[side] === edge.startVertex ? t : 1 - t,
+    };
+  };
 
+  const startPoint = resolvePoint(p1);
+  const endPoint = resolvePoint(p2);
+  if (!startPoint || !endPoint) return null;
+  const polygon: BoundaryPoint[] = [];
+  for (let i = 0; i < vIds.length; i++) {
+    const vertex = topology.vertices.get(vIds[i]);
+    if (!vertex) return null;
+    polygon.push({ id: vIds[i], point: vertex.position });
+    // Insert only on the referenced side, in that side's traversal direction.
+    const points = [startPoint, endPoint]
+      .filter(point => point.side === i)
+      .sort((a, b) => a.fraction! - b.fraction!);
+    for (const point of points) {
+      if (!polygon.some(existing => existing.id === point.id)) polygon.push(point);
+    }
+  }
+
+  const idx1 = polygon.findIndex(point => point.id === startPoint.id);
+  const idx2 = polygon.findIndex(point => point.id === endPoint.id);
   const [start, end] = idx1 < idx2 ? [idx1, idx2] : [idx2, idx1];
   const seg1 = polygon.slice(start, end + 1);
   const seg2 = [...polygon.slice(end), ...polygon.slice(0, start + 1)];
+  // Identical points or a cut along an existing side cannot create two cells.
+  if (seg1.length < 3 || seg2.length < 3) return null;
 
   const originalCells = cell.originalCells ?? [cell.id];
   const defFromSeg = (seg: { id: string; point: Point }[], suffix: string): CellDefinition => ({
@@ -396,7 +374,7 @@ function splitCellByPoints(
 
 /**
  * Apply splitLines definitions onto an existing topology.
- * Currently supports vertex-vertex splits only.
+ * Supports vertex and edge points on the target cell boundary.
  */
 export function applySplits(topology: GridTopology, config: GridConfig): GridTopology {
   const splits = config.splitLines ?? [];
@@ -422,7 +400,7 @@ export function applySplits(topology: GridTopology, config: GridConfig): GridTop
       return;
     }
 
-    const newDefs = splitCellByPoints(originalCell, start as any, end as any, topology);
+    const newDefs = splitCellByPoints(originalCell, start, end, topology);
     if (!newDefs) {
       console.warn('[split] split failed for cell', split.cellId, { start, end });
       return;
