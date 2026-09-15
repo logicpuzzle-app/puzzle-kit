@@ -8,7 +8,7 @@
 
 - 旧geometryテスト10件は不具合があっても成功。期待座標・面積と無効参照の保持へ置換すると、旧実装で5失敗・9成功。修正後geometryとmultitouchの対象31件が成功。
 - Unit 958件/72ファイル、アプリ/E2E型検査、solver source map検査が成功。
-- 開発E2E: 255成功・既存skip 1。
+- 開発E2E: 初回255成功・既存skip 1。#99を基点にした再検証では251成功・既存skip 1。
 - アプリビルド成功後、本番E2E: 70成功・既存skip 1。
 - 先行PRを含むローカル統合 `113f36c` でライブラリビルド、全Unit591件/68ファイル、アプリ/E2E型検査が成功。統合全E2Eはこの時点では未再実行。
 - Before: `c6e07799cfec71aa7d345216acca780f048c0bb2`、After: `cd38396639c1f2515e73b9e17e60b67fb7daf9c5`。両撮影時clean。552ソースの差は分割処理とgeometryテストの2ファイルのみ。
@@ -47,3 +47,9 @@ QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after --config 
 ```
 
 最初のAfter撮影はサンドボックスがChromiumのMachPort作成を拒否して起動前に終了し、権限を切り替えた撮影が成功しました。全QAの最初のE2EもサーバーbindのEPERMで未実行となり、Unit等の成功後にE2E以降を再実行しました。アプリの失敗とは分けて扱っています。
+
+## CI失敗経路を除いた基点への追従
+
+初回CI run 34966841821は、変更外の旧 `special-tip.spec.ts::init` が `Resulting promise was garbage collected` で失敗しました（254成功・1失敗・1既存skip）。辺分割の失敗ではありませんが、CI成功とは扱っていません。旧経路を公開File Open/Saveへ置換したPR #99を新しいbaseとしました。
+
+載せ替え後のcodeは `26b5e6253c87372e95d4babc38f384a773b80c4e`。Unit958/72・開発251+1skip・本番70+1skip・型/source map/buildを再検証して成功。撮影時と現行のアプリsrc treeは完全に一致し、増えた差分は #99のE2E/説明だけです。既存撮影を現行アプリの証跡として参照できます。[基点変更の照合結果](evidence-edge-split-20260915/rebase-proof.json)。現在のPR依存は #99です。
