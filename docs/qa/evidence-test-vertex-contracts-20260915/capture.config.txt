@@ -1,0 +1,5 @@
+import config from '../playwright.config';
+export default {
+  ...config, testDir: '.', testMatch: 'vertex-capture.spec.ts', testIgnore: [],
+  projects: config.projects!.filter(p => ['chromium', 'mobile-chrome'].includes(p.name!)).map(p => ({ name: p.name, use: p.use })),
+};

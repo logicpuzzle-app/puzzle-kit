@@ -1,0 +1,10 @@
+{
+  "baseline": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+  "beforeFiles": 552,
+  "afterFiles": 552,
+  "beforeMatchesBaseline": true,
+  "changed": [
+    "src/utils/topology/__tests__/geometry.test.ts",
+    "src/utils/topology/mergeSplit.ts"
+  ]
+}

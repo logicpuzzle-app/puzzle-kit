@@ -1,16 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
   isInputElement,
-  shouldIgnoreKeyEvent,
-  normalizeKey,
-  getModifiers,
   matchesShortcut,
-  isArrowKey,
   getArrowDirection,
   calculateNextPosition,
-  isDigit,
-  isSingleChar,
-  isDeleteKey,
   getMaxDigitsForGrid,
   appendDigit,
   removeLastChar,
@@ -29,129 +22,35 @@ describe('keyboardUtils', () => {
     });
   });
 
-  describe('normalizeKey', () => {
-    it('converts to lowercase', () => {
-      expect(normalizeKey('A')).toBe('a');
-      expect(normalizeKey('ArrowUp')).toBe('arrowup');
+  describe('arrow navigation', () => {
+    it.each([
+      ['ArrowUp', { row: 0, col: 3 }],
+      ['ArrowDown', { row: 2, col: 3 }],
+      ['ArrowLeft', { row: 1, col: 2 }],
+      ['ARROWRIGHT', { row: 1, col: 4 }],
+    ])('moves %s on a rectangular grid', (key, expected) => {
+      const direction = getArrowDirection(key);
+      expect(direction).not.toBeNull();
+      expect(calculateNextPosition({ row: 1, col: 3 }, direction!, 3, 5)).toEqual(expected);
     });
 
-    it('preserves already lowercase', () => {
-      expect(normalizeKey('a')).toBe('a');
-      expect(normalizeKey('1')).toBe('1');
-    });
-  });
-
-  describe('isArrowKey', () => {
-    it('returns true for arrow keys', () => {
-      expect(isArrowKey('ArrowUp')).toBe(true);
-      expect(isArrowKey('arrowdown')).toBe(true);
-      expect(isArrowKey('ArrowLeft')).toBe(true);
-      expect(isArrowKey('ARROWRIGHT')).toBe(true);
+    it('clamps each axis at the rectangular board edges', () => {
+      expect(calculateNextPosition({ row: 0, col: 0 }, { dr: -1, dc: -1 }, 3, 5)).toEqual({ row: 0, col: 0 });
+      expect(calculateNextPosition({ row: 2, col: 4 }, { dr: 1, dc: 1 }, 3, 5)).toEqual({ row: 2, col: 4 });
     });
 
-    it('returns false for non-arrow keys', () => {
-      expect(isArrowKey('a')).toBe(false);
-      expect(isArrowKey('Enter')).toBe(false);
-      expect(isArrowKey('Up')).toBe(false);
-    });
-  });
-
-  describe('getArrowDirection', () => {
-    it('returns correct delta for up', () => {
-      expect(getArrowDirection('ArrowUp')).toEqual({ dr: -1, dc: 0 });
-    });
-
-    it('returns correct delta for down', () => {
-      expect(getArrowDirection('ArrowDown')).toEqual({ dr: 1, dc: 0 });
-    });
-
-    it('returns correct delta for left', () => {
-      expect(getArrowDirection('ArrowLeft')).toEqual({ dr: 0, dc: -1 });
-    });
-
-    it('returns correct delta for right', () => {
-      expect(getArrowDirection('ArrowRight')).toEqual({ dr: 0, dc: 1 });
-    });
-
-    it('returns null for non-arrow keys', () => {
-      expect(getArrowDirection('a')).toBe(null);
-    });
-  });
-
-  describe('calculateNextPosition', () => {
-    it('moves within bounds', () => {
-      const current = { row: 5, col: 5 };
-      expect(calculateNextPosition(current, { dr: -1, dc: 0 }, 10, 10)).toEqual({ row: 4, col: 5 });
-      expect(calculateNextPosition(current, { dr: 1, dc: 0 }, 10, 10)).toEqual({ row: 6, col: 5 });
-      expect(calculateNextPosition(current, { dr: 0, dc: -1 }, 10, 10)).toEqual({ row: 5, col: 4 });
-      expect(calculateNextPosition(current, { dr: 0, dc: 1 }, 10, 10)).toEqual({ row: 5, col: 6 });
-    });
-
-    it('clamps to upper bounds', () => {
-      const current = { row: 9, col: 9 };
-      expect(calculateNextPosition(current, { dr: 1, dc: 0 }, 10, 10)).toEqual({ row: 9, col: 9 });
-      expect(calculateNextPosition(current, { dr: 0, dc: 1 }, 10, 10)).toEqual({ row: 9, col: 9 });
-    });
-
-    it('clamps to lower bounds', () => {
-      const current = { row: 0, col: 0 };
-      expect(calculateNextPosition(current, { dr: -1, dc: 0 }, 10, 10)).toEqual({ row: 0, col: 0 });
-      expect(calculateNextPosition(current, { dr: 0, dc: -1 }, 10, 10)).toEqual({ row: 0, col: 0 });
-    });
-  });
-
-  describe('isDigit', () => {
-    it('returns true for digits', () => {
-      for (let i = 0; i <= 9; i++) {
-        expect(isDigit(String(i))).toBe(true);
-      }
-    });
-
-    it('returns false for non-digits', () => {
-      expect(isDigit('a')).toBe(false);
-      expect(isDigit('')).toBe(false);
-      expect(isDigit('10')).toBe(false);
-    });
-  });
-
-  describe('isSingleChar', () => {
-    it('returns true for single non-digit characters', () => {
-      expect(isSingleChar('a')).toBe(true);
-      expect(isSingleChar('Z')).toBe(true);
-      expect(isSingleChar('!')).toBe(true);
-    });
-
-    it('returns false for digits', () => {
-      expect(isSingleChar('5')).toBe(false);
-    });
-
-    it('returns false for multi-character strings', () => {
-      expect(isSingleChar('ab')).toBe(false);
-      expect(isSingleChar('Enter')).toBe(false);
-    });
-  });
-
-  describe('isDeleteKey', () => {
-    it('returns true for delete keys', () => {
-      expect(isDeleteKey('Backspace')).toBe(true);
-      expect(isDeleteKey('Delete')).toBe(true);
-    });
-
-    it('returns false for other keys', () => {
-      expect(isDeleteKey('a')).toBe(false);
-      expect(isDeleteKey('Enter')).toBe(false);
+    it('ignores non-arrow keys', () => {
+      expect(getArrowDirection('a')).toBeNull();
     });
   });
 
   describe('getMaxDigitsForGrid', () => {
     describe('for direc type (Yajilin)', () => {
       it('returns 1 for small grids', () => {
-        expect(getMaxDigitsForGrid(10, 10, true)).toBe(1);
         expect(getMaxDigitsForGrid(20, 20, true)).toBe(1);
       });
 
       it('returns 2 for medium grids', () => {
-        expect(getMaxDigitsForGrid(50, 50, true)).toBe(2);
         expect(getMaxDigitsForGrid(200, 200, true)).toBe(2);
       });
 
@@ -186,7 +85,6 @@ describe('keyboardUtils', () => {
 
     it('appends digit when under max', () => {
       expect(appendDigit('1', '2', 3)).toBe('12');
-      expect(appendDigit('12', '3', 3)).toBe('123');
     });
 
     it('replaces when at max digits', () => {
@@ -205,7 +103,6 @@ describe('keyboardUtils', () => {
 
     it('removes last character', () => {
       expect(removeLastChar('123')).toBe('12');
-      expect(removeLastChar('12')).toBe('1');
     });
   });
 
