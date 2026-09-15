@@ -62,6 +62,6 @@ it('restores layer metadata on a text-only board and keeps post-load editing und
   const id=store.getState().addSymbol(element);
   expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
   expect(store.getState().puzzle.problem.symbols[id].layer).toBe('problem');
-  store.getState().addSymbol({...element,symbolType:'text-free:edited'});
+  expect(store.getState().addSymbol({...element,symbolType:'text-free:edited'})).toBe(id);
   store.getState().undo();expect(store.getState().puzzle.problem.symbols[id].symbolType).toBe('text-free:A:B');
 });
