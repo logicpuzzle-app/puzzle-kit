@@ -48,11 +48,11 @@ export default defineConfig({
     },
     {
       name: 'mobile-chrome',
-      grepInvert: devGrepInvert,
+      grepInvert: [...(devGrepInvert ? [devGrepInvert] : []), /@desktop/],
       use: { ...devices['Pixel 7'] },
     },
     { name: 'webkit', testIgnore: desktopTestIgnore, use: { ...devices['Desktop Safari'] } },
-    { name: 'mobile-webkit', testIgnore: desktopTestIgnore, use: { ...devices['iPhone 13'] } },
+    { name: 'mobile-webkit', grepInvert: /@desktop/, testIgnore: desktopTestIgnore, use: { ...devices['iPhone 13'] } },
   ],
   webServer: externalBaseURL || process.env.QA_STATIC_DIR
     ? undefined

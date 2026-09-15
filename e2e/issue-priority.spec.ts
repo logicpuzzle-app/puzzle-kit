@@ -40,7 +40,7 @@ test('lines: long and short overlap stays normalized through undo and reload', a
   await page.reload();await expect(page.locator('#puzzle-canvas')).toBeVisible();await expect.poll(() => lineCount(page)).toBe(1);
 });
 
-test('half: a half segment over a full segment adds no duplicate', async ({ page }) => {
+test('half: a half segment over a full segment adds no duplicate', { tag: '@desktop' }, async ({ page }) => {
   await init(page, 'line-normal');const a = await point(page, 1, 1), b = await point(page, 1, 2);
   await drag(page, a, b);await expect.poll(() => lineCount(page)).toBe(1);
   await page.evaluate(async () => { const path = '/src/store/puzzleStore.ts';const { usePuzzleStore } = await import(path);usePuzzleStore.getState().setToolSettings({ lineHalfMode: true, lineGridPoints: ['cell', 'edge'] }); });
@@ -75,7 +75,7 @@ test('edit: text replacement, clear and undo preserve a single entry', async ({ 
   await expect(texts).toHaveCount(0);await undo.click();await expect(texts).toHaveText(['DEF']);
 });
 
-test('contrast: neutral numbers and text follow dark cell backgrounds', async ({ page }) => {
+test('contrast: neutral numbers and text follow dark cell backgrounds', { tag: '@desktop' }, async ({ page }) => {
   await init(page);
   await page.evaluate(async () => {
     const path = '/src/store/puzzleStore.ts';const { usePuzzleStore } = await import(path);const s = usePuzzleStore.getState();
@@ -89,7 +89,7 @@ test('contrast: neutral numbers and text follow dark cell backgrounds', async ({
   await expect(page.locator('.symbol-layer-problem text')).toHaveAttribute('fill', '#ffffff');
 });
 
-test('lits: incomplete and forbidden shapes are rejected without completion highlight', async ({ page }) => {
+test('lits: incomplete and forbidden shapes are rejected without completion highlight', { tag: '@desktop' }, async ({ page }) => {
   await init(page);
   const store = await page.evaluateHandle(async () => {
     const path = '/src/store/puzzleStore.ts';
@@ -116,7 +116,7 @@ test('lits: incomplete and forbidden shapes are rejected without completion high
   }
 });
 
-test('highlights: Akari light beams remain visual and do not fill answer cells', async ({ page }) => {
+test('highlights: Akari light beams remain visual and do not fill answer cells', { tag: '@desktop' }, async ({ page }) => {
   await init(page);
   await page.evaluate(async () => {
     const path = '/src/store/puzzleStore.ts';const { usePuzzleStore } = await import(path);const s = usePuzzleStore.getState();

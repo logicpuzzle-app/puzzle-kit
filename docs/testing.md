@@ -199,3 +199,5 @@ npm run qa:production
 rot2生成の回帰はPRNG seed 1/2を明示し、各回の生成成功を確認する。UIのランダムseed自体を固定する変更ではない。
 
 同梱済みのNPGenerator Wasmを再生成する場合だけ、別途Rustソースとwasm-packが必要。ソースの絶対パスを `npm run build:npgen-wasm -- /path/to/npgenerator/rust` で指定する。通常の `npm run build` はWasm再生成を行わない。
+
+盤面のseed・表示・ルール判定など、モバイル固有の操作や配置を検証しない回帰ケースには `@desktop` を付けられる。desktop Chromium/WebKitで実行し、mobile Chrome/WebKitの重複実行を外す。`@production` と併用した場合も本番mobile Chromeから除外される。touch・狭幅レイアウト・端末固有APIを確認するケースには付けない。最初の適用対象は `issue-priority.spec.ts` のhalf/contrast/LITS/Akariの4ケース。
