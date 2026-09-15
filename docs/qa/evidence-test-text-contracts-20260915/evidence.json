@@ -1,0 +1,126 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "text-ui: long text remains multiline when reopened through Alphabet",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_INCLUDE_PRODUCTION_TESTS=1 QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/text-editing.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "text-edit-before.webm",
+    "screenshot": "text-edit-before.png",
+    "videoSha256": "7323d054f2510ae886122650fb6d7cf4fbf703fb319d2fc877639ecc7982075b",
+    "screenshotSha256": "6025cea6afcd927be7f7383986ab83cccd0ed3313443f322957071e4320ca96a",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "7.320000"
+      }
+    },
+    "fullyDecoded": true,
+    "screenshotAttachment": "cross-tool-dialog"
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "text-ui: composition Escape preserves the draft until explicit cancel",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_INCLUDE_PRODUCTION_TESTS=1 QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/text-editing.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "composition-draft-before.webm",
+    "screenshot": "composition-draft-before.png",
+    "videoSha256": "f30699d542051a5b5b871bee5f3d2c2a43a7f43e98782b2704fbba4595a53dbe",
+    "screenshotSha256": "4746d0e1497679b67d0d4ea239e52cb634ab7b4b12bb2b5249fa020d6be4e55c",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.760000"
+      }
+    },
+    "fullyDecoded": true,
+    "screenshotAttachment": "composition-draft"
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "text-ui: long text remains multiline when reopened through Alphabet",
+    "project": "chromium",
+    "revision": "d4d016cdd94769011ef723846c7218191f66f5ce",
+    "workingTree": "?? docs/qa/2026-09-15-test-text-contracts.md\n?? docs/qa/evidence-test-text-contracts-20260915/",
+    "command": "QA_INCLUDE_PRODUCTION_TESTS=1 QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/text-editing.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "text-edit-after.webm",
+    "screenshot": "text-edit-after.png",
+    "videoSha256": "cc58587455ba90fe71600d19bd0f4a8cabb2d6b55ba43775b5f4a76046b162bd",
+    "screenshotSha256": "a4634127709451eb337744eb44895a5964991f453864302bbda4666bf9c9069e",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "5.800000"
+      }
+    },
+    "fullyDecoded": true,
+    "screenshotAttachment": "cross-tool-dialog"
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "text-ui: composition Escape preserves the draft until explicit cancel",
+    "project": "chromium",
+    "revision": "d4d016cdd94769011ef723846c7218191f66f5ce",
+    "workingTree": "?? docs/qa/2026-09-15-test-text-contracts.md\n?? docs/qa/evidence-test-text-contracts-20260915/",
+    "command": "QA_INCLUDE_PRODUCTION_TESTS=1 QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/text-editing.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "composition-draft-after.webm",
+    "screenshot": "composition-draft-after.png",
+    "videoSha256": "e3cf5fff1b5df7896f1e7d1e8bb2d3134cdac4f5285025ec5d1224998e0e40b0",
+    "screenshotSha256": "75badc92c36ec4aa0bb97f4962f9add0f507ea1832dfb1d7437187db0c689301",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.760000"
+      }
+    },
+    "fullyDecoded": true,
+    "screenshotAttachment": "composition-draft"
+  }
+]

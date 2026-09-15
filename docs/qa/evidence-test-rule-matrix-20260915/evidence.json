@@ -1,0 +1,242 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "half: a half segment over a full segment adds no duplicate",
+    "project": "chromium",
+    "revision": "aa89a6802d1be460e39640737a1a188a77fd7f06",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/issue-priority.spec.ts --grep 'half:|contrast:|lits:|highlights:' --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "half-line-before.webm",
+    "screenshot": "half-line-before.png",
+    "videoSha256": "1ff991a5cb79459a1778f337b9e991e4db47d850f031738cb3a3482db29c6776",
+    "screenshotSha256": "5397c4624d97e0eb6bbbcd3eeca3279ee410fde74371ea5c2779cf8f619ee61c",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "3.800000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "contrast: neutral numbers and text follow dark cell backgrounds",
+    "project": "chromium",
+    "revision": "aa89a6802d1be460e39640737a1a188a77fd7f06",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/issue-priority.spec.ts --grep 'half:|contrast:|lits:|highlights:' --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "contrast-before.webm",
+    "screenshot": "contrast-before.png",
+    "videoSha256": "bc74cc40befc5433bf7485400b4de8f72fb478b52121220d234deb5cfae90f40",
+    "screenshotSha256": "67d13d639e18e9353596f1acd8138db9c1da1c43cf9696aa55234c548dc1f966",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.600000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "lits: incomplete and forbidden shapes are rejected without completion highlight",
+    "project": "chromium",
+    "revision": "aa89a6802d1be460e39640737a1a188a77fd7f06",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/issue-priority.spec.ts --grep 'half:|contrast:|lits:|highlights:' --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "lits-invalid-before.webm",
+    "screenshot": "lits-invalid-before.png",
+    "videoSha256": "195d325286684ca0c4986cc6f4f38a4c7849987ada9a2779869d701f4b4613eb",
+    "screenshotSha256": "9188995e361bff5403cdb36f6621e3374440201adefee4e2a209c605cb9e51ed",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.720000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "highlights: Akari light beams remain visual and do not fill answer cells",
+    "project": "chromium",
+    "revision": "aa89a6802d1be460e39640737a1a188a77fd7f06",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/issue-priority.spec.ts --grep 'half:|contrast:|lits:|highlights:' --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "akari-highlight-before.webm",
+    "screenshot": "akari-highlight-before.png",
+    "videoSha256": "73b563ee272ccf33db95a689b560e1e5186da22a92b19769f8275ffe8180e687",
+    "screenshotSha256": "bd382bf95bfc621c145560056fc9e844809c7340c8fe9d8379e039e1cb2e0f9d",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.640000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "half: a half segment over a full segment adds no duplicate",
+    "project": "chromium",
+    "revision": "525a0856886eede7266baeb447ca494558210857",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/issue-priority.spec.ts --grep 'half:|contrast:|lits:|highlights:' --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "half-line-after.webm",
+    "screenshot": "half-line-after.png",
+    "videoSha256": "5b1aa187ebf5fb799ab59239425b60951a8519a50f3cd279803cd77f819f3fd9",
+    "screenshotSha256": "2185a92ef99b8bd3d89029974ca3a1d98279b70f23be8227043305dcc50ee431",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.040000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "contrast: neutral numbers and text follow dark cell backgrounds",
+    "project": "chromium",
+    "revision": "525a0856886eede7266baeb447ca494558210857",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/issue-priority.spec.ts --grep 'half:|contrast:|lits:|highlights:' --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "contrast-after.webm",
+    "screenshot": "contrast-after.png",
+    "videoSha256": "b6b9ca176c1b2cb0ddf9bfe48a1691d9f6c8e484163e4b49d492cbf7ab6c3c8b",
+    "screenshotSha256": "5c856f60c9f34f09e4a8e0835136b02b31c876e73dfa40645347e4b2d06ebcc8",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.520000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "lits: incomplete and forbidden shapes are rejected without completion highlight",
+    "project": "chromium",
+    "revision": "525a0856886eede7266baeb447ca494558210857",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/issue-priority.spec.ts --grep 'half:|contrast:|lits:|highlights:' --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "lits-invalid-after.webm",
+    "screenshot": "lits-invalid-after.png",
+    "videoSha256": "a1b39cf12326b9152b01e7bcc4cd3965a88db07864fa509c3a5515fee7387452",
+    "screenshotSha256": "9188995e361bff5403cdb36f6621e3374440201adefee4e2a209c605cb9e51ed",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.800000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "highlights: Akari light beams remain visual and do not fill answer cells",
+    "project": "chromium",
+    "revision": "525a0856886eede7266baeb447ca494558210857",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/issue-priority.spec.ts --grep 'half:|contrast:|lits:|highlights:' --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "akari-highlight-after.webm",
+    "screenshot": "akari-highlight-after.png",
+    "videoSha256": "596d312deded0d9d94a05e319204db658f89a4511924a1c2d30258b29c02aade",
+    "screenshotSha256": "814d84ecc0e3999abe178433882c7571fae063f169defed5faf94d966d908dc5",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.680000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]
