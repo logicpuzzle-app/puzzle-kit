@@ -1,0 +1,327 @@
+{
+  "codeRevision": "0440d1ba55549f3c777c3cc6431ab0b2e148a7a9",
+  "modes": [
+    {
+      "mode": "development",
+      "recordSuccess": false,
+      "exit": 1,
+      "cases": [
+        {
+          "title": "retention: success @production",
+          "status": "passed",
+          "attachments": [
+            "runtime-errors"
+          ]
+        },
+        {
+          "title": "retention: assertion failure @production",
+          "status": "failed",
+          "attachments": [
+            "screenshot",
+            "runtime-errors",
+            "video",
+            "error-context",
+            "trace"
+          ]
+        },
+        {
+          "title": "retention: runtime failure @production",
+          "status": "failed",
+          "attachments": [
+            "runtime-errors",
+            "video",
+            "screenshot",
+            "error-context",
+            "trace"
+          ]
+        }
+      ],
+      "outputBytes": 2028111
+    },
+    {
+      "mode": "production",
+      "recordSuccess": false,
+      "exit": 1,
+      "cases": [
+        {
+          "title": "retention: success @production",
+          "status": "passed",
+          "attachments": [
+            "runtime-errors"
+          ]
+        },
+        {
+          "title": "retention: assertion failure @production",
+          "status": "failed",
+          "attachments": [
+            "screenshot",
+            "runtime-errors",
+            "video",
+            "error-context",
+            "trace"
+          ]
+        },
+        {
+          "title": "retention: runtime failure @production",
+          "status": "failed",
+          "attachments": [
+            "runtime-errors",
+            "video",
+            "screenshot",
+            "error-context",
+            "trace"
+          ]
+        }
+      ],
+      "outputBytes": 2021632
+    },
+    {
+      "mode": "development-phase",
+      "recordSuccess": true,
+      "exit": 1,
+      "cases": [
+        {
+          "title": "retention: success @production",
+          "status": "passed",
+          "attachments": [
+            "final-screen",
+            "runtime-errors",
+            "video",
+            "trace"
+          ]
+        },
+        {
+          "title": "retention: assertion failure @production",
+          "status": "failed",
+          "attachments": [
+            "screenshot",
+            "final-screen",
+            "runtime-errors",
+            "video",
+            "error-context",
+            "trace"
+          ]
+        },
+        {
+          "title": "retention: runtime failure @production",
+          "status": "failed",
+          "attachments": [
+            "final-screen",
+            "runtime-errors",
+            "video",
+            "screenshot",
+            "error-context",
+            "trace"
+          ]
+        }
+      ],
+      "outputBytes": 2120550
+    },
+    {
+      "mode": "production-phase",
+      "recordSuccess": true,
+      "exit": 1,
+      "cases": [
+        {
+          "title": "retention: success @production",
+          "status": "passed",
+          "attachments": [
+            "final-screen",
+            "runtime-errors",
+            "video",
+            "trace"
+          ]
+        },
+        {
+          "title": "retention: assertion failure @production",
+          "status": "failed",
+          "attachments": [
+            "screenshot",
+            "final-screen",
+            "runtime-errors",
+            "video",
+            "error-context",
+            "trace"
+          ]
+        },
+        {
+          "title": "retention: runtime failure @production",
+          "status": "failed",
+          "attachments": [
+            "final-screen",
+            "runtime-errors",
+            "video",
+            "screenshot",
+            "error-context",
+            "trace"
+          ]
+        }
+      ],
+      "outputBytes": 2126825
+    },
+    {
+      "mode": "capture",
+      "recordSuccess": true,
+      "exit": 1,
+      "cases": [
+        {
+          "title": "retention: success @production",
+          "status": "passed",
+          "attachments": [
+            "final-screen",
+            "runtime-errors",
+            "video",
+            "trace"
+          ]
+        },
+        {
+          "title": "retention: assertion failure @production",
+          "status": "failed",
+          "attachments": [
+            "screenshot",
+            "final-screen",
+            "runtime-errors",
+            "video",
+            "error-context",
+            "trace"
+          ]
+        },
+        {
+          "title": "retention: runtime failure @production",
+          "status": "failed",
+          "attachments": [
+            "final-screen",
+            "runtime-errors",
+            "video",
+            "screenshot",
+            "error-context",
+            "trace"
+          ]
+        }
+      ],
+      "outputBytes": 2113788
+    },
+    {
+      "mode": "explicit",
+      "recordSuccess": true,
+      "exit": 1,
+      "cases": [
+        {
+          "title": "retention: success @production",
+          "status": "passed",
+          "attachments": [
+            "final-screen",
+            "runtime-errors",
+            "video",
+            "trace"
+          ]
+        },
+        {
+          "title": "retention: assertion failure @production",
+          "status": "failed",
+          "attachments": [
+            "screenshot",
+            "final-screen",
+            "runtime-errors",
+            "video",
+            "error-context",
+            "trace"
+          ]
+        },
+        {
+          "title": "retention: runtime failure @production",
+          "status": "failed",
+          "attachments": [
+            "final-screen",
+            "runtime-errors",
+            "video",
+            "screenshot",
+            "error-context",
+            "trace"
+          ]
+        }
+      ],
+      "outputBytes": 2126745
+    }
+  ],
+  "files": {
+    "videosFullyDecoded": 16,
+    "traceArchivesVerified": 16,
+    "afterModes": 6,
+    "afterCases": 18,
+    "expectedFailures": 12,
+    "unexpectedRegressions": 0
+  },
+  "fullRuns": {
+    "development": {
+      "passed": 251,
+      "skipped": 1,
+      "retainedVideoTraceScreenshots": 0,
+      "remainingAttachmentTypes": [
+        "board-dimensions",
+        "bundled-worker-result",
+        "exported-png",
+        "exported-svg",
+        "input-events",
+        "pinch-anchor",
+        "png-pixels",
+        "runtime-errors"
+      ],
+      "outputBytes": 1593948,
+      "directory": "artifacts/check/2026-09-15T09-18-53-687Z/e2e"
+    },
+    "production": {
+      "passed": 70,
+      "skipped": 1,
+      "retainedVideoTraceScreenshots": 0,
+      "remainingAttachmentTypes": [
+        "bundled-worker-result",
+        "exported-png",
+        "exported-svg",
+        "png-pixels",
+        "runtime-errors"
+      ],
+      "outputBytes": 1265622,
+      "directory": "artifacts/check/production-2026-09-15T09-19-01-494Z"
+    },
+    "explicitRealUI": {
+      "passed": 2,
+      "inlineScreenshotRetained": true,
+      "rawScreenshotRetained": true,
+      "videosAndTracesRetained": 2
+    }
+  },
+  "sourceAndMatrix": {
+    "base": "44d1f0037cece199f3963c7fd4b77ef962bc39f8",
+    "specBodiesUnchangedExceptScreenshotGates": [
+      "e2e/build-entrypoints.spec.ts",
+      "e2e/editor-issues.spec.ts",
+      "e2e/editor-quality.spec.ts",
+      "e2e/number-pad-history.spec.ts",
+      "e2e/properties-drawer.spec.ts",
+      "e2e/puzzle-session.spec.ts",
+      "e2e/special-tip.spec.ts",
+      "e2e/special-touch.chromium-touch.spec.ts",
+      "e2e/symbol-sizing.spec.ts",
+      "e2e/text-editing.spec.ts",
+      "e2e/topology-issues.spec.ts"
+    ],
+    "dev": {
+      "before": 252,
+      "after": 252,
+      "setsEqual": true
+    },
+    "production": {
+      "before": 71,
+      "after": 71,
+      "setsEqual": true
+    }
+  },
+  "probeSourceHashes": {
+    "check-retention-matrix.py.txt": "b2f4945c1f7e1d46d3f5d5059fea2d0d23be4976a90927b4f30f217f065a1eb7",
+    "retention-cases.spec.ts.txt": "6e7aff3a1c3fdb9bf121694d1ce4ca57bf6d7b5b58998f4e7b61c6c14460d53a",
+    "development.config.ts.txt": "4f4408c2c798406313af704711b3ba9792239a163e57f5f59a63f6e53def5250",
+    "capture.config.ts.txt": "4062b370cc36a180558cda4e2a872a05bd2579d18a16f5719defd5887fa9e060",
+    "production.config.ts.txt": "2817bbbe4ce08c0055fad27f8348653fe7c42a1183d30191595b736ca1175e70"
+  }
+}

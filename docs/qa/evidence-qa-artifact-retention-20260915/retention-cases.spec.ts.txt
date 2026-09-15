@@ -1,0 +1,17 @@
+import { test, expect } from '../../e2e/fixtures';
+
+test('retention: success @production', async ({ page }) => {
+  await page.setContent('<h1>Artifact retention probe</h1>');
+  await expect(page.locator('h1')).toHaveText('Artifact retention probe');
+});
+
+test('retention: assertion failure @production', async ({ page }) => {
+  await page.setContent('<h1>Artifact retention probe</h1>');
+  expect(await page.locator('h1').textContent()).toBe('intentional assertion failure');
+});
+
+test('retention: runtime failure @production', async ({ page, runtimeErrors }) => {
+  await page.setContent('<h1>Artifact retention probe</h1>');
+  await page.evaluate(() => { setTimeout(() => { throw new Error('intentional runtime failure'); }, 0); });
+  await expect.poll(() => runtimeErrors.length).toBe(1);
+});
