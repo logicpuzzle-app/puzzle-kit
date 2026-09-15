@@ -55,11 +55,11 @@ export default defineConfig({
     {
       name: 'mobile-chrome',
       testIgnore: ['**/qa-*-capture.spec.ts', buildEntrypointsIgnore, mouseExclusionSpec],
-      grepInvert: devGrepInvert,
+      grepInvert: [...(devGrepInvert ? [devGrepInvert] : []), /@desktop/],
       use: { ...devices['Pixel 7'] },
     },
     { name: 'webkit', testIgnore: [...desktopTestIgnore, buildEntrypointsIgnore, ...mobileTouchSpecs], use: { ...devices['Desktop Safari'] } },
-    { name: 'mobile-webkit', testIgnore: [...desktopTestIgnore, buildEntrypointsIgnore, mouseExclusionSpec], use: { ...devices['iPhone 13'] } },
+    { name: 'mobile-webkit', grepInvert: /@desktop/, testIgnore: [...desktopTestIgnore, buildEntrypointsIgnore, mouseExclusionSpec], use: { ...devices['iPhone 13'] } },
   ],
   webServer: externalBaseURL || process.env.QA_STATIC_DIR
     ? undefined
