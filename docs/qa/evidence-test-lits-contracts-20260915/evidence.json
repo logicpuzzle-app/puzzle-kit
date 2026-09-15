@@ -1,0 +1,62 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "LITS imported rooms follow a drawn divider through undo, redo and reload",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/room-text-access.spec.ts --grep 'LITS imported rooms' --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "room-divider-before.webm",
+    "screenshot": "room-divider-before.png",
+    "videoSha256": "5b4b00af346bd7fcf84c98f780b486cef74904dc5f1e241b06edf350574a70f8",
+    "screenshotSha256": "9fb84a3eb89a47b4253fd0bc7f613172c6f2b015dd3bf3559f998834f0b103d2",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "7.520000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "LITS imported rooms follow a drawn divider through undo, redo and reload",
+    "project": "chromium",
+    "revision": "0745f0a359a2b7468ed88592743bd225684b7459",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/room-text-access.spec.ts --grep 'LITS imported rooms' --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "room-divider-after.webm",
+    "screenshot": "room-divider-after.png",
+    "videoSha256": "0d9022c5388e7778e117b52f5bf3ecd9b2152e72324db8e0f3bf1cec286c9d31",
+    "screenshotSha256": "3b2c8fbe0ae1832a97ea47ebd22e154a8beb097ed57b9495da0a26aa90117550",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "6.800000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]
