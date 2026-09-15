@@ -273,7 +273,12 @@ describe('multi-pointer interruption boundaries', () => {
 
 function geometrySnapshot(useStore: ReturnType<typeof setupStore>) {
   const { grid, topology } = useStore.getState();
-  return structuredClone({ grid, topology });
+  return structuredClone({
+    grid,
+    cells: [...topology!.cells].sort(([a], [b]) => a.localeCompare(b)).map(([id, cell]) => ({
+      id, vertices: cell.boundaryVertices.map(vertex => topology!.vertices.get(vertex)!.position),
+    })),
+  });
 }
 
 describe('grid geometry history', () => {
@@ -286,10 +291,10 @@ describe('grid geometry history', () => {
     const original = geometrySnapshot(useStore);
     useStore.getState().mergeCells(['cell-0-0', 'cell-0-1']);
     const merged = geometrySnapshot(useStore);
-    expect(merged.topology!.cells.size).toBe(original.topology!.cells.size - 1);
+    expect(merged.cells.length).toBe(original.cells.length - 1);
     useStore.getState().unmergeCells(['merged-0']);
     const unmerged = geometrySnapshot(useStore);
-    expect(unmerged.topology!.cells.size).toBe(original.topology!.cells.size);
+    expect(unmerged.cells.length).toBe(original.cells.length);
     useStore.getState().undo();
     expect(geometrySnapshot(useStore)).toEqual(merged);
     useStore.getState().undo();
@@ -307,7 +312,7 @@ describe('grid geometry history', () => {
     const add = () => useStore.getState().addSplitLine(cell.id, cell.boundaryVertices[0], cell.boundaryVertices[2]);
     add();
     const split = geometrySnapshot(useStore);
-    expect(split.topology!.cells.size).toBe(original.topology!.cells.size + 1);
+    expect(split.cells.length).toBe(original.cells.length + 1);
     add();
     useStore.getState().undo();
     expect(geometrySnapshot(useStore)).toEqual(original);
@@ -320,7 +325,7 @@ describe('grid geometry history', () => {
     useStore.getState().clearSplitLines();
     const cleared = geometrySnapshot(useStore);
     expect(cleared.grid.splitLines ?? []).toHaveLength(0);
-    expect(cleared.topology!.cells).toEqual(original.topology!.cells);
+    expect(cleared.cells).toEqual(original.cells);
     useStore.getState().undo();
     expect(geometrySnapshot(useStore)).toEqual(split);
     useStore.getState().redo();
