@@ -1,0 +1,72 @@
+{
+  "version": "1.0.0",
+  "grid": {
+    "rows": 6,
+    "cols": 6,
+    "cellSize": 40,
+    "outerPadding": 20,
+    "showGrid": true,
+    "gridStyle": "normal",
+    "blockRows": 3,
+    "blockCols": 3,
+    "gridType": "square",
+    "marginTop": 0,
+    "marginBottom": 0,
+    "marginLeft": 0,
+    "marginRight": 0,
+    "frameStyle": "normal",
+    "frameColor": "#000000",
+    "gridColor": "#000000",
+    "backgroundColor": "#ffffff"
+  },
+  "state": {
+    "problem": {
+      "surfaces": {},
+      "lines": {},
+      "edges": {},
+      "walls": {},
+      "numbers": {},
+      "symbols": {
+        "s1001": {
+          "id": "s1001",
+          "cellId": "cell-1-1",
+          "symbolType": "circle",
+          "size": "medium",
+          "rotation": 30,
+          "color": "#123456",
+          "fillColor": "#ffffff",
+          "objectKey": "keep",
+          "layer": "problem"
+        },
+        "s1002": {
+          "id": "s1002",
+          "cellId": "cell-1-1",
+          "symbolType": "arrow_N",
+          "size": "small",
+          "rotation": 90,
+          "color": "#000000",
+          "layer": "problem"
+        }
+      },
+      "cages": {},
+      "specials": {},
+      "boxLines": {}
+    },
+    "answer": {
+      "surfaces": {},
+      "lines": {},
+      "edges": {},
+      "walls": {},
+      "numbers": {},
+      "symbols": {},
+      "cages": {},
+      "specials": {},
+      "boxLines": {}
+    }
+  },
+  "topologySettings": {
+    "useTopology": true,
+    "topologyPreset": "none",
+    "topologyIntensity": 0
+  }
+}

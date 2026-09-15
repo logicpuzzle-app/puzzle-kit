@@ -15,7 +15,7 @@ async function selectNumberCell(page: Page, directional: boolean) {
   await page.mouse.click(point.x, point.y);
 }
 
-test('directional number insertion, replacement and deletion support Undo/Redo', { tag: '@production' }, async ({ page }) => {
+test('directional number insertion, replacement and deletion support Undo/Redo', { tag: ['@production', '@desktop'] }, async ({ page }) => {
   await selectNumberCell(page, true);
   const numbers = page.locator('.directional-clue-layer.problem text');
   const undo = page.getByTitle(/Undo \(Ctrl\+Z\)/).first();
@@ -43,12 +43,20 @@ test('directional number insertion, replacement and deletion support Undo/Redo',
 });
 
 for (const directional of [false, true]) {
-  test(`${directional ? 'directional' : 'normal'} marker keys support replacement, deletion and Undo/Redo`, { tag: '@production' }, async ({ page }) => {
+  test(`${directional ? 'directional' : 'normal'} marker keys support replacement, deletion and Undo/Redo`, { tag: ['@production', '@desktop'] }, async ({ page }) => {
     await selectNumberCell(page, directional);
     const numbers = page.locator(directional ? '.directional-clue-layer.problem text' : '.number-layer-problem text');
     const undo = page.getByTitle(/Undo \(Ctrl\+Z\)/).first();
     const redo = page.getByTitle(/Redo/).first();
+    if (!directional) await expect(numbers).not.toHaveCount(0);
     const before = await numbers.allTextContents();
+    if (!directional) {
+      // #19: delete the click-created number before testing keyboard markers.
+      await page.keyboard.press('Backspace');
+      await expect(numbers).toHaveCount(0);
+      await undo.click();
+      await expect(numbers).toHaveText(before);
+    }
     await page.keyboard.press('Shift+Slash');
     await expect(numbers).toHaveText(['?']);
     await undo.click();

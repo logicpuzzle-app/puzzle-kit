@@ -1,0 +1,122 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "New triangle board renders the selected geometry",
+    "project": "chromium",
+    "revision": "f7b49a8e6164f0341cbcb0036bef13d45054e36c",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before --config .work/playwright.vertex.config.ts",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "triangle-before.webm",
+    "screenshot": "triangle-before.png",
+    "videoSha256": "bf6cf50dc811803d969c07ee52361864923051c4527b549934dbf01451bedb55",
+    "screenshotSha256": "5c60458dd0409c3ca674c6954aff77466346a2cd5b9e1c556cc0c6f663753d26",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.800000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "New pyramid board renders the selected geometry",
+    "project": "chromium",
+    "revision": "f7b49a8e6164f0341cbcb0036bef13d45054e36c",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before --config .work/playwright.vertex.config.ts",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "pyramid-before.webm",
+    "screenshot": "pyramid-before.png",
+    "videoSha256": "0ebbcb311acb251208aad02f7aa55442db3161198467e456b0b6ae2334a9d649",
+    "screenshotSha256": "42f5c6e012d84da228d79e4d8781949d8d13a7dba3e5b1bbd75a630d5ff7cbf5",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.640000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "New triangle board renders the selected geometry",
+    "project": "chromium",
+    "revision": "e2c208df4eed197b469ada4d47aa88d42629f6e7",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after --config .work/playwright.vertex.config.ts",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "triangle-after.webm",
+    "screenshot": "triangle-after.png",
+    "videoSha256": "124a38012c4152ac0b567e65c2730acf970d3662fd0d58c1e1595a2e049296b7",
+    "screenshotSha256": "5c60458dd0409c3ca674c6954aff77466346a2cd5b9e1c556cc0c6f663753d26",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.680000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "New pyramid board renders the selected geometry",
+    "project": "chromium",
+    "revision": "e2c208df4eed197b469ada4d47aa88d42629f6e7",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after --config .work/playwright.vertex.config.ts",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "pyramid-after.webm",
+    "screenshot": "pyramid-after.png",
+    "videoSha256": "3053fa71c60ff764c057439bc7cc1efa51e52f77b71fc3fa0ca30338b3d4a0ad",
+    "screenshotSha256": "42f5c6e012d84da228d79e4d8781949d8d13a7dba3e5b1bbd75a630d5ff7cbf5",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.640000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]

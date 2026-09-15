@@ -1,0 +1,62 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "Number selection color and width survive reload",
+    "project": "mobile-chrome",
+    "revision": "aa89a6802d1be460e39640737a1a188a77fd7f06",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/cursor-style.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "number-before.webm",
+    "screenshot": "number-before.png",
+    "videoSha256": "773f65d64de42b0fbebb45713c59eaedfc0ee27583d0eca0912fd37edb643d9a",
+    "screenshotSha256": "6840e8bd603c28f5b91e496cf5266ef216fd7c85636f790d0c8946159d7278aa",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "3.200000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "Surface and Number selection styles survive a shared settings reload",
+    "project": "mobile-chrome",
+    "revision": "8beb5f9425f95f9e0c266cbfa54542e7c0ef03b1",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/cursor-style.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "number-after.webm",
+    "screenshot": "number-after.png",
+    "videoSha256": "28c138115676cfa3b0a01027c11572e8fc366dd207ec0ea95f1fe80e298fdb25",
+    "screenshotSha256": "d3e1ebd9b1daa7e75925df54d4e06fbd2a328827594733d0b1b30db90beaa6e0",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "4.000000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]

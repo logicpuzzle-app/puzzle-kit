@@ -11,7 +11,7 @@ async function clickCell(page: Page, x: number, y: number) {
   await page.mouse.click(point.x, point.y);
 }
 
-test('autosave survives reload with problem clues, answer content and subsequent undo', { tag: '@production' }, async ({ page }) => {
+test('autosave survives reload with problem clues, answer content and subsequent undo', { tag: ['@production', '@desktop'] }, async ({ page }) => {
   await page.goto('/master');
   await page.getByRole('button', { name: 'Problem', exact: true }).click();
   await page.getByRole('button', { name: 'Number', exact: true }).click();

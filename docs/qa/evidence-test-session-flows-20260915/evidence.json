@@ -1,0 +1,182 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "autosave survives reload with problem clues, answer content and subsequent undo",
+    "project": "chromium",
+    "revision": "8fa7f59f1126dfad4d74275211fd84bfd74cdb84",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/persistence.spec.ts e2e/puzzle-session.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "autosave-before.webm",
+    "screenshot": "autosave-before.png",
+    "videoSha256": "90ddec3495c095b95838ca02267a01ccf4250babdccc1fb3d3fb39792e620040",
+    "screenshotSha256": "89112f301df31c09cdcc7bca22b43d4ddd519a497a4f4d82f500b046f528cfa0",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "6.960000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "session: File Open starts new history and keeps the imported clue",
+    "project": "mobile-chrome",
+    "revision": "8fa7f59f1126dfad4d74275211fd84bfd74cdb84",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/persistence.spec.ts e2e/puzzle-session.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "file-open-before.webm",
+    "screenshot": "file-open-before.png",
+    "videoSha256": "d28813f174e0d4fd381b31c5abc5d275128d1ad30d9fd561fcd3377409a066b3",
+    "screenshotSha256": "808c70b63e8d6e7eb3d147aaf23bca99c2c2c9afbd71844fa029507bcfd08546",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "1.840000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "session: New discards a previous puzzle trial snapshot",
+    "project": "mobile-chrome",
+    "revision": "8fa7f59f1126dfad4d74275211fd84bfd74cdb84",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/persistence.spec.ts e2e/puzzle-session.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "new-before.webm",
+    "screenshot": "new-before.png",
+    "videoSha256": "89ef2d59f7c93d23f5417c454c1ecc8b3b0c3f3d36b9415f634ac27502a9d6a8",
+    "screenshotSha256": "3c3023de09e99452b40653ca76d96dc96245a985e8ae11f810842ea9fa34af92",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "1.920000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "autosave survives reload with problem clues, answer content and subsequent undo",
+    "project": "chromium",
+    "revision": "d967796b721c60e8329449b549d312ca3179482b",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/persistence.spec.ts e2e/puzzle-session.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "autosave-after.webm",
+    "screenshot": "autosave-after.png",
+    "videoSha256": "bc5a19c136fa976a4dcdce697e3da27f68a34de829dba911a3db20bf29a6b23a",
+    "screenshotSha256": "34e0181011c942c929dadb2a0fe065f888e371603a7fb428f970e2101726797a",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "6.800000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "session: File Open starts new history and keeps the imported clue",
+    "project": "mobile-chrome",
+    "revision": "d967796b721c60e8329449b549d312ca3179482b",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/persistence.spec.ts e2e/puzzle-session.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "file-open-after.webm",
+    "screenshot": "file-open-after.png",
+    "videoSha256": "a79d0350b95922ae801c6414d6787b7e85d6ac4dc7f54b000b37483cafc5d86b",
+    "screenshotSha256": "808c70b63e8d6e7eb3d147aaf23bca99c2c2c9afbd71844fa029507bcfd08546",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.400000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "session: New discards a previous puzzle trial snapshot",
+    "project": "mobile-chrome",
+    "revision": "d967796b721c60e8329449b549d312ca3179482b",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/persistence.spec.ts e2e/puzzle-session.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "new-after.webm",
+    "screenshot": "new-after.png",
+    "videoSha256": "f7409a8305e4b0a54b7b7d616ba16cc26de9be03397bdc3428b27a9f73bb6a1a",
+    "screenshotSha256": "6c45dae0ddbb5bdf52d9ed54cae2cc7a274a7deb244d40d89f6d35c0388acedf",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.560000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]

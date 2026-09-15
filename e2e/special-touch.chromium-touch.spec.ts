@@ -86,9 +86,7 @@ for (const tool of ['Cage', 'BoxLine']) {
     await expect(shapes).not.toHaveCount(0);
     const count = await shapes.count();
     const undo = page.getByTitle(/Undo \(Ctrl\+Z\)/).first();
-    // Capture the old BoxLine failure at the same comparison point even when
-    // the missing history leaves Undo disabled. The shape assertion still fails.
-    if (await undo.isEnabled()) await undo.tap();
+    await undo.tap();
     if (isRecordingQA(info)) await info.attach('after-undo', { body: await page.screenshot(), contentType: 'image/png' });
     await expect(shapes).toHaveCount(0);
     await page.getByTitle(/Redo/).first().tap();
@@ -96,18 +94,20 @@ for (const tool of ['Cage', 'BoxLine']) {
   });
 }
 
-for (const interruption of ['cancel', 'multitouch', 'pan'] as const) {
-  test(`special-touch: ${interruption} discards the pending arrow and allows the next stroke`, { tag: '@production' }, async ({ page }) => {
-    await openTool(page, 'Arrow');
-    if (interruption === 'pan') await page.getByTitle('Pan Mode', { exact: true }).tap();
-    await draw(page, interruption === 'pan' ? 'release' : interruption);
-    await expect(page.locator('#puzzle-canvas .special-layer-problem path')).toHaveCount(0);
-    const pendingSegments = () => page.locator('#puzzle-canvas [data-preview="true"] path').evaluateAll(paths => paths.filter(p => p.getAttribute('d')?.includes(' L ')).length);
-    await expect.poll(pendingSegments).toBe(0);
-    if (interruption === 'pan') await page.getByTitle('Pan Mode', { exact: true }).tap();
-    await draw(page);
-    await expect(page.locator('#puzzle-canvas .special-layer-problem path')).toHaveCount(1);
-    await page.getByTitle(/Undo \(Ctrl\+Z\)/).first().tap();
-    await expect(page.locator('#puzzle-canvas .special-layer-problem path')).toHaveCount(0);
-  });
-}
+test('special-touch: cancel, multitouch and pan each recover with an undoable stroke', { tag: '@production' }, async ({ page }) => {
+  await openTool(page, 'Arrow');
+  for (const interruption of ['cancel', 'multitouch', 'pan'] as const) {
+    await test.step(interruption, async () => {
+      if (interruption === 'pan') await page.getByTitle('Pan Mode', { exact: true }).tap();
+      await draw(page, interruption === 'pan' ? 'release' : interruption);
+      await expect(page.locator('#puzzle-canvas .special-layer-problem path')).toHaveCount(0);
+      const pendingSegments = () => page.locator('#puzzle-canvas [data-preview="true"] path').evaluateAll(paths => paths.filter(p => p.getAttribute('d')?.includes(' L ')).length);
+      await expect.poll(pendingSegments).toBe(0);
+      if (interruption === 'pan') await page.getByTitle('Pan Mode', { exact: true }).tap();
+      await draw(page);
+      await expect(page.locator('#puzzle-canvas .special-layer-problem path')).toHaveCount(1);
+      await page.getByTitle(/Undo \(Ctrl\+Z\)/).first().tap();
+      await expect(page.locator('#puzzle-canvas .special-layer-problem path')).toHaveCount(0);
+    });
+  }
+});

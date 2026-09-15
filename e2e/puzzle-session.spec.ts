@@ -1,4 +1,4 @@
-import { test, expect, isRecordingQA } from './fixtures';
+import { test, expect } from './fixtures';
 import type { Page } from '@playwright/test';
 import { openPuzzleFile, savePuzzleFile } from './puzzle-file';
 
@@ -10,7 +10,7 @@ async function cell(page: Page, x: number) {
   await page.mouse.click(point.x, point.y);
 }
 
-test('session: File Open starts new history and keeps the imported clue', { tag: '@production' }, async ({ page }, info) => {
+test('session: File Open starts new history and keeps the imported clue', { tag: '@production' }, async ({ page }) => {
   await page.goto('/master');
   await page.getByRole('button', { name: 'Problem', exact: true }).click();
   await page.getByRole('button', { name: 'Number', exact: true }).click();
@@ -24,10 +24,6 @@ test('session: File Open starts new history and keeps the imported clue', { tag:
   await openPuzzleFile(page, Buffer.from(JSON.stringify(data)));
   await expect(numbers).toHaveText(['9']);
   const undo = page.getByTitle(/Undo \(Ctrl\+Z\)/).first();
-  // Capture the actual effect of stale history in the Before recording.
-  if (await undo.isEnabled()) await undo.click();
-  if (isRecordingQA(info)) await page.screenshot({ path: info.outputPath('comparison.png') });
-  await expect(numbers).toHaveText(['9']);
   await expect(undo).toBeDisabled();
   await expect(page.getByTitle(/Redo/).first()).toBeDisabled();
   await cell(page, 120);
@@ -38,7 +34,7 @@ test('session: File Open starts new history and keeps the imported clue', { tag:
   await expect(numbers).toHaveCount(2);
 });
 
-test('session: New discards a previous puzzle trial snapshot', { tag: '@production' }, async ({ page }, info) => {
+test('session: New discards a previous puzzle trial snapshot', { tag: '@production' }, async ({ page }) => {
   await page.goto('/master');
   await page.getByRole('button', { name: 'Answer', exact: true }).click();
   await page.getByRole('button', { name: 'Surface', exact: true }).click();
@@ -55,9 +51,6 @@ test('session: New discards a previous puzzle trial snapshot', { tag: '@producti
   await page.getByRole('button', { name: 'Answer', exact: true }).click();
   await expect(surfaces).toHaveCount(0);
   const reject = page.getByRole('button', { name: 'Reject', exact: true });
-  if (await reject.isVisible()) await reject.click();
-  if (isRecordingQA(info)) await page.screenshot({ path: info.outputPath('comparison.png') });
-  await expect(surfaces).toHaveCount(0);
   await expect(reject).toHaveCount(0);
   await expect(page.getByTitle(/Undo \(Ctrl\+Z\)/).first()).toBeDisabled();
   await page.getByRole('button', { name: 'Surface', exact: true }).click();
