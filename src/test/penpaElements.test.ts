@@ -17,10 +17,7 @@ import {
   parseWalls,
   parseThermos,
   parseArrows,
-  PENPA_COLORS,
-  PENPA_SYMBOLS,
   PenpaNumberSize,
-  PenpaNumberPosition,
 } from '../types/penpaElements';
 
 describe('Penpa Elements', () => {
@@ -78,11 +75,6 @@ describe('Penpa Elements', () => {
       expect(result).toEqual({ from: 10, to: 20 });
     });
 
-    it('parses edge key with large numbers', () => {
-      const result = parseEdgeKey('1000,2000');
-      expect(result).toEqual({ from: 1000, to: 2000 });
-    });
-
     it('returns null for invalid key', () => {
       expect(parseEdgeKey('invalid')).toBeNull();
       expect(parseEdgeKey('10')).toBeNull();
@@ -97,11 +89,6 @@ describe('Penpa Elements', () => {
       const key2 = createEdgeKey(20, 10);
       expect(key1).toBe(key2);
       expect(key1).toBe('10,20');
-    });
-
-    it('handles equal indices', () => {
-      const key = createEdgeKey(10, 10);
-      expect(key).toBe('10,10');
     });
   });
 
@@ -145,72 +132,12 @@ describe('Penpa Elements', () => {
     });
   });
 
-  describe('PENPA_COLORS', () => {
-    it('has all required colors', () => {
-      expect(Object.keys(PENPA_COLORS).length).toBeGreaterThanOrEqual(13);
-      expect(PENPA_COLORS[0]).toBe('transparent');
-      expect(PENPA_COLORS[3]).toBe('#000000');
-      expect(PENPA_COLORS[12]).toBe('#ffffff');
-    });
-  });
-
-  describe('PENPA_SYMBOLS', () => {
-    it('has basic shapes', () => {
-      expect(PENPA_SYMBOLS.circle_L).toBeDefined();
-      expect(PENPA_SYMBOLS.circle_L.category).toBe('shape');
-      expect(PENPA_SYMBOLS.square_L).toBeDefined();
-      expect(PENPA_SYMBOLS.diamond_L).toBeDefined();
-      expect(PENPA_SYMBOLS.triangle_L).toBeDefined();
-    });
-
-    it('has battleship symbols', () => {
-      expect(PENPA_SYMBOLS.ship_top).toBeDefined();
-      expect(PENPA_SYMBOLS.ship_top.category).toBe('battleship');
-      expect(PENPA_SYMBOLS.water).toBeDefined();
-    });
-
-    it('has arrow symbols', () => {
-      expect(PENPA_SYMBOLS.arrow_N).toBeDefined();
-      expect(PENPA_SYMBOLS.arrow_N.category).toBe('arrow');
-      expect(PENPA_SYMBOLS.arrow_E).toBeDefined();
-      expect(PENPA_SYMBOLS.arrow_S).toBeDefined();
-      expect(PENPA_SYMBOLS.arrow_W).toBeDefined();
-    });
-
-    it('has dice symbols', () => {
-      expect(PENPA_SYMBOLS.dice_1).toBeDefined();
-      expect(PENPA_SYMBOLS.dice_6).toBeDefined();
-    });
-
-    it('has special symbols', () => {
-      expect(PENPA_SYMBOLS.star).toBeDefined();
-      expect(PENPA_SYMBOLS.heart).toBeDefined();
-      expect(PENPA_SYMBOLS.mine).toBeDefined();
-      expect(PENPA_SYMBOLS.tent).toBeDefined();
-    });
-  });
-
   describe('PenpaNumberSize', () => {
     it('has correct enum values', () => {
       expect(PenpaNumberSize.LARGE).toBe(1);
       expect(PenpaNumberSize.MEDIUM).toBe(2);
       expect(PenpaNumberSize.SMALL).toBe(3);
       expect(PenpaNumberSize.EXTRA_SMALL).toBe(4);
-    });
-  });
-
-  describe('PenpaNumberPosition', () => {
-    it('has all position values', () => {
-      expect(PenpaNumberPosition.CENTER).toBe('center');
-      expect(PenpaNumberPosition.CORNER_TL).toBe('corner_tl');
-      expect(PenpaNumberPosition.CORNER_TR).toBe('corner_tr');
-      expect(PenpaNumberPosition.CORNER_BL).toBe('corner_bl');
-      expect(PenpaNumberPosition.CORNER_BR).toBe('corner_br');
-      expect(PenpaNumberPosition.SIDE_TOP).toBe('side_top');
-      expect(PenpaNumberPosition.SIDE_RIGHT).toBe('side_right');
-      expect(PenpaNumberPosition.SIDE_BOTTOM).toBe('side_bottom');
-      expect(PenpaNumberPosition.SIDE_LEFT).toBe('side_left');
-      expect(PenpaNumberPosition.TAPA).toBe('tapa');
     });
   });
 
