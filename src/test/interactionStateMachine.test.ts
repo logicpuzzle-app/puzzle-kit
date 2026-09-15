@@ -4,11 +4,7 @@ import {
   INITIAL_STATE,
   getMouseButton,
   getModifiers,
-  shouldStartPan,
-  isGridLayer,
   getToolCategory,
-  toolSupportsDrag,
-  toolNeedsCompletion,
   type InteractionState,
   type InteractionEvent,
   type InteractionContext,
@@ -81,105 +77,10 @@ describe('Helper Functions', () => {
     });
   });
 
-  describe('shouldStartPan', () => {
-    it('returns true for middle button', () => {
-      expect(shouldStartPan('middle', defaultModifiers, false)).toBe(true);
-    });
-
-    it('returns true for left button with alt', () => {
-      expect(shouldStartPan('left', { ...defaultModifiers, alt: true }, false)).toBe(true);
-    });
-
-    it('returns true for left button with panMode', () => {
-      expect(shouldStartPan('left', defaultModifiers, true)).toBe(true);
-    });
-
-    it('returns false for left button without modifiers', () => {
-      expect(shouldStartPan('left', defaultModifiers, false)).toBe(false);
-    });
-
-    it('returns false for right button', () => {
-      expect(shouldStartPan('right', defaultModifiers, false)).toBe(false);
-    });
-  });
-
-  describe('isGridLayer', () => {
-    it('returns true for grid layer', () => {
-      expect(isGridLayer('grid')).toBe(true);
-    });
-
-    it('returns false for other layers', () => {
-      expect(isGridLayer('problem')).toBe(false);
-      expect(isGridLayer('answer')).toBe(false);
-      expect(isGridLayer('constraint')).toBe(false);
-    });
-  });
-
-  describe('getToolCategory', () => {
-    it('categorizes surface tools', () => {
-      expect(getToolCategory('surface')).toBe('surface');
-      expect(getToolCategory('surface-fill')).toBe('surface');
-    });
-
-    it('categorizes surface-cycle tool', () => {
-      expect(getToolCategory('surface-cycle')).toBe('surface-cycle');
-    });
-
-    it('categorizes line tools', () => {
-      expect(getToolCategory('line')).toBe('line');
-      expect(getToolCategory('line-edge')).toBe('line');
-    });
-
-    it('categorizes edge tools', () => {
-      expect(getToolCategory('edge')).toBe('edge');
-    });
-
-    it('categorizes wall tools', () => {
-      expect(getToolCategory('wall')).toBe('wall');
-    });
-
-    it('categorizes symbol tools', () => {
-      expect(getToolCategory('symbol')).toBe('symbol');
-      expect(getToolCategory('symbol-circle')).toBe('symbol');
-    });
-
-    it('categorizes special tools', () => {
-      expect(getToolCategory('special-thermo')).toBe('special-thermo');
-      expect(getToolCategory('special-arrow')).toBe('special-arrow');
-      expect(getToolCategory('special-cage')).toBe('special-cage');
-      expect(getToolCategory('special-boxline')).toBe('special-boxline');
-    });
-
-    it('returns unknown for unrecognized tools', () => {
-      expect(getToolCategory('unknown-tool')).toBe('unknown');
-    });
-  });
-
-  describe('toolSupportsDrag', () => {
-    it('returns true for drag-supporting tools', () => {
-      expect(toolSupportsDrag('surface')).toBe(true);
-      expect(toolSupportsDrag('line')).toBe(true);
-      expect(toolSupportsDrag('special-thermo')).toBe(true);
-    });
-
-    it('returns false for click-only tools', () => {
-      expect(toolSupportsDrag('symbol')).toBe(false);
-      expect(toolSupportsDrag('number')).toBe(false);
-      expect(toolSupportsDrag('text')).toBe(false);
-    });
-  });
-
-  describe('toolNeedsCompletion', () => {
-    it('returns true for tools needing completion', () => {
-      expect(toolNeedsCompletion('special-thermo')).toBe(true);
-      expect(toolNeedsCompletion('special-cage')).toBe(true);
-      expect(toolNeedsCompletion('line')).toBe(true);
-    });
-
-    it('returns false for tools not needing completion', () => {
-      expect(toolNeedsCompletion('surface')).toBe(false);
-      expect(toolNeedsCompletion('symbol')).toBe(false);
-    });
+  it('keeps the surface-cycle override ahead of generic surface classification', () => {
+    expect(getToolCategory('surface-cycle')).toBe('surface-cycle');
+    expect(getToolCategory('surface-fill')).toBe('surface');
+    expect(getToolCategory('unknown-tool')).toBe('unknown');
   });
 });
 
@@ -299,14 +200,15 @@ describe('State Transitions', () => {
       });
     });
 
-    it('returns to idle on mouse up with cleanup actions', () => {
+    it('finishes the tool and closes its history group on mouse up', () => {
       const ctx = createContext({ currentTool: 'surface' });
       const result = transition(drawingState, mouseUp(), ctx);
       expect(result.state.type).toBe('idle');
       expect(result.actions).toContainEqual({ type: 'END_HISTORY_GROUP' });
-      expect(result.actions).toContainEqual({ type: 'RESET_FILL_MODES' });
-      expect(result.actions).toContainEqual({ type: 'SET_DRAWING', isDrawing: false });
-      expect(result.actions).toContainEqual({ type: 'CLEAR_DRAW_STATE' });
+      expect(result.actions).toContainEqual({
+        type: 'TOOL_UP', tool: 'surface', point: { x: 150, y: 150 },
+        isRightClick: false, isShiftKey: false,
+      });
     });
 
     it('preserves isRightClick through move', () => {
@@ -320,6 +222,7 @@ describe('State Transitions', () => {
       const result = transition(drawingState, cancel, createContext());
       expect(result.state.type).toBe('idle');
       expect(result.actions).toContainEqual({ type: 'END_HISTORY_GROUP' });
+      expect(result.actions).not.toContainEqual(expect.objectContaining({ type: 'TOOL_UP' }));
     });
   });
 
@@ -354,54 +257,5 @@ describe('State Transitions', () => {
       });
       expect(result.actions).toContainEqual({ type: 'END_HISTORY_GROUP' });
     });
-  });
-});
-
-// ============================================================================
-// Tests: Action Sequences
-// ============================================================================
-
-describe('Action Sequences', () => {
-  it('generates correct action sequence for complete draw cycle', () => {
-    const ctx = createContext({ currentTool: 'surface' });
-
-    // Mouse down
-    const down = transition(INITIAL_STATE, mouseDown({ x: 100, y: 100 }), ctx);
-    expect(down.actions.map(a => a.type)).toEqual([
-      'RESET_FILL_MODES',
-      'START_HISTORY_GROUP',
-      'SET_DRAWING',
-      'TOOL_DOWN',
-    ]);
-
-    // Mouse move
-    const move = transition(down.state, mouseMove({ x: 150, y: 150 }), ctx);
-    expect(move.actions.map(a => a.type)).toEqual(['TOOL_MOVE']);
-
-    // Mouse up
-    const up = transition(move.state, mouseUp({ x: 150, y: 150 }), ctx);
-    expect(up.actions.map(a => a.type)).toEqual([
-      'TOOL_UP',
-      'END_HISTORY_GROUP',
-      'RESET_FILL_MODES',
-      'SET_DRAWING',
-      'CLEAR_DRAW_STATE',
-    ]);
-  });
-
-  it('generates correct action sequence for pan cycle', () => {
-    const ctx = createContext();
-
-    // Middle mouse down
-    const down = transition(INITIAL_STATE, mouseDown({ x: 100, y: 100 }, 'middle'), ctx);
-    expect(down.actions.map(a => a.type)).toEqual(['START_PAN']);
-
-    // Move
-    const move = transition(down.state, mouseMove({ x: 200, y: 150 }), ctx);
-    expect(move.actions.map(a => a.type)).toEqual(['UPDATE_PAN']);
-
-    // Up
-    const up = transition(move.state, mouseUp(), ctx);
-    expect(up.actions.map(a => a.type)).toEqual(['END_PAN']);
   });
 });

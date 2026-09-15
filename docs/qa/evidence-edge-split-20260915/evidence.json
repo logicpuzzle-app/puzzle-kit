@@ -1,0 +1,122 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "File Open renders an opposite-edge midpoint split",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before --config .work/edge-split-qa.config.ts",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "chromium-before.webm",
+    "screenshot": "chromium-before.png",
+    "videoSha256": "450cbc47e591c974cd76c1a4931b8abbdbe58e3129d88fa7f0fc0a80a19cbe7c",
+    "screenshotSha256": "d17394fb196b5267c74e2e7c46f284e80eda02ee5f3537710793d27aed8e2291",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "3.160000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "File Open renders an opposite-edge midpoint split",
+    "project": "mobile-chrome",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before --config .work/edge-split-qa.config.ts",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "mobile-chrome-before.webm",
+    "screenshot": "mobile-chrome-before.png",
+    "videoSha256": "0a85ad5b5f5a18c9a00a870192558f81412d82c2fbbb72a85121bc86707f7aea",
+    "screenshotSha256": "32365c2b905b2c38472cd79d70d57e00bc22ae42e5ba9999ec39f177535fab3e",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "3.120000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "File Open renders an opposite-edge midpoint split",
+    "project": "chromium",
+    "revision": "cd38396639c1f2515e73b9e17e60b67fb7daf9c5",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after --config .work/edge-split-qa.config.ts",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "chromium-after.webm",
+    "screenshot": "chromium-after.png",
+    "videoSha256": "fef61ac03280222b1aac87dc332e1c094736dcde2c41698c6fab763dd0e3a532",
+    "screenshotSha256": "9c5953ad297bf78929660c3976403d700fe477f887d6413660c7344b6e41bc2a",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.800000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "File Open renders an opposite-edge midpoint split",
+    "project": "mobile-chrome",
+    "revision": "cd38396639c1f2515e73b9e17e60b67fb7daf9c5",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after --config .work/edge-split-qa.config.ts",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "mobile-chrome-after.webm",
+    "screenshot": "mobile-chrome-after.png",
+    "videoSha256": "e377d06a506d0903b1d268c619d72baeddd99eda3ade7c36cef641961dd14ef6",
+    "screenshotSha256": "a05d75fc0533a89087bc9be95341a50168fafd8a107b4ea2bbb216ce2a364f44",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "1.840000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]
