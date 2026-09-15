@@ -1,0 +1,66 @@
+{
+  "version": "1.0.0",
+  "grid": {
+    "rows": 1,
+    "cols": 1,
+    "cellSize": 240,
+    "outerPadding": 20,
+    "showGrid": true,
+    "gridStyle": "normal",
+    "blockRows": 3,
+    "blockCols": 3,
+    "gridType": "square",
+    "marginTop": 0,
+    "marginBottom": 0,
+    "marginLeft": 0,
+    "marginRight": 0,
+    "frameStyle": "normal",
+    "frameColor": "#000000",
+    "gridColor": "#000000",
+    "backgroundColor": "#ffffff",
+    "splitLines": [
+      {
+        "cellId": "cell-0-0",
+        "startPoint": {
+          "type": "edge",
+          "edgeId": "edge-0",
+          "t": 0.5
+        },
+        "endPoint": {
+          "type": "edge",
+          "edgeId": "edge-2",
+          "t": 0.5
+        }
+      }
+    ]
+  },
+  "state": {
+    "problem": {
+      "surfaces": {},
+      "lines": {},
+      "edges": {},
+      "walls": {},
+      "numbers": {},
+      "symbols": {},
+      "cages": {},
+      "specials": {},
+      "boxLines": {}
+    },
+    "answer": {
+      "surfaces": {},
+      "lines": {},
+      "edges": {},
+      "walls": {},
+      "numbers": {},
+      "symbols": {},
+      "cages": {},
+      "specials": {},
+      "boxLines": {}
+    }
+  },
+  "topologySettings": {
+    "useTopology": true,
+    "topologyPreset": "none",
+    "topologyIntensity": 0
+  }
+}
