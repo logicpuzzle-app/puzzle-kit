@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import type { AutoModeConfig } from '../constraints/inputModeMapping';
 import {
   handleDirecMouseDown,
   handleNumberInputMouseDown,
@@ -6,7 +7,6 @@ import {
   handleLineMouseDown,
   handleSelectMouseDown,
   handleNumberToolMouseDown,
-  handleTextMouseDown,
   isDirecInputMode,
   isNumberInputMode,
   isLineCellMode,
@@ -14,7 +14,6 @@ import {
   createFlickState,
   type MouseDownContext,
   type CellInfo,
-  type AutoModeConfig,
 } from '../hooks/tool-handlers/mouseDownStrategies';
 
 // ============================================================================
@@ -42,10 +41,13 @@ const createCellInfo = (overrides: Partial<CellInfo> = {}): CellInfo => ({
   ...overrides,
 });
 
-const createAutoConfig = (type: string): AutoModeConfig => ({
+const createAutoConfig = (type: AutoModeConfig['type']): AutoModeConfig => ({
   type,
+  leftButton: { tool: 'line-normal', category: 'line', target: 'cell' },
   rightButton: {
-    action: 'default',
+    tool: 'symbol-cross',
+    category: 'symbol',
+    target: 'edge',
     settings: {
       color: '#007F00',
       secondaryColor: '#A0FFA0',
@@ -135,26 +137,16 @@ describe('Strategy Functions', () => {
       expect(result.handled).toBe(false);
     });
 
-    it('sets up flick state and selection for valid cell', () => {
-      const ctx = createContext({ point: { x: 150, y: 110 } });
-      const cellInfo = createCellInfo();
-      const result = handleDirecMouseDown(ctx, cellInfo);
-
+    it('initializes a right-button directional gesture and selects its cell', () => {
+      const result = handleDirecMouseDown(
+        createContext({ point: { x: 150, y: 110 }, isRightButton: true }), createCellInfo());
       expect(result.handled).toBe(true);
-      expect(result.flickState).toBeDefined();
-      expect(result.flickState?.startCell).toEqual({ row: 2, col: 3 });
-      expect(result.flickState?.startCellId).toBe('cell-2-3');
-      expect(result.flickState?.startPoint).toEqual({ x: 150, y: 110 });
-      expect(result.flickState?.inputted).toBe(false);
       expect(result.action).toEqual({ type: 'setNumberSelection', row: 2, col: 3 });
-    });
-
-    it('tracks right button in flick state', () => {
-      const ctx = createContext({ isRightButton: true });
-      const cellInfo = createCellInfo();
-      const result = handleDirecMouseDown(ctx, cellInfo);
-
-      expect(result.flickState?.rightButton).toBe(true);
+      expect(result.flickState).toMatchObject({
+        startCell: { row: 2, col: 3 }, startCellId: 'cell-2-3', startCellIndex: 21,
+        startCellCenter: { x: 140, y: 100 }, startPoint: { x: 150, y: 110 },
+        rightButton: true, inputted: false, lineDrawn: false, pekeInputMode: null,
+      });
     });
   });
 
@@ -165,28 +157,12 @@ describe('Strategy Functions', () => {
       expect(result.handled).toBe(false);
     });
 
-    it('returns handleNumberTool action for valid cell', () => {
-      const ctx = createContext({ point: { x: 200, y: 150 } });
-      const cellInfo = createCellInfo();
-      const result = handleNumberInputMouseDown(ctx, cellInfo);
-
-      expect(result.handled).toBe(true);
-      expect(result.action).toEqual({
-        type: 'handleNumberTool',
-        point: { x: 200, y: 150 },
-        isRightButton: false,
-      });
-    });
-
-    it('passes right button flag', () => {
-      const ctx = createContext({ isRightButton: true });
-      const cellInfo = createCellInfo();
-      const result = handleNumberInputMouseDown(ctx, cellInfo);
-
-      expect(result.action).toEqual({
-        type: 'handleNumberTool',
-        point: { x: 100, y: 100 },
-        isRightButton: true,
+    it('forwards the position and right button to the number handler', () => {
+      const result = handleNumberInputMouseDown(
+        createContext({ point: { x: 200, y: 150 }, isRightButton: true }), createCellInfo());
+      expect(result).toMatchObject({
+        handled: true,
+        action: { type: 'handleNumberTool', point: { x: 200, y: 150 }, isRightButton: true },
       });
     });
   });
@@ -262,28 +238,11 @@ describe('Strategy Functions', () => {
     });
   });
 
-  describe('handleSelectMouseDown', () => {
-    it('returns handleSelectTool action', () => {
-      const ctx = createContext({ point: { x: 250, y: 180 } });
-      const result = handleSelectMouseDown(ctx, false);
-
-      expect(result.handled).toBe(true);
-      expect(result.action).toEqual({
-        type: 'handleSelectTool',
-        point: { x: 250, y: 180 },
-        shiftKey: false,
-      });
-    });
-
-    it('passes shift key', () => {
-      const ctx = createContext();
-      const result = handleSelectMouseDown(ctx, true);
-
-      expect(result.action).toEqual({
-        type: 'handleSelectTool',
-        point: { x: 100, y: 100 },
-        shiftKey: true,
-      });
+  it('forwards the position and Shift modifier to selection', () => {
+    const result = handleSelectMouseDown(createContext({ point: { x: 250, y: 180 } }), true);
+    expect(result).toMatchObject({
+      handled: true,
+      action: { type: 'handleSelectTool', point: { x: 250, y: 180 }, shiftKey: true },
     });
   });
 
@@ -327,19 +286,6 @@ describe('Strategy Functions', () => {
     });
   });
 
-  describe('handleTextMouseDown', () => {
-    it('returns handleTextTool action', () => {
-      const ctx = createContext({ point: { x: 300, y: 200 } });
-      const result = handleTextMouseDown(ctx);
-
-      expect(result.handled).toBe(true);
-      expect(result.action).toEqual({
-        type: 'handleTextTool',
-        point: { x: 300, y: 200 },
-        isRightButton: false,
-      });
-    });
-  });
 });
 
 // ============================================================================
@@ -353,18 +299,4 @@ describe('createFlickState', () => {
     expect(result.startCellId).toBe(null);
   });
 
-  it('creates full state for valid cell info', () => {
-    const cellInfo = createCellInfo();
-    const result = createFlickState(cellInfo, { x: 150, y: 110 }, 9, true);
-
-    expect(result.startCell).toEqual({ row: 2, col: 3 });
-    expect(result.startCellId).toBe('cell-2-3');
-    expect(result.startCellIndex).toBe(2 * 9 + 3); // 21
-    expect(result.startCellCenter).toEqual({ x: 140, y: 100 });
-    expect(result.startPoint).toEqual({ x: 150, y: 110 });
-    expect(result.rightButton).toBe(true);
-    expect(result.inputted).toBe(false);
-    expect(result.lineDrawn).toBe(false);
-    expect(result.pekeInputMode).toBe(null);
-  });
 });

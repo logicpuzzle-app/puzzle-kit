@@ -1,0 +1,84 @@
+[
+  {
+    "phase": "before",
+    "commit": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "status": "",
+    "results": {
+      "triangle": {
+        "input": {
+          "x": 40.470588235294116,
+          "y": 45.70588235294116
+        },
+        "expected": {
+          "row": 0,
+          "col": 0
+        },
+        "actual": {
+          "col": 1,
+          "row": 0,
+          "isUpward": false
+        }
+      },
+      "pyramid": {
+        "input": {
+          "x": 120.73529411764707,
+          "y": 46.176470588235304
+        },
+        "expected": {
+          "row": 0,
+          "col": 0
+        },
+        "actual": null
+      }
+    },
+    "runtimeErrors": [],
+    "verified": "bug reproduced",
+    "video": "before.webm",
+    "screenshot": "before.png",
+    "videoSha256": "e7fa8e25c04de6601061e287bc1cb19ab0a3f0a5f6f195718ea1b480feff3da4",
+    "screenshotSha256": "f0fae59ba4a7eabbed3001474516d94ae11a8c2649119e1954c44a54a00a97d4"
+  },
+  {
+    "phase": "after",
+    "commit": "f8502522e5c405be6c8b243e9c9591a818c7102b",
+    "status": "",
+    "results": {
+      "triangle": {
+        "input": {
+          "x": 40.470588235294116,
+          "y": 45.70588235294116
+        },
+        "expected": {
+          "row": 0,
+          "col": 0
+        },
+        "actual": {
+          "col": 0,
+          "row": 0,
+          "isUpward": true
+        }
+      },
+      "pyramid": {
+        "input": {
+          "x": 120.73529411764707,
+          "y": 46.176470588235304
+        },
+        "expected": {
+          "row": 0,
+          "col": 0
+        },
+        "actual": {
+          "row": 0,
+          "col": 0,
+          "isUpward": true
+        }
+      }
+    },
+    "runtimeErrors": [],
+    "verified": "fixed lookup verified",
+    "video": "after.webm",
+    "screenshot": "after.png",
+    "videoSha256": "be92f1d8eb69d2b915c5eb2ff700bc2c7bdf189656066a8309df30b022b5baed",
+    "screenshotSha256": "c0e7c9ab2d88cd955ec8e03a9cac1dba98c774b9aaba219c831934123e2f3fe7"
+  }
+]

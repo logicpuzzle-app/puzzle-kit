@@ -1,29 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { isPenpaUrl, parsePenpaUrl } from '../utils/penpaCompat';
 import { gridConfigToTopology } from '../utils/gridTopology';
-import pako from 'pako';
-import { decompressSubstitutions } from '../utils/penpaSerializer';
-import { SurfaceColorPalette } from '../constants/colors';
-import { penroseP3FromPenpa } from '../utils/topology/special/penroseP3';
-
-function getHashParam(url: string, key: string): string | null {
-  const hash = new URL(url).hash;
-  const content = hash.startsWith('#') ? hash.slice(1) : hash;
-  for (const pair of content.split('&')) {
-    const idx = pair.indexOf('=');
-    if (idx <= 0) continue;
-    const k = pair.slice(0, idx);
-    if (k !== key) continue;
-    return decodeURIComponent(pair.slice(idx + 1));
-  }
-  return null;
-}
-
-function base64ToBytes(encoded: string): Uint8Array {
-  let base64 = encoded.replace(/ /g, '+').replace(/-/g, '+').replace(/_/g, '/');
-  while (base64.length % 4) base64 += '=';
-  return new Uint8Array(Buffer.from(base64, 'base64'));
-}
 
 describe('Penpa URL import', () => {
   it('imports a penpa-edit #m=solve URL with + characters', () => {
@@ -41,68 +18,20 @@ describe('Penpa URL import', () => {
     expect(result!.grid.penroseRotational).toBe(0);
     expect(result!.grid.penroseVariation).toBe(0.001);
     expect(result!.topology).toBeTruthy();
-    expect(result!.topology!.cells.size).toBeGreaterThan(0);
-    expect(Object.keys(result!.state.problem.surfaces).length).toBeGreaterThanOrEqual(10);
+    expect(result!.topology!.cells.size).toBe(80);
+    expect(Object.values(result!.state.problem.surfaces)).toHaveLength(10);
 
     // Ensure the app can regenerate the same topology from GridConfig (preset/apply, resize, etc.)
     const regenerated = gridConfigToTopology(result!.grid);
     expect(regenerated.cells.size).toBe(result!.topology!.cells.size);
 
-    // Verify that the penpa center-index -> cellId mapping matches the topology's own cell centers.
-    // (Regression for mismatched ordering between topology cell IDs and element placement.)
-    const encoded = getHashParam(url, 'p');
-    expect(encoded).toBeTruthy();
-    const inflated = new TextDecoder().decode(pako.inflateRaw(base64ToBytes(encoded!)));
-    const lines = inflated.split('\n');
-    const puqCompressed = lines[3];
-    const puqJson = decompressSubstitutions(puqCompressed);
-    const puq = JSON.parse(puqJson) as { surface?: Record<string, number> };
-    const penpaIndex = 14;
-    const colorIndex = puq.surface?.[String(penpaIndex)];
-    expect(colorIndex).toBeTypeOf('number');
-
-    const { points, centerlist, topology } = penroseP3FromPenpa(5, 5, 38, {
-      rotational: 0,
-      variation: 0.001,
-    });
-    expect(topology.cells.size).toBe(80);
-
-    const sortedCenterlist = [...centerlist].sort((a, b) => {
-      const pa = points[a];
-      const pb = points[b];
-      const dy = pa.y - pb.y;
-      if (Math.abs(dy) > 0.1) return dy;
-      return pa.x - pb.x;
-    });
-    const pos = sortedCenterlist.indexOf(penpaIndex);
-    expect(pos).toBeGreaterThanOrEqual(0);
-    const expectedCellId = `cell-${Math.floor(pos / 5)}-${pos % 5}`;
-
-    const surfaceAtCell = Object.values(result!.state.problem.surfaces).find(
-      (s) => s.cellId === expectedCellId
-    );
-    expect(surfaceAtCell).toBeTruthy();
-    expect(surfaceAtCell!.color).toBe(SurfaceColorPalette[colorIndex!]);
-
-    // Geometry check: topology cell center matches penpa point center after the same shift as penpa-edit.
-    let xmin = Infinity;
-    let ymin = Infinity;
-    for (const idx of centerlist) {
-      xmin = Math.min(xmin, points[idx].x);
-      ymin = Math.min(ymin, points[idx].y);
-    }
-    const shiftX = 20 - xmin + 38;
-    const shiftY = 20 - ymin + 38;
-    const expectedCenter = {
-      x: points[penpaIndex].x + shiftX,
-      y: points[penpaIndex].y + shiftY,
-    };
-    const cell = topology.cells.get(expectedCellId);
-    expect(cell).toBeTruthy();
-    const dx = Math.abs(cell!.center.x - expectedCenter.x);
-    const dy = Math.abs(cell!.center.y - expectedCenter.y);
-    expect(dx).toBeLessThan(1e-6);
-    expect(dy).toBeLessThan(1e-6);
+    // Fixed solve URL: Penpa center 14 is the yellow cell at this rendered position.
+    // Keep the fixture independent of production sorting and coordinate shifts.
+    const expectedCenter = { x: expect.closeTo(269.5681092382, 5), y: expect.closeTo(203.5992602519, 5) };
+    const surfaceAtCell = Object.values(result!.state.problem.surfaces).find(s => s.cellId === 'cell-7-2');
+    expect(surfaceAtCell).toMatchObject({ cellId: 'cell-7-2', color: '#ffffa3', layer: 'problem' });
+    expect(result!.topology!.cells.get('cell-7-2')?.center).toEqual(expectedCenter);
+    expect(regenerated.cells.get('cell-7-2')?.center).toEqual(expectedCenter);
   });
 
   it('recognizes #m=edit URLs with extra hash params', () => {
