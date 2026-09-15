@@ -8,7 +8,8 @@ const recordSuccessArtifacts = process.env.QA_RECORD_SUCCESS === '1'
 // Chromium runs these cases against built assets in playwright.production.config.ts.
 // Opt back in for local debugging or before/after capture against the dev server.
 const devGrepInvert = process.env.QA_INCLUDE_PRODUCTION_TESTS === '1' ? undefined : /@production/;
-const desktopTestIgnore = ['**/*.chromium-touch.spec.ts', '**/qa-*-capture.spec.ts'];
+const sharedTestIgnore = ['**/*.chromium-touch.spec.ts', '**/qa-*-capture.spec.ts'];
+const desktopTestIgnore = [...sharedTestIgnore, '**/properties-drawer.spec.ts'];
 
 export default defineConfig({
   testDir: './e2e',
@@ -52,7 +53,7 @@ export default defineConfig({
       use: { ...devices['Pixel 7'] },
     },
     { name: 'webkit', testIgnore: desktopTestIgnore, use: { ...devices['Desktop Safari'] } },
-    { name: 'mobile-webkit', grepInvert: /@desktop/, testIgnore: desktopTestIgnore, use: { ...devices['iPhone 13'] } },
+    { name: 'mobile-webkit', grepInvert: /@desktop/, testIgnore: sharedTestIgnore, use: { ...devices['iPhone 13'] } },
   ],
   webServer: externalBaseURL || process.env.QA_STATIC_DIR
     ? undefined
