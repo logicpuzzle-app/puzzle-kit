@@ -17,5 +17,5 @@
     "strict": true
   },
   "include": ["src/lib/**/*.ts", "src/lib/**/*.tsx"],
-  "exclude": ["src/test/**", "src/utils/penpaConverter.ts"]
+  "exclude": ["src/test/**"]
 }
