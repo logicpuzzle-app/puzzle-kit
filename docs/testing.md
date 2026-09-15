@@ -13,6 +13,8 @@
 - `e2e/multitouch-grid.chromium-touch.spec.ts`: 複数指の部分リリース、タッチのMerge/Splitと中断、Undo/Redoをmobile-chromeで検証。
 - `e2e/grid-sculpt.spec.ts`: Sculpt Rotate/CutとUndo/Redoを全4projectのtouchscreen.tapで検証。
 - `e2e/properties-drawer.spec.ts`: 狭幅Propertiesの開閉・設定・フォーカス・リサイズ・エラー通知を4projectで検証。
+- `e2e/build-entrypoints.spec.ts`: 全6入口のHTML/chunk配線を製品版desktop Chromiumで1回ずつ確認。モバイル/WebKitの同じ起動smokeは実行せず、各画面の操作・レイアウト検証は個別specで維持する。
+- `e2e/pdf-import.spec.ts`: PDF worker起動・青いpixelの描画・盤面への読込を、製品版Chromium/mobile-chromeと開発版WebKit/mobile-webkitで確認する。
 - `e2e/editor-quality.spec.ts`: Edit起動とPaint/Masterの最低限の盤面寸法。
 - `e2e/special-tip.spec.ts`: 公開JSONのFile Openで重なる矢印を配置し、選択・最小2点・削除Undoを4projectで確認。状態検査はSVGと保存JSONを使い、ブラウザー内からストアを動的importしない。
 - `e2e/puzzle-file.ts`: セッションと矢印検証で共有する実際のFile Open/Save操作。fixtureは `e2e/fixtures/overlapping-arrows.json`。
