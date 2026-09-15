@@ -12,7 +12,7 @@ export default defineConfig({
   grep: /@production/,
   projects: base.projects
     ?.filter(project => ['chromium', 'mobile-chrome'].includes(project.name!))
-    .map(project => ({ ...project, grepInvert: undefined })),
+    .map(project => ({ ...project, grepInvert: project.name === 'mobile-chrome' ? /@desktop/ : undefined })),
   outputDir: resolve(artifactDir, 'test-results'),
   reporter: [
     ['list'],

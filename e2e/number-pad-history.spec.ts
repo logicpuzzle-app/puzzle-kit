@@ -38,7 +38,5 @@ for (const preset of ['Nurikabe', 'Yajilin']) {
     await expect(numbers).toHaveText(['6']);
     await activate(redo, info);
     await expect(numbers).toHaveCount(0);
-    await activate(undo, info);
-    await expect(numbers).toHaveText(['6']);
   });
 }

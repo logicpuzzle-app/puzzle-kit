@@ -1,0 +1,182 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "directional number insertion, replacement and deletion support Undo/Redo",
+    "project": "chromium",
+    "revision": "8fa7f59f1126dfad4d74275211fd84bfd74cdb84",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/number-history.spec.ts e2e/number-pad-history.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "keyboard-before.webm",
+    "screenshot": "keyboard-before.png",
+    "videoSha256": "b4b1c044b3ab659ab5d6cc06920e6f59c5f15f30a693b860459eb5fa00eff907",
+    "screenshotSha256": "3821e34e61ef689bbd70445a95086c7817821d0ea2a6ea53020ab3363127ce3e",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "3.640000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "number-pad: Nurikabe replacement restores the previous clue in one undo",
+    "project": "mobile-chrome",
+    "revision": "8fa7f59f1126dfad4d74275211fd84bfd74cdb84",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/number-history.spec.ts e2e/number-pad-history.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "nurikabe-before.webm",
+    "screenshot": "nurikabe-before.png",
+    "videoSha256": "58373b2109b800106d7665c4c189dee316c18cc3c8cbe027e90f4d034db00820",
+    "screenshotSha256": "1fd961718121a9e1849d0b29e1d70ca081cc2da34aca390c4c7af4570ac7e392",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.160000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "number-pad: Yajilin replacement restores the previous clue in one undo",
+    "project": "mobile-chrome",
+    "revision": "8fa7f59f1126dfad4d74275211fd84bfd74cdb84",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/number-history.spec.ts e2e/number-pad-history.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "yajilin-before.webm",
+    "screenshot": "yajilin-before.png",
+    "videoSha256": "66dbf249385b03c8721d9bb12adf70b791c06a627d466160bea1d94982892de5",
+    "screenshotSha256": "46bf05c73ad9d2aae473bc8fc19bcc68e7bcb9a7dfc0ed06acda92cb9385756e",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.040000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "directional number insertion, replacement and deletion support Undo/Redo",
+    "project": "chromium",
+    "revision": "6d3b109bb6dcff4ee6a97ed7c64cd97732062191",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/number-history.spec.ts e2e/number-pad-history.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "keyboard-after.webm",
+    "screenshot": "keyboard-after.png",
+    "videoSha256": "978f0b6f6657fe1b33eb1369221102e64fa423479705cea6622605d0bd80b72d",
+    "screenshotSha256": "d02ae587cb51032325d1f9a1612986d7c88820c5ddc6e58d734eaf1bb0538bc2",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.320000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "number-pad: Nurikabe replacement restores the previous clue in one undo",
+    "project": "mobile-chrome",
+    "revision": "6d3b109bb6dcff4ee6a97ed7c64cd97732062191",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/number-history.spec.ts e2e/number-pad-history.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "nurikabe-after.webm",
+    "screenshot": "nurikabe-after.png",
+    "videoSha256": "459de488504a2f645269b60e61631a43ee38539dab2aa792c8d9bcc93ec97235",
+    "screenshotSha256": "7f8e7b1f1ffed6149e8c8e69d32e7c036ed6acff911d41cc57431d756d8ca943",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.160000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "number-pad: Yajilin replacement restores the previous clue in one undo",
+    "project": "mobile-chrome",
+    "revision": "6d3b109bb6dcff4ee6a97ed7c64cd97732062191",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/number-history.spec.ts e2e/number-pad-history.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "yajilin-after.webm",
+    "screenshot": "yajilin-after.png",
+    "videoSha256": "b874b4e25e48d6cebe11c9c1a40d4807c321c705f6136ae03d24479f6013f0ee",
+    "screenshotSha256": "cb8e4d884be7f70148c8f296f373094ad39f4070fe9004395b2468127312673e",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.200000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]
