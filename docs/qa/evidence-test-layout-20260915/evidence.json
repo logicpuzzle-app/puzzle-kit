@@ -1,0 +1,62 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "Edit starts with a visible board and stays responsive",
+    "project": "chromium",
+    "revision": "aa89a6802d1be460e39640737a1a188a77fd7f06",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/editor-quality.spec.ts",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "edit-before.webm",
+    "screenshot": "edit-before.png",
+    "videoSha256": "af0ebd6e33f68e6045f72c3d91d7ae2ad372ed3bdef60876282850630ec62047",
+    "screenshotSha256": "1d916bc9e320a3954832c44bddc0cf50782f48303c787a40a62f607399753d0e",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "3.160000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "Edit starts with a visible board and stays responsive",
+    "project": "chromium",
+    "revision": "535f9a441509d7b8f8d74663159c677a02c321cc",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/editor-quality.spec.ts",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "edit-after.webm",
+    "screenshot": "edit-after.png",
+    "videoSha256": "c64e087c4f1231402e37dba6d1cbafc85f8099f1359f45cbb211e4e2639c8665",
+    "screenshotSha256": "baf864531cfe94dc427d3d6a9b4b1d7313ecd90254e0bee3da48151a5bcb669e",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.520000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]
