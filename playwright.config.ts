@@ -3,6 +3,8 @@ import { resolve } from 'node:path';
 
 const artifactDir = process.env.QA_ARTIFACT_DIR;
 const externalBaseURL = process.env.QA_EXTERNAL_BASE_URL;
+const recordSuccessArtifacts = process.env.QA_RECORD_SUCCESS === '1'
+  || ['before', 'after'].includes(process.env.QA_VARIANT ?? '');
 // Chromium runs these cases against built assets in playwright.production.config.ts.
 // Opt back in for local debugging or before/after capture against the dev server.
 const devGrepInvert = process.env.QA_INCLUDE_PRODUCTION_TESTS === '1' ? undefined : /@production/;
@@ -15,6 +17,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   workers: 2,
   retries: 0,
+  metadata: { recordSuccessArtifacts },
   outputDir: artifactDir ? resolve(artifactDir, 'test-results') : 'test-results',
   timeout: 45_000,
   expect: {
@@ -29,9 +32,9 @@ export default defineConfig({
     baseURL: externalBaseURL ?? (process.env.QA_STATIC_DIR
       ? 'http://puzzle-kit-qa.local'
       : 'http://127.0.0.1:4174'),
-    trace: artifactDir ? 'on' : 'retain-on-failure',
+    trace: recordSuccessArtifacts ? 'on' : 'retain-on-failure',
     screenshot: 'only-on-failure',
-    video: artifactDir ? 'on' : 'retain-on-failure',
+    video: recordSuccessArtifacts ? 'on' : 'retain-on-failure',
     locale: 'en-US',
     timezoneId: 'Asia/Tokyo',
     contextOptions: { reducedMotion: 'reduce' },

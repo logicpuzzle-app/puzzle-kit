@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures';
+import { test, expect, isRecordingQA } from './fixtures';
 import type { Page } from '@playwright/test';
 import type { SymbolElement } from '../src/types';
 
@@ -68,7 +68,7 @@ test('symbol sizing: resize only the selected object with atomic history and per
   const after = await symbols(page);
   expect(after.find(s => s.id === target.id)).toEqual({ ...target, size: 1.75 });
   expect(after.find(s => s.id === before[1].id)).toEqual(before[1]);
-  if (process.env.QA_ARTIFACT_DIR) await info.attach('selected-object', { body: await page.screenshot(), contentType: 'image/png' });
+  if (isRecordingQA(info)) await info.attach('selected-object', { body: await page.screenshot(), contentType: 'image/png' });
   const close = page.getByTitle('Close', { exact: true });
   if (await close.isVisible()) await close.click();
   await page.getByTitle(/Undo \(Ctrl\+Z\)/).first().click();

@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures';
+import { test, expect, isRecordingQA } from './fixtures';
 
 // Exercise both HTML entrypoints and every app selected by main.tsx. In production
 // these catch missing chunks and initialization-order errors after code splitting.
@@ -52,7 +52,7 @@ test('build: Paint renders and imports a PDF through its worker', { tag: '@produ
     context.drawImage(image, 0, 0);
     return [...context.getImageData(100, 100, 1, 1).data];
   })).toEqual([0, 0, 255, 255]);
-  await info.attach('pdf-preview', { body: await page.screenshot(), contentType: 'image/png' });
+  if (isRecordingQA(info)) await info.attach('pdf-preview', { body: await page.screenshot(), contentType: 'image/png' });
   await page.getByRole('button', { name: 'Import', exact: true }).click();
   await expect(page.getByText('Import PDF Pages', { exact: true })).toHaveCount(0);
   await expect(page.locator('#puzzle-canvas')).toBeVisible();

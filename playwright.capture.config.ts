@@ -4,6 +4,8 @@ import base from './playwright.config';
 // Human-reviewed screenshots and videos run on demand, outside regression CI.
 export default defineConfig({
   ...base,
+  metadata: { ...base.metadata, recordSuccessArtifacts: true },
+  use: { ...base.use, video: 'on', trace: 'on' },
   testMatch: '**/qa-*-capture.spec.ts',
   testIgnore: [],
   projects: base.projects

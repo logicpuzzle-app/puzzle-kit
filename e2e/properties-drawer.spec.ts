@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures';
+import { test, expect, isRecordingQA } from './fixtures';
 import type { Page } from '@playwright/test';
 
 test.use({ hasTouch: true });
@@ -26,7 +26,7 @@ for (const width of [360, 412]) {
         body: JSON.stringify({ before, opened }),
         contentType: 'application/json',
       });
-      await page.screenshot({ path: info.outputPath('properties-open.png') });
+      if (isRecordingQA(info)) await page.screenshot({ path: info.outputPath('properties-open.png') });
     });
     expect(opened.width).toBeGreaterThanOrEqual(before.width - 1);
     expect(opened.x).toBeCloseTo(before.x, 0);

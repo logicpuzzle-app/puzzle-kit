@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures';
+import { test, expect, isRecordingQA } from './fixtures';
 import type { TestInfo, Locator } from '@playwright/test';
 
 async function activate(button: Locator, info: TestInfo) {
@@ -22,13 +22,13 @@ for (const preset of ['Nurikabe', 'Yajilin']) {
     const numbers = page.locator('#puzzle-canvas .number-layer-problem text, #puzzle-canvas .directional-clue-layer.problem text');
     const previous = preset === 'Nurikabe' ? '15' : '5';
     await expect(numbers).toHaveText([previous]);
-    await info.attach('before-replacement', { body: await page.screenshot(), contentType: 'image/png' });
+    if (isRecordingQA(info)) await info.attach('before-replacement', { body: await page.screenshot(), contentType: 'image/png' });
     await activate(page.getByRole('button', { name: '6', exact: true }), info);
     await expect(numbers).toHaveText(['6']);
     const undo = page.getByTitle('Undo', { exact: true });
     const redo = page.getByTitle('Redo', { exact: true });
     await activate(undo, info);
-    await info.attach('after-undo', { body: await page.screenshot(), contentType: 'image/png' });
+    if (isRecordingQA(info)) await info.attach('after-undo', { body: await page.screenshot(), contentType: 'image/png' });
     await expect(numbers).toHaveText([previous]);
     await activate(redo, info);
     await expect(numbers).toHaveText(['6']);

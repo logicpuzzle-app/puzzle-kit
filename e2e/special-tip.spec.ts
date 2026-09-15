@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures';
+import { test, expect, isRecordingQA } from './fixtures';
 import type { Page } from '@playwright/test';
 import type { PuzzleExport } from '../src/types';
 import { readFileSync } from 'node:fs';
@@ -30,7 +30,7 @@ test('arrow: shorten only the selected tip and retain history across reload', as
   await picker.selectOption(first.id);
   await expect(page.locator('#puzzle-canvas .special-selection-problem')).toHaveCount(1);
   await expect(page.getByRole('img', { name: 'Selected object preview' })).toBeVisible();
-  if (process.env.QA_ARTIFACT_DIR) await info.attach('selected-object', { body: await page.screenshot(), contentType: 'image/png' });
+  if (isRecordingQA(info)) await info.attach('selected-object', { body: await page.screenshot(), contentType: 'image/png' });
   const shorten = page.getByRole('button', { name: 'Shorten tip', exact: true });
   await shorten[info.project.name.startsWith('mobile') ? 'tap' : 'click']();
   await expect(picker.locator(`option[value="${first.id}"]`)).toHaveText('Arrow 1 — 3 points');

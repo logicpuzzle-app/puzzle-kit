@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures';
+import { test, expect, isRecordingQA } from './fixtures';
 import type { Page, TestInfo } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
@@ -32,7 +32,7 @@ test('text-ui: long text remains multiline when reopened through Alphabet', { ta
   await page.getByRole('button', { name: 'OK', exact: true }).click();
   await selectTool(page, 'Alphabet');
   await openCell(page, info);
-  await info.attach('cross-tool-dialog', { body: await page.screenshot(), contentType: 'image/png' });
+  if (isRecordingQA(info)) await info.attach('cross-tool-dialog', { body: await page.screenshot(), contentType: 'image/png' });
   const input = page.locator('form textarea');
   await expect(input).toHaveValue(originalText);
   await input.press('ControlOrMeta+A');
@@ -77,7 +77,7 @@ test('text-ui: composition Escape preserves the draft until explicit cancel', { 
   // Exercise the browser event contract; this does not operate a native OS IME.
   await input.dispatchEvent('compositionstart', { data: '編集中' });
   await input.dispatchEvent('keydown', { key: 'Escape', code: 'Escape', isComposing: true, keyCode: 229 });
-  await info.attach('composition-draft', { body: await page.screenshot(), contentType: 'image/png' });
+  if (isRecordingQA(info)) await info.attach('composition-draft', { body: await page.screenshot(), contentType: 'image/png' });
   await expect(input).toHaveValue('編集中の文章');
   await input.dispatchEvent('compositionend', { data: '編集中' });
   await input.press('Escape');
@@ -91,7 +91,7 @@ test('text-touch: a finger tap opens text input and reopens saved text', { tag: 
   await start(page);
   await selectTool(page, 'Free Text');
   await openCell(page, info, true);
-  await info.attach('touch-dialog', { body: await page.screenshot(), contentType: 'image/png' });
+  if (isRecordingQA(info)) await info.attach('touch-dialog', { body: await page.screenshot(), contentType: 'image/png' });
   const input = page.locator('form textarea');
   await expect(input).toBeVisible();
   await input.fill(originalText);
