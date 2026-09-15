@@ -82,6 +82,10 @@ npm run dev:harness
 
 ハーネスはQA専用originの `puzzlekit*` 設定を初期化する。日常編集には別ポートの通常devを使う。保存済みパズルや別originのデータは削除しない。デスクトップでの利用を基本とする。`harness.html` はViteの本番build入力に含めず、開発時のみモジュールを読み込む。
 
+QA用Viteは `.work`・`docs/qa`・テスト成果物を監視しない。`.work` 内の別worktreeの `tsconfig.json` 更新による全ページ再読み込みや、証跡HTMLによる不要なHMR通知を防ぐ。アプリの `src` とルートの設定は引き続き監視する。
+
+QAの依存キャッシュは各worktreeの `.work/node_modules/.vite-qa` に作成する。トップレベルの `node_modules` を別worktreeと共有しても、最適化済み依存を相互に上書きしない。通常の `npm run dev` は通常のVite設定を使う。外部QAサーバーを使う場合は `vite.qa.config.ts` を指定し、ソースのブランチ切替後はサーバーを再起動してからE2Eを実行する。
+
 ## before / after の動画証跡
 
 ```bash
