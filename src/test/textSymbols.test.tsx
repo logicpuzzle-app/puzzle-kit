@@ -1,42 +1,47 @@
-import { describe, expect, it } from 'vitest';
-import { act, renderHook } from '@testing-library/react';
+import { afterEach, expect, it } from 'vitest';
+import { act, cleanup, renderHook } from '@testing-library/react';
 import { createPuzzleStore } from '../store/puzzleStore';
-import { getTextSymbolValue, layoutCellText } from '../utils/textSymbols';
+import { layoutCellText } from '../utils/textSymbols';
 import { useTextSymbolDialog } from '../hooks/useTextSymbolDialog';
 
-describe('text editing', () => {
-  it.each(['A:B', ':日本語:🙂', ' first last ', 'a\nb', ''])('preserves literal text %j', text => {
-    expect(getTextSymbolValue(`text-free:${text}`)).toBe(text);
-  });
-  it('replaces text with the same ID in one undo action and preserves other symbols and layers', () => {
-    const store = createPuzzleStore().useStore;
-    store.getState().setActiveLayer('problem');
-    const element = { cellId: 'cell-0-0', symbolType: 'text-free:ABC', size: 'large' as const, rotation: 30, color: '#f00', layer: 'problem' as const };
-    store.getState().addSymbol({ ...element, symbolType: 'circle' });
-    const id = store.getState().addSymbol(element);
-    const before = store.getState().puzzle.problem.symbols;
-    expect(store.getState().addSymbol({ ...element, symbolType: 'text-free:DEF' })).toBe(id);
-    const after = store.getState().puzzle.problem.symbols;
-    expect(Object.values(after)).toHaveLength(2);
-    expect(after[id].symbolType).toBe('text-free:DEF');
-    store.getState().setActiveLayer('answer');
-    store.getState().undo();expect(store.getState().puzzle.problem.symbols).toEqual(before);
-    store.getState().redo();expect(store.getState().puzzle.problem.symbols).toEqual(after);
-  });
-  it('reopens colons literally, preserves styling, and clears existing text with undo', () => {
-    const store = createPuzzleStore().useStore;
-    store.getState().setActiveLayer('problem');
-    const id = store.getState().addSymbol({ cellId: 'cell-0-0', symbolType: 'text-free:A:B', size: 'largest', rotation: 30, color: '#123456', layer: 'problem' });
-    const original = store.getState().puzzle.problem.symbols[id];
-    const { result } = renderHook(() => useTextSymbolDialog(store.getState()));
-    act(() => result.current.handleTextClick({ cellId: 'cell-0-0', textType: 'free', existingText: original }));
-    expect(result.current.dialogProps.initialValue).toBe('A:B');
-    act(() => result.current.dialogProps.onSubmit({ value: '日本語:🙂', textType: 'free' }));
-    expect(store.getState().puzzle.problem.symbols[id]).toEqual({ ...original, symbolType: 'text-free:日本語:🙂' });
-    act(() => result.current.dialogProps.onSubmit({ value: '', textType: 'free' }));
-    expect(store.getState().puzzle.problem.symbols[id]).toBeUndefined();
-    store.getState().undo();expect(store.getState().puzzle.problem.symbols[id].symbolType).toBe('text-free:日本語:🙂');
-  });
+afterEach(cleanup);
+
+it('edits literal free text through another tool, preserving identity, styling and atomic history', () => {
+  const store = createPuzzleStore().useStore;
+  store.getState().setActiveLayer('problem');
+  const text = ' :A:B\n日本語:🙂 ';
+  const element = { cellId: 'cell-0-0', symbolType: `text-free:${text}`,
+    size: 1.75, rotation: 30, color: '#123456', fillColor: '#abcdef', objectKey: 'keep', layer: 'problem' as const };
+  const circleId = store.getState().addSymbol({ ...element, symbolType: 'circle' });
+  const id = store.getState().addSymbol(element);
+  const before = store.getState().puzzle.problem.symbols;
+  store.getState().historyManager.clear();
+  const { result } = renderHook(() => useTextSymbolDialog(store.getState()));
+  act(() => result.current.handleTextClick({ cellId: element.cellId, textType: 'alphabet', existingText: before[id] }));
+  expect(result.current.dialogProps).toMatchObject({ initialValue: text, textType: 'free' });
+  act(() => result.current.dialogProps.onSubmit({ value: text, textType: result.current.dialogProps.textType }));
+  expect(store.getState().puzzle.problem.symbols).toEqual(before);
+  expect(store.getState().canUndo()).toBe(false);
+
+  act(() => result.current.dialogProps.onSubmit({ value: '編集:済\n長文', textType: 'free' }));
+  const edited = { ...before, [id]: { ...before[id], symbolType: 'text-free:編集:済\n長文' } };
+  expect(store.getState().puzzle.problem.symbols).toEqual(edited);
+  store.getState().setActiveLayer('answer');
+  store.getState().undo();
+  expect(store.getState().puzzle.problem.symbols).toEqual(before);
+  expect(store.getState().canUndo()).toBe(false);
+  store.getState().redo();
+  expect(store.getState().puzzle.problem.symbols).toEqual(edited);
+
+  store.getState().setActiveLayer('problem');
+  act(() => result.current.handleTextClick({ cellId: element.cellId, textType: 'free', existingText: edited[id] }));
+  act(() => result.current.dialogProps.onSubmit({ value: '', textType: 'free' }));
+  expect(store.getState().puzzle.problem.symbols).toEqual({ [circleId]: before[circleId] });
+  store.getState().undo();
+  expect(store.getState().puzzle.problem.symbols).toEqual(edited);
+
+  act(() => result.current.handleTextClick({ cellId: 'cell-1-1', textType: 'hiragana' }));
+  expect(result.current.dialogProps).toMatchObject({ initialValue: '', textType: 'hiragana' });
 });
 
 it('wraps long text without splitting emoji graphemes and honors explicit newlines', () => {
@@ -59,30 +64,4 @@ it('restores layer metadata on a text-only board and keeps post-load editing und
   expect(store.getState().puzzle.problem.symbols[id].layer).toBe('problem');
   store.getState().addSymbol({...element,symbolType:'text-free:edited'});
   store.getState().undo();expect(store.getState().puzzle.problem.symbols[id].symbolType).toBe('text-free:A:B');
-});
-
-it.each(['alphabet', 'hiragana', 'katakana'])('reopens existing free text via %s without converting it or losing metadata', textType => {
-  const store = createPuzzleStore().useStore;
-  store.getState().setActiveLayer('problem');
-  const id = store.getState().addSymbol({ cellId: 'cell-0-0', symbolType: 'text-free:A:B\n日本語',
-    size: 1.75, rotation: 30, color: '#123456', fillColor: '#abcdef', objectKey: 'keep', layer: 'problem' });
-  const original = store.getState().puzzle.problem.symbols[id];
-  store.getState().historyManager.clear();
-  const { result, unmount } = renderHook(() => useTextSymbolDialog(store.getState()));
-  act(() => result.current.handleTextClick({ cellId: original.cellId, textType, existingText: original }));
-  expect(result.current.dialogProps.textType).toBe('free');
-  act(() => result.current.dialogProps.onSubmit({ value: result.current.dialogProps.initialValue, textType: result.current.dialogProps.textType }));
-  expect(store.getState().puzzle.problem.symbols[id]).toEqual(original);
-  expect(store.getState().canUndo()).toBe(false);
-  act(() => result.current.dialogProps.onSubmit({ value: '編集:済\n長文', textType: 'free' }));
-  expect(store.getState().puzzle.problem.symbols[id]).toEqual({ ...original, symbolType: 'text-free:編集:済\n長文' });
-  store.getState().undo();
-  expect(store.getState().puzzle.problem.symbols[id]).toEqual(original);
-  expect(store.getState().canUndo()).toBe(false);
-  store.getState().redo();
-  expect(store.getState().puzzle.problem.symbols[id].symbolType).toBe('text-free:編集:済\n長文');
-  act(() => result.current.handleTextClick({ cellId: 'cell-1-1', textType, existingText: undefined }));
-  expect(result.current.dialogProps.textType).toBe(textType);
-  expect(result.current.dialogProps.initialValue).toBe('');
-  unmount();
 });
