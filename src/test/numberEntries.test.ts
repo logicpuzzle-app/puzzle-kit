@@ -14,6 +14,7 @@ import {
   isNumericString,
   limitNumericString,
   getDirectionalCluesFromElements,
+  toPenpaDirectionalClue,
 } from '../utils/numberEntries';
 import { mergeDirectionalCluesIntoNumbersForLayer } from '../utils/legacyDirectionalClues';
 import type { NumberElement, PenpaDirectionalClue } from '../types';
@@ -86,6 +87,8 @@ describe('numberEntries utilities', () => {
         legacy: { cellId: 'cell-3-3', value: 5, direction: 2, layer: 'problem' },
       },
     };
+    // This public converter also accepts ordinary numbers without the collection helper.
+    expect(toPenpaDirectionalClue(elements.numbers.plain)).toBeNull();
     const migrated = mergeDirectionalCluesIntoNumbersForLayer(elements);
     expect(migrated.numbers.legacy).toMatchObject({ value: '5', direction: 2 });
     expect(getDirectionalCluesFromElements(migrated).sort((a, b) => a.cellId.localeCompare(b.cellId))).toMatchObject([
