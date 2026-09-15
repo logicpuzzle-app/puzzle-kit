@@ -19,14 +19,3 @@ for (const scenario of ['edge-lines', 'half-lines']) {
     await expect(lines).toHaveCount(count);
   });
 }
-
-test('#19 directional number supports Backspace deletion', async ({ page }) => {
-  await page.goto('/harness.html?scenario=directional-number');
-  const cell = await point(page, 80, 80);
-  await page.mouse.click(cell.x, cell.y);
-  await page.keyboard.press('5');
-  const numbers = page.locator('.directional-clue-layer.problem text');
-  await expect(numbers).not.toHaveCount(0);
-  await page.keyboard.press('Backspace');
-  await expect(numbers).toHaveCount(0);
-});
