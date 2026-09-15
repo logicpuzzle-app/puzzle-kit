@@ -160,13 +160,6 @@ export const ARROW_DIRECTIONS: Record<string, DirectionDelta> = {
 };
 
 /**
- * Check if key is an arrow key
- */
-export function isArrowKey(key: string): boolean {
-  return normalizeKey(key) in ARROW_DIRECTIONS;
-}
-
-/**
  * Get direction delta for arrow key
  */
 export function getArrowDirection(key: string): DirectionDelta | null {
@@ -189,32 +182,11 @@ export function calculateNextPosition(
 }
 
 // ============================================================================
-// Digit/Character Detection
+// Clue Marker Keys
 // ============================================================================
-
-/**
- * Check if key is a digit (0-9)
- */
-export function isDigit(key: string): boolean {
-  return /^[0-9]$/.test(key);
-}
 
 /** Keyboard equivalents of the number pad's clue markers. */
 export const MARKER_KEYS = ['?', '.'] as const;
-
-/**
- * Check if key is a single character (non-digit)
- */
-export function isSingleChar(key: string): boolean {
-  return key.length === 1 && !isDigit(key);
-}
-
-/**
- * Check if key is delete or backspace
- */
-export function isDeleteKey(key: string): boolean {
-  return key === 'Backspace' || key === 'Delete';
-}
 
 // ============================================================================
 // Multi-digit Number Input
