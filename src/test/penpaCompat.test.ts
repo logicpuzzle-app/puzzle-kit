@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isPenpaUrl, exportToPenpaFormat, isPuzzlinkUrl, parsePuzzlinkUrl, generatePuzzlinkUrl } from '../utils/penpaCompat';
+import { isPenpaUrl, parsePenpaUrl, exportToPenpaFormat, isPuzzlinkUrl, parsePuzzlinkUrl, generatePuzzlinkUrl } from '../utils/penpaCompat';
 import type { GridConfig, PuzzleState, PuzzleElements } from '../types';
 
 const createEmptyElements = (): PuzzleElements => ({
@@ -11,6 +11,7 @@ const createEmptyElements = (): PuzzleElements => ({
   symbols: {},
   cages: {},
   specials: {},
+  boxLines: {},
 });
 
 const createTestGrid = (): GridConfig => ({
@@ -58,104 +59,27 @@ describe('penpaCompat', () => {
   });
 
   describe('exportToPenpaFormat', () => {
-    it('exports empty puzzle without error', () => {
-      const grid = createTestGrid();
+    it('exports URL-safe data that imports at the same surface and clue cells', () => {
+      const grid = { ...createTestGrid(), rows: 3, cols: 4 };
       const state: PuzzleState = {
-        problem: createEmptyElements(),
-        answer: createEmptyElements(),
-      };
-
-      const result = exportToPenpaFormat(grid, state);
-      expect(result).not.toBeNull();
-      expect(typeof result).toBe('string');
-      expect(result!.length).toBeGreaterThan(0);
-    });
-
-    it('exports puzzle with surfaces', () => {
-      const grid = createTestGrid();
-      const state: PuzzleState = {
-        problem: {
-          ...createEmptyElements(),
-          surfaces: {
-            's1': {
-              id: 's1',
-              cellId: 'cell-0-0',
-              color: '#808080',
-              layer: 'problem',
-            },
-            's2': {
-              id: 's2',
-              cellId: 'cell-1-1',
-              color: '#ff0000',
-              layer: 'problem',
-            },
-          },
+        problem: { ...createEmptyElements(),
+          surfaces: { s: { id: 's', cellId: 'cell-0-2', color: '#ffffa3', layer: 'problem' } },
+          numbers: { n: { id: 'n', cellId: 'cell-2-1', value: '5', size: 'medium', position: 'center', color: '#000000', layer: 'problem' } },
         },
         answer: createEmptyElements(),
       };
-
-      const result = exportToPenpaFormat(grid, state);
-      expect(result).not.toBeNull();
-      expect(result!.length).toBeGreaterThan(0);
+      const encoded = exportToPenpaFormat(grid, state);
+      expect(encoded).toMatch(/^[A-Za-z0-9_-]+$/);
+      const restored = parsePenpaUrl('https://example.com/?p=' + encoded)!;
+      expect(restored.grid).toMatchObject({ rows: 3, cols: 4 });
+      expect(Object.values(restored.state.problem.surfaces)).toEqual([
+        expect.objectContaining({ cellId: 'cell-0-2', color: '#ffffa3' }),
+      ]);
+      expect(Object.values(restored.state.problem.numbers)).toEqual([
+        expect.objectContaining({ cellId: 'cell-2-1', value: '5' }),
+      ]);
     });
 
-    it('exports puzzle with numbers', () => {
-      const grid = createTestGrid();
-      const state: PuzzleState = {
-        problem: {
-          ...createEmptyElements(),
-          numbers: {
-            'n1': {
-              id: 'n1',
-              cellId: 'cell-0-0',
-              value: '5',
-              size: 'medium',
-              position: 'center',
-              color: '#000000',
-              layer: 'problem',
-            },
-            'n2': {
-              id: 'n2',
-              cellId: 'cell-2-2',
-              value: '12',
-              size: 'small',
-              position: 'corner',
-              color: '#000000',
-              layer: 'problem',
-            },
-          },
-        },
-        answer: createEmptyElements(),
-      };
-
-      const result = exportToPenpaFormat(grid, state);
-      expect(result).not.toBeNull();
-    });
-
-    it('produces URL-safe output', () => {
-      const grid = createTestGrid();
-      const state: PuzzleState = {
-        problem: {
-          ...createEmptyElements(),
-          surfaces: {
-            's1': {
-              id: 's1',
-              cellId: 'cell-0-0',
-              color: '#808080',
-              layer: 'problem',
-            },
-          },
-        },
-        answer: createEmptyElements(),
-      };
-
-      const result = exportToPenpaFormat(grid, state);
-      expect(result).not.toBeNull();
-      // Should not contain +, /, or = (URL-safe base64)
-      expect(result).not.toContain('+');
-      expect(result).not.toContain('/');
-      expect(result).not.toContain('=');
-    });
   });
 });
 
@@ -209,27 +133,11 @@ describe('puzzlinkCompat', () => {
   });
 
   describe('generatePuzzlinkUrl', () => {
-    it('generates URL for empty puzzle', () => {
-      const grid = createTestGrid();
-      const state: PuzzleState = {
-        problem: createEmptyElements(),
-        answer: createEmptyElements(),
-      };
-
-      const url = generatePuzzlinkUrl(grid, state, 'edit');
-      expect(url).toContain('puzz.link');
-      expect(url).toContain('/5/5/');
+    it('includes the requested puzzle type and non-square dimensions', () => {
+      const grid = { ...createTestGrid(), rows: 2, cols: 3 };
+      const state: PuzzleState = { problem: createEmptyElements(), answer: createEmptyElements() };
+      expect(generatePuzzlinkUrl(grid, state, 'sudoku')).toBe('https://puzz.link/p?sudoku/3/2/f');
     });
 
-    it('generates URL with puzzle type', () => {
-      const grid = createTestGrid();
-      const state: PuzzleState = {
-        problem: createEmptyElements(),
-        answer: createEmptyElements(),
-      };
-
-      const url = generatePuzzlinkUrl(grid, state, 'sudoku');
-      expect(url).toContain('sudoku');
-    });
   });
 });
