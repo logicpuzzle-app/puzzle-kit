@@ -7,6 +7,9 @@ const externalBaseURL = process.env.QA_EXTERNAL_BASE_URL;
 // Opt back in for local debugging or before/after capture against the dev server.
 const devGrepInvert = process.env.QA_INCLUDE_PRODUCTION_TESTS === '1' ? undefined : /@production/;
 const desktopTestIgnore = ['**/*.chromium-touch.spec.ts', '**/qa-*-capture.spec.ts'];
+// Entry/chunk wiring is checked once in production desktop Chromium. PDF import
+// stays in its own spec so browser/worker rendering remains covered everywhere.
+const buildEntrypointsIgnore = '**/build-entrypoints.spec.ts';
 
 export default defineConfig({
   testDir: './e2e',
@@ -45,11 +48,12 @@ export default defineConfig({
     },
     {
       name: 'mobile-chrome',
+      testIgnore: ['**/qa-*-capture.spec.ts', buildEntrypointsIgnore],
       grepInvert: devGrepInvert,
       use: { ...devices['Pixel 7'] },
     },
-    { name: 'webkit', testIgnore: desktopTestIgnore, use: { ...devices['Desktop Safari'] } },
-    { name: 'mobile-webkit', testIgnore: desktopTestIgnore, use: { ...devices['iPhone 13'] } },
+    { name: 'webkit', testIgnore: [...desktopTestIgnore, buildEntrypointsIgnore], use: { ...devices['Desktop Safari'] } },
+    { name: 'mobile-webkit', testIgnore: [...desktopTestIgnore, buildEntrypointsIgnore], use: { ...devices['iPhone 13'] } },
   ],
   webServer: externalBaseURL || process.env.QA_STATIC_DIR
     ? undefined
