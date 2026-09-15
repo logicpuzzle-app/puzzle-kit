@@ -48,7 +48,15 @@ for (const directional of [false, true]) {
     const numbers = page.locator(directional ? '.directional-clue-layer.problem text' : '.number-layer-problem text');
     const undo = page.getByTitle(/Undo \(Ctrl\+Z\)/).first();
     const redo = page.getByTitle(/Redo/).first();
+    if (!directional) await expect(numbers).not.toHaveCount(0);
     const before = await numbers.allTextContents();
+    if (!directional) {
+      // #19: delete the click-created number before testing keyboard markers.
+      await page.keyboard.press('Backspace');
+      await expect(numbers).toHaveCount(0);
+      await undo.click();
+      await expect(numbers).toHaveText(before);
+    }
     await page.keyboard.press('Shift+Slash');
     await expect(numbers).toHaveText(['?']);
     await undo.click();

@@ -10,26 +10,28 @@ function setup(type: 'arrow' | 'thermo' | 'polygon' = 'arrow') {
   return { store, id, object: () => store.getState().puzzle.problem.specials[id] };
 }
 
-it.each(['arrow','thermo'] as const)('shortens %s by one final point and restores one atomic history entry', type => {
+it.each(['arrow','thermo'] as const)('shortens %s to its minimum with atomic undo and no-op protection', type => {
   const { store, id, object } = setup(type);
   const before = object();
+  const shortened = { ...before, points: ['cell-1-1', 'cell-1-2', 'cell-1-1'] };
   store.getState().shortenSpecial(id);
-  expect(object()).toEqual({ ...before, points: before.points.slice(0,-1) });
-  expect(store.getState().historyManager.getState().entries).toHaveLength(1);
-  store.getState().undo(); expect(object()).toEqual(before);
-  store.getState().redo(); expect(object().points).toEqual(before.points.slice(0,-1));
+  expect(object()).toEqual(shortened);
+  store.getState().undo();
+  expect(object()).toEqual(before);
+  expect(store.getState().canUndo()).toBe(false);
+  store.getState().redo();
+  expect(object()).toEqual(shortened);
   expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
-  expect(object()).toEqual({ ...before, points: before.points.slice(0,-1) });
-});
+  expect(object()).toEqual(shortened);
 
-it('stops at two points without creating a no-op history entry', () => {
-  const { store, id, object } = setup();
-  store.getState().shortenSpecial(id); store.getState().shortenSpecial(id);
-  const shortest = object();
   store.getState().shortenSpecial(id);
-  expect(object()).toBe(shortest);
-  expect(shortest.points).toHaveLength(2);
-  expect(store.getState().historyManager.getState().entries).toHaveLength(2);
+  const shortest = { ...before, points: ['cell-1-1', 'cell-1-2'] };
+  expect(object()).toEqual(shortest);
+  store.getState().shortenSpecial(id);
+  expect(object()).toEqual(shortest);
+  store.getState().undo();
+  expect(object()).toEqual(shortened);
+  expect(store.getState().canUndo()).toBe(false);
 });
 
 it('does not edit polygons or missing objects', () => {

@@ -1,0 +1,62 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "Embedded modes expose shortcuts, reset submodes and cycle selection",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before --config .work/playwright.mode.config.ts",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "mode-selection-before.webm",
+    "screenshot": "mode-selection-before.png",
+    "videoSha256": "86b1ac0f858c16a55416827ca1171a29748f266b857a8ff309784948cfb45e2f",
+    "screenshotSha256": "25fbd6c7ab5588f517c56d5c9f44ea63d6019ac4d5d4d8ff45ca5f0cf45fc52a",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "3.320000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "Embedded modes expose shortcuts, reset submodes and cycle selection",
+    "project": "chromium",
+    "revision": "dd6f5c078571745532e9f584d462ce3fc9aa1223",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after --config .work/playwright.mode.config.ts",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "mode-selection-after.webm",
+    "screenshot": "mode-selection-after.png",
+    "videoSha256": "66e3294518f6d518b27f25d297e957044d89f920ce25b516cc9b5b0ebdd1a3cb",
+    "screenshotSha256": "25fbd6c7ab5588f517c56d5c9f44ea63d6019ac4d5d4d8ff45ca5f0cf45fc52a",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.960000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]

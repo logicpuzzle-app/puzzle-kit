@@ -1,0 +1,122 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "generates a seeded Number Place puzzle through the Wasm worker",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/npgen.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "generated-puzzle-before.webm",
+    "screenshot": "generated-puzzle-before.png",
+    "videoSha256": "f7bddcf39b421d2896044eb47894cc07bcccde256ba19aca2e75e97a59f414ce",
+    "screenshotSha256": "3bb386a18dea54f67096e55ed21698728360b34eb47cc3a0080b54afdaedd909",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "4.040000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "edits problems, hint patterns, and fixed numbers on the GUI board",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/npgen.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "gui-input-before.webm",
+    "screenshot": "gui-input-before.png",
+    "videoSha256": "7bbf11ca5a3149dfebcf7b880872a34a25a9ad02360acaf4973ef40b8dd75c21",
+    "screenshotSha256": "0af3ef0837927aa4007a499ad4bd4eb990623bc513601c84c737473b4a97f693",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.800000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "generates a seeded Number Place puzzle through the Wasm worker",
+    "project": "chromium",
+    "revision": "2377e631a6ea6db7bd7581c7203934ff0d0bdfef",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/npgen.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "generated-puzzle-after.webm",
+    "screenshot": "generated-puzzle-after.png",
+    "videoSha256": "c57b0ec786a3d4c18d66515937daba4b36cd04f76f48ec5804b748069600ffc7",
+    "screenshotSha256": "250278e6eebb6f73e5fde6d57e0b383d1f5d0418b929f9976cbf169292fbebd8",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.760000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "edits problems, hint patterns, and fixed numbers on the GUI board",
+    "project": "chromium",
+    "revision": "2377e631a6ea6db7bd7581c7203934ff0d0bdfef",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/npgen.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "gui-input-after.webm",
+    "screenshot": "gui-input-after.png",
+    "videoSha256": "40b4b2c3d1e931ad88d66fc0995b5336cb30d22a87ca3509063005ae83ad3bec",
+    "screenshotSha256": "b46865b1b202094b50571291e6120941ffd126574666aaaa5e7dcad52599734d",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.960000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]
