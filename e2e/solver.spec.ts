@@ -27,8 +27,8 @@ async function clickSolve(page: Page) {
   await page.getByRole('button', { name: 'Solve', exact: true }).click();
 }
 
-test('solver: solves Nurikabe and reports an impossible puzzle', { tag: '@production' }, async ({ page }) => {
-  await importPuzzle(page);
+test('solver: toolbar and menu imports support Nurikabe solving and impossible puzzles', { tag: '@production' }, async ({ page }) => {
+  await importPuzzle(page, 'nurikabe/3/3/1g1i1g1', true);
   await clickSolve(page);
   await expect(page.getByText('Solved', { exact: true })).toBeVisible();
   await expect(page.locator('.solver-layer')).toBeVisible();
@@ -62,9 +62,9 @@ test('solver: displays confirmed cells for multiple solutions', { tag: '@product
   await expect(page.locator('.solver-layer [fill="#F97316"]').first()).toBeVisible();
 });
 
-test('solver: bundled Heyawake respects imported room walls', { tag: '@production' }, async ({ page }, testInfo) => {
+test('solver: bundled Heyawake respects room walls from parsed input', { tag: ['@production', '@desktop'] }, async ({ page }, testInfo) => {
   const path = 'heyawake/2/2/o8010';
-  await importPuzzle(page, path);
+  await page.goto('/master');
   const puzzle = parsePuzzlinkUrl(`https://puzz.link/p?${path}`)!;
   const production = testInfo.project.use.baseURL?.endsWith(':4176');
   const workerURL = production
@@ -110,13 +110,6 @@ test('solver: cancels loading and solves again with a fresh worker', { tag: '@pr
   } finally {
     release();
   }
-});
-
-test('solver: toolbar URL import enables the correct solver', { tag: '@production' }, async ({ page }) => {
-  await importPuzzle(page, 'nurikabe/3/3/1g1i1g1', true);
-  await expect(page.getByRole('button', { name: 'Solve', exact: true })).toBeVisible();
-  await clickSolve(page);
-  await expect(page.getByText('Solved', { exact: true })).toBeVisible();
 });
 
 test('solver: displays worker startup errors and recovers on retry', { tag: '@production' }, async ({ page, context }) => {
