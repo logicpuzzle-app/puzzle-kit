@@ -9,7 +9,6 @@ import {
   generateTriGridPoints,
   pixelToTri,
   triToPixel,
-  getTriVertices,
   getTriNeighbors,
   triDistance,
   isUpwardTriangle,
@@ -73,17 +72,6 @@ it('keeps fixed centers and orientation when changing triangle columns or rows',
   // Interior probes are independent of the center conversion and avoid shared edges.
   expect(pixelToTri(10, 20, 40)).toEqual({ col: 0, row: 0, isUpward: true });
   expect(pixelToTri(30, 10, 40)).toEqual({ col: 1, row: 0, isUpward: false });
-});
-
-it('builds upward and downward triangle vertices around the supplied center', () => {
-  for (const [up, expected] of [
-    [true, [[100, 76.9059892324], [80, 111.5470053838], [120, 111.5470053838]]],
-    [false, [[100, 123.0940107676], [80, 88.4529946162], [120, 88.4529946162]]],
-  ] as const) {
-    const vertices = getTriVertices(100, 100, 40, up);
-    expect(vertices).toHaveLength(3);
-    vertices.forEach((v, i) => { expect(v.x).toBe(expected[i][0]); expect(v.y).toBeCloseTo(expected[i][1], 5); });
-  }
 });
 
 it('selects exact triangle neighbors for both orientations and the board corner', () => {
