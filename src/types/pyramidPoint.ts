@@ -13,6 +13,7 @@ import {
   type Point,
   type GridPoints,
 } from './point';
+import { getTriangleColumnAtPixel } from './triangleLookup';
 
 // ========================================
 // Pyramid Grid Constants
@@ -340,7 +341,8 @@ export function pixelToPyramid(
 
   // Calculate column
   const localX = x - rowOffsetX;
-  const col = Math.floor(localX / halfWidth);
+  const localY = y - (border + row) * triHeight;
+  const col = getTriangleColumnAtPixel(localX, localY, size, 0);
 
   const cellsInRow = getPyramidRowCellCount(row);
   if (col < 0 || col >= cellsInRow) {
