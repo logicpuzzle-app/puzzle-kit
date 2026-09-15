@@ -1,0 +1,122 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "solver: retries after the first Wasm download fails",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4188 npm run qa:capture -- before e2e/solver.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "wasm-retry-before.webm",
+    "screenshot": "wasm-retry-before.png",
+    "videoSha256": "ef31025fddd35a9bbc0295b2a91274249c04a84591804cb806b3f5861aa2fc3d",
+    "screenshotSha256": "464b44ad016c61b65d480a39227cca26b9aacd66befb53cd30287fc80e0ff6f8",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.920000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "solver: solves Slitherlink and displays the complete loop",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4188 npm run qa:capture -- before e2e/solver.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "slither-loop-before.webm",
+    "screenshot": "slither-loop-before.png",
+    "videoSha256": "e51120e74881168206aa02f49a8c59595d1ab698638e52bfc11009fedf9194af",
+    "screenshotSha256": "9c6d6fcea0092f5ebd6409f1a0b0f8b47dac65ad1d6bc6d88d6be98e343533ea",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.840000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "solver: retries after the first Wasm download fails",
+    "project": "chromium",
+    "revision": "d8835f2d2779a35bbc02fdd0a8fe1b5acb1be7cf",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4188 npm run qa:capture -- after e2e/solver.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "wasm-retry-after.webm",
+    "screenshot": "wasm-retry-after.png",
+    "videoSha256": "e8ad2c7f930ace0162c84a42d79694681ce64dbf6f16bd1c3f83ab1d9d38a5a4",
+    "screenshotSha256": "d0cc2a1dc267cb646b9020d642743d118ed13cdbfb1d0ccd3f715570b7174b0d",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.080000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "solver: solves Slitherlink and displays the complete loop",
+    "project": "chromium",
+    "revision": "d8835f2d2779a35bbc02fdd0a8fe1b5acb1be7cf",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4188 npm run qa:capture -- after e2e/solver.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "slither-loop-after.webm",
+    "screenshot": "slither-loop-after.png",
+    "videoSha256": "5e7f8f113921df6c455c5c0c3a851e007de491ce13c61c1eea79593c7edf5e4f",
+    "screenshotSha256": "355d5c80728db6549b4dad82b27440198f66050c22cbcd7bd498b9bc50e8626b",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.680000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]

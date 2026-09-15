@@ -1,0 +1,7 @@
+import { mergeConfig, normalizePath } from 'vite';
+import { resolve } from 'node:path';
+import config from '../vite.qa.config';
+export default mergeConfig(config, {
+  cacheDir: '.work/node_modules/.vite-special-fixture',
+  server: { watch: { ignored: ['.work', 'docs/qa'].map(p => `${normalizePath(resolve(__dirname, '..', p))}/**`) } },
+});
