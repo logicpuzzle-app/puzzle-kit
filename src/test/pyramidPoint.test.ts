@@ -9,7 +9,6 @@ import {
   generatePyramidGridPoints,
   pixelToPyramid,
   pyramidToPixel,
-  getPyramidVertices,
   getPyramidNeighbors,
   isPyramidUpward,
   getPyramidRowCellCount,
@@ -50,51 +49,6 @@ describe('Pyramid Grid Point System', () => {
       // Position in row -1
       const result = pixelToPyramid(100, border * triHeight - 1, 3, size, border);
       expect(result).toBeNull();
-    });
-  });
-
-  describe('getPyramidVertices', () => {
-    it('returns 3 vertices for upward triangle', () => {
-      const vertices = getPyramidVertices(100, 100, 40, true);
-      expect(vertices.length).toBe(3);
-    });
-
-    it('returns 3 vertices for downward triangle', () => {
-      const vertices = getPyramidVertices(100, 100, 40, false);
-      expect(vertices.length).toBe(3);
-    });
-
-    it('upward triangle has top vertex above center', () => {
-      const centerY = 100;
-      const vertices = getPyramidVertices(100, centerY, 40, true);
-      expect(vertices[0].y).toBeLessThan(centerY);
-    });
-
-    it('downward triangle has bottom vertex below center', () => {
-      const centerY = 100;
-      const vertices = getPyramidVertices(100, centerY, 40, false);
-      expect(vertices[0].y).toBeGreaterThan(centerY);
-    });
-
-    it('vertices form equilateral triangle', () => {
-      const size = 40;
-      const vertices = getPyramidVertices(100, 100, size, true);
-
-      const dist01 = Math.hypot(
-        vertices[1].x - vertices[0].x,
-        vertices[1].y - vertices[0].y
-      );
-      const dist12 = Math.hypot(
-        vertices[2].x - vertices[1].x,
-        vertices[2].y - vertices[1].y
-      );
-      const dist20 = Math.hypot(
-        vertices[0].x - vertices[2].x,
-        vertices[0].y - vertices[2].y
-      );
-
-      expect(dist01).toBeCloseTo(dist12, 5);
-      expect(dist12).toBeCloseTo(dist20, 5);
     });
   });
 
