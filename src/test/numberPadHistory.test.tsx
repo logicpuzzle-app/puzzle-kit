@@ -8,7 +8,7 @@ import '../i18n';
 
 afterEach(cleanup);
 
-function setup(position: 'center' | 'corner' | 'side' = 'center', mode: 'normal' | 'directional' | 'paint' = 'normal') {
+function setupStore(position: 'center' | 'corner' | 'side' = 'center', mode: 'normal' | 'directional' | 'paint' = 'normal') {
   const store = createPuzzleStore().useStore;
   store.getState().newPuzzle({ rows: 9, cols: 9 });
   store.getState().setActiveLayer('problem');
@@ -24,8 +24,13 @@ function setup(position: 'center' | 'corner' | 'side' = 'center', mode: 'normal'
   const id = store.getState().addNumber(original);
   store.getState().addNumber({ ...original, position: 'corner', cornerIndex: 3, value: '9', objectKey: 'other' });
   store.getState().historyManager.clear();
-  const view = render(<PuzzleStoreProvider store={store}><NumberInputPanel /></PuzzleStoreProvider>);
-  return { store, id, view, before: store.getState().puzzle.problem.numbers };
+  return { store, id, before: store.getState().puzzle.problem.numbers };
+}
+
+function setup(...args: Parameters<typeof setupStore>) {
+  const state = setupStore(...args);
+  const view = render(<PuzzleStoreProvider store={state.store}><NumberInputPanel /></PuzzleStoreProvider>);
+  return { ...state, view };
 }
 
 describe('number pad history', () => {
@@ -107,7 +112,7 @@ describe('number pad history', () => {
   });
 
   it.each(['answer', 'grid', 'constraint', 'player-problem'] as const)('protects the problem entry from %s updates', layer => {
-    const { store, id, before } = setup();
+    const { store, id, before } = setupStore();
     act(() => {
       if (layer === 'player-problem') store.setState({ isPlayerMode: true, activeLayer: 'problem' });
       else store.getState().setActiveLayer(layer);
