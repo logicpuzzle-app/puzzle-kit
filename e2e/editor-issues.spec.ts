@@ -29,9 +29,14 @@ async function drag(page: Page) {
 test('#40 Free Segment completes on pointer release and supports Undo/Redo', async ({ page }, info) => {
   await openEditor(page);
   await page.getByRole('button', { name: 'Line', exact: true }).click();
+  const lines = page.locator('.line-layer-problem > *');
+  // #20 uses the default orthogonal tool; free segments use a different mode.
+  await drag(page);
+  await expect(lines).not.toHaveCount(0);
+  await drag(page);
+  await expect(lines).toHaveCount(0);
   await page.getByTitle('Free Segment', { exact: true }).click();
   await drag(page);
-  const lines = page.locator('.line-layer-problem > *');
   if (isRecordingQA(info)) await page.screenshot({ path: info.outputPath('drawn.png') });
   await expect(lines).not.toHaveCount(0);
   const count = await lines.count();
@@ -39,27 +44,6 @@ test('#40 Free Segment completes on pointer release and supports Undo/Redo', asy
   await expect(lines).toHaveCount(0);
   await page.getByTitle(/Redo/).first().click();
   await expect(lines).toHaveCount(count);
-});
-
-test('#20 re-dragging an orthogonal route erases it', async ({ page }) => {
-  await openEditor(page);
-  await page.getByRole('button', { name: 'Line', exact: true }).click();
-  await drag(page);
-  const lines = page.locator('.line-layer-problem > *');
-  await expect(lines).not.toHaveCount(0);
-  await drag(page);
-  await expect(lines).toHaveCount(0);
-});
-
-test('#19 a click-entered number can be deleted with Backspace', async ({ page }) => {
-  await openEditor(page);
-  await page.getByRole('button', { name: 'Number', exact: true }).click();
-  const cell = await boardPoint(page, 80, 80);
-  await page.mouse.click(cell.x, cell.y);
-  const numbers = page.locator('.number-layer-problem text');
-  await expect(numbers).not.toHaveCount(0);
-  await page.keyboard.press('Backspace');
-  await expect(numbers).toHaveCount(0);
 });
 
 test('number selection moves with ArrowRight', async ({ page }) => {

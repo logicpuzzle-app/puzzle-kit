@@ -23,5 +23,5 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src"],
-  "exclude": ["src/test/**", "src/utils/penpaConverter.ts"]
+  "exclude": ["src/test/**"]
 }

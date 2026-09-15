@@ -1,0 +1,122 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "Surface selection color and width survive reload",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/number-history.spec.ts e2e/persistence.spec.ts e2e/cursor-style.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "surface-cursor-before.webm",
+    "screenshot": "surface-cursor-before.png",
+    "videoSha256": "36ab7fe7614ac0a96326ace9cb6d12f7bdd94ea2ef3801c6909634f105bc2b45",
+    "screenshotSha256": "9eb6ed7e0cf95b1b17bcf77a4d41618c9252215e521458e87301e63a96337dbd",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "4.840000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "Number selection color and width survive reload",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/number-history.spec.ts e2e/persistence.spec.ts e2e/cursor-style.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "number-cursor-before.webm",
+    "screenshot": "number-cursor-before.png",
+    "videoSha256": "afebf6aa6da0d1ffd2574d21f6e6fbbb4e566080104e38ae6e9c2caf7375b033",
+    "screenshotSha256": "888b690c9f4ae387b7a19f1bf2d096194c0f61e639613b0c78a549508c29c088",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "3.360000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "Surface selection color and width survive reload",
+    "project": "chromium",
+    "revision": "9efc47d2d2e7a0c258fee27fdf0dbed27c67b6a7",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4188 npm run qa:capture -- after e2e/number-history.spec.ts e2e/persistence.spec.ts e2e/cursor-style.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "surface-cursor-after.webm",
+    "screenshot": "surface-cursor-after.png",
+    "videoSha256": "f21937a80139f4852b19b42188d7879ff32bcdc70ce0b0e7158f3aa981adaf8b",
+    "screenshotSha256": "b36de3dd0a74dd5f63d15e86e777c39e7d50d99c588e6d311fbc9001e8ec754b",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "5.480000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "Number selection color and width survive reload",
+    "project": "chromium",
+    "revision": "9efc47d2d2e7a0c258fee27fdf0dbed27c67b6a7",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4188 npm run qa:capture -- after e2e/number-history.spec.ts e2e/persistence.spec.ts e2e/cursor-style.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "number-cursor-after.webm",
+    "screenshot": "number-cursor-after.png",
+    "videoSha256": "98455dce32931bc312ef0a75a8dc1524ff175bdce3c591ee9b55ce5f15365579",
+    "screenshotSha256": "2b43b871af6e01cac06eda8e9db44b0a668f806478f6535617762054ff7ae665",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "3.800000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]

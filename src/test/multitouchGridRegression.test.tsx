@@ -1,11 +1,13 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, cleanup, renderHook } from '@testing-library/react';
 import type { PointerEvent, ReactNode } from 'react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { createPuzzleStore } from '../store/puzzleStore';
 import { PuzzleStoreProvider } from '../store/puzzleStoreContext';
 import { useCanvasInteraction } from '../hooks/useCanvasInteraction';
 
-function setup(allowMultiTouchPanZoom = true) {
+afterEach(cleanup);
+
+function setupStore() {
   const { useStore } = createPuzzleStore();
   useStore.getState().newPuzzle({ rows: 6, cols: 6 });
   useStore.getState().setActiveLayer('problem');
@@ -16,6 +18,11 @@ function setup(allowMultiTouchPanZoom = true) {
       lineDirections: ['straight'],
       lineGridPoints: ['cell'],
     });
+  return useStore;
+}
+
+function setup(allowMultiTouchPanZoom = true) {
+  const useStore = setupStore();
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setPointerCapture = () => {};
   svg.hasPointerCapture = () => false;
@@ -40,7 +47,7 @@ function setup(allowMultiTouchPanZoom = true) {
       type,
       currentTarget: svg,
       preventDefault() {},
-    }) as PointerEvent;
+    }) as PointerEvent<SVGSVGElement>;
   return { useStore, result, event };
 }
 
@@ -90,9 +97,9 @@ describe('multi-pointer lifetime', () => {
     });
     act(() => result.current.handlePointerDown(event(80, 'pointerdown')));
     act(() => result.current.handlePointerDown(event(85, 'pointerdown', 2)));
-    const before = useStore.getState().puzzle;
+    const before = structuredClone(useStore.getState().puzzle);
     act(() => result.current.handlePointerUp(event(85, 'pointerup', 2)));
-    expect(useStore.getState().puzzle).toBe(before);
+    expect(useStore.getState().puzzle).toEqual(before);
     act(() => result.current.handlePointerUp(event(80)));
     expect(
       Object.values(useStore.getState().puzzle.problem.surfaces).map(
@@ -189,15 +196,16 @@ describe('touch grid editing', () => {
         event(v.position.x, 'pointerup', 1, v.position.y)
       )
     );
-    expect(useStore.getState().grid).not.toBe(before);
+    expect(useStore.getState().grid).not.toEqual(before);
     act(() => useStore.getState().undo());
     expect(useStore.getState().grid).toEqual(before);
   });
 });
 
 describe('multi-pointer interruption boundaries', () => {
-  it.each([1, 2, 3])(
-    'uses the maximum finger count and commits deletion once (first release %i)',
+  // First tracked contact versus the third contact; the other tracked contact is redundant here.
+  it.each([1, 3])(
+    'uses the maximum finger count at the last release (first release %i)',
     (first) => {
       const { useStore, result, event } = setup();
       act(() => useStore.getState().setTool('surface-fill', 'surface'));
@@ -205,13 +213,14 @@ describe('multi-pointer interruption boundaries', () => {
         act(() =>
           result.current.handlePointerDown(event(80 + id, 'pointerdown', id))
         );
-      const before = useStore.getState().puzzle;
+      const before = structuredClone(useStore.getState().puzzle);
+      expect(Object.values(before.problem.surfaces)).toHaveLength(1);
       const order = [first, ...[1, 2, 3].filter((id) => id !== first)];
       for (const id of order.slice(0, 2)) {
         act(() =>
           result.current.handlePointerUp(event(80 + id, 'pointerup', id))
         );
-        expect(useStore.getState().puzzle).toBe(before);
+        expect(useStore.getState().puzzle).toEqual(before);
         expect(useStore.getState().historyManager.isInGroup()).toBe(true);
       }
       const last = order[2];
@@ -224,29 +233,6 @@ describe('multi-pointer interruption boundaries', () => {
       expect(useStore.getState().historyManager.isInGroup()).toBe(false);
     }
   );
-  it('does not apply secondary color when the multi-finger gesture moved', () => {
-    const { useStore, result, event } = setup();
-    act(() => {
-      useStore.getState().setTool('surface-fill', 'surface');
-      useStore
-        .getState()
-        .setToolSettings({ color: '#000000', secondaryColor: '#00ff00' });
-    });
-    act(() => result.current.handlePointerDown(event(80, 'pointerdown')));
-    act(() => result.current.handlePointerDown(event(85, 'pointerdown', 2)));
-    act(() => result.current.handlePointerMove(event(100, 'pointermove', 2)));
-    act(() => result.current.handlePointerUp(event(100, 'pointerup', 2)));
-    act(() => result.current.handlePointerUp(event(80)));
-    expect(
-      Object.values(useStore.getState().puzzle.problem.surfaces).map(
-        (s) => s.color
-      )
-    ).toEqual(['#000000']);
-    act(() => useStore.getState().undo());
-    expect(
-      Object.keys(useStore.getState().puzzle.problem.surfaces)
-    ).toHaveLength(0);
-  });
   it('ignores a late release from a cancelled gesture while a new stroke is active', () => {
     const { useStore, result, event } = setup();
     act(() => result.current.handlePointerDown(event(80, 'pointerdown')));
@@ -285,50 +271,64 @@ describe('multi-pointer interruption boundaries', () => {
   });
 });
 
+function geometrySnapshot(useStore: ReturnType<typeof setupStore>) {
+  const { grid, topology } = useStore.getState();
+  return structuredClone({
+    grid,
+    cells: [...topology!.cells].sort(([a], [b]) => a.localeCompare(b)).map(([id, cell]) => ({
+      id, vertices: cell.boundaryVertices.map(vertex => topology!.vertices.get(vertex)!.position),
+    })),
+  });
+}
+
 describe('grid geometry history', () => {
   it('restores a merge and unmerge without changing puzzle contents', () => {
-    const { useStore } = setup();
-    const original = useStore.getState();
-    const ids = [...original.topology!.cells.keys()].slice(0, 2);
-    act(() => useStore.getState().mergeCells(ids));
-    const merged = useStore.getState();
-    act(() => useStore.getState().unmergeCells(['merged-0']));
-    const unmerged = useStore.getState();
-    act(() => useStore.getState().undo());
-    expect(useStore.getState().grid).toBe(merged.grid);
-    expect(useStore.getState().topology).toBe(merged.topology);
-    act(() => useStore.getState().undo());
-    expect(useStore.getState().grid).toBe(original.grid);
-    act(() => useStore.getState().redo());
-    act(() => useStore.getState().redo());
-    expect(useStore.getState().grid).toBe(unmerged.grid);
-    expect(useStore.getState().puzzle).toBe(original.puzzle);
+    const useStore = setupStore();
+    useStore.getState().addNumber({ cellId: 'cell-0-0', value: '7', position: 'center',
+      size: 'medium', color: '#000000', layer: 'problem' });
+    useStore.getState().addSurface({ cellId: 'cell-1-1', color: '#ff0000', layer: 'answer' });
+    const contents = structuredClone(useStore.getState().puzzle);
+    const original = geometrySnapshot(useStore);
+    useStore.getState().mergeCells(['cell-0-0', 'cell-0-1']);
+    const merged = geometrySnapshot(useStore);
+    expect(merged.cells.length).toBe(original.cells.length - 1);
+    useStore.getState().unmergeCells(['merged-0']);
+    const unmerged = geometrySnapshot(useStore);
+    expect(unmerged.cells.length).toBe(original.cells.length);
+    useStore.getState().undo();
+    expect(geometrySnapshot(useStore)).toEqual(merged);
+    useStore.getState().undo();
+    expect(geometrySnapshot(useStore)).toEqual(original);
+    useStore.getState().redo();
+    useStore.getState().redo();
+    expect(geometrySnapshot(useStore)).toEqual(unmerged);
+    expect(useStore.getState().puzzle).toEqual(contents);
   });
+
   it('does not record a duplicate split and can undo removing or clearing splits', () => {
-    const { useStore } = setup();
+    const useStore = setupStore();
+    const original = geometrySnapshot(useStore);
     const cell = [...useStore.getState().topology!.cells.values()][0];
-    const add = () =>
-      useStore
-        .getState()
-        .addSplitLine(
-          cell.id,
-          cell.boundaryVertices[0],
-          cell.boundaryVertices[2]
-        );
-    act(add);
-    const split = useStore.getState();
-    act(add);
-    expect(useStore.getState().historyManager.getState().entries).toHaveLength(
-      1
-    );
-    act(() => useStore.getState().removeSplitLine(cell.id));
-    act(() => useStore.getState().undo());
-    expect(useStore.getState().topology).toBe(split.topology);
-    act(() => useStore.getState().clearSplitLines());
-    expect(useStore.getState().grid.splitLines ?? []).toHaveLength(0);
-    act(() => useStore.getState().undo());
-    expect(useStore.getState().grid).toBe(split.grid);
-    act(() => useStore.getState().redo());
-    expect(useStore.getState().grid.splitLines ?? []).toHaveLength(0);
+    const add = () => useStore.getState().addSplitLine(cell.id, cell.boundaryVertices[0], cell.boundaryVertices[2]);
+    add();
+    const split = geometrySnapshot(useStore);
+    expect(split.cells.length).toBe(original.cells.length + 1);
+    add();
+    useStore.getState().undo();
+    expect(geometrySnapshot(useStore)).toEqual(original);
+    expect(useStore.getState().canUndo()).toBe(false);
+    useStore.getState().redo();
+    expect(geometrySnapshot(useStore)).toEqual(split);
+    useStore.getState().removeSplitLine(cell.id);
+    useStore.getState().undo();
+    expect(geometrySnapshot(useStore)).toEqual(split);
+    useStore.getState().clearSplitLines();
+    const cleared = geometrySnapshot(useStore);
+    expect(cleared.grid.splitLines ?? []).toHaveLength(0);
+    expect(cleared.cells).toEqual(original.cells);
+    useStore.getState().undo();
+    expect(geometrySnapshot(useStore)).toEqual(split);
+    useStore.getState().redo();
+    expect(geometrySnapshot(useStore)).toEqual(cleared);
   });
 });

@@ -1,0 +1,66 @@
+{
+  "revision": "1c988dc0f19a8f002c74abd02c279c513d8e45ab",
+  "baseline": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+  "command": "node --test scripts/qa-check.test.mjs",
+  "beforePassed": 3,
+  "afterPassed": 3,
+  "unitTestFileSha256": "d90d696b7a751171423bcb420c8dec375273eee0a8d4f3d4db04f51a6e9ab23e",
+  "runnerUnchanged": true,
+  "mutations": [
+    {
+      "name": "buffer-output",
+      "operation": "buffer child stdout and forward it only on child close",
+      "expectedExit": 1,
+      "actualExit": 1
+    },
+    {
+      "name": "stop-after-failure",
+      "operation": "break runner loop after recording first nonzero check",
+      "expectedExit": 1,
+      "actualExit": 1
+    }
+  ],
+  "logs": {
+    "runner-before.txt": "512f8462c268152fbea38be714b18823ca30c888f3878b64632b44218cae1d18",
+    "runner-after.txt": "a5ee41878083fb05ed79601d90de26e13d64d2084f9084e8f7e91fdbfe2e699c",
+    "mutation-buffer-output.txt": "598963b35c2cebfa4033bb9be43f073cfafef1b9ac8cd4a6b1baf493f4ae1961",
+    "mutation-stop-after-failure.txt": "b2e40ce81600b0dd1b896792b510c1f203b16ca6a0c961db1f08e28239489d11"
+  },
+  "durationCaveat": "Single local runs, not a performance benchmark. Only the unconditional 10 x 150 ms fixture delay is removed.",
+  "logNormalization": "Absolute repository path replaced with <repo> in mutation logs.",
+  "qaCheckSummary": [
+    {
+      "script": "check:solver-sourcemaps",
+      "exitCode": 0
+    },
+    {
+      "script": "typecheck",
+      "exitCode": 0
+    },
+    {
+      "script": "typecheck:e2e",
+      "exitCode": 0
+    },
+    {
+      "script": "test:unit",
+      "exitCode": 0
+    },
+    {
+      "script": "test:e2e",
+      "exitCode": 0
+    }
+  ],
+  "unit": {
+    "passed": 954,
+    "files": 72
+  },
+  "developmentE2E": {
+    "passed": 255,
+    "skipped": 1
+  },
+  "integration": {
+    "head": "ea959585579915fe2a9b2623a27e7918ce30b1f1",
+    "runnerTestsPassed": 3,
+    "fullUnitAndE2ERerun": false
+  }
+}

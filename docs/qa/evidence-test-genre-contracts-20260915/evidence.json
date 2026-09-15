@@ -1,0 +1,62 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "build: opens /embedded.html",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_INCLUDE_PRODUCTION_TESTS=1 QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/build-entrypoints.spec.ts --grep 'build: opens /embedded.html' --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "embedded-before.webm",
+    "screenshot": "embedded-before.png",
+    "videoSha256": "7b38cd52c87a7e50474e535054dd322035df5447dfffb8cf966b41af0f829673",
+    "screenshotSha256": "3c92545cec84dade2d3596ace8bcb6f3bd812bbb7774f77436ade93b3c0f74c8",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.760000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "build: opens /embedded.html",
+    "project": "chromium",
+    "revision": "83c82015a1b2cf3c90f8870f4bc7b881b3e54b7e",
+    "workingTree": "",
+    "command": "QA_INCLUDE_PRODUCTION_TESTS=1 QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/build-entrypoints.spec.ts --grep 'build: opens /embedded.html' --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "embedded-after.webm",
+    "screenshot": "embedded-after.png",
+    "videoSha256": "f1ac42eaac12b99d5615a011233f6a7cd7f84113c0de63d71507d00a9f8481a1",
+    "screenshotSha256": "3c92545cec84dade2d3596ace8bcb6f3bd812bbb7774f77436ade93b3c0f74c8",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.600000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]
