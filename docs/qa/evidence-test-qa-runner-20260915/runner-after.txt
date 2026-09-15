@@ -1,0 +1,11 @@
+✔ QA runner: success (440.55075ms)
+✔ QA runner: failure (410.308125ms)
+✔ QA runner: spawn-error (58.324625ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 967.724875

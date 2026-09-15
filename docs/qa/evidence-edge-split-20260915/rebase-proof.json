@@ -1,0 +1,19 @@
+{
+  "beforeCaptureRevision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+  "currentBaseRevision": "44d1f0037cece199f3963c7fd4b77ef962bc39f8",
+  "afterCaptureRevision": "cd38396639c1f2515e73b9e17e60b67fb7daf9c5",
+  "rebasedCodeRevision": "26b5e6253c87372e95d4babc38f384a773b80c4e",
+  "beforeSrcTree": "0b8ccff251dbb5a1332d6f7c487f8dbd178d2782",
+  "afterSrcTree": "8febd78b8be97cc1659469c0387fdba21eac1bd0",
+  "beforeAndCurrentBaseSrcIdentical": true,
+  "afterAndRebasedCodeSrcIdentical": true,
+  "changedNonEvidenceFiles": [
+    "docs/testing.md",
+    "e2e/fixtures/overlapping-arrows.json",
+    "e2e/puzzle-file.ts",
+    "e2e/puzzle-session.spec.ts",
+    "e2e/special-tip.spec.ts"
+  ],
+  "applicationAndBuildInputsUnchanged": true,
+  "reason": "CI failed in old dynamic-import special-tip initialization. PR99 replaces that path with public File Open/Save; no rerun of unchanged failing head."
+}

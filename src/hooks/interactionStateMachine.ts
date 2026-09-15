@@ -344,45 +344,5 @@ function handleSelectingState(
   }
 }
 
-// ============================================================================
-// Tool Category Helpers
-// ============================================================================
-
-/**
- * Tool category behavior configuration (map-based instead of switch)
- */
-const TOOL_CATEGORY_CONFIG: Record<ToolCategory, { supportsDrag: boolean; needsCompletion: boolean }> = {
-  'surface': { supportsDrag: true, needsCompletion: false },
-  'surface-cycle': { supportsDrag: true, needsCompletion: false },
-  'line': { supportsDrag: true, needsCompletion: true },
-  'edge': { supportsDrag: true, needsCompletion: false },
-  'wall': { supportsDrag: true, needsCompletion: false },
-  'symbol': { supportsDrag: false, needsCompletion: false },
-  'special-thermo': { supportsDrag: true, needsCompletion: true },
-  'special-arrow': { supportsDrag: true, needsCompletion: true },
-  'special-cage': { supportsDrag: true, needsCompletion: true },
-  'special-boxline': { supportsDrag: true, needsCompletion: true },
-  'multicolor-surface': { supportsDrag: true, needsCompletion: false },
-  'solution-area': { supportsDrag: true, needsCompletion: false },
-  'number': { supportsDrag: false, needsCompletion: false },
-  'text': { supportsDrag: false, needsCompletion: false },
-  'select': { supportsDrag: true, needsCompletion: false },
-  'unknown': { supportsDrag: false, needsCompletion: false },
-};
-
-/**
- * Check if tool supports drag operation
- */
-export function toolSupportsDrag(category: ToolCategory): boolean {
-  return TOOL_CATEGORY_CONFIG[category]?.supportsDrag ?? false;
-}
-
-/**
- * Check if tool needs completion on mouse up
- */
-export function toolNeedsCompletion(category: ToolCategory): boolean {
-  return TOOL_CATEGORY_CONFIG[category]?.needsCompletion ?? false;
-}
-
 export { getToolCategory };
 export type { ToolCategory };
