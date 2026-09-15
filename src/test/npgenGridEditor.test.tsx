@@ -41,35 +41,30 @@ describe('NPGenerator grid editor', () => {
     expect(target).toHaveFocus();
   });
 
-  it('keeps one cell in the tab sequence and moves focus with arrow keys', () => {
-    render(<NumberHarness />);
-    const cells = screen.getAllByRole('gridcell');
-    fireEvent.click(cells[0]);
-    expect(cells.filter(cell => cell.tabIndex === 0)).toHaveLength(1);
-    fireEvent.keyDown(cells[0], { key: 'ArrowRight' });
-    expect(cells[1]).toHaveFocus();
-    expect(cells[1]).toHaveAttribute('tabindex', '0');
-    expect(cells[0]).toHaveAttribute('tabindex', '-1');
-  });
-
   it('enters and clears numbers with keyboard navigation', () => {
     render(<NumberHarness />);
     const firstCell = screen.getByRole('gridcell', {
       name: 'Problem grid: 1, 1, Empty',
     });
 
+    expect(screen.getAllByRole('gridcell').filter(cell => cell.tabIndex === 0)).toHaveLength(1);
     fireEvent.click(firstCell);
     fireEvent.keyDown(firstCell, { key: '2' });
     expect(screen.getByRole('gridcell', { name: 'Problem grid: 1, 1, 2' })).toBeVisible();
 
     fireEvent.keyDown(firstCell, { key: 'ArrowRight' });
-    fireEvent.keyDown(firstCell, { key: '1' });
+    const secondCell = screen.getByRole('gridcell', { name: 'Problem grid: 1, 2, Empty' });
+    expect(secondCell).toHaveFocus();
+    expect(secondCell).toHaveAttribute('tabindex', '0');
+    expect(firstCell).toHaveAttribute('tabindex', '-1');
+    expect(screen.getAllByRole('gridcell').filter(cell => cell.tabIndex === 0)).toHaveLength(1);
+    fireEvent.keyDown(secondCell, { key: '1' });
     expect(screen.getByRole('gridcell', { name: 'Problem grid: 1, 2, 1' })).toHaveAttribute(
       'aria-selected',
       'true',
     );
 
-    fireEvent.keyDown(firstCell, { key: 'Backspace' });
+    fireEvent.keyDown(secondCell, { key: 'Backspace' });
     expect(screen.getByRole('gridcell', { name: 'Problem grid: 1, 2, Empty' })).toBeVisible();
   });
 

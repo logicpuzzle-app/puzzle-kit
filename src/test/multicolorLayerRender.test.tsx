@@ -1,103 +1,43 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { it, expect } from 'vitest';
 import { render, act } from '@testing-library/react';
-
-import { usePuzzleStore } from '../store/puzzleStore';
-import { createEmptyState } from '../store/slices/types';
-import { gridConfigToTopology } from '../utils/gridTopology';
+import { createPuzzleStore } from '../store/puzzleStore';
+import { PuzzleStoreProvider } from '../store/puzzleStoreContext';
 import { MulticolorSurfaceLayer } from '../components/canvas/MulticolorSurfaceLayer';
 
-afterEach(() => {
-  act(() => {
-    usePuzzleStore.setState({
-      puzzle: createEmptyState(),
-      useTopology: true,
-      showProblemLayer: true,
-      showAnswerLayer: true,
-      topology: gridConfigToTopology({
-        rows: 1,
-        cols: 2,
-        cellSize: 40,
-        outerPadding: 0,
-        showGrid: true,
-        gridStyle: 'normal',
-        gridType: 'square',
-        marginTop: 0,
-        marginBottom: 0,
-        marginLeft: 0,
-        marginRight: 0,
-        frameStyle: 'normal',
-        frameColor: '#000000',
-        gridColor: '#000000',
-        backgroundColor: '#ffffff',
-      }),
-      grid: {
-        rows: 1,
-        cols: 2,
-        cellSize: 40,
-        outerPadding: 0,
-        showGrid: true,
-        gridStyle: 'normal',
-        gridType: 'square',
-        marginTop: 0,
-        marginBottom: 0,
-        marginLeft: 0,
-        marginRight: 0,
-        frameStyle: 'normal',
-        frameColor: '#000000',
-        gridColor: '#000000',
-        backgroundColor: '#ffffff',
+it('renders nonrectangular cells in their own visible problem/answer layer', () => {
+  const store = createPuzzleStore().useStore;
+  store.getState().newPuzzle({ rows: 1, cols: 1, cellSize: 40, gridType: 'trihexagonal' });
+  store.setState({
+    useTopology: true,
+    showProblemLayer: true,
+    showAnswerLayer: false,
+    puzzle: {
+      ...store.getState().puzzle,
+      multicolorSurfaces: {
+        p: { id: 'p', cellId: 'cell-0-0-hex', colors: [3], pattern: 'cross', layer: 'problem' },
+        a: { id: 'a', cellId: 'cell-0-0-hex', colors: [4, 5, 6], pattern: 'x', layer: 'answer' },
       },
-    });
+    },
   });
-});
-
-describe('MulticolorSurfaceLayer (per-layer rendering)', () => {
-  it('renders only the visible layer', () => {
-    const grid = {
-      rows: 1,
-      cols: 2,
-      cellSize: 40,
-      outerPadding: 0,
-      showGrid: true,
-      gridStyle: 'normal' as const,
-      gridType: 'square' as const,
-      marginTop: 0,
-      marginBottom: 0,
-      marginLeft: 0,
-      marginRight: 0,
-      frameStyle: 'normal' as const,
-      frameColor: '#000000',
-      gridColor: '#000000',
-      backgroundColor: '#ffffff',
-    };
-    const topology = gridConfigToTopology(grid);
-
-    const puzzle = createEmptyState();
-    puzzle.multicolorSurfaces = {
-      p: { id: 'p', cellId: 'cell-0-0', colors: [3], pattern: 'cross', layer: 'problem' },
-      a: { id: 'a', cellId: 'cell-0-1', colors: [4], pattern: 'cross', layer: 'answer' },
-    };
-
-    act(() => {
-      usePuzzleStore.setState({
-        grid,
-        topology,
-        useTopology: true,
-        showProblemLayer: true,
-        showAnswerLayer: false,
-        puzzle,
-      });
-    });
-
-    const { container } = render(
+  const { container } = render(
+    <PuzzleStoreProvider store={store}>
       <svg>
         <MulticolorSurfaceLayer layer="problem" />
         <MulticolorSurfaceLayer layer="answer" />
       </svg>
-    );
+    </PuzzleStoreProvider>
+  );
+  const problem = container.querySelector('[data-layer="problem"] polygon');
+  expect(problem).toHaveAttribute('fill', '#000000');
+  expect(problem!.getAttribute('points')!.trim().split(/\s+/)).toHaveLength(6);
+  expect(container.querySelector('[data-layer="answer"]')).toBeNull();
 
-    // One polygon for problem, answer hidden.
-    expect(container.querySelectorAll('polygon').length).toBe(1);
-  });
+  act(() => store.setState({ showProblemLayer: false, showAnswerLayer: true }));
+  expect(container.querySelector('[data-layer="problem"]')).toBeNull();
+  const answer = container.querySelectorAll('[data-layer="answer"] polygon');
+  expect(answer).toHaveLength(6);
+  expect(new Set(Array.from(answer, polygon => polygon.getAttribute('fill'))).size).toBe(3);
+  for (const polygon of answer) {
+    expect(polygon.getAttribute('points')!.trim().split(/\s+/)).toHaveLength(3);
+  }
 });
-

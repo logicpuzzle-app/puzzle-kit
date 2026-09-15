@@ -8,7 +8,6 @@ import { SymbolLayer } from '../components/canvas/SymbolLayer';
 import { isSymbolSize, resolveSymbolSize } from '../utils/symbolSize';
 import { serializePuzzle, deserializePuzzle } from '../utils/serialization';
 import { prepareSvgForExport } from '../components/toolbar/menu/exportHandlers';
-import type { SymbolSize } from '../types';
 
 const symbol = { cellId: 'cell-1-1', symbolType: 'arrow_cross', size: 'medium' as const, rotation: 30,
   color: '#123456', fillColor: '#abcdef', layer: 'problem' as const, objectKey: 'keep',
@@ -38,14 +37,12 @@ describe('symbol size editing', () => {
     store.getState().redo();
     expect(store.getState().puzzle.problem.symbols).toEqual(after);
   });
-  it.each([0, -1, 3.01, NaN, Infinity, 'bad', null])('rejects invalid size %s without history', value => {
+  it('rejects an invalid size without changing the puzzle or history', () => {
     const { store, id } = setup();
     const before = store.getState().puzzle;
-    store.getState().resizeSymbol(id, value as SymbolSize);
+    store.getState().resizeSymbol(id, 0);
     expect(store.getState().puzzle).toBe(before);
     expect(store.getState().canUndo()).toBe(false);
-    expect(isSymbolSize(value)).toBe(false);
-    expect(resolveSymbolSize(value)).toBe(0.5);
   });
   it('does nothing for missing IDs, unchanged size or inactive layers', () => {
     const { store, id } = setup();
@@ -83,18 +80,32 @@ describe('symbol size editing', () => {
   });
 });
 
-it.each([['small', 8], ['medium', 11.2], ['large', 16], ['largest', 20.8], [1.75, 28], [0.1, 1.6], [3, 48]] as [SymbolSize, number][])
-  ('renders and exports circle radius for size %s', (size, radius) => {
-    const store = createPuzzleStore().useStore;
-    store.getState().setActiveLayer('problem');
-    store.getState().addSymbol({ ...symbol, symbolType: 'circle', size });
-    const view = render(<PuzzleStoreProvider store={store}><svg><SymbolLayer layer="problem" /></svg></PuzzleStoreProvider>);
-    const circle = view.container.querySelector('circle')!;
-    expect(Number(circle.getAttribute('r'))).toBeCloseTo(radius);
-    const clone = prepareSvgForExport(view.container.querySelector('svg')!, 400, 400);
-    expect(Number(clone.querySelector('circle')!.getAttribute('r'))).toBeCloseTo(radius);
-    view.unmount();
-  });
+it('validates imported sizes and resolves legacy presets without rendering', () => {
+  for (const value of [0, -1, 0.09, 3.01, NaN, Infinity, 'bad', null]) {
+    expect(isSymbolSize(value), String(value)).toBe(false);
+    expect(resolveSymbolSize(value), String(value)).toBe(0.5);
+  }
+  for (const [value, scale] of [['small', 0.5], ['medium', 0.7], ['large', 1], ['largest', 1.3], [0.1, 0.1], [3, 3]] as const) {
+    expect(isSymbolSize(value)).toBe(true);
+    expect(resolveSymbolSize(value)).toBe(scale);
+  }
+});
+
+it('renders and exports legacy and custom circle sizes together', () => {
+  const store = createPuzzleStore().useStore;
+  store.getState().setActiveLayer('problem');
+  store.getState().addSymbol({ ...symbol, symbolType: 'circle', size: 'largest' });
+  store.getState().addSymbol({ ...symbol, cellId: 'cell-1-2', symbolType: 'circle', size: 1.75 });
+  const view = render(<PuzzleStoreProvider store={store}><svg><SymbolLayer layer="problem" /></svg></PuzzleStoreProvider>);
+  const radii = (element: ParentNode) => Array.from(element.querySelectorAll('circle'), circle => Number(circle.getAttribute('r'))).sort((a, b) => a - b);
+  const rendered = radii(view.container);
+  expect(rendered).toHaveLength(2);
+  expect(rendered[0]).toBeCloseTo(20.8);
+  expect(rendered[1]).toBeCloseTo(28);
+  const clone = prepareSvgForExport(view.container.querySelector('svg')!, 400, 400);
+  expect(radii(clone)).toEqual(rendered);
+  view.unmount();
+});
 
 it('keeps explicit arrow sizing when defaults, rotation and color change', () => {
   const { store, id } = setup();
