@@ -1,0 +1,182 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "png: toolbar exports the board and excludes special selection",
+    "project": "chromium",
+    "revision": "aa89a6802d1be460e39640737a1a188a77fd7f06",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/special-touch.chromium-touch.spec.ts e2e/special-export.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "png-before.webm",
+    "screenshot": "png-before.png",
+    "videoSha256": "f0f4e70691e57aa35ce2702aa674dd9ce83803ea59d455b8c685a2b73ab28c22",
+    "screenshotSha256": "d0263b65396b959103c3633b93008a87d9a16f468b68e0e867b039a7eda40abd",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "3.560000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "special-touch: BoxLine creates one undoable object",
+    "project": "mobile-chrome",
+    "revision": "aa89a6802d1be460e39640737a1a188a77fd7f06",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/special-touch.chromium-touch.spec.ts e2e/special-export.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "boxline-before.webm",
+    "screenshot": "boxline-before.png",
+    "videoSha256": "d413074f5f9aebd4b5086ae13b37b3737e903ae13ded264ad8fd9a08c9f3f485",
+    "screenshotSha256": "9a50506ce340917e9e739a34d6b64cc6005bb7cb6a49dcfc300604c08819d86b",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.160000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "special-touch: pan discards the pending arrow and allows the next stroke",
+    "project": "mobile-chrome",
+    "revision": "aa89a6802d1be460e39640737a1a188a77fd7f06",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/special-touch.chromium-touch.spec.ts e2e/special-export.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "interruptions-before.webm",
+    "screenshot": "interruptions-before.png",
+    "videoSha256": "119efb0d4670501a8bddf2632e2992fc17d0308b92bfa49d8c212c7ccf421c91",
+    "screenshotSha256": "3c021ed2fd11228b10ba19b8945917d29bad2e291ac1ea0ff8688a3ece4cc350",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.400000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "png: toolbar exports the board and excludes special selection",
+    "project": "chromium",
+    "revision": "877a741d3bc6dd6adcda9355beabea08a3e41fc6",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/special-touch.chromium-touch.spec.ts e2e/special-export.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "png-after.webm",
+    "screenshot": "png-after.png",
+    "videoSha256": "5fceee64011ff000f6147fe5cc10b83acaa047f84e2a10baeb20e89d66ebe666",
+    "screenshotSha256": "d0263b65396b959103c3633b93008a87d9a16f468b68e0e867b039a7eda40abd",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.680000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "special-touch: BoxLine creates one undoable object",
+    "project": "mobile-chrome",
+    "revision": "877a741d3bc6dd6adcda9355beabea08a3e41fc6",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/special-touch.chromium-touch.spec.ts e2e/special-export.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "boxline-after.webm",
+    "screenshot": "boxline-after.png",
+    "videoSha256": "19f963959a96cb5dad6d1efee1a792a956b75cdef81d5ee75d507b0f978a7ffe",
+    "screenshotSha256": "8a0806da2925801e1960f2ccb098c7d5e44e9093669760eddd3e7df55181c654",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "3.120000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "special-touch: cancel, multitouch and pan each recover with an undoable stroke",
+    "project": "mobile-chrome",
+    "revision": "877a741d3bc6dd6adcda9355beabea08a3e41fc6",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/special-touch.chromium-touch.spec.ts e2e/special-export.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "interruptions-after.webm",
+    "screenshot": "interruptions-after.png",
+    "videoSha256": "1f8bab95b8b934d6c7dfb3f1a7f17f4780984a07a38f65a6ccb175d6f25d18e2",
+    "screenshotSha256": "16a15b1680e5f62b6516d2b4cafb5ccdb0a5d66ef34ef26e0e158be04fe3e7c8",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "5.880000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]
