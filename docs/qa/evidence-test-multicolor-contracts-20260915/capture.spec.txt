@@ -1,0 +1,22 @@
+import { test, expect } from '../e2e/fixtures';
+
+test('Multicolor and icon selections survive layer changes', async ({ page }) => {
+  await page.goto('/master');
+  await page.getByRole('button', { name: 'Problem', exact: true }).click();
+  await page.getByRole('button', { name: 'Symbol', exact: true }).click();
+  const multicolor = page.getByTitle('Multicolor Surface', { exact: true });
+  const icon = page.getByRole('button', { name: '○ Icon', exact: true });
+  await multicolor.click();
+  await page.getByRole('button', { name: 'Answer', exact: true }).click();
+  await page.getByRole('button', { name: 'Symbol', exact: true }).click();
+  await icon.click();
+  await page.getByRole('button', { name: 'Problem', exact: true }).click();
+  await expect(multicolor).toHaveClass(/(?:^| )bg-office-accent(?: |$)/);
+  await page.getByRole('button', { name: 'Answer', exact: true }).click();
+  await expect(icon).toHaveClass(/(?:^| )bg-office-accent(?: |$)/);
+  await page.getByRole('button', { name: 'Problem', exact: true }).click();
+  await expect(multicolor).toHaveClass(/(?:^| )bg-office-accent(?: |$)/);
+  await expect(page.getByRole('button', { name: 'Problem', exact: true })).toHaveClass(/(?:^| )bg-office-accent(?: |$)/);
+  await expect(icon).not.toHaveClass(/(?:^| )bg-office-accent(?: |$)/);
+  await page.evaluate(() => Promise.all(document.getAnimations().map(animation => animation.finished)));
+});

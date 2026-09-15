@@ -1,5 +1,6 @@
 import { test, expect } from './fixtures';
 import type { Page } from '@playwright/test';
+import { openPuzzleFile, savePuzzleFile } from './puzzle-file';
 
 async function cell(page: Page, x: number) {
   const point = await page.locator('#puzzle-canvas > g').first().evaluate((g, x) => {
@@ -9,13 +10,6 @@ async function cell(page: Page, x: number) {
   await page.mouse.click(point.x, point.y);
 }
 
-async function openFile(page: Page, buffer: Buffer) {
-  await page.getByRole('button', { name: 'File', exact: true }).click();
-  const pending = page.waitForEvent('filechooser');
-  await page.getByText('Open', { exact: true }).click();
-  await (await pending).setFiles({ name: 'puzzle.json', mimeType: 'application/json', buffer });
-}
-
 test('session: File Open starts new history and keeps the imported clue', { tag: '@production' }, async ({ page }, info) => {
   await page.goto('/master');
   await page.getByRole('button', { name: 'Problem', exact: true }).click();
@@ -23,17 +17,11 @@ test('session: File Open starts new history and keeps the imported clue', { tag:
   await cell(page, 80);
   const numbers = page.locator('#puzzle-canvas .number-layer-problem text');
   await expect(numbers).toHaveText(['0']);
-  await page.getByRole('button', { name: 'File', exact: true }).click();
-  const pending = page.waitForEvent('download');
-  await page.getByText('Save', { exact: true }).click();
-  const stream = await (await pending).createReadStream();
-  const chunks = [];
-  for await (const chunk of stream) chunks.push(chunk);
-  const data = JSON.parse(Buffer.concat(chunks).toString());
+  const data = await savePuzzleFile(page);
   const id = Object.keys(data.state.problem.numbers)[0];
   data.state.problem.numbers[id].value = '9';
   data.grid.rows = 4; data.grid.cols = 4;
-  await openFile(page, Buffer.from(JSON.stringify(data)));
+  await openPuzzleFile(page, Buffer.from(JSON.stringify(data)));
   await expect(numbers).toHaveText(['9']);
   const undo = page.getByTitle(/Undo \(Ctrl\+Z\)/).first();
   // Capture the actual effect of stale history in the Before recording.
@@ -89,7 +77,7 @@ test('session: invalid File Open preserves the board, trial and undo history', {
   const surfaces = page.locator('#puzzle-canvas .surface-layer-answer > *');
   await expect(surfaces).toHaveCount(2);
   for (const invalid of ['{invalid', '{}']) {
-    await openFile(page, Buffer.from(invalid));
+    await openPuzzleFile(page, Buffer.from(invalid));
     await expect(page.getByText('Invalid file format', { exact: true }).first()).toBeVisible();
     await page.getByText('Close', { exact: true }).click();
     await expect(surfaces).toHaveCount(2);
