@@ -1,0 +1,242 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "XML generation reports exhausted attempts and recovers with a new seed",
+    "project": "chromium",
+    "revision": "8fa7f59f1126dfad4d74275211fd84bfd74cdb84",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/npgen.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "xml-recovery-before.webm",
+    "screenshot": "xml-recovery-before.png",
+    "videoSha256": "937d171386998490c91303692714037beb988cbe3b81ec26ced79a251238104a",
+    "screenshotSha256": "2537d254a351f8fa55f442f339d0a1e91f7b28b266f1dee0b67b705a013a6d90",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "4.840000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "imports every XML constraint group in declaration order",
+    "project": "chromium",
+    "revision": "8fa7f59f1126dfad4d74275211fd84bfd74cdb84",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/npgen.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "xml-groups-before.webm",
+    "screenshot": "xml-groups-before.png",
+    "videoSha256": "ef95db80b8304abf771e3e5ccf9c45700967c1ba2f530f55996b30947bdc1779",
+    "screenshotSha256": "6570ad8f9821055b466b0be6bee3c1d67a7f548db3cb668c5f95192923db19ba",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.840000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "generates a seeded Number Place puzzle through the Wasm worker",
+    "project": "mobile-chrome",
+    "revision": "8fa7f59f1126dfad4d74275211fd84bfd74cdb84",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/npgen.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "generate-before.webm",
+    "screenshot": "generate-before.png",
+    "videoSha256": "3ed8d2f8cc403678667ae2dfa28a77aec7378a3645827b059073313cf27b3e3d",
+    "screenshotSha256": "fc082336feb6e999e43abb37f9f5c1656d497dc420ba45f7e79783a0b92dab14",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "4.320000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "edits problems, hint patterns, and fixed numbers on the GUI board",
+    "project": "mobile-chrome",
+    "revision": "8fa7f59f1126dfad4d74275211fd84bfd74cdb84",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/npgen.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "gui-before.webm",
+    "screenshot": "gui-before.png",
+    "videoSha256": "f3ec27ec33fd6e983fda9ba8b98199eb367d3d42c50b90de982ee94336c84b89",
+    "screenshotSha256": "bb685efa0f0a7a9c206412799b99eca001c88cae8e8823f93d52ee4a701f62ec",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.080000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "XML generation reports exhausted attempts and recovers with a new seed",
+    "project": "chromium",
+    "revision": "e0b57a8d675af9f53fba3060a51c386b83b4e549",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/npgen.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "xml-recovery-after.webm",
+    "screenshot": "xml-recovery-after.png",
+    "videoSha256": "3845218f5089f1e585236c134c4c0de15c06f7f7bd9a321ce9261d4e67f95572",
+    "screenshotSha256": "2537d254a351f8fa55f442f339d0a1e91f7b28b266f1dee0b67b705a013a6d90",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "5.440000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "solves an imported XML puzzle with multiple constraint groups",
+    "project": "chromium",
+    "revision": "e0b57a8d675af9f53fba3060a51c386b83b4e549",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/npgen.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "xml-groups-after.webm",
+    "screenshot": "xml-groups-after.png",
+    "videoSha256": "0137c34594b6778c7c088ba259126c74a0e86fbe5a5f73bf2b426c5c65fd5009",
+    "screenshotSha256": "2f7d625cd5ebe3d4cfdbef11002c5b886d67bb54cbd6e999ad65605c37cfbb71",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.320000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "generates and applies a seeded Number Place puzzle with rot2 selected",
+    "project": "mobile-chrome",
+    "revision": "e0b57a8d675af9f53fba3060a51c386b83b4e549",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/npgen.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "generate-after.webm",
+    "screenshot": "generate-after.png",
+    "videoSha256": "2bba5288374ed62680ab7196648ba400b95d9d737d8116bcad41684811e08f06",
+    "screenshotSha256": "4a0b732684dfeda59f2fc941c986dd4f9431cfa8a99849c7561b6e98227b601e",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.720000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "edits problems, hint patterns, and fixed numbers on the GUI board",
+    "project": "mobile-chrome",
+    "revision": "e0b57a8d675af9f53fba3060a51c386b83b4e549",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/npgen.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "gui-after.webm",
+    "screenshot": "gui-after.png",
+    "videoSha256": "8886d25c6159fc46d5f455be12ac44358641a141c35b09d0292f078796cb66cf",
+    "screenshotSha256": "e5cb48a05fce6f6553ad592605383fb22f80349971e2012468872e83399a96e8",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.640000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]
