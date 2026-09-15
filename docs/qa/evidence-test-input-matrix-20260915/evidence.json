@@ -1,0 +1,242 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "touch iso-sculpt changes geometry once and supports undo/redo",
+    "project": "mobile-chrome",
+    "revision": "09f3012bef4c1a13ac5859924b9bdc965ea74a7d",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/tap-input.spec.ts e2e/grid-sculpt.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "iso-sculpt-before.webm",
+    "screenshot": "iso-sculpt-before.png",
+    "videoSha256": "c0b4d3ecbe097d4284e7f26aeef7ed96ee4fcc2ee700faa4561c6c66b8072fd3",
+    "screenshotSha256": "ee36a483c840a8b2b7fb436a93cb23ee6c9077b8570f54dfe48f6db5367b199c",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "3.120000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "touch iso-sculpt-cut changes geometry once and supports undo/redo",
+    "project": "mobile-chrome",
+    "revision": "09f3012bef4c1a13ac5859924b9bdc965ea74a7d",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/tap-input.spec.ts e2e/grid-sculpt.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "iso-sculpt-cut-before.webm",
+    "screenshot": "iso-sculpt-cut-before.png",
+    "videoSha256": "17b9306a03fe2c22b31ee3e749a14b017d717bf3abd743b83a9323dafb0d7502",
+    "screenshotSha256": "9df94e51f6f1e09e1af56c1175c8cc1255076b7c156410bcd64154f6f7623807",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "1.760000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "touch tap excludes and restores a square cell",
+    "project": "mobile-chrome",
+    "revision": "09f3012bef4c1a13ac5859924b9bdc965ea74a7d",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/tap-input.spec.ts e2e/grid-sculpt.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "square-exclusion-before.webm",
+    "screenshot": "square-exclusion-before.png",
+    "videoSha256": "738d7958006890b6bd9655076465131cf730101df76cdc7efe3650be44d2446f",
+    "screenshotSha256": "430a38e3898bc177756e7eb95d95c8dbc7913dcd01a99b1599a2f7429ce60952",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "3.000000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "touch tap excludes and restores a hex cell",
+    "project": "mobile-chrome",
+    "revision": "09f3012bef4c1a13ac5859924b9bdc965ea74a7d",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/tap-input.spec.ts e2e/grid-sculpt.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "hex-exclusion-before.webm",
+    "screenshot": "hex-exclusion-before.png",
+    "videoSha256": "f7a8662a0a0b4c99ba62eb3a3d7500b0ff44ff81af81a2112d7ad2945bf0f508",
+    "screenshotSha256": "fed5d09f82a1f6ba520fd6dd538a831d7c104ebc5be956bf48ea2f2c5caa0fee",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "1.720000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "touch iso-sculpt changes geometry once and supports undo/redo",
+    "project": "mobile-chrome",
+    "revision": "0e13c6f3c875b944ceee3c4a73b374df087b4253",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/tap-input.spec.ts e2e/grid-sculpt.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "iso-sculpt-after.webm",
+    "screenshot": "iso-sculpt-after.png",
+    "videoSha256": "25790f6eef95c9c9cb3785d9e3ef05ece1176b19efb78fbaaf77b7ac8d95eafe",
+    "screenshotSha256": "16dbc69d534490ef7a21ea83d1a5c5d54b4954d102c0066348195e2211aa269d",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "1.760000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "touch iso-sculpt-cut changes geometry once and supports undo/redo",
+    "project": "mobile-chrome",
+    "revision": "0e13c6f3c875b944ceee3c4a73b374df087b4253",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/tap-input.spec.ts e2e/grid-sculpt.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "iso-sculpt-cut-after.webm",
+    "screenshot": "iso-sculpt-cut-after.png",
+    "videoSha256": "1288ce6de7185ad981613792d73a9eee909cc402b79c4ba6d548bd41a71c277a",
+    "screenshotSha256": "ad810754aa1834a7e6b3718b05064a7dde0a33f54d5ccfa786dbe5279f81c24b",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "1.760000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "touch tap excludes and restores a square cell",
+    "project": "mobile-chrome",
+    "revision": "0e13c6f3c875b944ceee3c4a73b374df087b4253",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/tap-input.spec.ts e2e/grid-sculpt.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "square-exclusion-after.webm",
+    "screenshot": "square-exclusion-after.png",
+    "videoSha256": "3704c30ebbf5c9731dbd3ab0d5067be8578b30698d2cbda447f506536d2f4d71",
+    "screenshotSha256": "430a38e3898bc177756e7eb95d95c8dbc7913dcd01a99b1599a2f7429ce60952",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "1.600000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "touch tap excludes and restores a hex cell",
+    "project": "mobile-chrome",
+    "revision": "0e13c6f3c875b944ceee3c4a73b374df087b4253",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/tap-input.spec.ts e2e/grid-sculpt.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "hex-exclusion-after.webm",
+    "screenshot": "hex-exclusion-after.png",
+    "videoSha256": "3067003304de64a9e71ee5e6b8c9e6136d77c0f8ae4b5e13f2f7074730f9042f",
+    "screenshotSha256": "fed5d09f82a1f6ba520fd6dd538a831d7c104ebc5be956bf48ea2f2c5caa0fee",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "1.640000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]
