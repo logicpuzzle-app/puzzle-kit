@@ -27,25 +27,27 @@ async function expectStyle(page: Page, tool: 'Surface' | 'Number') {
   expect(screenWidth).toBeCloseTo(8, 1);
 }
 
-for (const tool of ['Surface', 'Number'] as const) {
-  test(`${tool} selection color and width survive reload`, { tag: '@production' }, async ({ page }) => {
-    await page.goto('/master');
-    await page.getByRole('button', { name: 'Problem', exact: true }).click();
-    await page.getByRole('button', { name: 'Grid', exact: true }).click();
-    await page.getByRole('button', { name: 'Style', exact: true }).click();
-    const color = page.getByTitle('Selection cursor color', { exact: true });
-    await expect(color).toBeVisible();
-    await color.fill('#0000ff');
-    await page.getByTitle('Selection cursor width', { exact: true }).selectOption('8');
+test('Surface and Number selection styles survive a shared settings reload', { tag: '@production' }, async ({ page }) => {
+  await page.goto('/master');
+  await page.getByRole('button', { name: 'Problem', exact: true }).click();
+  await page.getByRole('button', { name: 'Grid', exact: true }).click();
+  await page.getByRole('button', { name: 'Style', exact: true }).click();
+  const color = page.getByTitle('Selection cursor color', { exact: true });
+  await expect(color).toBeVisible();
+  await color.fill('#0000ff');
+  await page.getByTitle('Selection cursor width', { exact: true }).selectOption('8');
+  for (const tool of ['Surface', 'Number'] as const) {
     await selectCell(page, tool);
     await expectStyle(page, tool);
-    await expect.poll(() => page.evaluate(() => {
-      const data = JSON.parse(localStorage.getItem('puzzlekit_tool_settings') || '{}').data;
-      return [data?.cursorCellColor, data?.cursorCellThickness];
-    })).toEqual(['#0000ff', 8]);
-    await page.reload();
-    await expect(page.locator('#puzzle-canvas')).toBeVisible();
+  }
+  await expect.poll(() => page.evaluate(() => {
+    const data = JSON.parse(localStorage.getItem('puzzlekit_tool_settings') || '{}').data;
+    return [data?.cursorCellColor, data?.cursorCellThickness];
+  })).toEqual(['#0000ff', 8]);
+  await page.reload();
+  await expect(page.locator('#puzzle-canvas')).toBeVisible();
+  for (const tool of ['Surface', 'Number'] as const) {
     await selectCell(page, tool);
     await expectStyle(page, tool);
-  });
-}
+  }
+});
