@@ -1,0 +1,182 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "Properties preserves board geometry at 412px",
+    "project": "mobile-chrome",
+    "revision": "8fa7f59f1126dfad4d74275211fd84bfd74cdb84",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/text-editing.spec.ts e2e/properties-drawer.spec.ts --grep 'composition Escape|Properties' --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "geometry-before.webm",
+    "screenshot": "geometry-before.png",
+    "videoSha256": "48d919570dce36e02680aeb507fd9e716704c762a435a6b9d5e1da2aed92b7e1",
+    "screenshotSha256": "2a9e538a1c827da4f36f897b39f8acb86c72dacca978b2f34644167413a24684",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.080000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "Properties keeps focus and shortcuts inside, and saves color on backdrop dismissal",
+    "project": "mobile-chrome",
+    "revision": "8fa7f59f1126dfad4d74275211fd84bfd74cdb84",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/text-editing.spec.ts e2e/properties-drawer.spec.ts --grep 'composition Escape|Properties' --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "focus-before.webm",
+    "screenshot": "focus-before.png",
+    "videoSha256": "c36e0fe1f8cdf1809935151f6c60f7bb3027d46cde318e85b0a7f6d402191a2e",
+    "screenshotSha256": "e1e1c5cf1fba4b4efbf8432d42d04d0bf90d5930430bdc70a1b37ce69b391f40",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.120000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "text-ui: composition Escape preserves the draft until explicit cancel",
+    "project": "chromium",
+    "revision": "8fa7f59f1126dfad4d74275211fd84bfd74cdb84",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/text-editing.spec.ts e2e/properties-drawer.spec.ts --grep 'composition Escape|Properties' --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "composition-before.webm",
+    "screenshot": "composition-before.png",
+    "videoSha256": "69742e105cb9bd1021815de2b66f27b1455ef24df5d8161dfbebc2eb106b109a",
+    "screenshotSha256": "5629f08870e4a42a11c2f18da54db99ee0d1d9a6bfe1dfcf25bb7f1f0f3f3dfa",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "3.320000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "text-ui: composition Escape preserves the draft until explicit cancel",
+    "project": "chromium",
+    "revision": "5844d7c52ca32e7d658c377bee360bc97a49d5a1",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/text-editing.spec.ts e2e/properties-drawer.spec.ts --grep 'composition Escape|Properties' --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "composition-after.webm",
+    "screenshot": "composition-after.png",
+    "videoSha256": "8e12cb47c25675c1a96ea0d3b171e562f204b492dc0d44d6fea0b0482061da54",
+    "screenshotSha256": "f3e592edd0e9daf8dc2b184189a76d6cbb15a305708db83f13a3dd6f31ca1f42",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.880000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "Properties preserves board geometry at 412px",
+    "project": "mobile-chrome",
+    "revision": "5844d7c52ca32e7d658c377bee360bc97a49d5a1",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/text-editing.spec.ts e2e/properties-drawer.spec.ts --grep 'composition Escape|Properties' --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "geometry-after.webm",
+    "screenshot": "geometry-after.png",
+    "videoSha256": "1c03abe917c2c5f160e6f095667e1969d12087ee8cef59b96613787591ea7880",
+    "screenshotSha256": "2a9e538a1c827da4f36f897b39f8acb86c72dacca978b2f34644167413a24684",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.000000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "Properties keeps focus and shortcuts inside, saves color and supports Escape dismissal",
+    "project": "mobile-chrome",
+    "revision": "5844d7c52ca32e7d658c377bee360bc97a49d5a1",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/text-editing.spec.ts e2e/properties-drawer.spec.ts --grep 'composition Escape|Properties' --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "focus-after.webm",
+    "screenshot": "focus-after.png",
+    "videoSha256": "6abd231740ca2be3eaef97ad69ec09d6b876565412d9c33f6b5ffa2a6e7244d3",
+    "screenshotSha256": "e928d17c5d2b12be3b8471a6884871ed7df3a46f305379c8941419c780ef6891",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "1.960000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]
