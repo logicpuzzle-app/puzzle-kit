@@ -7,10 +7,11 @@
 - `src/test/fixtures/penpa-edit`: 出典を固定した外部互換テーブル（MIT）。兄弟フォルダ不要でparityを検証。
 - `src/test` および `src/**/__tests__` / `*.test.ts`: Vitest + jsdom + Testing Library。純粋関数、Zustandストア、Reactコンポーネント、入力フックの統合を検証。
 - `e2e/npgen.spec.ts`: 実際のWasm Workerによる生成、XML読込、盤面編集。XMLは `e2e/fixtures` に同梱。
-- `e2e/editor-issues.spec.ts`: GitHub #40 / #20 / #19 / #22 と数字の矢印移動。実際の `/master` のUIを操作し、描画されたSVGを確認。ストアをブラウザーから直接書き換えない。
+- `e2e/editor-issues.spec.ts`: #20の通常線消去→#40のFree Segment/UndoRedoを同じ起動で検証。数字の矢印移動と盤外クリックは独立に維持する。
+- `e2e/number-history.spec.ts`: 本番UIの方向数字・マーカーキーの置換/削除/UndoRedo。通常数字ではclickで作成した直後のBackspace削除も同じフローで確認する。
 - `e2e/cell-exclusion.mouse.spec.ts`: 正方形/六角形セルの除外・復元をdesktop Chromium/WebKitのmouse操作で検証。
 - `e2e/tap-input.spec.ts`: 同じ2形状の除外・復元と、tapによる数字作成→Undoをmobile-chrome/mobile-webkitで検証。
-- `e2e/topology-issues.spec.ts`: 辺中点/半分の線とUndo/Redo、方向付き数字のBackspace。ハーネスで初期化して実際のポインターとキーボードを操作。
+- `e2e/topology-issues.spec.ts`: 辺中点/半分の線とUndo/Redo。ハーネスで初期化して実際のポインターとキーボードを操作。
 - `e2e/pinch-anchor.chromium-touch.spec.ts`: ピンチ中心、副色誤判定、最初の描画・Pan Modeの境界を録画付きで検証。
 - `e2e/multitouch-grid.chromium-touch.spec.ts`: 複数指の部分リリース、タッチのMerge/Splitと中断、Undo/Redoをmobile-chromeで検証。
 - `e2e/grid-sculpt.spec.ts`: Sculpt Rotate/CutとUndo/Redoをmobile-chrome/mobile-webkitのtouchscreen.tapで検証。
