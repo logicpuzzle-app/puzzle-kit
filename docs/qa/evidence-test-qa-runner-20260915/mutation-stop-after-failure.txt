@@ -1,0 +1,35 @@
+✖ QA runner: failure (340.543ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 409.934833
+
+✖ failing tests:
+
+test at .work/qa-runner-mutants/stop-after-failure/qa-check.test.mjs:13:3
+✖ QA runner: failure (340.543ms)
+  AssertionError [ERR_ASSERTION]: A failed check must not prevent later checks
+  + actual - expected
+  
+    [
+      'check:solver-sourcemaps',
+      'typecheck',
+  -   'typecheck:e2e',
+  -   'test:unit',
+  -   'test:e2e'
+    ]
+  
+      at TestContext.<anonymous> (file://<repo>/.work/qa-runner-mutants/stop-after-failure/qa-check.test.mjs:55:14)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'check:solver-sourcemaps', 'typecheck' ],
+    expected: [ 'check:solver-sourcemaps', 'typecheck', 'typecheck:e2e', 'test:unit', 'test:e2e' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
