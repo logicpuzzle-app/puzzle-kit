@@ -1,0 +1,100 @@
+[
+  {
+    "phase": "before",
+    "commit": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "status": "",
+    "probes": [
+      {
+        "path": ".work/watch-isolation-probe/tsconfig.json",
+        "before": 1,
+        "after": 2,
+        "reloads": 1,
+        "messages": [
+          {
+            "type": "full-reload",
+            "path": "*"
+          }
+        ]
+      },
+      {
+        "path": "docs/qa/watch-isolation-probe.html",
+        "before": 2,
+        "after": 2,
+        "reloads": 0,
+        "messages": [
+          {
+            "type": "full-reload",
+            "path": "/docs/qa/watch-isolation-probe.html"
+          }
+        ]
+      }
+    ],
+    "cacheDir": "node_modules/.vite",
+    "sourceHmr": "passed",
+    "documentLoads": 2,
+    "runtimeErrors": [],
+    "video": "before.webm",
+    "screenshot": "before.png",
+    "videoSha256": "955a22dbf0ae1bf87987354a0e162d26cd991906f0b0068ae785f856836c23c4",
+    "screenshotSha256": "67ed70968e9565561343f5126a898a0a5b7586fd40f6f0bfc7046d4ba40da5d8",
+    "fullyDecoded": true,
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 1280,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "7.320000"
+      }
+    }
+  },
+  {
+    "phase": "after",
+    "commit": "e83dc18ce521451e4e8b44c0e0f117d4390cc497",
+    "status": "",
+    "probes": [
+      {
+        "path": ".work/watch-isolation-probe/tsconfig.json",
+        "before": 1,
+        "after": 1,
+        "reloads": 0,
+        "messages": []
+      },
+      {
+        "path": "docs/qa/watch-isolation-probe.html",
+        "before": 1,
+        "after": 1,
+        "reloads": 0,
+        "messages": []
+      }
+    ],
+    "cacheDir": ".work/node_modules/.vite-qa",
+    "sourceHmr": "passed",
+    "documentLoads": 1,
+    "runtimeErrors": [],
+    "video": "after.webm",
+    "screenshot": "after.png",
+    "videoSha256": "742c8e8f40baa3d115f875e66338bae741df9c01e77b6e885102b0f574625fbd",
+    "screenshotSha256": "a394c1d82b49b8ff9bd7819987cb5fc1776a7d54f551ceb1acba3b6b11b79b1a",
+    "fullyDecoded": true,
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 1280,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "11.760000"
+      }
+    }
+  }
+]

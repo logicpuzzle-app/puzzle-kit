@@ -1,0 +1,122 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "pinch anchors the board under a moving midpoint",
+    "project": "mobile-chrome",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/pinch-anchor.chromium-touch.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "moving-before.webm",
+    "screenshot": "moving-before.png",
+    "videoSha256": "e7428a2cc9517956c02a04a39ca9681a64082abd36ee7d5f52922cd907db8e6b",
+    "screenshotSha256": "7408f463f4be92a2eaad61b9447a54b7de99f21a830655078708f32a8d90af40",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.000000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "pinch preserves the first surface contact as one undoable edit",
+    "project": "mobile-chrome",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/pinch-anchor.chromium-touch.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "surface-undo-before.webm",
+    "screenshot": "surface-undo-before.png",
+    "videoSha256": "5d7be9310a01c497158d783cf53919f943c73c24f20733be9760764d212f7a8a",
+    "screenshotSha256": "ca2da570c5f71f19b94f32d3696cf2eb48d2c8863dab7ea807285a63a55e442c",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.120000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "pinch anchors the board under a moving midpoint",
+    "project": "mobile-chrome",
+    "revision": "cf54aa19a5a076028a23b7f06c370d21d4455f47",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/pinch-anchor.chromium-touch.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "moving-after.webm",
+    "screenshot": "moving-after.png",
+    "videoSha256": "9374aa1a2cf94b84a73d705b422a97a8069185d0e6583be05cb6140cc3493ce6",
+    "screenshotSha256": "7408f463f4be92a2eaad61b9447a54b7de99f21a830655078708f32a8d90af40",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.240000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "pinch preserves the first surface contact as one undoable edit",
+    "project": "mobile-chrome",
+    "revision": "cf54aa19a5a076028a23b7f06c370d21d4455f47",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/pinch-anchor.chromium-touch.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "surface-undo-after.webm",
+    "screenshot": "surface-undo-after.png",
+    "videoSha256": "d858391dff5927d1254a45ebce414c1569fb2bdb26700cec0a8b97efa92d0a80",
+    "screenshotSha256": "af239231424dd4104d31a9d17c719a75b294d364c3421b733699ccc8716ace98",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.840000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]

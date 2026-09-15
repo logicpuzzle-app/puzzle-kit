@@ -34,21 +34,35 @@ function setup(...args: Parameters<typeof setupStore>) {
 }
 
 describe('number pad history', () => {
-  it.each(['center', 'corner', 'side'] as const)('updates a %s entry in one undo without changing other entries or metadata', position => {
-    const { store, id, view, before } = setup(position);
-    fireEvent.click(view.getByRole('button', { name: '6', exact: true }));
-    const after = store.getState().puzzle.problem.numbers;
-    expect(after).toEqual({ ...before, [id]: { ...before[id], value: '6' } });
+  it('targets center, corner and side entries independently and restores an edit from another layer', () => {
+    const { store, id: centerId, before } = setupStore();
+    // Put other indices first to expose a lookup that ignores the selected index.
+    store.getState().addNumber({ ...before[centerId], position: 'side', sideIndex: 3, value: '9', objectKey: 'other-side' });
+    const targets = [
+      ['center', centerId, '6'],
+      ['corner', store.getState().addNumber({ ...before[centerId], position: 'corner' }), '7'],
+      ['side', store.getState().addNumber({ ...before[centerId], position: 'side' }), '8'],
+    ] as const;
+    const original = store.getState().puzzle.problem.numbers;
+    store.getState().historyManager.clear();
+    const view = render(<PuzzleStoreProvider store={store}><NumberInputPanel /></PuzzleStoreProvider>);
+    const expected = { ...original };
+    for (const [position, id, digit] of targets) {
+      act(() => store.getState().setToolSettings({ numberPosition: position }));
+      fireEvent.click(view.getByRole('button', { name: digit }));
+      expected[id] = { ...original[id], value: digit };
+    }
+    expect(store.getState().puzzle.problem.numbers).toEqual(expected);
+    const sideId = targets[2][1];
     act(() => { store.getState().setActiveLayer('answer'); store.getState().undo(); });
-    expect(store.getState().puzzle.problem.numbers).toEqual(before);
-    expect(store.getState().canUndo()).toBe(false);
+    expect(store.getState().puzzle.problem.numbers).toEqual({ ...expected, [sideId]: original[sideId] });
     act(() => store.getState().redo());
-    expect(store.getState().puzzle.problem.numbers).toEqual(after);
+    expect(store.getState().puzzle.problem.numbers).toEqual(expected);
   });
 
   it('keeps a directional clue ID, angle, color and metadata, including after JSON import', () => {
     const { store, id, view, before } = setup('center', 'directional');
-    fireEvent.click(view.getByRole('button', { name: '6', exact: true }));
+    fireEvent.click(view.getByRole('button', { name: '6' }));
     const after = store.getState().puzzle.problem.numbers;
     expect(after).toEqual({ ...before, [id]: { ...before[id], value: '6' } });
     act(() => store.getState().undo());
@@ -58,7 +72,7 @@ describe('number pad history', () => {
     act(() => { expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true); });
     expect(store.getState().puzzle.problem.numbers[id]).toEqual(after[id]);
     act(() => store.getState().setNumberSelection({ row: 1, col: 1 }));
-    fireEvent.click(view.getByRole('button', { name: '7', exact: true }));
+    fireEvent.click(view.getByRole('button', { name: '7' }));
     expect(store.getState().puzzle.problem.numbers[id].value).toBe('7');
     act(() => store.getState().undo());
     expect(store.getState().puzzle.problem.numbers[id]).toEqual(after[id]);
@@ -66,12 +80,12 @@ describe('number pad history', () => {
 
   it('does not add history for the same directional digit or discard an existing redo', () => {
     const { store, view, before } = setup('center', 'directional');
-    fireEvent.click(view.getByRole('button', { name: '5', exact: true }));
+    fireEvent.click(view.getByRole('button', { name: '5' }));
     expect(store.getState().puzzle.problem.numbers).toBe(before);
     expect(store.getState().canUndo()).toBe(false);
-    fireEvent.click(view.getByRole('button', { name: '6', exact: true }));
+    fireEvent.click(view.getByRole('button', { name: '6' }));
     act(() => store.getState().undo());
-    fireEvent.click(view.getByRole('button', { name: '5', exact: true }));
+    fireEvent.click(view.getByRole('button', { name: '5' }));
     expect(store.getState().canRedo()).toBe(true);
   });
 
@@ -91,7 +105,7 @@ describe('number pad history', () => {
 
   it('retains Paint brush color/size behavior in the same undo operation', () => {
     const { store, id, view, before } = setup('center', 'paint');
-    fireEvent.click(view.getByRole('button', { name: '6', exact: true }));
+    fireEvent.click(view.getByRole('button', { name: '6' }));
     expect(store.getState().puzzle.problem.numbers[id]).toEqual({ ...before[id], value: '6', color: '#ff0000', size: 'large' });
     act(() => store.getState().undo());
     expect(store.getState().puzzle.problem.numbers).toEqual(before);
@@ -102,9 +116,9 @@ describe('number pad history', () => {
 
   it('does not close a surrounding history group', () => {
     const { store, view, before } = setup();
-    act(() => store.getState().startHistoryGroup('Outer edit'));
-    fireEvent.click(view.getByRole('button', { name: '6', exact: true }));
-    fireEvent.click(view.getByRole('button', { name: '7', exact: true }));
+    act(() => store.getState().startHistoryGroup());
+    fireEvent.click(view.getByRole('button', { name: '6' }));
+    fireEvent.click(view.getByRole('button', { name: '7' }));
     expect(store.getState().historyManager.isInGroup()).toBe(true);
     act(() => { store.getState().endHistoryGroup(); store.getState().undo(); });
     expect(store.getState().puzzle.problem.numbers).toEqual(before);
