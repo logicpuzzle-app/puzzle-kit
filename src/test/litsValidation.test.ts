@@ -54,7 +54,7 @@ describe('LITS validation', () => {
     const store = setup(['cell-1-1']);const s = store.getState();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
-      const result = runDataDrivenValidation(s.puzzle, s.grid, { ...schema, validation: [{ ...schema.validation[0], pzpr: { checklist: ['unregistered-regression-check'] } }] });
+      const result = runDataDrivenValidation(s.puzzle, s.grid, { ...schema, validation: [{ ...schema.validation[0], pzpr: { pid: schema.pid, checklist: ['unregistered-regression-check'] } }] });
       expect(result).toMatchObject({ complete: false, undecided: true, errors: [expect.objectContaining({ failcode: 'unavailable' })] });
     } finally { warn.mockRestore(); }
   });
