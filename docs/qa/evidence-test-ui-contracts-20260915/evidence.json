@@ -1,0 +1,118 @@
+[
+  {
+    "case": "number-pad: Nurikabe replacement restores the previous clue in one undo",
+    "phase": "before",
+    "project": "chromium",
+    "revision": "31a15cd347e7c240cb5b4cc9857d2e0f8e39fb41",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4184 npm run qa:capture -- before e2e/topology-issues.spec.ts e2e/number-pad-history.spec.ts e2e/symbol-sizing.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "number-undo-before.webm",
+    "screenshot": "number-undo-before.png",
+    "videoSha256": "7fa2555527ede5bb0b4553d924985f54bb2eced8dcba17bdb98d00f8305596c7",
+    "screenshotSha256": "661d3b9aa857647c346ebd598cefa1cfac0fff2c19ba449cd10525dcdde4c63e",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "3.920000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "symbol sizing: resize only the selected object with atomic history and persistence",
+    "phase": "before",
+    "project": "chromium",
+    "revision": "31a15cd347e7c240cb5b4cc9857d2e0f8e39fb41",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4184 npm run qa:capture -- before e2e/topology-issues.spec.ts e2e/number-pad-history.spec.ts e2e/symbol-sizing.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "symbol-resize-before.webm",
+    "screenshot": "symbol-resize-before.png",
+    "videoSha256": "cdeb20d1374ebecf34e5291417229e6dd045d0b0f82c0d7e5b8530e5bcde7c51",
+    "screenshotSha256": "567bbf2c5b4fec6d1c1992534924a77d7953bfa8c6c20838ec67f972e5623519",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "5.560000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "number-pad: Nurikabe replacement restores the previous clue in one undo",
+    "phase": "after",
+    "project": "chromium",
+    "revision": "7465608f386b1b3ca2af4380252d8634ad1423d5",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4184 npm run qa:capture -- after e2e/topology-issues.spec.ts e2e/number-pad-history.spec.ts e2e/symbol-sizing.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "number-undo-after.webm",
+    "screenshot": "number-undo-after.png",
+    "videoSha256": "02f8e972ac582a8a00dc3b96518b954002364271b61b3f00812cd9b157eb0a5b",
+    "screenshotSha256": "bb416a51c4a6a8a27531cfbea97e938af804ef89a102fbe501d728454d03efc3",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.280000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "symbol sizing: resize only the selected object with atomic history and persistence",
+    "phase": "after",
+    "project": "chromium",
+    "revision": "7465608f386b1b3ca2af4380252d8634ad1423d5",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4184 npm run qa:capture -- after e2e/topology-issues.spec.ts e2e/number-pad-history.spec.ts e2e/symbol-sizing.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "symbol-resize-after.webm",
+    "screenshot": "symbol-resize-after.png",
+    "videoSha256": "2d8139fc485ee6767bc1249b4dcac143831c0c14740440b1744e5cb180815e56",
+    "screenshotSha256": "283b6e6bfa9d9e0464d1f19a82db77826aae30a8f0417598424be6d1eeb5356d",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "5.400000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]
