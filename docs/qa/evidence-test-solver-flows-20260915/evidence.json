@@ -1,0 +1,198 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "solver: bundled Heyawake respects imported room walls",
+    "project": "chromium",
+    "revision": "8fa7f59f1126dfad4d74275211fd84bfd74cdb84",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/solver.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "heyawake-before.webm",
+    "screenshot": "heyawake-before.png",
+    "videoSha256": "090a1e662969dab89d6d2386f0ea364bbcb9c70d6cc1321d98fed059bed42754",
+    "screenshotSha256": "dd3b68bd842a834b870bccb09501750af276853a3a0664fd1fd651165cd72488",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.600000"
+      }
+    },
+    "fullyDecoded": true,
+    "workerResult": {
+      "file": "heyawake-before-result.json",
+      "sha256": "8c84cb694ad59aeb712d83dc2d9b2e11e9ad750abe24a55119b6395cbbab5b4a",
+      "status": "solved",
+      "solvedCells": [
+        "cell-0-1"
+      ]
+    }
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "solver: solves Nurikabe and reports an impossible puzzle",
+    "project": "mobile-chrome",
+    "revision": "8fa7f59f1126dfad4d74275211fd84bfd74cdb84",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/solver.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "imports-before.webm",
+    "screenshot": "imports-before.png",
+    "videoSha256": "37a6ee9388a75465adda5b19c848b5ddb23648346c8b08b4e71369c2772508ce",
+    "screenshotSha256": "b74387b739b54602bc9e9aeb6705906cae2c05355d80a81b3db2db2dd6abe9a2",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "4.600000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "solver: retries after the first Wasm download fails",
+    "project": "mobile-chrome",
+    "revision": "8fa7f59f1126dfad4d74275211fd84bfd74cdb84",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/solver.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "retry-before.webm",
+    "screenshot": "retry-before.png",
+    "videoSha256": "101ea9494ca8f090f7226b81a1dd68d2f5b822d55e09a6d0b8fb85b0e3c45d53",
+    "screenshotSha256": "e1a40b891c8bef617c26c975c9fba751dc9b10b0631905af44841e6bf0732b44",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.040000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "solver: bundled Heyawake respects room walls from parsed input",
+    "project": "chromium",
+    "revision": "21603ffbe5222b9de157a55ee114872e638dd902",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/solver.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "heyawake-after.webm",
+    "screenshot": "heyawake-after.png",
+    "videoSha256": "0039703ddd06c032ae5fe73a5ddbbbb4aff07223c5c86ed447c84ddcf197907e",
+    "screenshotSha256": "72d55ff12d323a7c7d54c19bdc19521fc72c8d9b79705645e0688f4eed4ebfbe",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.600000"
+      }
+    },
+    "fullyDecoded": true,
+    "workerResult": {
+      "file": "heyawake-after-result.json",
+      "sha256": "b00ca5478791dc940c3ab8f90ec06ecde66b9eb734d4b86a2f47c8cf20497b6a",
+      "status": "solved",
+      "solvedCells": [
+        "cell-0-1"
+      ]
+    }
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "solver: toolbar and menu imports support Nurikabe solving and impossible puzzles",
+    "project": "mobile-chrome",
+    "revision": "21603ffbe5222b9de157a55ee114872e638dd902",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/solver.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "imports-after.webm",
+    "screenshot": "imports-after.png",
+    "videoSha256": "32c3c649397694f611bd86713c658d36fba29e1391cd9ff63157d1bea7bbb403",
+    "screenshotSha256": "b74387b739b54602bc9e9aeb6705906cae2c05355d80a81b3db2db2dd6abe9a2",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "4.320000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "solver: retries after the first Wasm download fails",
+    "project": "mobile-chrome",
+    "revision": "21603ffbe5222b9de157a55ee114872e638dd902",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/solver.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "retry-after.webm",
+    "screenshot": "retry-after.png",
+    "videoSha256": "42ed1b3d8076dbd1d2a1ebebd7b249256c042de5cc60aad6b9df0ac77bb2db95",
+    "screenshotSha256": "42327a31af0536cc412090694ab6f735705bc9baaf6d3a28f2e652ed854992d1",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "3.440000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]
