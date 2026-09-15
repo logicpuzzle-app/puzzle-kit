@@ -25,8 +25,11 @@ describe('LITS validation', () => {
     expect(validate(setup(['cell-1-1', 'cell-1-2']))).toMatchObject({ complete: false, errors: [expect.objectContaining({ failcode: 'bkNotLits' })] });
     expect(validate(setup(['cell-0-1', 'cell-1-1', 'cell-2-1', 'cell-3-1'], true)).complete).toBe(false);
   });
-  it('accepts a valid I and rejects O and disconnected cells', () => {
-    expect(validate(setup(['cell-1-1', 'cell-1-2', 'cell-1-3', 'cell-1-4'])).complete).toBe(true);
+  it('restores a valid I through undo/redo and rejects O and disconnected cells', () => {
+    const store = setup(['cell-1-1', 'cell-1-2', 'cell-1-3', 'cell-1-4']);
+    expect(validate(store).complete).toBe(true);
+    store.getState().undo(); expect(validate(store).complete).toBe(false);
+    store.getState().redo(); expect(validate(store).complete).toBe(true);
     expect(validate(setup(['cell-1-1', 'cell-1-2', 'cell-2-1', 'cell-2-2'])).complete).toBe(false);
     expect(validate(setup(['cell-1-1', 'cell-1-2', 'cell-1-3', 'cell-4-4'])).complete).toBe(false);
   });
@@ -36,12 +39,6 @@ describe('LITS validation', () => {
     expect(result.complete).toBe(true);
     const same = validate(setup(['cell-0-2','cell-1-2','cell-2-2','cell-3-2','cell-2-3','cell-3-3','cell-4-3','cell-5-3'], true));
     expect(same.errors.some(e => e.failcode === 'bkSameTetro')).toBe(true);
-  });
-  it('retains the correct result across undo and redo', () => {
-    const store = setup(['cell-1-1', 'cell-1-2', 'cell-1-3', 'cell-1-4']);
-    expect(validate(store).complete).toBe(true);
-    store.getState().undo(); expect(validate(store).complete).toBe(false);
-    store.getState().redo(); expect(validate(store).complete).toBe(true);
   });
   it('derives rooms from drawn borders when there is no imported map', () => {
     const store = setup([]);store.getState().clearRoomMap();
@@ -64,20 +61,27 @@ describe('LITS validation', () => {
   it('resolves all built-in schema checklist entries', () => {
     for (const s of constraintCatalog.getAllSchemas()) for (const r of s.validation) for (const name of r.pzpr?.checklist ?? []) expect(getCheckFunction(name), `${s.pid}: ${name}`).toBeTypeOf('function');
   });
-  it.each(Object.entries({ L: [[0,0],[1,0],[2,0],[2,1]], I: [[0,0],[0,1],[0,2],[0,3]], T: [[0,0],[0,1],[0,2],[1,1]], S: [[0,0],[0,1],[1,1],[1,2]] }))('recognizes every rotation and reflection of %s', (name, points) => {
-    for (const sign of [1,-1]) {
-      let cells = points.map(([r,c]) => [r,c*sign]);
-      for (let n=0;n<4;n++) {
-        expect(getLitsShape(cells.map(([r,c]) => `cell-${r+5}-${c+5}`))).toBe(name);
-        cells=cells.map(([r,c]) => [c,-r]);
-      }
+  // Fixed diagrams are independent of the classifier's rotation/reflection code.
+  // '/' separates rows; '#' is shaded. Each distinct orientation appears once.
+  it.each(Object.entries({
+    L: ['#./#./##', '.#/.#/##', '##/#./#.', '##/.#/.#',
+      '###/#..', '###/..#', '#../###', '..#/###'],
+    I: ['####', '#/#/#/#'],
+    T: ['###/.#.', '.#./###', '#./##/#.', '.#/##/.#'],
+    S: ['.##/##.', '##./.##', '#./##/.#', '.#/##/#.'],
+  }))('recognizes each distinct orientation of %s', (name, diagrams) => {
+    for (const diagram of diagrams) {
+      const cells = diagram.split('/').flatMap((row, r) =>
+        [...row].flatMap((cell, c) => cell === '#' ? [`cell-${r + 5}-${c + 5}`] : [])
+      );
+      expect(getLitsShape(cells), diagram).toBe(name);
     }
   });
 });
 
 it('preserves multiple rooms and validation across JSON roundtrips', () => {
   const store=setup(['cell-0-2','cell-1-2','cell-2-2','cell-3-2','cell-3-3','cell-3-4','cell-3-5','cell-2-5'],true);
-  const before=store.getState().puzzle.problem.roomMap;
+  const before=structuredClone(store.getState().puzzle.problem.roomMap);
   expect(validate(store).complete).toBe(true);
   expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
   expect(store.getState().puzzle.problem.roomMap).toEqual(before);
@@ -135,21 +139,21 @@ it('retains partial dividers until they close a room and reopens a deleted gap',
 
 it('keeps room labels for decorative/answer lines and does not change other genres', () => {
   const store = setup([]);
-  const map = store.getState().puzzle.problem.roomMap;
+  const map = structuredClone(store.getState().puzzle.problem.roomMap);
   const border = { from: 'vertex-0-3', to: 'vertex-6-3', lineTarget: 'edge' as const, layer: 'problem' as const, style: 'solid' as const, thickness: 'normal' as const, color: '#000000' };
   store.getState().addLine({ ...border, layer: 'answer' });
   store.getState().addLine({ ...border, isFree: true, fromX: 120, fromY: 0, toX: 120, toY: 240 });
-  expect(store.getState().puzzle.problem.roomMap).toBe(map);
+  expect(store.getState().puzzle.problem.roomMap).toEqual(map);
   store.getState().setCurrentSchemaId('heyawake');
   store.getState().addLine(border);
-  expect(store.getState().puzzle.problem.roomMap).toBe(map);
+  expect(store.getState().puzzle.problem.roomMap).toEqual(map);
 });
 
 it('keeps invalid maps invalid when borders are edited', () => {
   const store = setup(['cell-1-1', 'cell-1-2', 'cell-1-3', 'cell-1-4']);
   const map = { 'cell-1-1': 9 };
-  store.getState().setRoomMap(map);
+  store.getState().setRoomMap(structuredClone(map));
   store.getState().addLine({ from: 'vertex-0-3', to: 'vertex-6-3', lineTarget: 'edge', layer: 'problem', style: 'solid', thickness: 'normal', color: '#000000' });
-  expect(store.getState().puzzle.problem.roomMap).toBe(map);
+  expect(store.getState().puzzle.problem.roomMap).toEqual(map);
   expect(validate(store).complete).toBe(false);
 });
