@@ -1,0 +1,118 @@
+[
+  {
+    "case": "build: opens /master",
+    "phase": "before",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/build-entrypoints.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "master-before.webm",
+    "screenshot": "master-before.png",
+    "videoSha256": "bbb297e1c4a22d745db0f4a6bc8ce8d7d32b96b44de9d568f3142d38ba52166f",
+    "screenshotSha256": "9c4a92bb53ad8619b97cc09d05ee8c75e2baf9f70620f37a2a990d90c7c0c19b",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.760000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "build: Paint renders and imports a PDF through its worker",
+    "phase": "before",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/build-entrypoints.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "paint-pdf-before.webm",
+    "screenshot": "paint-pdf-before.png",
+    "videoSha256": "580a706d39ef31be7d85531746705f0b56dde5278e2b939dfbb6efbb8bbe60ef",
+    "screenshotSha256": "195e2ae4a189b43aa59af8bb48766f8df8cc946e8f4fd07d356da24119a95d8b",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.800000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "build: opens /master",
+    "phase": "after",
+    "project": "chromium",
+    "revision": "2898508b9b8417763c50f8889d373dd50d73fb4f",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/build-entrypoints.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "master-after.webm",
+    "screenshot": "master-after.png",
+    "videoSha256": "ccc04f4ddf61a9f9e8872c889ceebb2482cc5f597d8f77f81ed8cac5279052bc",
+    "screenshotSha256": "9c4a92bb53ad8619b97cc09d05ee8c75e2baf9f70620f37a2a990d90c7c0c19b",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.680000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "case": "build: Paint renders and imports a PDF through its worker",
+    "phase": "after",
+    "project": "chromium",
+    "revision": "2898508b9b8417763c50f8889d373dd50d73fb4f",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/build-entrypoints.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "paint-pdf-after.webm",
+    "screenshot": "paint-pdf-after.png",
+    "videoSha256": "6d8de3d005a2c5ae80dd2a6785afd19c7ce911f4db9a7d86eb243e955fe138ac",
+    "screenshotSha256": "195e2ae4a189b43aa59af8bb48766f8df8cc946e8f4fd07d356da24119a95d8b",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.840000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]
