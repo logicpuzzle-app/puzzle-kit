@@ -1,0 +1,122 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "build: opens /embedded.html",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "npm run qa:capture -- before --config playwright.production.config.ts e2e/build-entrypoints.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "embedded-before.webm",
+    "screenshot": "embedded-before.png",
+    "videoSha256": "17475362d7bfba05fd54894fd61f207d7a9b15b702db0dce79a3089abc8f6771",
+    "screenshotSha256": "558ce831b0f9250ea4b85c5a51f35765b8abc06eee228346055fc9c55422be37",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.120000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "build: Paint renders and imports a PDF through its worker",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "npm run qa:capture -- before --config playwright.production.config.ts e2e/build-entrypoints.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "pdf-before.webm",
+    "screenshot": "pdf-before.png",
+    "videoSha256": "104929525afc6e50448a9080cb79b83d9eaaa301834a1beb3c8939df9f61ae17",
+    "screenshotSha256": "3158c81b43cbb1529dc926e8b4e307bfbb35d41f37eba6964f952e1bfcdd343a",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.280000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "build: opens /embedded.html",
+    "project": "chromium",
+    "revision": "8f23b05225287d265b3e3cd932171d0b1dfd5eef",
+    "workingTree": "",
+    "command": "npm run qa:capture -- after --config playwright.production.config.ts e2e/build-entrypoints.spec.ts e2e/pdf-import.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "embedded-after.webm",
+    "screenshot": "embedded-after.png",
+    "videoSha256": "710e1b9b9d6357465eb7294cad1fa158694ae84ffe2a3a9cdb953803f17965d1",
+    "screenshotSha256": "558ce831b0f9250ea4b85c5a51f35765b8abc06eee228346055fc9c55422be37",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.160000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "build: Paint renders and imports a PDF through its worker",
+    "project": "chromium",
+    "revision": "8f23b05225287d265b3e3cd932171d0b1dfd5eef",
+    "workingTree": "",
+    "command": "npm run qa:capture -- after --config playwright.production.config.ts e2e/build-entrypoints.spec.ts e2e/pdf-import.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "pdf-after.webm",
+    "screenshot": "pdf-after.png",
+    "videoSha256": "544e3e2fb5d3bdd34f3671a64a59193ea69700ada564755ccc39f0a07239c19b",
+    "screenshotSha256": "3158c81b43cbb1529dc926e8b4e307bfbb35d41f37eba6964f952e1bfcdd343a",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.760000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]

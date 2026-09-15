@@ -1,0 +1,122 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "directional number insertion, replacement and deletion support Undo/Redo",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/number-history.spec.ts e2e/persistence.spec.ts e2e/cursor-style.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "directional-number-before.webm",
+    "screenshot": "directional-number-before.png",
+    "videoSha256": "b10274bf7a66833eb93bda42cad9abee17b16c55a3d6fed7567401126d2324bf",
+    "screenshotSha256": "3821e34e61ef689bbd70445a95086c7817821d0ea2a6ea53020ab3363127ce3e",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "3.560000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "directional marker keys support replacement, deletion and Undo/Redo",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/number-history.spec.ts e2e/persistence.spec.ts e2e/cursor-style.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "directional-marker-before.webm",
+    "screenshot": "directional-marker-before.png",
+    "videoSha256": "89b3bbd0285a82371d5c4e3f872878315c5bdb6623357e89f226d2e744efb6b2",
+    "screenshotSha256": "b6e41b38059e03b1d8a9c6e0a64eb1e83613767eeb219c86be0cd5b6358a116a",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.920000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "directional number insertion, replacement and deletion support Undo/Redo",
+    "project": "chromium",
+    "revision": "b3e402b75590db55677b7dfe146acd66a32be037",
+    "workingTree": "?? docs/qa/evidence-test-number-contracts-20260915/",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/number-history.spec.ts e2e/persistence.spec.ts e2e/cursor-style.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "directional-number-after.webm",
+    "screenshot": "directional-number-after.png",
+    "videoSha256": "5e99570ff75c611d0da6e1a12ac90a2b38828d263377dbff0a92030d197a60b9",
+    "screenshotSha256": "a46074459ff592c4be032c38640de0be77a7879ffa33574f5448db4562f045a4",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.840000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "directional marker keys support replacement, deletion and Undo/Redo",
+    "project": "chromium",
+    "revision": "b3e402b75590db55677b7dfe146acd66a32be037",
+    "workingTree": "?? docs/qa/evidence-test-number-contracts-20260915/",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/number-history.spec.ts e2e/persistence.spec.ts e2e/cursor-style.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "directional-marker-after.webm",
+    "screenshot": "directional-marker-after.png",
+    "videoSha256": "52fccb8d341578318e640ef18b34671782b289aee61d58e06c63f9e7a5aca2ba",
+    "screenshotSha256": "6b92ac298c36e965501109d240976591fed4a8c5f739257f3b5cd17568f59c7a",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "3.640000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]

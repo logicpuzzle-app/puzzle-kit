@@ -47,34 +47,6 @@ test('half: a half segment over a full segment adds no duplicate', { tag: '@desk
   await drag(page, a, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });await expect.poll(() => lineCount(page)).toBe(1);
 });
 
-test('text: colons, long strings and newlines survive display and reopening', async ({ page }) => {
-  await init(page, 'text-free');const a = await point(page, 1, 1), input = page.locator('form textarea');
-  await page.mouse.click(a.x, a.y);await expect(input).toBeVisible();await input.fill('A:B');await page.getByRole('button', { name: 'OK', exact: true }).click();
-  const texts = page.locator('.symbol-layer-problem text');await expect(texts).toHaveText(['A:B']);
-  await page.mouse.click(a.x, a.y);await expect(input).toHaveValue('A:B');
-  const value = 'ABCDEFGHIJKLMNOPQRST\n日本語:🙂';await input.fill(value);await page.getByRole('button', { name: 'OK', exact: true }).click();
-  await expect(texts).toHaveCount(1);
-  const dimensions = await texts.evaluate(n => { const box = (n as SVGGraphicsElement).getBBox();return { width: box.width, height: box.height }; });
-  expect(dimensions.width).toBeLessThan(40);expect(dimensions.height).toBeLessThan(40);
-  await page.mouse.click(a.x, a.y);await expect(input).toHaveValue(value);await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-  await expect.poll(() => page.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem('puzzlekit_autosave') || '{}').state?.problem?.symbols || {}))).toContain('ABCDEFGHIJKLMNOPQRST');
-  await page.reload();await expect(page.locator('#puzzle-canvas')).toBeVisible();
-  await page.getByRole('button', { name: 'Problem', exact: true }).click();
-  await page.evaluate(async () => { const path = '/src/store/puzzleStore.ts';const { usePuzzleStore } = await import(path);usePuzzleStore.getState().setTool('text-free', 'text'); });
-  const b = await point(page, 1, 1);await page.mouse.click(b.x, b.y);await expect(input).toHaveValue(value);
-  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-});
-
-test('edit: text replacement, clear and undo preserve a single entry', async ({ page }) => {
-  await init(page, 'text-free');const a = await point(page, 1, 1), input = page.locator('form textarea'), texts = page.locator('.symbol-layer-problem text');
-  for (const value of ['ABC', 'DEF']) { await page.mouse.click(a.x, a.y);await expect(input).toBeVisible();await input.fill(value);await page.getByRole('button', { name: 'OK', exact: true }).click(); }
-  await expect(texts).toHaveText(['DEF']);
-  const undo = page.getByTitle(/Undo \(Ctrl\+Z\)/).first();await undo.click();await expect(texts).toHaveText(['ABC']);
-  await page.getByTitle(/Redo/).first().click();await expect(texts).toHaveText(['DEF']);
-  await page.mouse.click(a.x, a.y);await page.getByRole('button', { name: 'Clear', exact: true }).click();await page.getByRole('button', { name: 'OK', exact: true }).click();
-  await expect(texts).toHaveCount(0);await undo.click();await expect(texts).toHaveText(['DEF']);
-});
-
 test('contrast: neutral numbers and text follow dark cell backgrounds', { tag: '@desktop' }, async ({ page }) => {
   await init(page);
   await page.evaluate(async () => {

@@ -13,6 +13,7 @@ import {
   type GridPoints,
   createGridPoints,
 } from './point';
+import { getTriangleColumnAtPixel } from './triangleLookup';
 
 // ========================================
 // Triangle Grid Constants
@@ -297,13 +298,11 @@ export function pixelToTri(
   size: number
 ): { col: number; row: number; isUpward: boolean } {
   const triHeight = size * TRI_HEIGHT_FACTOR;
-  const halfWidth = size / 2;
 
   // Approximate row
   const row = Math.floor(y / triHeight);
 
-  // Approximate column
-  const col = Math.floor(x / halfWidth);
+  const col = getTriangleColumnAtPixel(x, y - row * triHeight, size, row);
 
   // Determine if upward or downward
   const isUpward = isUpwardTriangle(row, col);

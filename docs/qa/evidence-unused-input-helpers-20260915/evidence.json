@@ -1,0 +1,182 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "number selection moves with ArrowRight",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/editor-issues.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "number-navigation-before.webm",
+    "screenshot": "number-navigation-before.png",
+    "videoSha256": "3169b0b1915350d985c1625a31e377e210630677383892bcb463dda4842f4499",
+    "screenshotSha256": "6fc7c962640f43c19ed507514200d9f42241705094af365bfea0b67660e96f62",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "1.960000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "touch pan mode moves the viewport without drawing",
+    "project": "mobile-chrome",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/gestures.chromium-touch.spec.ts --project=mobile-chrome --grep 'touch pan mode|cancelled touch'",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "touch-pan-before.webm",
+    "screenshot": "touch-pan-before.png",
+    "videoSha256": "5ff7a49b338a762624699a6666b522dd5d9f1e3eca6e5065f46d95e92947e282",
+    "screenshotSha256": "e1fcf0119f42b118f89cfb31b1449fe37785626a8b289c2c956366be89f4ca83",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.160000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "cancelled touch discards a pending free segment and allows the next stroke",
+    "project": "mobile-chrome",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/gestures.chromium-touch.spec.ts --project=mobile-chrome --grep 'touch pan mode|cancelled touch'",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "touch-cancel-before.webm",
+    "screenshot": "touch-cancel-before.png",
+    "videoSha256": "18a34cac23e810af80dcd3bc73b0932ab00d8c5d01dafdea51fc58685954c67b",
+    "screenshotSha256": "560a7d4b06866c15122a6140e8da7cfeb3bb93caeaddf4f169def8f1e932f312",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.040000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "number selection moves with ArrowRight",
+    "project": "chromium",
+    "revision": "05c8217f24af67a8d25f0a358495c37fe1bd2ef6",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/editor-issues.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "number-navigation-after.webm",
+    "screenshot": "number-navigation-after.png",
+    "videoSha256": "8bd3b0d0cdfc1e8193503ebc69ef46b39c30f16e6f13a9bb246d53783d28e9b4",
+    "screenshotSha256": "6fc7c962640f43c19ed507514200d9f42241705094af365bfea0b67660e96f62",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.280000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "touch pan mode moves the viewport without drawing",
+    "project": "mobile-chrome",
+    "revision": "05c8217f24af67a8d25f0a358495c37fe1bd2ef6",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/gestures.chromium-touch.spec.ts --project=mobile-chrome --grep 'touch pan mode|cancelled touch'",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "touch-pan-after.webm",
+    "screenshot": "touch-pan-after.png",
+    "videoSha256": "25960b399fa3e6cdcb4837a6dc168838cb658553c736e18c91498ad21fa4ab6e",
+    "screenshotSha256": "e1fcf0119f42b118f89cfb31b1449fe37785626a8b289c2c956366be89f4ca83",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.760000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "cancelled touch discards a pending free segment and allows the next stroke",
+    "project": "mobile-chrome",
+    "revision": "05c8217f24af67a8d25f0a358495c37fe1bd2ef6",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/gestures.chromium-touch.spec.ts --project=mobile-chrome --grep 'touch pan mode|cancelled touch'",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "touch-cancel-after.webm",
+    "screenshot": "touch-cancel-after.png",
+    "videoSha256": "9727046fb52942a874eaf40b0af3da149583e59f420497c458696a0688aed278",
+    "screenshotSha256": "8a3b0bcf33bf5d67e9afaab65e0170056f616ad0a0b433697a47e7c5dd898175",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.040000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]
