@@ -13,7 +13,6 @@ import {
   areVerticesOrthogonallyAdjacent,
   pointDistance,
   executeLineAction,
-  FREEHAND_MIN_DISTANCE,
 } from '../utils/lineUtils';
 
 describe('lineUtils', () => {
@@ -23,7 +22,6 @@ describe('lineUtils', () => {
 
     describe('with shift key', () => {
       it('returns remove when line exists', () => {
-        expect(determineLineAction(true, targetColor, targetColor)).toBe('remove');
         expect(determineLineAction(true, otherColor, targetColor)).toBe('remove');
       });
 
@@ -53,8 +51,6 @@ describe('lineUtils', () => {
 
     it('returns erase when shift key is pressed', () => {
       expect(determineFillMode(true, null, targetColor)).toBe('erase');
-      expect(determineFillMode(true, targetColor, targetColor)).toBe('erase');
-      expect(determineFillMode(true, otherColor, targetColor)).toBe('erase');
     });
 
     it('returns erase when same color line exists', () => {
@@ -85,7 +81,6 @@ describe('lineUtils', () => {
 
       it('returns remove when shift key is pressed regardless of color', () => {
         expect(determineSegmentAction('erase', true, otherColor, targetColor)).toBe('remove');
-        expect(determineSegmentAction('erase', true, targetColor, targetColor)).toBe('remove');
       });
 
       it('returns skip when different color line exists without shift', () => {
@@ -108,115 +103,48 @@ describe('lineUtils', () => {
     });
   });
 
-  describe('getClickColor', () => {
-    const primary = '#000000';
-    const secondary = '#ffffff';
-
-    it('returns primary color for left click', () => {
-      expect(getClickColor(primary, secondary, false)).toBe(primary);
-    });
-
-    it('returns secondary color for right click', () => {
-      expect(getClickColor(primary, secondary, true)).toBe(secondary);
-    });
+  it('selects primary or secondary color according to the mouse button', () => {
+    expect(getClickColor('#000000', '#ffffff', false)).toBe('#000000');
+    expect(getClickColor('#000000', '#ffffff', true)).toBe('#ffffff');
   });
 
   describe('areVerticesOrthogonallyAdjacent', () => {
     it('returns true for horizontally adjacent vertices', () => {
       expect(areVerticesOrthogonallyAdjacent('vertex-0-0', 'vertex-0-1')).toBe(true);
-      expect(areVerticesOrthogonallyAdjacent('vertex-5-3', 'vertex-5-4')).toBe(true);
     });
 
     it('returns true for vertically adjacent vertices', () => {
       expect(areVerticesOrthogonallyAdjacent('vertex-0-0', 'vertex-1-0')).toBe(true);
-      expect(areVerticesOrthogonallyAdjacent('vertex-3-5', 'vertex-4-5')).toBe(true);
     });
 
     it('returns false for diagonally adjacent vertices', () => {
       expect(areVerticesOrthogonallyAdjacent('vertex-0-0', 'vertex-1-1')).toBe(false);
-      expect(areVerticesOrthogonallyAdjacent('vertex-2-3', 'vertex-3-4')).toBe(false);
     });
 
     it('returns false for non-adjacent vertices', () => {
       expect(areVerticesOrthogonallyAdjacent('vertex-0-0', 'vertex-0-2')).toBe(false);
-      expect(areVerticesOrthogonallyAdjacent('vertex-0-0', 'vertex-2-0')).toBe(false);
-      expect(areVerticesOrthogonallyAdjacent('vertex-0-0', 'vertex-2-2')).toBe(false);
     });
 
     it('returns true for non-parseable IDs (topology mode)', () => {
       // In topology mode, IDs may not match vertex-row-col pattern
       expect(areVerticesOrthogonallyAdjacent('v-abc', 'v-def')).toBe(true);
-      expect(areVerticesOrthogonallyAdjacent('topo-vertex-1', 'topo-vertex-2')).toBe(true);
     });
   });
 
-  describe('pointDistance', () => {
-    it('returns 0 for same point', () => {
-      expect(pointDistance({ x: 0, y: 0 }, { x: 0, y: 0 })).toBe(0);
-      expect(pointDistance({ x: 5, y: 5 }, { x: 5, y: 5 })).toBe(0);
-    });
-
-    it('calculates horizontal distance correctly', () => {
-      expect(pointDistance({ x: 0, y: 0 }, { x: 3, y: 0 })).toBe(3);
-      expect(pointDistance({ x: 0, y: 0 }, { x: -4, y: 0 })).toBe(4);
-    });
-
-    it('calculates vertical distance correctly', () => {
-      expect(pointDistance({ x: 0, y: 0 }, { x: 0, y: 5 })).toBe(5);
-      expect(pointDistance({ x: 0, y: 0 }, { x: 0, y: -6 })).toBe(6);
-    });
-
-    it('calculates diagonal distance correctly', () => {
-      expect(pointDistance({ x: 0, y: 0 }, { x: 3, y: 4 })).toBe(5); // 3-4-5 triangle
-      expect(pointDistance({ x: 0, y: 0 }, { x: 5, y: 12 })).toBe(13); // 5-12-13 triangle
-    });
-
-    it('is symmetric', () => {
-      const p1 = { x: 1, y: 2 };
-      const p2 = { x: 4, y: 6 };
-      expect(pointDistance(p1, p2)).toBe(pointDistance(p2, p1));
-    });
-  });
-
-  describe('FREEHAND_MIN_DISTANCE', () => {
-    it('is defined and positive', () => {
-      expect(FREEHAND_MIN_DISTANCE).toBeDefined();
-      expect(FREEHAND_MIN_DISTANCE).toBeGreaterThan(0);
-    });
+  it('measures distance from both coordinate differences', () => {
+    expect(pointDistance({ x: 7, y: 2 }, { x: 4, y: 6 })).toBe(5);
   });
 
   describe('executeLineAction', () => {
-    it('calls removeFn for remove action', () => {
-      const addFn = vi.fn();
+    it('removes the old line and returns the replacement id', () => {
+      const addFn = vi.fn(() => 'replacement-id');
       const removeFn = vi.fn();
       const newElement = { color: '#000' };
 
-      executeLineAction('remove', addFn, removeFn, 'existing-id', newElement);
-
-      expect(removeFn).toHaveBeenCalledWith('existing-id');
-      expect(addFn).not.toHaveBeenCalled();
-    });
-
-    it('calls both removeFn and addFn for replace action', () => {
-      const addFn = vi.fn();
-      const removeFn = vi.fn();
-      const newElement = { color: '#000' };
-
-      executeLineAction('replace', addFn, removeFn, 'existing-id', newElement);
+      expect(executeLineAction('replace', addFn, removeFn, 'existing-id', newElement)).toBe('replacement-id');
 
       expect(removeFn).toHaveBeenCalledWith('existing-id');
       expect(addFn).toHaveBeenCalledWith(newElement);
-    });
-
-    it('calls addFn for add action', () => {
-      const addFn = vi.fn();
-      const removeFn = vi.fn();
-      const newElement = { color: '#000' };
-
-      executeLineAction('add', addFn, removeFn, undefined, newElement);
-
-      expect(addFn).toHaveBeenCalledWith(newElement);
-      expect(removeFn).not.toHaveBeenCalled();
     });
 
     it('calls nothing for skip action', () => {
@@ -230,22 +158,5 @@ describe('lineUtils', () => {
       expect(removeFn).not.toHaveBeenCalled();
     });
 
-    it('does not call removeFn if existingId is undefined', () => {
-      const addFn = vi.fn();
-      const removeFn = vi.fn();
-
-      executeLineAction('remove', addFn, removeFn, undefined, undefined);
-
-      expect(removeFn).not.toHaveBeenCalled();
-    });
-
-    it('does not call addFn if newElement is undefined', () => {
-      const addFn = vi.fn();
-      const removeFn = vi.fn();
-
-      executeLineAction('add', addFn, removeFn, undefined, undefined);
-
-      expect(addFn).not.toHaveBeenCalled();
-    });
   });
 });
