@@ -232,3 +232,5 @@ https://puzz.link/p?yajilin/10/10/b41e2121e21o41a41b41g41b41g30d41a41b40a40r31a3
 このYajilin入力は期待解を固定した回帰fixtureではない。問題を発見したときは現在の取込・Worker経路で再現し、期待する結果を特定してから既存テストへ加える。パーサーやソルバーのコピーを診断用に増やさない。
 
 盤面のseed・表示・ルール判定など、モバイル固有の操作や配置を検証しない回帰ケースには `@desktop` を付けられる。desktop Chromium/WebKitで実行し、mobile Chrome/WebKitの重複実行を外す。`@production` と併用した場合も本番mobile Chromeから除外される。touch・狭幅レイアウト・端末固有APIを確認するケースには付けない。最初の適用対象は `issue-priority.spec.ts` のhalf/contrast/LITS/Akariの4ケース。
+
+`properties-drawer.spec.ts` は幅を固定し全ケースでtouchを有効にするため、mobile-chrome/mobile-webkitで実行します。デスクトップ側の重複設定を除外しても、sidebar/drawer切替・Escape・モーダル競合の検査は残します。合成compositionイベントのケースは `@production` と `@desktop` を併用します（OS IME自体は操作しません）。
