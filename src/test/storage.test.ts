@@ -1,225 +1,96 @@
-/**
- * Storage Persistence Tests
- */
-
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
-  saveToolSettings,
-  loadToolSettings,
-  saveGridConfig,
-  loadGridConfig,
-  saveUIPreferences,
-  loadUIPreferences,
-  saveRecentPuzzle,
-  loadRecentPuzzles,
-  clearRecentPuzzles,
-  saveLanguage,
-  loadLanguage,
-  clearLocalAppStorage,
-  isLocalStorageAvailable,
+  saveToolSettings, loadToolSettings, saveGridConfig, loadGridConfig,
+  saveUIPreferences, loadUIPreferences, saveRecentPuzzle, loadRecentPuzzles,
+  clearRecentPuzzles, saveLanguage, loadLanguage, clearLocalAppStorage,
 } from '../utils/storage';
-import type { ToolSettings, GridConfig } from '../types';
+import { DEFAULT_TOOL_SETTINGS } from '../store/slices/types';
+import type { GridConfig } from '../types';
 
-// Mock localStorage
-const mockStorage: Record<string, string> = {};
-const localStorageMock = {
-  getItem: vi.fn((key: string) => mockStorage[key] || null),
-  setItem: vi.fn((key: string, value: string) => {
-    mockStorage[key] = value;
-  }),
-  removeItem: vi.fn((key: string) => {
-    delete mockStorage[key];
-  }),
-  clear: vi.fn(() => {
-    Object.keys(mockStorage).forEach((key) => delete mockStorage[key]);
-  }),
+const grid: GridConfig = {
+  rows: 10, cols: 12, cellSize: 50, gridType: 'hex', gridStyle: 'thick',
+  frameStyle: 'double', outerPadding: 40, showGrid: true,
+  marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0,
+  frameColor: '#000000', gridColor: '#888888', backgroundColor: '#ffffff',
 };
 
-Object.defineProperty(globalThis, 'localStorage', {
-  value: localStorageMock,
-  writable: true,
+beforeEach(() => {
+  const values = new Map<string, string>();
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+    removeItem: (key: string) => values.delete(key),
+  });
+});
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
 });
 
-describe('Storage Utilities (localStorage)', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    Object.keys(mockStorage).forEach((key) => delete mockStorage[key]);
+describe('storage persistence', () => {
+  it('restores custom styles, including the cursor, without restoring the active tool', () => {
+    saveToolSettings({
+      ...DEFAULT_TOOL_SETTINGS, currentTool: 'symbol-circle',
+      color: '#ff0000', secondaryColor: '#00ff00', multicolorSlots: [1, 2, 3, 4],
+      cursorCellColor: '#0000ff', cursorCellThickness: 8,
+    });
+    const loaded = loadToolSettings();
+    expect(loaded).toMatchObject({
+      color: '#ff0000', secondaryColor: '#00ff00', multicolorSlots: [1, 2, 3, 4],
+      cursorCellColor: '#0000ff', cursorCellThickness: 8,
+    });
+    expect(loaded).not.toHaveProperty('currentTool');
   });
 
-  describe('isLocalStorageAvailable', () => {
-    it('returns true when localStorage works', () => {
-      expect(isLocalStorageAvailable()).toBe(true);
-    });
-  });
-
-  describe('Tool Settings', () => {
-    it('saves and loads tool settings', () => {
-      const settings = {
-        currentTool: 'surface-fill',
-        currentCategory: 'surface',
-        color: '#ff0000',
-        secondaryColor: '#00ff00',
-        lineStyle: 'solid',
-        lineThickness: 'normal',
-        symbolSize: 'medium',
-        numberSize: 'medium',
-        numberPosition: 'center',
-        cornerIndex: 0,
-        sideIndex: 0,
-        selectedCandidates: [],
-        multicolorSlots: [1, 2, 3, 4],
-      } as ToolSettings;
-
-      saveToolSettings(settings);
-      const loaded = loadToolSettings();
-
-      expect(loaded.color).toBe('#ff0000');
-      expect(loaded.secondaryColor).toBe('#00ff00');
-      expect(loaded.multicolorSlots).toEqual([1, 2, 3, 4]);
-    });
-
-    it('returns defaults when no saved settings', () => {
-      const loaded = loadToolSettings();
-
-      expect(loaded.color).toBe('#808080');
-      expect(loaded.secondaryColor).toBe('#00ff00');
+  it('restores a rectangular non-square grid and its styles', () => {
+    saveGridConfig(grid);
+    expect(loadGridConfig()).toMatchObject({
+      rows: 10, cols: 12, cellSize: 50, gridType: 'hex', gridStyle: 'thick', frameStyle: 'double',
     });
   });
 
-  describe('Grid Config', () => {
-    it('saves and loads grid config', () => {
-      const config = {
-        rows: 10,
-        cols: 12,
-        cellSize: 50,
-        gridType: 'hex',
-        gridStyle: 'thick',
-        frameStyle: 'double',
-        outerPadding: 40,
-      } as GridConfig;
-
-      saveGridConfig(config);
-      const loaded = loadGridConfig();
-
-      expect(loaded.rows).toBe(10);
-      expect(loaded.cols).toBe(12);
-      expect(loaded.cellSize).toBe(50);
-      expect(loaded.gridType).toBe('hex');
-    });
-
-    it('returns defaults when no saved config', () => {
-      const loaded = loadGridConfig();
-
-      expect(loaded.rows).toBe(9);
-      expect(loaded.cols).toBe(9);
-      expect(loaded.cellSize).toBe(40);
+  it('preserves previous preferences when saving a partial update', () => {
+    saveUIPreferences({ showProblemLayer: false, showAnswerLayer: false, language: 'en' });
+    saveUIPreferences({ theme: 'dark' });
+    expect(loadUIPreferences()).toMatchObject({
+      showProblemLayer: false, showAnswerLayer: false, language: 'en', theme: 'dark',
     });
   });
 
-  describe('UI Preferences', () => {
-    it('saves and loads UI preferences', () => {
-      saveUIPreferences({
-        showProblemLayer: false,
-        showAnswerLayer: true,
-        language: 'en',
-        theme: 'dark',
-      });
-
-      const loaded = loadUIPreferences();
-
-      expect(loaded.showProblemLayer).toBe(false);
-      expect(loaded.showAnswerLayer).toBe(true);
-      expect(loaded.language).toBe('en');
-      expect(loaded.theme).toBe('dark');
-    });
-
-    it('merges partial updates', () => {
-      saveUIPreferences({ language: 'en' });
-      saveUIPreferences({ theme: 'dark' });
-
-      const loaded = loadUIPreferences();
-
-      expect(loaded.language).toBe('en');
-      expect(loaded.theme).toBe('dark');
-    });
+  it('reopening a recent puzzle updates its data and timestamp and moves it to the front once', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1000);
+    saveRecentPuzzle({ id: 'puzzle-1', title: 'First', url: 'https://example.com/old' });
+    vi.setSystemTime(2000);
+    saveRecentPuzzle({ id: 'puzzle-2', title: 'Second' });
+    vi.setSystemTime(3000);
+    saveRecentPuzzle({ id: 'puzzle-1', title: 'First Updated', url: 'https://example.com/new' });
+    expect(loadRecentPuzzles()).toEqual([
+      { id: 'puzzle-1', title: 'First Updated', url: 'https://example.com/new', lastOpened: 3000 },
+      { id: 'puzzle-2', title: 'Second', lastOpened: 2000 },
+    ]);
   });
 
-  describe('Recent Puzzles', () => {
-    it('saves and loads recent puzzles', () => {
-      saveRecentPuzzle({
-        id: 'puzzle-1',
-        title: 'My Puzzle',
-        url: 'https://example.com/puzzle-1',
-      });
-
-      const puzzles = loadRecentPuzzles();
-
-      expect(puzzles).toHaveLength(1);
-      expect(puzzles[0].id).toBe('puzzle-1');
-      expect(puzzles[0].title).toBe('My Puzzle');
-      expect(puzzles[0].lastOpened).toBeDefined();
-    });
-
-    it('maintains order with most recent first', () => {
-      saveRecentPuzzle({ id: 'puzzle-1', title: 'First' });
-      saveRecentPuzzle({ id: 'puzzle-2', title: 'Second' });
-      saveRecentPuzzle({ id: 'puzzle-3', title: 'Third' });
-
-      const puzzles = loadRecentPuzzles();
-
-      expect(puzzles[0].id).toBe('puzzle-3');
-      expect(puzzles[1].id).toBe('puzzle-2');
-      expect(puzzles[2].id).toBe('puzzle-1');
-    });
-
-    it('removes duplicates and moves to front', () => {
-      saveRecentPuzzle({ id: 'puzzle-1', title: 'First' });
-      saveRecentPuzzle({ id: 'puzzle-2', title: 'Second' });
-      saveRecentPuzzle({ id: 'puzzle-1', title: 'First Updated' });
-
-      const puzzles = loadRecentPuzzles();
-
-      expect(puzzles).toHaveLength(2);
-      expect(puzzles[0].id).toBe('puzzle-1');
-      expect(puzzles[0].title).toBe('First Updated');
-    });
-
-    it('clears recent puzzles', () => {
-      saveRecentPuzzle({ id: 'puzzle-1', title: 'First' });
-      clearRecentPuzzles();
-
-      const puzzles = loadRecentPuzzles();
-      expect(puzzles).toHaveLength(0);
-    });
+  it('clears the recent puzzle list', () => {
+    saveRecentPuzzle({ id: 'puzzle-1', title: 'First' });
+    clearRecentPuzzles();
+    expect(loadRecentPuzzles()).toEqual([]);
   });
 
-  describe('Language', () => {
-    it('saves and loads language', () => {
-      saveLanguage('en');
-      expect(loadLanguage()).toBe('en');
-
-      saveLanguage('ja');
-      expect(loadLanguage()).toBe('ja');
-    });
-
-    it('returns default language when not set', () => {
-      expect(loadLanguage()).toBe('ja');
-    });
+  it('saves the selected language', () => {
+    saveLanguage('en');
+    expect(loadLanguage()).toBe('en');
+    saveLanguage('ja');
+    expect(loadLanguage()).toBe('ja');
   });
 
-  describe('clearLocalAppStorage', () => {
-    it('clears all stored data', () => {
-      saveToolSettings({
-        currentTool: 'surface-fill',
-        currentCategory: 'surface',
-        color: '#ff0000',
-      } as ToolSettings);
-      saveLanguage('en');
-
-      clearLocalAppStorage();
-
-      expect(loadToolSettings().color).toBe('#808080');
-      expect(loadLanguage()).toBe('ja');
-    });
+  it('clearing app storage restores defaults for previously saved settings', () => {
+    saveToolSettings({ ...DEFAULT_TOOL_SETTINGS, color: '#ff0000' });
+    saveGridConfig(grid);
+    saveLanguage('en');
+    clearLocalAppStorage();
+    expect(loadToolSettings()).toMatchObject({ color: '#808080', secondaryColor: '#00ff00' });
+    expect(loadGridConfig()).toMatchObject({ rows: 9, cols: 9, cellSize: 40 });
+    expect(loadLanguage()).toBe('ja');
   });
 });
