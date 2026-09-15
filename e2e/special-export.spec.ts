@@ -56,7 +56,6 @@ test('png: toolbar exports the board and excludes special selection', { tag: '@p
   }, { data: `data:image/png;base64,${buffer.toString('base64')}`, source });
   await info.attach('png-pixels', { body: JSON.stringify({ source, pixels }), contentType: 'application/json' });
   // The default 400 × 400 board must be exported, not a 16 × 16 toolbar icon.
-  expect(pixels.width).toBeGreaterThan(200);
   expect(pixels.width).toBe(800);
   expect(pixels.height).toBe(800);
   expect(pixels.blue).toBe(0);
