@@ -20,7 +20,7 @@ interface UseSculptModeOptions {
   topology: GridTopology | null;
 }
 
-interface SculptHover {
+export interface SculptHover {
   vertexId: string;
   cellIds: string[];
 }

@@ -1,9 +1,11 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, cleanup, renderHook } from '@testing-library/react';
 import type { PointerEvent, ReactNode } from 'react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { createPuzzleStore } from '../store/puzzleStore';
 import { PuzzleStoreProvider } from '../store/puzzleStoreContext';
 import { useCanvasInteraction } from '../hooks/useCanvasInteraction';
+
+afterEach(cleanup);
 
 function setup(allowMultiTouchPanZoom = true) {
   const { useStore } = createPuzzleStore();
@@ -38,7 +40,7 @@ function setup(allowMultiTouchPanZoom = true) {
       type,
       currentTarget: svg,
       preventDefault() {},
-    }) as PointerEvent;
+    }) as PointerEvent<SVGSVGElement>;
   return { useStore, result, event, svg };
 }
 
@@ -79,23 +81,6 @@ describe('pinch anchor', () => {
     }
   );
 
-  it.each([5, 0.1])('preserves the midpoint at the zoom limit %s', (limit) => {
-    const { useStore, result, event } = setup();
-    act(() => useStore.getState().setZoom(limit));
-    act(() => result.current.handlePointerDown(event(80, 'pointerdown')));
-    act(() => result.current.handlePointerDown(event(160, 'pointerdown', 2)));
-    act(() =>
-      result.current.handlePointerMove(
-        event(limit === 5 ? 240 : 120, 'pointermove', 2)
-      )
-    );
-    const c = useStore.getState().canvas;
-    expect(c.zoom).toBe(limit);
-    expect(c.panX + (120 / limit) * c.zoom).toBeCloseTo(
-      limit === 5 ? 160 : 100
-    );
-  });
-
   it('does not interpret cumulative subpixel pan as a secondary tap', () => {
     const { useStore, result, event } = setup();
     act(() => {
@@ -128,22 +113,32 @@ describe('pinch anchor', () => {
 
 describe('pinch transform boundaries', () => {
   it.each([
-    [4, 240, 5],
-    [0.2, 100, 0.1],
-  ])(
-    'anchors while crossing a zoom limit from %s',
-    (initial, end, expected) => {
-      const { useStore, result, event } = setup();
-      act(() => useStore.getState().setZoom(initial));
-      act(() => result.current.handlePointerDown(event(80, 'pointerdown')));
-      act(() => result.current.handlePointerDown(event(160, 'pointerdown', 2)));
-      act(() => result.current.handlePointerMove(event(end, 'pointermove', 2)));
-      const c = useStore.getState().canvas;
-      expect(c.zoom).toBe(expected);
-      expect(c.panX + (120 / initial) * c.zoom).toBeCloseTo((80 + end) / 2);
-      expect(c.panY + (80 / initial) * c.zoom).toBeCloseTo(80);
-    }
-  );
+    { initial: 4, crossX: 240, limit: 5, limitX: 240, anchorX: 22 },
+    { initial: 0.2, crossX: 100, limit: 0.1, limitX: 120, anchorX: 900 },
+  ])('anchors when crossing and restarting at zoom limit $limit', ({
+    initial, crossX, limit, limitX, anchorX,
+  }) => {
+    const { useStore, result, event } = setup();
+    act(() => useStore.getState().setZoom(initial));
+    act(() => result.current.handlePointerDown(event(80, 'pointerdown')));
+    act(() => result.current.handlePointerDown(event(160, 'pointerdown', 2)));
+    act(() => result.current.handlePointerMove(event(crossX, 'pointermove', 2)));
+    const crossed = useStore.getState().canvas;
+    expect(crossed.zoom).toBe(limit);
+    expect(crossed.panX + (120 / initial) * crossed.zoom).toBeCloseTo((80 + crossX) / 2);
+    expect(crossed.panY + (80 / initial) * crossed.zoom).toBeCloseTo(80);
+    act(() => result.current.handlePointerUp(event(crossX, 'pointerup', 2)));
+    act(() => result.current.handlePointerUp(event(80)));
+
+    // Start a fresh pinch at the limit. The new midpoint is board x=22/900.
+    act(() => result.current.handlePointerDown(event(80, 'pointerdown')));
+    act(() => result.current.handlePointerDown(event(160, 'pointerdown', 2)));
+    act(() => result.current.handlePointerMove(event(limitX, 'pointermove', 2)));
+    const atLimit = useStore.getState().canvas;
+    expect(atLimit.zoom).toBe(limit);
+    expect(atLimit.panX + anchorX * atLimit.zoom).toBeCloseTo((80 + limitX) / 2);
+    expect(atLimit.panY + (80 / initial) * atLimit.zoom).toBeCloseTo(80);
+  });
 
   it('includes export padding and the SVG client offset in the anchor', () => {
     const { useStore, result, event, svg } = setup();
