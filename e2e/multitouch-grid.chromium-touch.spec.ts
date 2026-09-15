@@ -156,30 +156,7 @@ test('pinch keeps the remaining finger active without drawing', async ({
 });
 
 for (const mode of ['merge', 'split']) {
-  test(`touch ${mode} commits and undoes grid geometry`, async ({ page }) => {
-    await page.goto(`/harness.html?scenario=square-${mode}`);
-    const cells = page.locator(
-      '.topology-grid-background > polygon, .topology-grid-layer > polygon'
-    );
-    await expect(cells.first()).toBeVisible();
-    const before = await cells.count();
-    const a = mode === 'merge' ? [80, 80] : [60, 60],
-      b = mode === 'merge' ? [120, 80] : [100, 100];
-    await gesture(
-      page,
-      await point(page, a[0], a[1]),
-      await point(page, b[0], b[1])
-    );
-    await expect(cells).toHaveCount(mode === 'merge' ? before - 1 : before + 1);
-    await page
-      .getByTitle(/Undo \(Ctrl\+Z\)/)
-      .first()
-      .tap();
-    await expect(cells).toHaveCount(before);
-    await page.getByTitle(/Redo/).first().tap();
-    await expect(cells).toHaveCount(mode === 'merge' ? before - 1 : before + 1);
-  });
-  test(`cancelled touch ${mode} leaves grid geometry unchanged`, async ({
+  test(`cancelled touch ${mode} preserves geometry and the next edit supports Undo/Redo`, async ({
     page,
   }) => {
     await page.goto(`/harness.html?scenario=square-${mode}`);
@@ -202,6 +179,10 @@ for (const mode of ['merge', 'split']) {
       await point(page, a[0], a[1]),
       await point(page, b[0], b[1])
     );
+    await expect(cells).toHaveCount(mode === 'merge' ? before - 1 : before + 1);
+    await page.getByTitle(/Undo \(Ctrl\+Z\)/).first().tap();
+    await expect(cells).toHaveCount(before);
+    await page.getByTitle(/Redo/).first().tap();
     await expect(cells).toHaveCount(mode === 'merge' ? before - 1 : before + 1);
   });
 }

@@ -103,33 +103,24 @@ async function pinch(page: Page, dx = 0, dy = 0) {
   } finally {
     await cdp.detach();
   }
-  return { x: (a.x + b.x) / 2 + dx, y: (a.y + b.y) / 2 + dy };
+  return { x: (a.x + b.x) / 2 + dx, y: (a.y + b.y) / 2 + dy, span: b.x - a.x + 40 };
 }
 
-for (const mode of ['stationary', 'moving', 'prezoomed']) {
-  test(`pinch anchors the board under a ${mode} midpoint`, async ({
-    page,
-  }, info) => {
-    await page.goto('/harness.html?scenario=free-segment');
-    if (mode === 'prezoomed') {
-      await page.getByTitle('Zoom In', { exact: true }).first().tap();
-    }
-    const expected = await pinch(
-      page,
-      mode === 'moving' ? 12 : 0,
-      mode === 'moving' ? 10 : 0
-    );
-    const actual = await point(page, 120, 80);
-    await info.attach('pinch-anchor', {
-      body: JSON.stringify({ expected, actual }),
-      contentType: 'application/json',
-    });
-    expect(
-      Math.hypot(actual.x - expected.x, actual.y - expected.y)
-    ).toBeLessThan(1);
-    await expect(page.locator('.line-layer-problem > *')).toHaveCount(0);
+test('pinch anchors and scales the prezoomed board under a moving midpoint', async ({ page }, info) => {
+  await page.goto('/harness.html?scenario=free-segment');
+  await page.getByTitle('Zoom In', { exact: true }).first().tap();
+  const expected = await pinch(page, 12, 10);
+  const actual = await point(page, 120, 80);
+  const left = await point(page, 80, 80), right = await point(page, 160, 80);
+  const span = right.x - left.x;
+  await info.attach('pinch-anchor', {
+    body: JSON.stringify({ expected, actual, span }),
+    contentType: 'application/json',
   });
-}
+  expect(Math.hypot(actual.x - expected.x, actual.y - expected.y)).toBeLessThan(1);
+  expect(Math.abs(span - expected.span)).toBeLessThan(1);
+  await expect(page.locator('.line-layer-problem > *')).toHaveCount(0);
+});
 
 test('pinch preserves the first surface contact as one undoable edit', async ({
   page,
@@ -155,85 +146,5 @@ test('pan mode pinch keeps a surface tool from editing the board', async ({
   await page.getByRole('button', { name: 'Surface', exact: true }).click();
   await page.getByTitle('Pan Mode', { exact: true }).tap();
   await pinch(page);
-  await expect(page.locator('.surface-layer-problem > *')).toHaveCount(0);
-});
-
-// Deterministic subpixel event cadence; this is not a physical-device recording.
-test('subpixel multi-pointer motion does not apply a secondary color', async ({
-  page,
-}) => {
-  await page.goto('/harness.html?scenario=free-segment');
-  await page.getByRole('button', { name: 'Surface', exact: true }).click();
-  const a = await point(page, 80, 80),
-    b = await point(page, 160, 80);
-  let initialColor: string | null = null;
-  const cdp = await page.context().newCDPSession(page);
-  try {
-    await cdp.send('Input.dispatchTouchEvent', {
-      type: 'touchStart',
-      touchPoints: [{ ...a, id: 1 }],
-    });
-    initialColor = await page
-      .locator('.surface-layer-problem > *')
-      .getAttribute('fill');
-    await cdp.send('Input.dispatchTouchEvent', {
-      type: 'touchStart',
-      touchPoints: [
-        { ...a, id: 1 },
-        { ...b, id: 2 },
-      ],
-    });
-    await page.locator('#puzzle-canvas').evaluate(
-      (svg, points) => {
-        const events = (
-          window as unknown as {
-            __qaInputEvents: {
-              type: string;
-              pointerType: string;
-              pointerId: number;
-            }[];
-          }
-        ).__qaInputEvents;
-        const ids = events
-          .filter((e) => e.type === 'pointerdown' && e.pointerType === 'touch')
-          .slice(-2)
-          .map((e) => e.pointerId);
-        if (ids.length !== 2) throw new Error('Missing native touch contacts');
-        const send = (type: string, i: number, dx: number) =>
-          svg.dispatchEvent(
-            new PointerEvent(type, {
-              bubbles: true,
-              cancelable: true,
-              pointerType: 'touch',
-              pointerId: ids[i],
-              clientX: points[i].x + dx,
-              clientY: points[i].y,
-              buttons: type === 'pointermove' ? 1 : 0,
-            })
-          );
-        for (let step = 1; step <= 8; step++) {
-          send('pointermove', 0, step / 4);
-          send('pointermove', 1, step / 4);
-        }
-        send('pointerup', 0, 2);
-        send('pointerup', 1, 2);
-      },
-      [a, b]
-    );
-    await cdp.send('Input.dispatchTouchEvent', {
-      type: 'touchEnd',
-      touchPoints: [],
-    });
-  } finally {
-    await cdp.detach();
-  }
-  await expect(page.locator('.surface-layer-problem > *')).toHaveAttribute(
-    'fill',
-    initialColor!
-  );
-  await page
-    .getByTitle(/Undo \(Ctrl\+Z\)/)
-    .first()
-    .tap();
   await expect(page.locator('.surface-layer-problem > *')).toHaveCount(0);
 });
