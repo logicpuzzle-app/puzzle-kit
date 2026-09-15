@@ -1,0 +1,126 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "arrow: shorten only the selected tip and retain history across reload",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_INCLUDE_PRODUCTION_TESTS=1 QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/special-tip.spec.ts e2e/special-touch.chromium-touch.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "selected-tip-before.webm",
+    "screenshot": "selected-tip-before.png",
+    "videoSha256": "a235d8346a3d7d70cf00c0a559289eecd139f3c482363fdb8cf34ae377218eab",
+    "screenshotSha256": "aa0f6aa35d569cc8f88a04efa5a791e450af908e5e6788b3be77163ed3528457",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "7.200000"
+      }
+    },
+    "fullyDecoded": true,
+    "screenshotAttachment": "selected-object"
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "special-touch: BoxLine creates one undoable object",
+    "project": "mobile-chrome",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_INCLUDE_PRODUCTION_TESTS=1 QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/special-tip.spec.ts e2e/special-touch.chromium-touch.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "touch-boxline-before.webm",
+    "screenshot": "touch-boxline-before.png",
+    "videoSha256": "9fa3d4840ee55bc85a64c672392c3e71fc96f1e7101e002cdcd32cca37e9f60f",
+    "screenshotSha256": "19b3616f05b219ed2027c3b4a33968d0c3199d532a5ff6e8ed855ef13ceba249",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.160000"
+      }
+    },
+    "fullyDecoded": true,
+    "screenshotAttachment": "after-release"
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "arrow: shorten only the selected tip and retain history across reload",
+    "project": "chromium",
+    "revision": "e0b4601e56f37bb4bf5c463ca3562d9a1a45e6ed",
+    "workingTree": "",
+    "command": "QA_INCLUDE_PRODUCTION_TESTS=1 QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/special-tip.spec.ts e2e/special-touch.chromium-touch.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "selected-tip-after.webm",
+    "screenshot": "selected-tip-after.png",
+    "videoSha256": "9de1dd0a508ee689a032115fab63c1f2f4866ddbc475d24521cdedcc6caffc01",
+    "screenshotSha256": "ba9b5e3efe30cfb333b1e19e4d5f2c8ff7db8d2d96badde32fffc4744f3f4af6",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "5.600000"
+      }
+    },
+    "fullyDecoded": true,
+    "screenshotAttachment": "selected-object"
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "special-touch: BoxLine creates one undoable object",
+    "project": "mobile-chrome",
+    "revision": "e0b4601e56f37bb4bf5c463ca3562d9a1a45e6ed",
+    "workingTree": "",
+    "command": "QA_INCLUDE_PRODUCTION_TESTS=1 QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/special-tip.spec.ts e2e/special-touch.chromium-touch.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "touch-boxline-after.webm",
+    "screenshot": "touch-boxline-after.png",
+    "videoSha256": "3318580972d09952cf3045a2b85727750102fd9c48cef78da6cfc00add48ea2c",
+    "screenshotSha256": "19b3616f05b219ed2027c3b4a33968d0c3199d532a5ff6e8ed855ef13ceba249",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.120000"
+      }
+    },
+    "fullyDecoded": true,
+    "screenshotAttachment": "after-release"
+  }
+]

@@ -1,0 +1,122 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "touch merge commits and undoes grid geometry",
+    "project": "mobile-chrome",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/multitouch-grid.chromium-touch.spec.ts e2e/pinch-anchor.chromium-touch.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "merge-before.webm",
+    "screenshot": "merge-before.png",
+    "videoSha256": "965581bb9d33ff4372e2730001d36f7e7619315eb2cac4d051a6a8b5cc472b83",
+    "screenshotSha256": "2e690d5f52074819906acfa97f73cd6ddc634a031e54f2b6de3dedb28b29795a",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.040000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "touch split commits and undoes grid geometry",
+    "project": "mobile-chrome",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/multitouch-grid.chromium-touch.spec.ts e2e/pinch-anchor.chromium-touch.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "split-before.webm",
+    "screenshot": "split-before.png",
+    "videoSha256": "0e109f9cac9c93ef5a0275a59e333486f960d842b0dd61596e4cb42d704815f9",
+    "screenshotSha256": "210f4455d180ecb88b2cc95c48307d7904ad3673d82d241d891bedc36bece1ef",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.040000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "touch merge commits and undoes grid geometry",
+    "project": "mobile-chrome",
+    "revision": "edab712b8fce0aa98c3f554a9d9bf88a9ea31ad8",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/multitouch-grid.chromium-touch.spec.ts e2e/pinch-anchor.chromium-touch.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "merge-after.webm",
+    "screenshot": "merge-after.png",
+    "videoSha256": "43054575cdc2a4d7fa33c377ed4e1feb42cfb42f81e5a8f8de81d7cfcf223050",
+    "screenshotSha256": "dc779ef9504976a6c101081c478d78b7e70018ab00b746c5e3d64f5cb1095613",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.120000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "touch split commits and undoes grid geometry",
+    "project": "mobile-chrome",
+    "revision": "edab712b8fce0aa98c3f554a9d9bf88a9ea31ad8",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/multitouch-grid.chromium-touch.spec.ts e2e/pinch-anchor.chromium-touch.spec.ts --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "split-after.webm",
+    "screenshot": "split-after.png",
+    "videoSha256": "d0603836373a91369168e2bdfefcb03ed157600a45388d2a8fb865e5a1494efc",
+    "screenshotSha256": "d72428bbfcff0aac470d2efd7828efb4748b286947f69da7094f97f14314d7e6",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.520000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]
