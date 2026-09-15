@@ -193,3 +193,25 @@ npm run qa:production
 rot2生成の回帰はPRNG seed 1/2を明示し、各回の生成成功を確認する。UIのランダムseed自体を固定する変更ではない。
 
 同梱済みのNPGenerator Wasmを再生成する場合だけ、別途Rustソースとwasm-packが必要。ソースの絶対パスを `npm run build:npgen-wasm -- /path/to/npgenerator/rust` で指定する。通常の `npm run build` はWasm再生成を行わない。
+
+
+## ソルバーの診断
+
+現行のURL取込・Worker起動・結果表示・再試行は共通のブラウザーQAから確認する。
+
+```bash
+npm run qa:capture -- before e2e/solver.spec.ts --project=chromium
+# 修正後
+npm run qa:capture -- after e2e/solver.spec.ts --project=chromium
+npm run qa:compare -- <beforeの出力先> <afterの出力先>
+```
+
+旧 `scripts/test-solver*` / `scripts/test-yajilin*` / `scripts/test-slither-solver.ts` は、期待解を判定せずconsole出力を手動で見る診断だったため整理した。ソルバー本体と現行Unit/E2Eは維持する。
+
+過去の診断で使った入力は、アプリの「File → Import from Penpa/puzz.link」から再利用できる。
+
+```text
+https://puzz.link/p?yajilin/10/10/b41e2121e21o41a41b41g41b41g30d41a41b40a40r31a31d30f
+```
+
+このYajilin入力は期待解を固定した回帰fixtureではない。問題を発見したときは現在の取込・Worker経路で再現し、期待する結果を特定してから既存テストへ加える。パーサーやソルバーのコピーを診断用に増やさない。
