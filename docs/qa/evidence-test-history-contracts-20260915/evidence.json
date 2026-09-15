@@ -1,0 +1,122 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "directional number insertion, replacement and deletion support Undo/Redo",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/number-history.spec.ts e2e/persistence.spec.ts e2e/cursor-style.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "directional-history-before.webm",
+    "screenshot": "directional-history-before.png",
+    "videoSha256": "b10274bf7a66833eb93bda42cad9abee17b16c55a3d6fed7567401126d2324bf",
+    "screenshotSha256": "3821e34e61ef689bbd70445a95086c7817821d0ea2a6ea53020ab3363127ce3e",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "3.560000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "autosave survives reload with problem clues, answer content and subsequent undo",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/number-history.spec.ts e2e/persistence.spec.ts e2e/cursor-style.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "autosave-before.webm",
+    "screenshot": "autosave-before.png",
+    "videoSha256": "b9068b380ea92709defa76630ada273ee7ff64b0a19b3a6e3a549ca8feb73c03",
+    "screenshotSha256": "a1e2cba382271214f87e6f014bf8074a268dd423b2a846038a7d9fa1bd1ba80a",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "5.520000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "directional number insertion, replacement and deletion support Undo/Redo",
+    "project": "chromium",
+    "revision": "6b906c219443dc0ffbc1c0e959034e420b6d65e0",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/number-history.spec.ts e2e/persistence.spec.ts e2e/cursor-style.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "directional-history-after.webm",
+    "screenshot": "directional-history-after.png",
+    "videoSha256": "9538d8c7062b7e94ef4b336d806c25374a91bee1fb1808a10f326a7c8c7009a6",
+    "screenshotSha256": "85262d3cec590551b0526f8f27dec8ec0da01c31b7c83fb7f4b3a9e52dba0cc1",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.400000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "autosave survives reload with problem clues, answer content and subsequent undo",
+    "project": "chromium",
+    "revision": "6b906c219443dc0ffbc1c0e959034e420b6d65e0",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/number-history.spec.ts e2e/persistence.spec.ts e2e/cursor-style.spec.ts --project=chromium",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "autosave-after.webm",
+    "screenshot": "autosave-after.png",
+    "videoSha256": "bde2e38fdcced71fb8245893a73de7afd47347276bd329c92c543d12be15c1bd",
+    "screenshotSha256": "b566dd417c0bec82a2d1b1b27fc6181cd792d6b509c3d689fc88e26425cab177",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "6.120000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]
