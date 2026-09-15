@@ -1,0 +1,122 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "#40 Free Segment completes on pointer release and supports Undo/Redo",
+    "project": "chromium",
+    "revision": "11ad8b75e2669c4245b6a484764f711417febe53",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/editor-issues.spec.ts e2e/number-history.spec.ts e2e/topology-issues.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "line-flow-before.webm",
+    "screenshot": "line-flow-before.png",
+    "videoSha256": "63ef59ed24af748f44faafa41d9da1ffcc1c1dfdfa621d180447f2acff4a2592",
+    "screenshotSha256": "653b14bebea74aef82cea8b0fcc0f39c56828776265b3e652b37aea10cf8cc4c",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "3.600000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "normal marker keys support replacement, deletion and Undo/Redo",
+    "project": "mobile-chrome",
+    "revision": "11ad8b75e2669c4245b6a484764f711417febe53",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/editor-issues.spec.ts e2e/number-history.spec.ts e2e/topology-issues.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "number-flow-before.webm",
+    "screenshot": "number-flow-before.png",
+    "videoSha256": "5411cb8668d23694e43360c6045b2a2e47c06b0800e471b419a0c8e0de292799",
+    "screenshotSha256": "bf9f0fbbab8f6363a3df632e07138f03f03439f285b06dec823b3ddb4856ab23",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.320000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "#40 Free Segment completes on pointer release and supports Undo/Redo",
+    "project": "chromium",
+    "revision": "ff6183b870defb4374b6fc1b58680f4a93746490",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/editor-issues.spec.ts e2e/number-history.spec.ts e2e/topology-issues.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "line-flow-after.webm",
+    "screenshot": "line-flow-after.png",
+    "videoSha256": "cb08a64f170934c298288e08b693ab052048f90d01dc8277cd3a689812fa4fd4",
+    "screenshotSha256": "2e72bb9d352e8e805c79d0a12c0d92859b0a70aee0099233a8a899b9051cfea9",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.480000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "normal marker keys support replacement, deletion and Undo/Redo",
+    "project": "mobile-chrome",
+    "revision": "ff6183b870defb4374b6fc1b58680f4a93746490",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/editor-issues.spec.ts e2e/number-history.spec.ts e2e/topology-issues.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "number-flow-after.webm",
+    "screenshot": "number-flow-after.png",
+    "videoSha256": "bb0f4e152c9946ae32f96c71ef3e025971bb9d549e3aba09825c7050add4a427",
+    "screenshotSha256": "c7d9920fb6c9a2c9a4508faceca96f970d5122fe8b0804c1e3d83a8bad5c69e1",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "2.240000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]
