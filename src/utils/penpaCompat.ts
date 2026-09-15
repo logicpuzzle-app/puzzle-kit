@@ -1,3 +1,4 @@
+import { decodePenpaBattleship } from './penpaBattleship';
 import pako from 'pako';
 import type { GridConfig, PuzzleState, PuzzleElements } from '../types';
 import type { GridTopology } from './topology/types';
@@ -850,6 +851,7 @@ function convertPenpaLayer(
       if (pos && Array.isArray(data) && data.length >= 2) {
         const id = `symbol-${pos.row}-${pos.col}`;
         const styleNum = data[0] as number;
+        const battleship = decodePenpaBattleship(styleNum, data[1] as string);
         const symbolType = symbolTypeMap[styleNum] || 'circle';
 
         elements.symbols[id] = {
@@ -860,6 +862,7 @@ function convertPenpaLayer(
           rotation: 0,
           color: '#000000',
           layer,
+          ...battleship,
         };
       }
     });

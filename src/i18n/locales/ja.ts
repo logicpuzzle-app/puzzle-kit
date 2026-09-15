@@ -702,6 +702,7 @@ export const ja = {
   'tool.number.center': '中央',
 
   // Symbol categories
+  'symbols.battleships': 'バトルシップ',
   'symbols.shapes': '形状',
   'symbols.marks': 'マーク',
   'symbols.arrows': '矢印',
