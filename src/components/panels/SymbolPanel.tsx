@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { ToolType } from '../../types';
 import { ANIMAL_ICON_MAP, GhostBlackIcon, FryingPanIcon } from '../icons/AnimalIcons';
+import { BattleshipSymbol } from '../canvas/symbols/BattleshipSymbols';
+import { isBattleshipSymbol } from '../../utils/battleshipSymbols';
 
 // SVG icon components for special symbols
 const MineIcon: React.FC<{ size: number; color: string }> = ({ size, color }) => {
@@ -450,6 +452,20 @@ const SYMBOL_CATEGORIES: { id: string; labelKey: string; symbols: SymbolDef[] }[
     ],
   },
   {
+    id: 'battleships',
+    labelKey: 'symbols.battleships',
+    symbols: [
+      { id: 'ship_single', icon: '●', filled: true, tagsJa: ['船', '単艦', '潜水艦'], tagsEn: ['ship', 'single', 'submarine'] },
+      { id: 'ship_middle_h', icon: '■', filled: true, tagsJa: ['船', '中間'], tagsEn: ['ship', 'middle'] },
+      { id: 'ship_left', icon: '', filled: true, tagsJa: ['船', '左端'], tagsEn: ['ship', 'left', 'end'] },
+      { id: 'ship_top', icon: '', filled: true, tagsJa: ['船', '上端'], tagsEn: ['ship', 'top', 'end'] },
+      { id: 'ship_right', icon: '', filled: true, tagsJa: ['船', '右端'], tagsEn: ['ship', 'right', 'end'] },
+      { id: 'ship_bottom', icon: '', filled: true, tagsJa: ['船', '下端'], tagsEn: ['ship', 'bottom', 'end'] },
+      { id: 'water', icon: '≈', filled: false, tagsJa: ['船', '海', '水面'], tagsEn: ['ship', 'water', 'sea'] },
+      { id: 'ship_dot', icon: '·', filled: true, tagsJa: ['船', '点'], tagsEn: ['ship', 'dot'] },
+    ],
+  },
+  {
     id: 'marks',
     labelKey: 'symbols.marks',
     symbols: [
@@ -677,6 +693,12 @@ export const SymbolPanel: React.FC<SymbolPanelProps> = ({ filterCategory, filter
                   const isSelected = currentSymbol === symbol.id;
                   // Render SVG icons for mine, bulb, arrows, and animals
                   const renderIcon = () => {
+                    if (isBattleshipSymbol(symbol.id)) {
+                      return <svg width={fontSize} height={fontSize} viewBox={`0 0 ${fontSize} ${fontSize}`} aria-hidden="true">
+                        <BattleshipSymbol type={symbol.id} x={fontSize / 2} y={fontSize / 2}
+                          size={fontSize} color={currentColor} rotation={0} />
+                      </svg>;
+                    }
                     // Special symbols
                     if (symbol.id === 'mine') {
                       return <MineIcon size={fontSize} color={currentColor} />;

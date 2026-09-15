@@ -5,6 +5,8 @@ import { getTextSymbolValue } from '../../../utils/textSymbols';
 
 import React from 'react';
 import type { SymbolProps } from './types';
+import { isBattleshipSymbol } from '../../../utils/battleshipSymbols';
+import { BattleshipSymbol } from './BattleshipSymbols';
 
 // Basic shapes
 import {
@@ -102,6 +104,7 @@ const renderAnimalSymbol = (
 );
 
 export const renderSymbol = (type: string, props: SymbolProps): React.ReactElement | null => {
+  if (isBattleshipSymbol(type)) return <BattleshipSymbol type={type} {...props} />;
   // Handle text symbols (format: text-{type}:{value})
   if (type.startsWith('text-') && type.includes(':')) {
     const text = getTextSymbolValue(type);
