@@ -1,11 +1,11 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, cleanup, renderHook } from '@testing-library/react';
 import type { PointerEvent, ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createPuzzleStore } from '../store/puzzleStore';
 import { PuzzleStoreProvider } from '../store/puzzleStoreContext';
 import { useCanvasInteraction } from '../hooks/useCanvasInteraction';
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 function setup(tool: 'arrow' | 'thermo' | 'cage' | 'boxline') {
   const store = createPuzzleStore().useStore;
@@ -17,10 +17,10 @@ function setup(tool: 'arrow' | 'thermo' | 'cage' | 'boxline') {
   svg.hasPointerCapture = () => false;
   const wrapper = ({ children }: { children: ReactNode }) => <PuzzleStoreProvider store={store}>{children}</PuzzleStoreProvider>;
   const { result } = renderHook(() => useCanvasInteraction({ svgRef: { current: svg } }), { wrapper });
-  const event = (x: number, type = 'pointerup', id = 1, pointerType = 'touch') => ({
+  const event = (x: number, type = 'pointerup', id = 1, pointerType: PointerEvent['pointerType'] = 'touch') => ({
     clientX: x, clientY: 80, button: 0, pointerId: id, pointerType,
     type, currentTarget: svg, preventDefault() {},
-  }) as PointerEvent;
+  }) as PointerEvent<SVGSVGElement>;
   const down = (x = 80, id = 1) => act(() => result.current.handlePointerDown(event(x, 'pointerdown', id)));
   const move = (x: number, id = 1) => act(() => result.current.handlePointerMove(event(x, 'pointermove', id)));
   const up = (x = 200, type = 'pointerup', id = 1) => act(() => result.current.handlePointerUp(event(x, type, id)));
@@ -51,42 +51,6 @@ for (const tool of ['arrow', 'thermo', 'cage', 'boxline'] as const) {
       expect(objects()).toEqual(created);
     });
 
-    it('discards a cancelled preview and keeps the next stroke independent', () => {
-      const { store, result, down, move, up, stroke, objects } = setup(tool);
-      down(); move(120); up(120, 'pointercancel');
-      expect(objects()).toEqual([]);
-      expect(result.current.specialPath).toEqual([]);
-      expect(store.getState().canvas.isDrawing).toBe(false);
-      expect(store.getState().historyManager.isInGroup()).toBe(false);
-      stroke();
-      expect(objects()).toHaveLength(1);
-      act(() => store.getState().undo());
-      expect(objects()).toEqual([]);
-      expect(store.getState().canUndo()).toBe(false);
-    });
-
-    it('abandons the path when a second finger arrives, including partial release', () => {
-      const { result, down, move, up, objects, store } = setup(tool);
-      down(); move(120); down(160, 2);
-      expect(result.current.specialPath).toEqual([]);
-      up(160, 'pointerup', 2); move(140); up(140);
-      expect(objects()).toEqual([]);
-      expect(result.current.specialPath).toEqual([]);
-      expect(store.getState().historyManager.isInGroup()).toBe(false);
-    });
-
-    it.each(['pan', 'player-problem'] as const)('does not create in %s mode', mode => {
-      const { store, result, stroke, objects } = setup(tool);
-      act(() => {
-        if (mode === 'pan') store.getState().setPanMode(true);
-        else store.setState({ isPlayerMode: true, activeLayer: 'problem' });
-      });
-      stroke();
-      expect(objects()).toEqual([]);
-      expect(result.current.specialPath).toEqual([]);
-      expect(store.getState().canUndo()).toBe(false);
-    });
-
     it('long press deletes without creating a replacement', () => {
       const { store, down, up, stroke, objects, result } = setup(tool);
       stroke();
@@ -101,21 +65,23 @@ for (const tool of ['arrow', 'thermo', 'cage', 'boxline'] as const) {
       expect(objects()).toEqual(original);
     });
 
-    it.each([2, 3])('retains the existing %i-finger Special delete gesture', fingers => {
+    it('deletes with either two or three fingers only after the last release', () => {
       const { store, down, up, stroke, objects, result } = setup(tool);
       stroke();
       const original = objects();
       expect(original).toHaveLength(1);
-      down(); down(85, 2);
-      if (fingers === 3) down(90, 3);
-      up(85, 'pointerup', 2);
-      if (fingers === 3) up(90, 'pointerup', 3);
-      expect(objects()).toEqual(original);
-      up(80);
-      expect(objects()).toEqual([]);
-      expect(result.current.specialPath).toEqual([]);
-      act(() => store.getState().undo());
-      expect(objects()).toEqual(original);
+      for (const fingers of [2, 3]) {
+        down(); down(85, 2);
+        if (fingers === 3) down(90, 3);
+        up(85, 'pointerup', 2);
+        if (fingers === 3) up(90, 'pointerup', 3);
+        expect(objects()).toEqual(original);
+        up(80);
+        expect(objects()).toEqual([]);
+        expect(result.current.specialPath).toEqual([]);
+        act(() => store.getState().undo());
+        expect(objects()).toEqual(original);
+      }
     });
 
     it('keeps the minimum cell rule for a stationary tap', () => {
@@ -134,6 +100,66 @@ for (const tool of ['arrow', 'thermo', 'cage', 'boxline'] as const) {
       act(() => store.getState().undo());
       expect(objects()).toEqual([]);
     });
+  });
+}
+
+describe('Shared Special pointer lifecycle', () => {
+  it('discards a cancelled preview and keeps the next stroke independent', () => {
+    const { store, result, down, move, up, stroke, objects } = setup('arrow');
+    down(); move(120); up(120, 'pointercancel');
+    expect(objects()).toEqual([]);
+    expect(result.current.specialPath).toEqual([]);
+    expect(store.getState().canvas.isDrawing).toBe(false);
+    expect(store.getState().historyManager.isInGroup()).toBe(false);
+    stroke();
+    expect(objects()).toHaveLength(1);
+    act(() => store.getState().undo());
+    expect(objects()).toEqual([]);
+    expect(store.getState().canUndo()).toBe(false);
+  });
+
+  it('abandons the path when a second finger arrives, including partial release', () => {
+    const { result, down, move, up, objects, store } = setup('arrow');
+    down(); move(120); down(160, 2);
+    expect(result.current.specialPath).toEqual([]);
+    up(160, 'pointerup', 2); move(140); up(140);
+    expect(objects()).toEqual([]);
+    expect(result.current.specialPath).toEqual([]);
+    expect(store.getState().historyManager.isInGroup()).toBe(false);
+  });
+
+  it('does not create in pan mode', () => {
+    const { store, result, stroke, objects } = setup('arrow');
+    act(() => store.getState().setPanMode(true));
+    stroke();
+    expect(objects()).toEqual([]);
+    expect(result.current.specialPath).toEqual([]);
+    expect(store.getState().canUndo()).toBe(false);
+  });
+
+  it('also completes a pen stroke', () => {
+    const { result, event, objects, store } = setup('arrow');
+    act(() => result.current.handlePointerDown(event(80, 'pointerdown', 1, 'pen')));
+    act(() => result.current.handlePointerMove(event(120, 'pointermove', 1, 'pen')));
+    act(() => result.current.handlePointerUp(event(160, 'pointerup', 1, 'pen')));
+    expect(objects()).toHaveLength(1);
+    act(() => store.getState().undo());
+    expect(objects()).toEqual([]);
+  });
+});
+
+
+// Arrow and Thermo share a handler; Cage and BoxLine have separate guards.
+for (const tool of ['arrow', 'cage', 'boxline'] as const) {
+  describe(`Special handler guards: ${tool}`, () => {
+    it('protects Player problem content', () => {
+      const { store, result, stroke, objects } = setup(tool);
+      act(() => store.setState({ isPlayerMode: true, activeLayer: 'problem' }));
+      stroke();
+      expect(objects()).toEqual([]);
+      expect(result.current.specialPath).toEqual([]);
+      expect(store.getState().canUndo()).toBe(false);
+    });
 
     it('clears an unfinished path when released outside the board', () => {
       const { down, move, up, result, objects, store } = setup(tool);
@@ -141,16 +167,6 @@ for (const tool of ['arrow', 'thermo', 'cage', 'boxline'] as const) {
       expect(objects()).toEqual([]);
       expect(result.current.specialPath).toEqual([]);
       expect(store.getState().historyManager.isInGroup()).toBe(false);
-    });
-
-    it('also completes a pen stroke', () => {
-      const { result, event, objects, store } = setup(tool);
-      act(() => result.current.handlePointerDown(event(80, 'pointerdown', 1, 'pen')));
-      act(() => result.current.handlePointerMove(event(120, 'pointermove', 1, 'pen')));
-      act(() => result.current.handlePointerUp(event(160, 'pointerup', 1, 'pen')));
-      expect(objects()).toHaveLength(1);
-      act(() => store.getState().undo());
-      expect(objects()).toEqual([]);
     });
   });
 }
@@ -180,7 +196,7 @@ describe('BoxLine update history', () => {
     act(() => store.getState().updateBoxLine(original.id, cells));
     expect(store.getState().canRedo()).toBe(true);
     act(() => {
-      store.getState().startHistoryGroup('Outer edit');
+      store.getState().startHistoryGroup();
       store.getState().updateBoxLine(original.id, ['cell-2-1']);
       store.getState().updateBoxLine(original.id, ['cell-2-1', 'cell-2-2']);
     });

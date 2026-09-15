@@ -88,6 +88,10 @@ npm run dev:harness
 
 ハーネスはQA専用originの `puzzlekit*` 設定を初期化する。日常編集には別ポートの通常devを使う。保存済みパズルや別originのデータは削除しない。デスクトップでの利用を基本とする。`harness.html` はViteの本番build入力に含めず、開発時のみモジュールを読み込む。
 
+QA用Viteは `.work`・`docs/qa`・テスト成果物を監視しない。`.work` 内の別worktreeの `tsconfig.json` 更新による全ページ再読み込みや、証跡HTMLによる不要なHMR通知を防ぐ。アプリの `src` とルートの設定は引き続き監視する。
+
+QAの依存キャッシュは各worktreeの `.work/node_modules/.vite-qa` に作成する。トップレベルの `node_modules` を別worktreeと共有しても、最適化済み依存を相互に上書きしない。通常の `npm run dev` は通常のVite設定を使う。外部QAサーバーを使う場合は `vite.qa.config.ts` を指定し、ソースのブランチ切替後はサーバーを再起動してからE2Eを実行する。
+
 ## before / after の動画証跡
 
 ```bash
@@ -193,3 +197,25 @@ npm run qa:production
 rot2生成の回帰はPRNG seed 1/2を明示し、各回の生成成功を確認する。UIのランダムseed自体を固定する変更ではない。
 
 同梱済みのNPGenerator Wasmを再生成する場合だけ、別途Rustソースとwasm-packが必要。ソースの絶対パスを `npm run build:npgen-wasm -- /path/to/npgenerator/rust` で指定する。通常の `npm run build` はWasm再生成を行わない。
+
+
+## ソルバーの診断
+
+現行のURL取込・Worker起動・結果表示・再試行は共通のブラウザーQAから確認する。
+
+```bash
+npm run qa:capture -- before e2e/solver.spec.ts --project=chromium
+# 修正後
+npm run qa:capture -- after e2e/solver.spec.ts --project=chromium
+npm run qa:compare -- <beforeの出力先> <afterの出力先>
+```
+
+旧 `scripts/test-solver*` / `scripts/test-yajilin*` / `scripts/test-slither-solver.ts` は、期待解を判定せずconsole出力を手動で見る診断だったため整理した。ソルバー本体と現行Unit/E2Eは維持する。
+
+過去の診断で使った入力は、アプリの「File → Import from Penpa/puzz.link」から再利用できる。
+
+```text
+https://puzz.link/p?yajilin/10/10/b41e2121e21o41a41b41g41b41g30d41a41b40a40r31a31d30f
+```
+
+このYajilin入力は期待解を固定した回帰fixtureではない。問題を発見したときは現在の取込・Worker経路で再現し、期待する結果を特定してから既存テストへ加える。パーサーやソルバーのコピーを診断用に増やさない。

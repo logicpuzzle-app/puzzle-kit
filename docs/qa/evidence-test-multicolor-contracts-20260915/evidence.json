@@ -1,0 +1,84 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "Multicolor and icon selections survive layer changes",
+    "project": "chromium",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "?? docs/qa/evidence-test-multicolor-contracts-20260915/",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before --config .work/playwright.multicolor.config.ts",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "layer-switch-before.webm",
+    "screenshot": "layer-switch-before.png",
+    "videoSha256": "dc43c06fc678ea9e2665d6b6f78fe46c8314e9059ad92afc1a30ce42e037da40",
+    "screenshotSha256": "3915d18971d59955f86355cebcdac5227cba43ece8b48c8bd542b601a5067658",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.120000"
+      }
+    },
+    "fullyDecoded": true,
+    "captureSources": [
+      {
+        "file": "capture.spec.txt",
+        "sha256": "e2210060973bb42d5677b4725f6dca6056f83b04d1da019e06728d860d0be397"
+      },
+      {
+        "file": "playwright.config.txt",
+        "sha256": "9e8bd3c5e99c7defc4654f66b919b46dc21d0779ce022f393db1ff517995641e"
+      }
+    ],
+    "scenarioMatchesTrace": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "Multicolor and icon selections survive layer changes",
+    "project": "chromium",
+    "revision": "e844dbbc2e24bf5d6ac8c03cf1a1a333183dd741",
+    "workingTree": "?? docs/qa/evidence-test-multicolor-contracts-20260915/",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after --config .work/playwright.multicolor.config.ts",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "layer-switch-after.webm",
+    "screenshot": "layer-switch-after.png",
+    "videoSha256": "70d7e0754147018aed37f0a895d7d0cd3d0e83379461c006bad064b798f015bb",
+    "screenshotSha256": "3915d18971d59955f86355cebcdac5227cba43ece8b48c8bd542b601a5067658",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 800,
+          "height": 450
+        }
+      ],
+      "format": {
+        "duration": "2.120000"
+      }
+    },
+    "fullyDecoded": true,
+    "captureSources": [
+      {
+        "file": "capture.spec.txt",
+        "sha256": "e2210060973bb42d5677b4725f6dca6056f83b04d1da019e06728d860d0be397"
+      },
+      {
+        "file": "playwright.config.txt",
+        "sha256": "9e8bd3c5e99c7defc4654f66b919b46dc21d0779ce022f393db1ff517995641e"
+      }
+    ],
+    "scenarioMatchesTrace": true
+  }
+]
