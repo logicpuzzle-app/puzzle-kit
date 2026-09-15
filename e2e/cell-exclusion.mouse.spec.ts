@@ -2,7 +2,7 @@ import { test, expect } from './fixtures';
 import { point } from './canvas-point';
 
 for (const shape of ['square', 'hex']) {
-  test(`#18/#23 ${shape} excluded cell disappears immediately and can be restored`, async ({ page }, info) => {
+  test(`#18/#23 ${shape} excluded cell disappears immediately and can be restored`, async ({ page }) => {
     await page.goto(`/harness.html?scenario=${shape}-exclusion`);
     const cells = page.locator('.topology-grid-background > polygon, .topology-grid-layer > polygon');
     await expect(cells).not.toHaveCount(0);
@@ -15,10 +15,8 @@ for (const shape of ['square', 'hex']) {
     const target = await point(page, center.x, center.y);
     await page.mouse.click(target.x, target.y);
     await expect(cells).toHaveCount(count - 1);
-    await page.screenshot({ path: info.outputPath('excluded.png') });
     const hole = await point(page, center.x, center.y);
     await page.mouse.click(hole.x, hole.y);
     await expect(cells).toHaveCount(count);
-    await page.screenshot({ path: info.outputPath('restored.png') });
   });
 }
