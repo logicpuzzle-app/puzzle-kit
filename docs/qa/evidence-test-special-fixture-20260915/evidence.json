@@ -1,0 +1,62 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "arrow: shorten only the selected tip and retain history across reload",
+    "project": "mobile-chrome",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/special-tip.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "arrow-overlap-before.webm",
+    "screenshot": "arrow-overlap-before.png",
+    "videoSha256": "9b1f2086d7aeb0171f12c3e0b76cc581644e5f93aee5d5d94a22b14c6298034b",
+    "screenshotSha256": "d92dadaa27f7304c48964bbd2005720419d40075021a49c3e91accf19cb03621",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "7.160000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "arrow: shorten only the selected tip and retain history across reload",
+    "project": "mobile-chrome",
+    "revision": "1278d6043917d15a8585bc31590502e1a619b055",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/special-tip.spec.ts --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "arrow-overlap-after.webm",
+    "screenshot": "arrow-overlap-after.png",
+    "videoSha256": "f4bd34474e52622d03595841fbee97ffeb3783b9b44f64817153e083090a2382",
+    "screenshotSha256": "448381369c91891213f69218ec17d0113840f4a9a92d9157f5c388cade6fe252",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "5.800000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]
