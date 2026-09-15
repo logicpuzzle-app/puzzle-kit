@@ -1,6 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2020",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "rootDir": "./src",

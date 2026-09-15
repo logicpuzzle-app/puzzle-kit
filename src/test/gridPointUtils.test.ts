@@ -1,369 +1,86 @@
-/**
- * Grid Point Utilities Tests
- *
- * Tests for the integrated grid point system
- */
-
 import { describe, it, expect } from 'vitest';
 import {
-  generateGridPoints,
-  getCellCenters,
-  getInsideCellCenters,
-  getVertexPoints,
-  getEdgePoints,
-  findNearestCell,
-  findNearestVertex,
-  findNearestEdge,
-  getGridBounds,
-  getGridViewBox,
-  pointIndexToKey,
-  edgeToKey,
-  parseEdgeKey,
-  getCellDegree,
-  getVerticesPerCell,
-  getEdgesPerCell,
+  generateGridPoints, getCellCenters, getInsideCellCenters, getVertexPoints, getEdgePoints,
+  findNearestCell, findNearestVertex, findNearestEdge, getGridBounds, getGridViewBox,
+  edgeToKey, parseEdgeKey, getCellDegree, getVerticesPerCell, getEdgesPerCell,
 } from '../utils/gridPointUtils';
-import { GridConfig } from '../types';
+import type { GridConfig } from '../types';
 import { PointType, PointUse } from '../types/point';
 
-const createTestGrid = (
-  gridType: 'square' | 'hex' | 'triangle' | 'pyramid' = 'square'
-): GridConfig => ({
-  rows: 5,
-  cols: 5,
-  cellSize: 40,
-  outerPadding: 20,
-  showGrid: true,
-  gridStyle: 'normal',
-  gridType,
-  marginTop: 0,
-  marginBottom: 0,
-  marginLeft: 0,
-  marginRight: 0,
-  frameStyle: 'normal',
-  frameColor: '#000000',
-  gridColor: '#000000',
-  backgroundColor: '#ffffff',
-});
+const gridConfig: GridConfig = {
+  rows: 2, cols: 3, cellSize: 40, outerPadding: 20, showGrid: true,
+  gridStyle: 'normal', gridType: 'square', marginTop: 0, marginBottom: 0,
+  marginLeft: 0, marginRight: 0, frameStyle: 'normal', frameColor: '#000000',
+  gridColor: '#000000', backgroundColor: '#ffffff',
+};
 
-describe('Grid Point Utilities', () => {
-  describe('generateGridPoints', () => {
-    it('generates points for square grid', () => {
-      const grid = createTestGrid('square');
-      const points = generateGridPoints(grid);
-
-      expect(points.nx).toBe(5);
-      expect(points.ny).toBe(5);
-      expect(points.points.length).toBeGreaterThan(0);
-    });
-
-    it('generates points for hex grid', () => {
-      const grid = createTestGrid('hex');
-      const points = generateGridPoints(grid);
-
-      expect(points.nx).toBe(5);
-      expect(points.ny).toBe(5);
-      expect(points.points.length).toBeGreaterThan(0);
-    });
-
-    it('generates points for triangle grid', () => {
-      const grid = createTestGrid('triangle');
-      const points = generateGridPoints(grid);
-
-      // Triangle grid has 2*cols columns
-      expect(points.nx).toBe(10);
-      expect(points.ny).toBe(5);
-      expect(points.points.length).toBeGreaterThan(0);
-    });
-
-    it('generates points for pyramid grid', () => {
-      const grid = createTestGrid('pyramid');
-      const points = generateGridPoints(grid);
-
-      // Pyramid uses rows as height
-      expect(points.points.length).toBeGreaterThan(0);
-    });
+describe('grid point entry points', () => {
+  // Fixed Penpa point IDs and coordinates; do not derive expectations with a generator.
+  it.each([
+    ['square', 3, 6, 16, 100, 100],
+    ['hex', 3, 6, 16, 173.2050807569, 160],
+    ['triangle', 6, 12, 22, 60, 92.3760430703],
+    ['pyramid', 3, 4, 0, 80, 92.3760430703],
+  ] as const)('%s preserves dimensions, inside cells and the first cell position', (gridType, nx, count, firstId, x, y) => {
+    const grid = generateGridPoints({ ...gridConfig, gridType });
+    expect([grid.nx, grid.ny, grid.border, grid.size]).toEqual([nx, 2, 2, 40]);
+    const cells = getCellCenters(grid);
+    expect(cells).toHaveLength(count);
+    expect(getInsideCellCenters(grid)).toEqual(cells);
+    for (const cell of cells) expect(cell).toMatchObject({ type: PointType.CELL, use: PointUse.INSIDE });
+    expect(grid.centerList).toContain(firstId);
+    expect(grid.points[firstId]).toMatchObject({ index: [0, 0] });
+    expect(grid.points[firstId].x).toBeCloseTo(x, 5);
+    expect(grid.points[firstId].y).toBeCloseTo(y, 5);
+    expect(findNearestCell(x, y, grid, 1)).toBe(firstId);
   });
 
-  describe('getCellCenters', () => {
-    it('returns cell centers from square grid', () => {
-      const grid = createTestGrid('square');
-      const points = generateGridPoints(grid);
-      const centers = getCellCenters(points);
-
-      expect(centers.length).toBeGreaterThan(0);
-      centers.forEach((center) => {
-        expect(center.type).toBe(PointType.CELL);
-      });
-    });
-
-    it('returns cell centers from hex grid', () => {
-      const grid = createTestGrid('hex');
-      const points = generateGridPoints(grid);
-      const centers = getCellCenters(points);
-
-      expect(centers.length).toBeGreaterThan(0);
-    });
+  it('filters inside vertices/edges and selects the requested point kind', () => {
+    const grid = generateGridPoints(gridConfig);
+    const vertices = getVertexPoints(grid);
+    expect(vertices).toHaveLength(12);
+    for (const point of vertices) expect(point).toMatchObject({ type: PointType.VERTEX, use: PointUse.INSIDE });
+    const edges = getEdgePoints(grid);
+    expect(edges).toHaveLength(17);
+    for (const point of edges) {
+      expect(point.use).toBe(PointUse.INSIDE);
+      expect([PointType.EDGE_H, PointType.EDGE_V]).toContain(point.type);
+    }
+    expect(findNearestCell(141, 101, grid)).toBe(17);
+    expect(findNearestVertex(121, 81, grid)).toBe(61);
+    expect(findNearestEdge(141, 81, grid)).toBe(115);
+    expect(findNearestEdge(121, 101, grid)).toBe(166);
   });
 
-  describe('getInsideCellCenters', () => {
-    it('returns only inside cells', () => {
-      const grid = createTestGrid('square');
-      const points = generateGridPoints(grid);
-      const insideCenters = getInsideCellCenters(points);
-
-      insideCenters.forEach((center) => {
-        expect(center.use).toBe(PointUse.INSIDE);
-      });
-    });
-
-    it('returns 25 cells for 5x5 square grid', () => {
-      const grid = createTestGrid('square');
-      const points = generateGridPoints(grid);
-      const insideCenters = getInsideCellCenters(points);
-
-      expect(insideCenters.length).toBe(25);
-    });
+  it('excludes outside points and respects each nearest-point distance limit', () => {
+    const grid = generateGridPoints(gridConfig);
+    expect(findNearestCell(141, 101, grid, 1)).toBeNull();
+    expect(findNearestVertex(121, 81, grid, 1)).toBeNull();
+    expect(findNearestEdge(141, 81, grid, 1)).toBeNull();
+    expect(findNearestCell(20, 20, grid, 1)).toBeNull();
+    expect(findNearestVertex(0, 0, grid, 1)).toBeNull();
+    expect(findNearestEdge(20, 0, grid, 1)).toBeNull();
   });
 
-  describe('getVertexPoints', () => {
-    it('returns vertex points from square grid', () => {
-      const grid = createTestGrid('square');
-      const points = generateGridPoints(grid);
-      const vertices = getVertexPoints(points);
-
-      expect(vertices.length).toBeGreaterThan(0);
-      vertices.forEach((v) => {
-        expect(v.type).toBe(PointType.VERTEX);
-        expect(v.use).toBe(PointUse.INSIDE);
-      });
-    });
+  it('bounds only the board and applies default/custom viewBox padding', () => {
+    const grid = generateGridPoints(gridConfig);
+    expect(getGridBounds(grid)).toEqual({ minX: 80, minY: 80, maxX: 200, maxY: 160, width: 120, height: 80 });
+    expect(getGridViewBox(grid)).toBe('60 60 160 120');
+    expect(getGridViewBox(grid, 30)).toBe('50 50 180 140');
   });
 
-  describe('getEdgePoints', () => {
-    it('returns edge points from square grid', () => {
-      const grid = createTestGrid('square');
-      const points = generateGridPoints(grid);
-      const edges = getEdgePoints(points);
-
-      expect(edges.length).toBeGreaterThan(0);
-      edges.forEach((e) => {
-        expect([PointType.EDGE_H, PointType.EDGE_V]).toContain(e.type);
-        expect(e.use).toBe(PointUse.INSIDE);
-      });
-    });
+  it('normalizes edge order and rejects malformed keys', () => {
+    expect(edgeToKey(10, 20)).toBe('10,20');
+    expect(edgeToKey(20, 10)).toBe('10,20');
+    expect(parseEdgeKey('10,20')).toEqual([10, 20]);
+    for (const key of ['invalid', '10', 'a,b']) expect(parseEdgeKey(key)).toBeNull();
   });
 
-  describe('findNearestCell', () => {
-    it('finds cell at center position', () => {
-      const grid = createTestGrid('square');
-      const points = generateGridPoints(grid);
-
-      // Center of first inside cell
-      const cellIdx = findNearestCell(
-        (2 + 0.5) * 40, // First inside cell at (0,0) with border=2
-        (2 + 0.5) * 40,
-        points
-      );
-
-      expect(cellIdx).not.toBeNull();
-    });
-
-    it('returns null for position far outside grid', () => {
-      const grid = createTestGrid('square');
-      const points = generateGridPoints(grid);
-
-      const cellIdx = findNearestCell(-1000, -1000, points, 50);
-
-      expect(cellIdx).toBeNull();
-    });
-  });
-
-  describe('findNearestVertex', () => {
-    it('finds vertex at grid intersection', () => {
-      const grid = createTestGrid('square');
-      const points = generateGridPoints(grid);
-
-      // Vertex at (2,2) with border
-      const vertexIdx = findNearestVertex(2 * 40, 2 * 40, points);
-
-      expect(vertexIdx).not.toBeNull();
-      if (vertexIdx !== null) {
-        expect(points.points[vertexIdx].type).toBe(PointType.VERTEX);
-      }
-    });
-  });
-
-  describe('findNearestEdge', () => {
-    it('finds edge on cell boundary', () => {
-      const grid = createTestGrid('square');
-      const points = generateGridPoints(grid);
-
-      // Edge between first two inside cells
-      const edgeIdx = findNearestEdge((2 + 0.5) * 40, 2 * 40, points);
-
-      expect(edgeIdx).not.toBeNull();
-      if (edgeIdx !== null) {
-        expect([PointType.EDGE_H, PointType.EDGE_V]).toContain(
-          points.points[edgeIdx].type
-        );
-      }
-    });
-  });
-
-  describe('getGridBounds', () => {
-    it('returns correct bounds for square grid', () => {
-      const grid = createTestGrid('square');
-      const points = generateGridPoints(grid);
-      const bounds = getGridBounds(points);
-
-      expect(bounds.minX).toBeLessThan(bounds.maxX);
-      expect(bounds.minY).toBeLessThan(bounds.maxY);
-      expect(bounds.width).toBeGreaterThan(0);
-      expect(bounds.height).toBeGreaterThan(0);
-    });
-  });
-
-  describe('getGridViewBox', () => {
-    it('returns valid viewBox string', () => {
-      const grid = createTestGrid('square');
-      const points = generateGridPoints(grid);
-      const viewBox = getGridViewBox(points);
-
-      expect(viewBox).toMatch(/^-?\d+(\.\d+)? -?\d+(\.\d+)? \d+(\.\d+)? \d+(\.\d+)?$/);
-    });
-
-    it('includes padding', () => {
-      const grid = createTestGrid('square');
-      const points = generateGridPoints(grid);
-      const bounds = getGridBounds(points);
-      const padding = 30;
-      const viewBox = getGridViewBox(points, padding);
-
-      const [x, y, width, height] = viewBox.split(' ').map(Number);
-
-      expect(x).toBeLessThan(bounds.minX);
-      expect(y).toBeLessThan(bounds.minY);
-      expect(width).toBeGreaterThan(bounds.width);
-      expect(height).toBeGreaterThan(bounds.height);
-    });
-  });
-
-  describe('pointIndexToKey', () => {
-    it('converts index to string', () => {
-      expect(pointIndexToKey(0)).toBe('0');
-      expect(pointIndexToKey(42)).toBe('42');
-      expect(pointIndexToKey(1000)).toBe('1000');
-    });
-  });
-
-  describe('edgeToKey', () => {
-    it('creates consistent key regardless of order', () => {
-      const key1 = edgeToKey(10, 20);
-      const key2 = edgeToKey(20, 10);
-
-      expect(key1).toBe(key2);
-      expect(key1).toBe('10,20');
-    });
-  });
-
-  describe('parseEdgeKey', () => {
-    it('parses valid edge key', () => {
-      const result = parseEdgeKey('10,20');
-
-      expect(result).toEqual([10, 20]);
-    });
-
-    it('returns null for invalid key', () => {
-      expect(parseEdgeKey('invalid')).toBeNull();
-      expect(parseEdgeKey('10')).toBeNull();
-      expect(parseEdgeKey('a,b')).toBeNull();
-    });
-  });
-
-  describe('getCellDegree', () => {
-    it('returns 4 for square grid', () => {
-      expect(getCellDegree('square')).toBe(4);
-    });
-
-    it('returns 6 for hex grid', () => {
-      expect(getCellDegree('hex')).toBe(6);
-    });
-
-    it('returns 3 for triangle grid', () => {
-      expect(getCellDegree('triangle')).toBe(3);
-    });
-
-    it('returns 3 for pyramid grid', () => {
-      expect(getCellDegree('pyramid')).toBe(3);
-    });
-  });
-
-  describe('getVerticesPerCell', () => {
-    it('returns 4 for square grid', () => {
-      expect(getVerticesPerCell('square')).toBe(4);
-    });
-
-    it('returns 6 for hex grid', () => {
-      expect(getVerticesPerCell('hex')).toBe(6);
-    });
-
-    it('returns 3 for triangle grid', () => {
-      expect(getVerticesPerCell('triangle')).toBe(3);
-    });
-  });
-
-  describe('getEdgesPerCell', () => {
-    it('returns 4 for square grid', () => {
-      expect(getEdgesPerCell('square')).toBe(4);
-    });
-
-    it('returns 6 for hex grid', () => {
-      expect(getEdgesPerCell('hex')).toBe(6);
-    });
-
-    it('returns 3 for triangle grid', () => {
-      expect(getEdgesPerCell('triangle')).toBe(3);
-    });
-  });
-
-  describe('integration with different grid types', () => {
-    const gridTypes: Array<'square' | 'hex' | 'triangle' | 'pyramid'> = [
-      'square',
-      'hex',
-      'triangle',
-      'pyramid',
-    ];
-
-    gridTypes.forEach((gridType) => {
-      it(`generates valid points for ${gridType} grid`, () => {
-        const grid = createTestGrid(gridType);
-        const points = generateGridPoints(grid);
-
-        // Basic validity checks
-        expect(points.points.length).toBeGreaterThan(0);
-        expect(points.centerList.length).toBeGreaterThan(0);
-
-        // All centerList indices should be valid
-        for (const idx of points.centerList) {
-          expect(idx).toBeGreaterThanOrEqual(0);
-          expect(idx).toBeLessThan(points.points.length);
-          expect(points.points[idx]).toBeDefined();
-        }
-      });
-
-      it(`can find cells in ${gridType} grid`, () => {
-        const grid = createTestGrid(gridType);
-        const points = generateGridPoints(grid);
-
-        const insideCenters = getInsideCellCenters(points);
-        if (insideCenters.length > 0) {
-          const firstCell = insideCenters[0];
-          const foundIdx = findNearestCell(firstCell.x, firstCell.y, points);
-
-          expect(foundIdx).not.toBeNull();
-        }
-      });
-    });
+  it('classifies each point API independently', () => {
+    for (const classify of [getCellDegree, getVerticesPerCell, getEdgesPerCell]) {
+      expect(classify('square')).toBe(4);
+      expect(classify('hex')).toBe(6);
+      expect(classify('triangle')).toBe(3);
+    }
   });
 });
