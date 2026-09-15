@@ -1,0 +1,22 @@
+import { test, expect } from '../../e2e/fixtures';
+import { resolve } from 'node:path';
+
+test('File Open renders an opposite-edge midpoint split', async ({ page }, info) => {
+  await page.goto('/master');
+  await page.getByRole('button', { name: 'File', exact: true }).click();
+  const chooser = page.waitForEvent('filechooser');
+  await page.getByText('Open', { exact: true }).click();
+  await (await chooser).setFiles(resolve('.work/edge-split-qa/fixture.json'));
+  const cells = page.locator('.topology-grid-background > polygon, .topology-grid-layer > polygon');
+  await expect(cells).toHaveCount(2);
+  const polygons = await cells.evaluateAll(items => items.map(item => [...(item as SVGPolygonElement).points].map(p => [p.x, p.y])));
+  const counts = polygons.map(p => p.length).sort((a,b) => a-b);
+  if (process.env.QA_VARIANT === 'before') {
+    expect(counts).toEqual([2, 6]); // Record the confirmed defect without claiming a regression pass.
+  } else {
+    expect(counts).toEqual([4, 4]);
+    const areas = polygons.map(p => Math.abs(p.reduce((sum, a, i) => { const b=p[(i+1)%p.length]; return sum+a[0]*b[1]-b[0]*a[1]; },0))/2);
+    expect(areas).toEqual([28800, 28800]);
+  }
+  await info.attach('cell-polygons', { body: JSON.stringify(polygons), contentType: 'application/json' });
+});

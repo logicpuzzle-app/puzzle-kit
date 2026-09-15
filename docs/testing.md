@@ -14,6 +14,8 @@
 - `e2e/grid-sculpt.spec.ts`: Sculpt Rotate/CutとUndo/Redoを全4projectのtouchscreen.tapで検証。
 - `e2e/properties-drawer.spec.ts`: 狭幅Propertiesの開閉・設定・フォーカス・リサイズ・エラー通知を4projectで検証。
 - `e2e/editor-quality.spec.ts`: Edit起動とPaint/Masterの最低限の盤面寸法。
+- `e2e/special-tip.spec.ts`: 公開JSONのFile Openで重なる矢印を配置し、選択・最小2点・削除Undoを4projectで確認。状態検査はSVGと保存JSONを使い、ブラウザー内からストアを動的importしない。
+- `e2e/puzzle-file.ts`: セッションと矢印検証で共有する実際のFile Open/Save操作。fixtureは `e2e/fixtures/overlapping-arrows.json`。
 - `e2e/ui-audit.spec.ts`: 開発ハーネスのシナリオ切替とJSON検査。
 - `e2e/qa-*-capture.spec.ts`: 人が確認する画面寸法・スクリーンショット。通常CIから分離し、`playwright.capture.config.ts` で任意に実行する。
 - `e2e/fixtures.ts`: uncaught browser exception を失敗として扱い、エラーを添付。QAでは成功時も画面を保存。
