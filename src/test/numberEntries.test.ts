@@ -11,19 +11,23 @@ import {
   getDirectionalClueValueFields,
   hasNumberAtCell,
   findDirectionalNumberByCellId,
-  isDirectionalNumber,
   isNumericString,
   limitNumericString,
-  normalizeCandidates,
   getDirectionalCluesFromElements,
-  toPenpaDirectionalClue,
 } from '../utils/numberEntries';
 import { mergeDirectionalCluesIntoNumbersForLayer } from '../utils/legacyDirectionalClues';
-import type { PenpaDirectionalClue, PuzzleElements } from '../types';
+import type { NumberElement, PenpaDirectionalClue } from '../types';
+import type { NumberEntryLike } from '../utils/numberEntries';
+import type { PuzzleElementsWithDirectionalClues } from '../utils/legacyDirectionalClues';
+
+function number(id: string, fields: Partial<NumberElement> = {}): NumberElement {
+  return { id, cellId: 'cell-0-0', value: '5', position: 'center',
+    size: 'large', color: '#000', layer: 'problem', ...fields };
+}
 
 describe('numberEntries utilities', () => {
   it('findNumberEntry locates numbers by position and indexes', () => {
-    const numbers = {
+    const numbers: Record<string, NumberEntryLike> = {
       a: { cellId: 'cell-0-0', value: '5', position: 'center' },
       b: { cellId: 'cell-0-0', value: '7', position: 'corner', cornerIndex: 1 },
       c: { cellId: 'cell-0-0', value: '3', position: 'side', sideIndex: 2 },
@@ -37,180 +41,63 @@ describe('numberEntries utilities', () => {
     expect(findNumberEntry(numbers, 'cell-0-0', 'candidates', { value: '2' })?.id).toBe('e');
   });
 
-  it('getCellCandidates returns unique 1-9 values', () => {
-    const numbers = {
-      a: { cellId: 'cell-0-0', value: '1', position: 'candidates' },
-      b: { cellId: 'cell-0-0', value: '2', position: 'candidates' },
-      c: { cellId: 'cell-0-1', value: '3', position: 'candidates' },
+  it('selects candidate entries independently of their normalized display values', () => {
+    const numbers: Record<string, NumberEntryLike> = {
+      a: { cellId: 'cell-0-0', value: '3', position: 'candidates' },
+      b: { cellId: 'cell-0-0', value: '1', position: 'candidates' },
+      c: { cellId: 'cell-0-1', value: '9', position: 'candidates' },
       d: { cellId: 'cell-0-0', value: '11', position: 'candidates' },
       e: { cellId: 'cell-0-0', value: '5', position: 'center' },
+      f: { cellId: 'cell-0-0', value: '3', position: 'candidates' },
     };
-
-    const candidates = getCellCandidates(numbers, 'cell-0-0');
-    expect(candidates).toEqual(new Set([1, 2]));
+    // Color edits target every candidate entry, including duplicate/invalid values.
+    expect(getCandidateEntries(numbers, 'cell-0-0').map(entry => entry.id).sort()).toEqual(['a', 'b', 'd', 'f']);
+    // The number panel shows only distinct valid values from this cell.
+    expect(getCellCandidates(numbers, 'cell-0-0')).toEqual(new Set([1, 3]));
   });
 
-  it('findDirectionalNumberByCellId finds directional center numbers', () => {
+  it('serializes candidates in order without duplicates or out-of-range values', () => {
+    expect(candidatesToValue([3, 1, 9, 1, 10, 0])).toBe('139');
+  });
+
+  it('finds direction-zero and angle-only center numbers without selecting other entries', () => {
     const numbers = {
-      a: {
-        id: 'a',
-        cellId: 'cell-0-0',
-        value: '5',
-        size: 'large',
-        position: 'center',
-        direction: 2,
-        color: '#000',
-        layer: 'problem',
-      },
-      b: {
-        id: 'b',
-        cellId: 'cell-0-0',
-        value: '7',
-        size: 'large',
-        position: 'center',
-        color: '#000',
-        layer: 'problem',
-      },
+      otherCell: number('otherCell', { cellId: 'cell-0-1', direction: 2 }),
+      corner: number('corner', { position: 'corner', direction: 2 }),
+      plain: number('plain'),
+      zero: number('zero', { direction: 0 }),
+      angle: number('angle', { cellId: 'cell-0-2', angle: 45 }),
     };
-    expect(findDirectionalNumberByCellId(numbers, 'cell-0-0')?.id).toBe('a');
+    expect(findDirectionalNumberByCellId(numbers, 'cell-0-0')?.id).toBe('zero');
+    expect(findDirectionalNumberByCellId(numbers, 'cell-0-2')?.id).toBe('angle');
   });
 
-  it('normalizeCandidates filters, dedupes, and sorts', () => {
-    expect(normalizeCandidates([3, 1, 9, 1, 10, 0])).toEqual([1, 3, 9]);
-  });
-
-  it('candidatesToValue joins sorted candidates', () => {
-    expect(candidatesToValue([4, 2, 2, 1])).toBe('124');
-  });
-
-  it('isDirectionalNumber detects direction/angle presence', () => {
-    expect(isDirectionalNumber({})).toBe(false);
-    expect(isDirectionalNumber({ direction: 0 })).toBe(true);
-    expect(isDirectionalNumber({ angle: 45 })).toBe(true);
-  });
-
-  it('toPenpaDirectionalClue converts directional numbers', () => {
-    const clue = toPenpaDirectionalClue({
-      id: 'n1',
-      cellId: 'cell-0-0',
-      value: '7',
-      size: 'large',
-      position: 'center',
-      color: '#000',
-      layer: 'problem',
-      direction: 2,
-      angle: null,
-    });
-    expect(clue).toMatchObject({
-      cellId: 'cell-0-0',
-      direction: 2,
-      value: 7,
-      layer: 'problem',
-    });
-
-    const charClue = toPenpaDirectionalClue({
-      id: 'n2',
-      cellId: 'cell-1-1',
-      value: 'A',
-      size: 'large',
-      position: 'center',
-      color: '#000',
-      layer: 'problem',
-      direction: 0,
-    });
-    expect(charClue?.char).toBe('A');
-
-    const hatenaClue = toPenpaDirectionalClue({
-      id: 'n3',
-      cellId: 'cell-2-2',
-      value: '?',
-      size: 'large',
-      position: 'center',
-      color: '#000',
-      layer: 'problem',
-      direction: 0,
-    });
-    expect(hatenaClue?.value).toBe(-2);
-
-    const nonDirectional = toPenpaDirectionalClue({
-      id: 'n4',
-      cellId: 'cell-0-1',
-      value: '5',
-      size: 'large',
-      position: 'center',
-      color: '#000',
-      layer: 'problem',
-    });
-    expect(nonDirectional).toBeNull();
-  });
-
-  it('mergeDirectionalCluesIntoNumbersForLayer mirrors clues into numbers', () => {
-    const elements: PuzzleElements & { directionalClues?: Record<string, PenpaDirectionalClue> } = {
-      surfaces: {},
-      lines: {},
-      edges: {},
-      walls: {},
-      numbers: {},
-      symbols: {},
-      cages: {},
-      specials: {},
-      boxLines: {},
-      directionalClues: {
-        d1: {
-          cellId: 'cell-0-0',
-          direction: 2,
-          value: 5,
-          layer: 'problem',
-        },
-      },
-    };
-    const result = mergeDirectionalCluesIntoNumbersForLayer(elements);
-    expect(Object.keys(result.numbers)).toHaveLength(1);
-    expect(result.numbers.d1?.direction).toBe(2);
-    expect(result.numbers.d1?.value).toBe('5');
-  });
-
-  it('getDirectionalCluesFromElements prefers directional numbers over clues', () => {
-    const elements: PuzzleElements = {
-      surfaces: {},
-      lines: {},
-      edges: {},
-      walls: {},
+  it('migrates legacy clues without replacing current numbers and extracts numeric, character and unknown clues', () => {
+    const elements: PuzzleElementsWithDirectionalClues = {
+      surfaces: {}, lines: {}, edges: {}, walls: {}, symbols: {}, cages: {}, specials: {}, boxLines: {},
       numbers: {
-        n1: {
-          id: 'n1',
-          cellId: 'cell-0-0',
-          value: '3',
-          size: 'large',
-          position: 'center',
-          direction: 1,
-          color: '#000',
-          layer: 'problem',
-        },
+        plain: number('plain', { cellId: 'cell-1-0' }),
+        current: number('current', { value: '7', direction: 2 }),
+        character: number('character', { cellId: 'cell-1-1', value: 'A', direction: 0 }),
+        unknown: number('unknown', { cellId: 'cell-2-2', value: '?', angle: 45 }),
       },
-      symbols: {},
-      cages: {},
-      specials: {},
-      boxLines: {},
+      directionalClues: {
+        obsolete: { cellId: 'cell-0-0', value: 99, direction: 1, layer: 'problem' },
+        legacy: { cellId: 'cell-3-3', value: 5, direction: 2, layer: 'problem' },
+      },
     };
-    const clues = getDirectionalCluesFromElements(elements);
-    expect(clues).toHaveLength(1);
-    expect(clues.find((c) => c.cellId === 'cell-0-0')?.value).toBe(3);
-  });
-
-  it('getCandidateEntries returns candidate entries for a cell', () => {
-    const numbers = {
-      a: { cellId: 'cell-0-0', value: '1', position: 'candidates' },
-      b: { cellId: 'cell-0-0', value: '2', position: 'candidates' },
-      c: { cellId: 'cell-0-1', value: '3', position: 'candidates' },
-    };
-
-    const entries = getCandidateEntries(numbers, 'cell-0-0');
-    expect(entries.map((entry) => entry.id).sort()).toEqual(['a', 'b']);
+    const migrated = mergeDirectionalCluesIntoNumbersForLayer(elements);
+    expect(migrated.numbers.legacy).toMatchObject({ value: '5', direction: 2 });
+    expect(getDirectionalCluesFromElements(migrated).sort((a, b) => a.cellId.localeCompare(b.cellId))).toMatchObject([
+      { id: 'current', cellId: 'cell-0-0', value: 7, direction: 2, layer: 'problem', angle: null },
+      { id: 'character', cellId: 'cell-1-1', value: 0, char: 'A', direction: 0 },
+      { id: 'unknown', cellId: 'cell-2-2', value: -2, direction: 0, angle: 45 },
+      { id: 'legacy', cellId: 'cell-3-3', value: 5, direction: 2 },
+    ]);
   });
 
   it('hasNumberAtCell detects any number at a cell', () => {
-    const numbers = {
+    const numbers: Record<string, NumberEntryLike> = {
       a: { cellId: 'cell-0-0', value: '9', position: 'center' },
       b: { cellId: 'cell-0-1', value: '1', position: 'candidates' },
     };
@@ -269,7 +156,7 @@ describe('numberEntries utilities', () => {
   });
 
   it('buildDirectionalClueIncrementPlan handles existing clue', () => {
-    const clue = { cellId: 'cell-0-0', direction: 2, value: 4, layer: 'answer', angle: 30 };
+    const clue: PenpaDirectionalClue = { cellId: 'cell-0-0', direction: 2, value: 4, layer: 'answer', angle: 30 };
     const plan = buildDirectionalClueIncrementPlan({
       cellId: 'cell-0-0',
       layer: 'answer',
@@ -284,7 +171,7 @@ describe('numberEntries utilities', () => {
   });
 
   it('buildDirectionalClueIncrementPlan skips char clue', () => {
-    const clue = { cellId: 'cell-0-0', direction: 0, value: 0, char: 'A', layer: 'answer' };
+    const clue: PenpaDirectionalClue = { cellId: 'cell-0-0', direction: 0, value: 0, char: 'A', layer: 'answer' };
     const plan = buildDirectionalClueIncrementPlan({
       cellId: 'cell-0-0',
       layer: 'answer',
@@ -294,7 +181,7 @@ describe('numberEntries utilities', () => {
   });
 
   it('buildDirectionalClueIncrementPlan converts numeric number entries', () => {
-    const existingNumber = { id: 'n1', number: { cellId: 'cell-0-0', value: '7', position: 'center' } };
+    const existingNumber = { id: 'n1', number: { cellId: 'cell-0-0', value: '7', position: 'center' as const } };
     const plan = buildDirectionalClueIncrementPlan({
       cellId: 'cell-0-0',
       layer: 'answer',
@@ -309,7 +196,7 @@ describe('numberEntries utilities', () => {
   });
 
   it('buildDirectionalClueIncrementPlan skips non-numeric number entries', () => {
-    const existingNumber = { id: 'n2', number: { cellId: 'cell-0-0', value: 'A', position: 'center' } };
+    const existingNumber = { id: 'n2', number: { cellId: 'cell-0-0', value: 'A', position: 'center' as const } };
     const plan = buildDirectionalClueIncrementPlan({
       cellId: 'cell-0-0',
       layer: 'answer',
