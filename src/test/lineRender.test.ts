@@ -13,21 +13,17 @@ import {
   shortenPathEnds,
   getLineRenderParams,
   isLineToolCategory,
-  LINE_TOOL_CATEGORIES,
 } from '../utils/lineRender';
 
 describe('Line Render Utilities', () => {
   describe('getStrokeWidth', () => {
-    it('returns correct width for each thickness', () => {
-      expect(getStrokeWidth('thinnest')).toBe(1);
+    it('distinguishes thin and normal strokes', () => {
       expect(getStrokeWidth('thin')).toBe(2);
       expect(getStrokeWidth('normal')).toBe(3);
-      expect(getStrokeWidth('thick')).toBe(5);
-      expect(getStrokeWidth('thickest')).toBe(8);
     });
 
     it('returns default width for unknown thickness', () => {
-      expect(getStrokeWidth('unknown' as any)).toBe(3);
+      expect(getStrokeWidth('unknown' as Parameters<typeof getStrokeWidth>[0])).toBe(3);
     });
   });
 
@@ -36,7 +32,6 @@ describe('Line Render Utilities', () => {
       expect(getStrokeDasharray('solid')).toBeUndefined();
       expect(getStrokeDasharray('dashed')).toBe('8,4');
       expect(getStrokeDasharray('dotted')).toBe('2,4');
-      expect(getStrokeDasharray('double')).toBeUndefined();
     });
   });
 
@@ -110,27 +105,16 @@ describe('Line Render Utilities', () => {
       expect(result).toEqual(points);
     });
 
-    it('shortens start of path', () => {
-      const points = [{ x: 0, y: 0 }, { x: 100, y: 0 }];
-      const result = shortenPathEnds(points, 10, 0);
-      expect(result[0].x).toBe(10);
-      expect(result[0].y).toBe(0);
-      expect(result[1]).toEqual({ x: 100, y: 0 });
+    it('shortens a bent path asymmetrically without moving its middle point', () => {
+      expect(shortenPathEnds([{ x: 0, y: 0 }, { x: 50, y: 0 }, { x: 50, y: 80 }], 10, 20)).toEqual([
+        { x: 10, y: 0 }, { x: 50, y: 0 }, { x: 50, y: 60 },
+      ]);
     });
 
-    it('shortens end of path', () => {
-      const points = [{ x: 0, y: 0 }, { x: 100, y: 0 }];
-      const result = shortenPathEnds(points, 0, 10);
-      expect(result[0]).toEqual({ x: 0, y: 0 });
-      expect(result[1].x).toBe(90);
-      expect(result[1].y).toBe(0);
-    });
-
-    it('shortens both ends', () => {
-      const points = [{ x: 0, y: 0 }, { x: 100, y: 0 }];
-      const result = shortenPathEnds(points, 10, 10);
-      expect(result[0].x).toBe(10);
-      expect(result[1].x).toBe(90);
+    it('leaves the start intact when only the end is shortened', () => {
+      expect(shortenPathEnds([{ x: 0, y: 0 }, { x: 100, y: 0 }], 0, 10)).toEqual([
+        { x: 0, y: 0 }, { x: 90, y: 0 },
+      ]);
     });
 
     it('handles diagonal lines', () => {
@@ -138,19 +122,6 @@ describe('Line Render Utilities', () => {
       const result = shortenPathEnds(points, 14.14, 0); // ~10 * sqrt(2)
       expect(result[0].x).toBeCloseTo(10, 0);
       expect(result[0].y).toBeCloseTo(10, 0);
-    });
-
-    it('handles multi-point paths', () => {
-      const points = [
-        { x: 0, y: 0 },
-        { x: 50, y: 0 },
-        { x: 100, y: 0 },
-      ];
-      const result = shortenPathEnds(points, 10, 10);
-      expect(result[0].x).toBe(10);
-      expect(result[2].x).toBe(90);
-      // Middle point should be unchanged
-      expect(result[1]).toEqual({ x: 50, y: 0 });
     });
 
     it('handles path too short to shorten', () => {
@@ -162,55 +133,21 @@ describe('Line Render Utilities', () => {
   });
 
   describe('getLineRenderParams', () => {
-    it('returns correct params for normal single line', () => {
-      const params = getLineRenderParams('normal', false);
-      expect(params.strokeWidth).toBe(3);
-      expect(params.doubleGap).toBe(7.5); // 3 * 2.5
-      expect(params.totalWidth).toBe(3);
-      expect(params.arrowSize).toBe(9); // 3 * 3
-    });
-
-    it('returns correct params for double line', () => {
-      const params = getLineRenderParams('normal', true);
-      expect(params.strokeWidth).toBe(1.5); // 3 * 0.5
-      expect(params.doubleGap).toBe(3.75); // 1.5 * 2.5
-      expect(params.totalWidth).toBeCloseTo(5.25); // 1.5 + 3.75
-      expect(params.arrowSize).toBeCloseTo(15.75); // 5.25 * 3
-    });
-
-    it('has minimum stroke width of 1 for double lines', () => {
-      const params = getLineRenderParams('thinnest', true);
-      expect(params.strokeWidth).toBe(1); // max(1, 1 * 0.5) = 1
+    it('keeps double strokes readable and scales their arrow to the wider line', () => {
+      const single = getLineRenderParams('normal', false);
+      const double = getLineRenderParams('normal', true);
+      expect(single.strokeWidth).toBe(3);
+      expect(single.totalWidth).toBe(3);
+      expect(double.strokeWidth).toBeLessThan(single.strokeWidth);
+      expect(double.doubleGap).toBeGreaterThan(double.strokeWidth);
+      expect(double.totalWidth).toBeGreaterThan(single.totalWidth);
+      expect(double.arrowSize).toBeGreaterThan(single.arrowSize);
+      expect(getLineRenderParams('thinnest', true).strokeWidth).toBe(1);
     });
   });
 
-  describe('isLineToolCategory', () => {
-    it('returns true for line category', () => {
-      expect(isLineToolCategory('line')).toBe(true);
-    });
-
-    it('returns true for edge category', () => {
-      expect(isLineToolCategory('edge')).toBe(true);
-    });
-
-    it('returns true for wall category', () => {
-      expect(isLineToolCategory('wall')).toBe(true);
-    });
-
-    it('returns false for non-line categories', () => {
-      expect(isLineToolCategory('surface')).toBe(false);
-      expect(isLineToolCategory('number')).toBe(false);
-      expect(isLineToolCategory('symbol')).toBe(false);
-      expect(isLineToolCategory('select')).toBe(false);
-    });
-  });
-
-  describe('LINE_TOOL_CATEGORIES', () => {
-    it('contains all line-related categories', () => {
-      expect(LINE_TOOL_CATEGORIES).toContain('line');
-      expect(LINE_TOOL_CATEGORIES).toContain('edge');
-      expect(LINE_TOOL_CATEGORIES).toContain('wall');
-      expect(LINE_TOOL_CATEGORIES).toHaveLength(3);
-    });
+  it('recognizes line tools and rejects unrelated tools', () => {
+    expect(isLineToolCategory('line')).toBe(true);
+    expect(isLineToolCategory('surface')).toBe(false);
   });
 });

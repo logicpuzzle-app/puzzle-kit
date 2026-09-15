@@ -42,121 +42,6 @@ const createHexGrid = (rows = 5, cols = 5): GridConfig => ({
 });
 
 describe('hexGridUtils', () => {
-  describe('Hexagonal Grid', () => {
-    describe('getHexSize', () => {
-      it('calculates correct hex dimensions', () => {
-        const size = getHexSize(40);
-        expect(size.width).toBeCloseTo(Math.sqrt(3) * 20);
-        expect(size.height).toBe(40);
-      });
-    });
-
-    describe('getHexCenter', () => {
-      it('calculates center for first hex', () => {
-        const grid = createHexGrid();
-        const center = getHexCenter(0, 0, grid);
-        expect(center.x).toBeGreaterThan(0);
-        expect(center.y).toBeGreaterThan(0);
-      });
-
-      it('odd rows have horizontal offset', () => {
-        const grid = createHexGrid();
-        const centerRow0 = getHexCenter(0, 0, grid);
-        const centerRow1 = getHexCenter(1, 0, grid);
-        // Odd row is shifted horizontally by half a hex width
-        expect(centerRow1.x).not.toBe(centerRow0.x);
-      });
-    });
-
-    describe('getHexVertices', () => {
-      it('returns 6 vertices', () => {
-        const grid = createHexGrid();
-        const vertices = getHexVertices(0, 0, grid);
-        expect(vertices).toHaveLength(6);
-      });
-
-      it('vertices form a closed hexagon', () => {
-        const grid = createHexGrid();
-        const vertices = getHexVertices(0, 0, grid);
-        // All vertices should be roughly equidistant from center
-        const center = getHexCenter(0, 0, grid);
-        const distances = vertices.map(v =>
-          Math.sqrt(Math.pow(v.x - center.x, 2) + Math.pow(v.y - center.y, 2))
-        );
-        const avgDist = distances.reduce((a, b) => a + b) / distances.length;
-        distances.forEach(d => {
-          expect(d).toBeCloseTo(avgDist, 0);
-        });
-      });
-    });
-
-    describe('findNearestHexCell', () => {
-      it('finds cell when point is at center', () => {
-        const grid = createHexGrid();
-        const center = getHexCenter(2, 2, grid);
-        const result = findNearestHexCell(center, grid);
-        expect(result).toEqual({ row: 2, col: 2 });
-      });
-
-      it('returns null for point outside grid', () => {
-        const grid = createHexGrid();
-        const result = findNearestHexCell({ x: -100, y: -100 }, grid);
-        expect(result).toBeNull();
-      });
-    });
-
-    describe('getHexGridDimensions', () => {
-      it('calculates grid dimensions', () => {
-        const grid = createHexGrid(5, 5);
-        const dims = getHexGridDimensions(grid);
-        expect(dims.width).toBeGreaterThan(0);
-        expect(dims.height).toBeGreaterThan(0);
-      });
-    });
-  });
-
-  describe('Triangular Grid', () => {
-    describe('getTriangleOrientation', () => {
-      it('alternates between up and down', () => {
-        expect(getTriangleOrientation(0, 0)).toBe('up');
-        expect(getTriangleOrientation(0, 1)).toBe('down');
-        expect(getTriangleOrientation(1, 0)).toBe('down');
-        expect(getTriangleOrientation(1, 1)).toBe('up');
-      });
-    });
-
-    describe('getTriangleSize', () => {
-      it('calculates correct dimensions', () => {
-        const size = getTriangleSize(40);
-        expect(size.width).toBe(40);
-        expect(size.height).toBeCloseTo((Math.sqrt(3) / 2) * 40);
-      });
-    });
-
-    describe('getTriangleVertices', () => {
-      it('returns 3 vertices for up-pointing triangle', () => {
-        const grid: GridConfig = { ...createHexGrid(), gridType: 'triangle' };
-        const vertices = getTriangleVertices(0, 0, grid);
-        expect(vertices).toHaveLength(3);
-      });
-
-      it('returns 3 vertices for down-pointing triangle', () => {
-        const grid: GridConfig = { ...createHexGrid(), gridType: 'triangle' };
-        const vertices = getTriangleVertices(0, 1, grid);
-        expect(vertices).toHaveLength(3);
-      });
-    });
-
-    describe('findNearestTriangleCell', () => {
-      it('finds cell when point is at center', () => {
-        const grid: GridConfig = { ...createHexGrid(), gridType: 'triangle' };
-        const center = getTriangleCenter(0, 0, grid);
-        const result = findNearestTriangleCell(center, grid);
-        expect(result).not.toBeNull();
-      });
-    });
-  });
-
   describe('Pyramid Grid', () => {
     describe('getPyramidRowCols', () => {
       it('returns correct number of columns per row', () => {
@@ -184,49 +69,46 @@ describe('hexGridUtils', () => {
       });
     });
   });
+});
 
-  describe('Cell ID functions', () => {
-    describe('hex cell IDs', () => {
-      it('generates correct hex cell ID', () => {
-        expect(getHexCellId(2, 3)).toBe('hex-2-3');
-      });
+it('uses diameter-based hex geometry with padding and odd-row offsets', () => {
+  const grid = createHexGrid(5, 3);
+  expect(getHexSize(40)).toEqual({ width: expect.closeTo(34.6410161514, 5), height: 40 });
+  expect(getHexCenter(0, 0, grid)).toEqual({ x: expect.closeTo(37.3205080757, 5), y: 40 });
+  expect(getHexCenter(1, 0, grid)).toEqual({ x: expect.closeTo(54.6410161514, 5), y: 70 });
+  expect(getHexGridDimensions(grid)).toEqual({ width: expect.closeTo(161.2435565298, 5), height: 200 });
+  const vertices = getHexVertices(0, 0, grid);
+  expect(vertices).toHaveLength(6);
+  const expected = [[54.6410161514, 50], [37.3205080757, 60], [20, 50], [20, 30], [37.3205080757, 20], [54.6410161514, 30]];
+  vertices.forEach((v, i) => { expect(v.x).toBeCloseTo(expected[i][0], 5); expect(v.y).toBeCloseTo(expected[i][1], 5); });
+  expect(findNearestHexCell({ x: 106.6025403784, y: 100 }, grid)).toEqual({ row: 2, col: 2 });
+  expect(findNearestHexCell({ x: -100, y: -100 }, grid)).toBeNull();
+});
 
-      it('parses hex cell ID', () => {
-        expect(parseHexCellId('hex-2-3')).toEqual({ row: 2, col: 3 });
-      });
+it('locates both triangle orientations using their padded geometry', () => {
+  const grid: GridConfig = { ...createHexGrid(), gridType: 'triangle' };
+  expect(getTriangleSize(40)).toEqual({ width: 40, height: expect.closeTo(34.6410161514, 5) });
+  expect([getTriangleOrientation(0, 0), getTriangleOrientation(0, 1), getTriangleOrientation(1, 0), getTriangleOrientation(1, 1)]).toEqual(['up', 'down', 'down', 'up']);
+  for (const [col, x, y, expectedVertices] of [
+    [0, 40, 43.0940107676, [[40, 20], [60, 54.6410161514], [20, 54.6410161514]]],
+    [1, 60, 31.5470053838, [[40, 20], [80, 20], [60, 54.6410161514]]],
+  ] as const) {
+    expect(getTriangleCenter(0, col, grid)).toEqual({ x, y: expect.closeTo(y, 5) });
+    const vertices = getTriangleVertices(0, col, grid);
+    expect(vertices).toHaveLength(3);
+    vertices.forEach((v, i) => { expect(v.x).toBe(expectedVertices[i][0]); expect(v.y).toBeCloseTo(expectedVertices[i][1], 5); });
+    expect(findNearestTriangleCell({ x, y }, grid)).toEqual({ row: 0, col });
+  }
+});
 
-      it('returns null for invalid hex cell ID', () => {
-        expect(parseHexCellId('cell-0-0')).toBeNull();
-        expect(parseHexCellId('invalid')).toBeNull();
-      });
-    });
-
-    describe('triangle cell IDs', () => {
-      it('generates correct tri cell ID', () => {
-        expect(getTriCellId(1, 4)).toBe('tri-1-4');
-      });
-
-      it('parses tri cell ID', () => {
-        expect(parseTriCellId('tri-1-4')).toEqual({ row: 1, col: 4 });
-      });
-
-      it('returns null for invalid tri cell ID', () => {
-        expect(parseTriCellId('hex-0-0')).toBeNull();
-      });
-    });
-
-    describe('pyramid cell IDs', () => {
-      it('generates correct pyramid cell ID', () => {
-        expect(getPyramidCellId(3, 2)).toBe('pyr-3-2');
-      });
-
-      it('parses pyramid cell ID', () => {
-        expect(parsePyramidCellId('pyr-3-2')).toEqual({ row: 3, col: 2 });
-      });
-
-      it('returns null for invalid pyramid cell ID', () => {
-        expect(parsePyramidCellId('cell-0-0')).toBeNull();
-      });
-    });
-  });
+it.each([
+  ['hex', getHexCellId, parseHexCellId, 'tri-2-3'],
+  ['tri', getTriCellId, parseTriCellId, 'hex-2-3'],
+  ['pyr', getPyramidCellId, parsePyramidCellId, 'cell-2-3'],
+] as const)('%s IDs roundtrip and reject another grid prefix', (prefix, make, parse, wrongPrefix) => {
+  const id = make(2, 3);
+  expect(id).toBe(prefix + '-2-3');
+  expect(parse(id)).toEqual({ row: 2, col: 3 });
+  expect(parse(wrongPrefix)).toBeNull();
+  expect(parse('invalid')).toBeNull();
 });

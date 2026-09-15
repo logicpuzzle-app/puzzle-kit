@@ -27,37 +27,47 @@ const makeSegment = (
   midpoint: null,
 });
 
-describe('normalizeLineGroup (undirected to directed)', () => {
-  it('infers forward directions for scrambled undirected chain →→↓↓←←↓↓→→', () => {
-    const base = [
-      makeSegment('a', [0, 0], [10, 0]),
-      makeSegment('b', [10, 0], [20, 0]),
-      makeSegment('c', [20, 0], [20, 10]),
-      makeSegment('d', [20, 10], [20, 20]),
-      makeSegment('e', [20, 20], [10, 20]),
-      makeSegment('f', [10, 20], [0, 20]),
-      makeSegment('g', [0, 20], [0, 30]),
-      makeSegment('h', [0, 30], [0, 40]),
-    ];
+describe('normalizeLineGroup', () => {
+  it('orders a converted zigzag and assigns every segment direction', () => {
+    const a = makeSegment('a', [0, 0], [20, 0], 'endpoint');
+    const b = makeSegment('b', [20, 0], [20, 10], 'endpoint');
+    const c = makeSegment('c', [20, 10], [0, 10], 'endpoint');
+    const d = makeSegment('d', [0, 10], [0, 30], 'endpoint');
+    expect(normalizeLineGroup([c, a, d, b], true)).toMatchObject({
+      lineIds: ['a', 'b', 'c', 'd'],
+      arrowDirections: new Map([
+        ['a', 'forward'], ['b', 'forward'], ['c', 'forward'], ['d', 'forward'],
+      ]),
+    });
+  });
 
-    // Simulate conversion: mark directed without arrowDirection
-    const directed: LineWithPosition[] = base.map((seg): LineWithPosition => ({
-      ...seg,
-      line: { ...seg.line, directed: 'endpoint', arrowDirection: undefined },
-    }));
+  it('preserves an existing backward heading through a bend', () => {
+    const a = makeSegment('a', [0, 0], [10, 0], 'endpoint', 'backward');
+    const b = makeSegment('b', [10, 0], [10, 20], 'endpoint', 'backward');
+    expect(normalizeLineGroup([b, a], false)).toMatchObject({
+      lineIds: ['b', 'a'],
+      arrowDirections: new Map([['a', 'backward'], ['b', 'backward']]),
+    });
+  });
 
-    const scrambled = [directed[4], directed[0], directed[7], directed[2], directed[6], directed[1], directed[5], directed[3]];
-    const result = normalizeLineGroup(scrambled, true);
-    expect(result).not.toBeNull();
-    if (!result) return;
+  it('assigns backward only to the segment stored against the chain flow', () => {
+    const a = makeSegment('a', [0, 0], [10, 0], 'endpoint');
+    const b = makeSegment('b', [20, 0], [10, 0], 'endpoint');
+    expect(normalizeLineGroup([a, b], true)).toMatchObject({
+      lineIds: ['a', 'b'],
+      arrowDirections: new Map([['a', 'forward'], ['b', 'backward']]),
+    });
+  });
 
-    // All segments should be forward after normalization
-    for (const dir of result.arrowDirections.values()) {
-      expect(dir).toBe('forward');
-    }
-
-    // Order should connect all segments
-    expect(new Set(result.lineIds)).toEqual(new Set(base.map((s) => s.line.id)));
-    expect(result.lineIds.length).toBe(base.length);
+  it('normalizes conflicting arrows into one connected heading', () => {
+    const a = makeSegment('a', [0, 0], [10, 0], 'endpoint', 'forward');
+    const b = makeSegment('b', [10, 0], [20, 0], 'endpoint', 'forward');
+    const c = makeSegment('c', [20, 0], [20, 10], 'endpoint', 'backward');
+    const result = normalizeLineGroup([c, a, b], false);
+    // Conflicting arrows have no preferred winner, but must form one ordered path.
+    expect([
+      { lineIds: ['a', 'b', 'c'], arrowDirections: { a: 'forward', b: 'forward', c: 'forward' } },
+      { lineIds: ['c', 'b', 'a'], arrowDirections: { a: 'backward', b: 'backward', c: 'backward' } },
+    ]).toContainEqual({ lineIds: result?.lineIds, arrowDirections: Object.fromEntries(result!.arrowDirections) });
   });
 });

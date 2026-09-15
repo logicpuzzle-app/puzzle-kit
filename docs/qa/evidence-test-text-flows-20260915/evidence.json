@@ -1,0 +1,62 @@
+[
+  {
+    "phase": "before",
+    "recordedPhase": "before",
+    "case": "text-ui: long text remains multiline when reopened through Alphabet",
+    "project": "mobile-chrome",
+    "revision": "c6e07799cfec71aa7d345216acca780f048c0bb2",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- before e2e/issue-priority.spec.ts e2e/room-text-access.spec.ts e2e/text-editing.spec.ts --grep 'text: colons|edit: text replacement|Free text is reachable|text-ui: long text' --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "text-editing-before.webm",
+    "screenshot": "text-editing-before.png",
+    "videoSha256": "a2be17b2fefa5051fb0af4cd4fb4149e9362eef787bd34f60edcde252c1b63e7",
+    "screenshotSha256": "39b61ef5f4a0cb2948f6712f48b5dc5d6580e2c4c9d23d62faa582da77c76b6a",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "5.360000"
+      }
+    },
+    "fullyDecoded": true
+  },
+  {
+    "phase": "after",
+    "recordedPhase": "after",
+    "case": "text-ui: long text remains multiline when reopened through Alphabet",
+    "project": "mobile-chrome",
+    "revision": "34ce3892399d9f6babf86c83c178a503c4703a09",
+    "workingTree": "",
+    "command": "QA_EXTERNAL_BASE_URL=http://127.0.0.1:4186 npm run qa:capture -- after e2e/issue-priority.spec.ts e2e/room-text-access.spec.ts e2e/text-editing.spec.ts --grep 'text: colons|edit: text replacement|Free text is reachable|text-ui: long text' --project=chromium --project=mobile-chrome",
+    "status": "passed",
+    "runtimeErrors": [],
+    "video": "text-editing-after.webm",
+    "screenshot": "text-editing-after.png",
+    "videoSha256": "2337adb64de18cfc6ac14b0114bf349892bde1a332c25b2611d41f1989b114ef",
+    "screenshotSha256": "3160f44d4b98c54c0920745cd8bef0e7c79e1f098ce8e54e1685c8f6bdeb83a8",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp8",
+          "width": 392,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "7.560000"
+      }
+    },
+    "fullyDecoded": true
+  }
+]
