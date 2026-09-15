@@ -30,7 +30,8 @@
     "README.md",
     "LICENSE",
     "docs/library-usage.md",
-    "docs/embedded-example.md"
+    "docs/embedded-example.md",
+    "docs/licenses/penpa-edit.txt"
   ],
   "scripts": {
     "check:solver-sourcemaps": "node scripts/check-solver-sourcemaps.mjs",

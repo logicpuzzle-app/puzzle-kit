@@ -7,4 +7,3 @@ export type BattleshipSymbolType = typeof BATTLESHIP_SYMBOLS[number] | 'ship_mid
 export function isBattleshipSymbol(type: string): type is BattleshipSymbolType {
   return type === 'ship_middle_v' || (BATTLESHIP_SYMBOLS as readonly string[]).includes(type);
 }
-
