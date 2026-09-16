@@ -18,7 +18,7 @@
 
 ## Board IDs and References
 - Start with the contract's decision table: distinguish board entity IDs, annotation record IDs, coordinates, and display/external numbering. For each lookup, identify scope, unresolved behavior, and lifetime before choosing an API.
-- Follow [the board ID contract](docs/board-id-contract.md). IDs are opaque keys scoped to a board and entity kind; do not derive coordinates, kinds, adjacency, order, or array indexes from their spelling.
+- Follow [the board ID contract](docs/board-id-contract.md). Board entity references are opaque keys scoped to a board, reference mode, and entity kind; do not derive coordinates, kinds, adjacency, order, or array indexes from their spelling. Use the data's declared reference mode, which need not match the display mode (vertex shading always references Topology).
 - Compare IDs exactly without trimming, case folding, Unicode normalization, or numeric conversion. An ID does not prove that its target currently exists or is editable; check the scoped topology and state.
 - Resolve geometry and adjacency from topology metadata/query APIs. Grid-format lookup belongs to an explicitly scoped compatibility adapter; a missing topology reference is not permission to parse the ID.
 - Choose reference mode from explicit board/input context before lookup, never from whether an ID parses. Topology IDs may look exactly like legacy Grid IDs; missing topology must remain unresolved.
