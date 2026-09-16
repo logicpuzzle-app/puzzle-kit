@@ -16,8 +16,8 @@ const hexOffsets = [[0, -2], [1, -1], [1, 1], [0, 2], [-1, 1], [-1, -1]];
  * not persistent identity and cannot resolve a missing reference.
  */
 export function resizeLatticeExtent(topology: GridTopology, before: GridConfig, after: GridConfig): GridTopology | null {
-  const kind = before.gridType ?? 'square', hex = kind === 'hex';
-  if ((!hex && kind !== 'square') || (after.gridType ?? 'square') !== kind
+  const kind = before.gridType ?? 'square', hex = kind === 'hex', triangle = kind === 'triangle', square = kind === 'square';
+  if ((!hex && !triangle && !square) || (after.gridType ?? 'square') !== kind
     || (topology.appliedPreset && topology.appliedPreset.preset !== 'square')
     || [before, after].some(grid => grid.mergedCells?.length || grid.splitLines?.length || grid.sculptOperations?.length)) return null;
   const base = topology.exclusionBase ?? topology;
@@ -26,22 +26,28 @@ export function resizeLatticeExtent(topology: GridTopology, before: GridConfig, 
     || [before, after].some(grid => !Number.isFinite(grid.cellSize) || grid.cellSize <= 0 || !Number.isFinite(grid.outerPadding)
       || [grid.marginTop, grid.marginBottom, grid.marginLeft, grid.marginRight].some(n => n !== undefined && (!Number.isInteger(n) || n < 0)))
     || base.cells.size !== oldExtent.rows * oldExtent.cols) return null;
-  const oldPhase = base.sourceConfig?.hexRowOffset ?? 0;
+  const oldPhase = (triangle ? base.sourceConfig?.trianglePhase : base.sourceConfig?.hexRowOffset) ?? 0;
   const rowShift = (after.marginTop ?? 0) - (before.marginTop ?? 0);
   const colShift = (after.marginLeft ?? 0) - (before.marginLeft ?? 0);
-  // Preserve the stagger of surviving hex rows, including odd top insertions.
+  // Preserve hex stagger and triangle orientation after odd top/left insertions.
   // This is explicit layout metadata, not information encoded in any node ID.
-  const nextPhase = ((oldPhase - rowShift) % 2 + 2) % 2 as 0 | 1;
+  const nextPhase = ((oldPhase - rowShift - (triangle ? colShift : 0)) % 2 + 2) % 2 as 0 | 1;
+  const upward = (row: number, col: number, phase: number) => (row + col + phase) % 2 === 0;
   const center = (row: number, col: number, phase: number): Point => hex
     ? { x: 2 * col + ((row + phase) % 2) + 1, y: 3 * row + 2 }
+    : triangle ? { x: col + 1, y: row + (upward(row, col, phase) ? 2 / 3 : 1 / 3) }
     : { x: col + .5, y: row + .5 };
   const corners = (row: number, col: number, phase: number): Point[] => {
     const c = center(row, col, phase);
+    if (triangle) return upward(row, col, phase)
+      ? [{ x: col + 1, y: row }, { x: col, y: row + 1 }, { x: col + 2, y: row + 1 }]
+      : [{ x: col, y: row }, { x: col + 2, y: row }, { x: col + 1, y: row + 1 }];
     return hex ? hexOffsets.map(([x, y]) => ({ x: c.x + x, y: c.y + y }))
       : [{ x: col, y: row }, { x: col + 1, y: row }, { x: col + 1, y: row + 1 }, { x: col, y: row + 1 }];
   };
   const units = (grid: GridConfig) => hex
     ? { x: grid.cellSize * Math.sqrt(3) / 4, y: grid.cellSize / 4 }
+    : triangle ? { x: grid.cellSize / 2, y: grid.cellSize * Math.sqrt(3) / 2 }
     : { x: grid.cellSize, y: grid.cellSize };
   const oldUnits = units(before), newUnits = units(after);
   const point = (p: Point, grid: GridConfig, unit: Point) => ({ x: grid.outerPadding + p.x * unit.x, y: grid.outerPadding + p.y * unit.y });
@@ -96,7 +102,7 @@ export function resizeLatticeExtent(topology: GridTopology, before: GridConfig, 
       if (vertexSlots.has(key)) continue;
       const old = oldVertices.get(slot(p.x - delta.x, p.y - delta.y)), id = old?.id ?? fresh();
       vertices.set(id, { ...old, id, position: old ? move(old.position) : point(p, after, newUnits),
-        index: hex ? null : [p.y, p.x], row: hex ? undefined : p.y, col: hex ? undefined : p.x,
+        index: square ? [p.y, p.x] : null, row: square ? p.y : undefined, col: square ? p.x : undefined,
         adjacentCells: [], adjacentEdges: [], adjacentVertices: [] });
       vertexSlots.set(key, id);
     }
@@ -111,11 +117,11 @@ export function resizeLatticeExtent(topology: GridTopology, before: GridConfig, 
       if (!edgeId) {
         const oldEdge = oldEdges.get(key); edgeId = oldEdge?.id ?? fresh();
         const p = vertices.get(a)!.position, q = vertices.get(b)!.position;
-        const edgeRow = hex ? undefined : Math.min(vertices.get(a)!.row!, vertices.get(b)!.row!);
-        const edgeCol = hex ? undefined : Math.min(vertices.get(a)!.col!, vertices.get(b)!.col!);
+        const edgeRow = square ? Math.min(vertices.get(a)!.row!, vertices.get(b)!.row!) : undefined;
+        const edgeCol = square ? Math.min(vertices.get(a)!.col!, vertices.get(b)!.col!) : undefined;
         edges.set(edgeId, { ...oldEdge, id: edgeId, startVertex: oldEdge?.startVertex ?? a, endVertex: oldEdge?.endVertex ?? b,
           midpoint: oldEdge ? move(oldEdge.midpoint) : { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 },
-          direction: hex ? undefined : near(p.y, q.y) ? 'h' : 'v', index: hex ? null : [edgeRow!, edgeCol!], row: edgeRow, col: edgeCol,
+          direction: square ? near(p.y, q.y) ? 'h' : 'v' : undefined, index: square ? [edgeRow!, edgeCol!] : null, row: edgeRow, col: edgeCol,
           adjacentCells: [], isBoundary: true });
         edgePairs.set(key, edgeId);
       }
@@ -138,8 +144,9 @@ export function resizeLatticeExtent(topology: GridTopology, before: GridConfig, 
     edges.get(id)!.adjacentCells.filter(other => other !== cell.id && !cells.get(other)!.outboard));
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const { position: p } of vertices.values()) { minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y); }
+  const configuration = { ...after, ...(hex && { hexRowOffset: nextPhase }), ...(triangle && { trianglePhase: nextPhase }) };
   const result: GridTopology = { cells, vertices, edges, appliedPreset: { preset: 'square', intensity: 0.5 },
-    sourceConfig: { ...after, ...(hex && { hexRowOffset: nextPhase }), voidCells: undefined, disabledCells: undefined, outboardCells: undefined },
+    sourceConfig: { ...configuration, voidCells: undefined, disabledCells: undefined, outboardCells: undefined },
     bounds: { minX, minY, maxX, maxY, width: maxX + after.outerPadding, height: maxY + after.outerPadding } };
-  return applyCellExclusions(result, { ...after, ...(hex && { hexRowOffset: nextPhase }) });
+  return applyCellExclusions(result, configuration);
 }

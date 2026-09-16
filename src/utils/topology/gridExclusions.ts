@@ -19,7 +19,7 @@ export function applyGridCellExclusions(topology: GridTopology, grid: GridConfig
     const key = JSON.stringify([row, col]);
     cellsByIndex.set(key, cellsByIndex.has(key) ? null : cell.id);
   }
-  const hasMargins = ['square', 'hex'].includes(grid.gridType ?? 'square');
+  const hasMargins = ['square', 'hex', 'triangle'].includes(grid.gridType ?? 'square');
   const translate = (ids: string[] | undefined) => ids?.flatMap(id => {
     const index = getCellIndexById(id, grid);
     if (!index) return [];

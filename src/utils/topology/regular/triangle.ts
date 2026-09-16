@@ -55,7 +55,7 @@ export function triangularGridToTopology(config: GridConfig): GridTopology {
       // Void cells are completely skipped (no topology)
       if (voidSet.has(cellId)) continue;
 
-      const isUpward = isUpwardTriangle(row, col);
+      const isUpward = isUpwardTriangle(row + (config.trianglePhase ?? 0), col);
 
       // Calculate center position
       const centerX = outerPadding + col * halfWidth + halfWidth;

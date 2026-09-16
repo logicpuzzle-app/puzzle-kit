@@ -14,6 +14,7 @@
 [正方格子の行列・周囲セル編集](board-extent-identity.md)は存続IDを引き継ぐ方式へ移行。
 [接続を変えない表示変形](board-preset-identity.md)も、元座標を保存して実際のグラフへ適用する。
 [六角格子も共通の編集器](hex-extent-identity.md)へ移行し、元座標を持つ正方・六角の表示変形中も存続IDを保持する。
+[三角格子のTopology行列編集](triangle-extent-identity.md)も同じ編集器へ移行し、奇数個の上・左追加で向きと存続IDを保持する。従来Grid形式との列数解釈の差は残る。
 [新規の結合・解除](board-merge-identity.md)は結合前の実グラフを保持する方式へ移行。
 [既知の旧結合ファイル](legacy-merge-identity.md)も実際のIDと境界を保持して移行する。
 [結合後の正方・六角格子の行列変更](merged-extent-identity.md)も、元セルの編集と結合の再投影へ移行した。

@@ -491,6 +491,8 @@ export type IsometricView = 'exterior' | 'interior';
 export interface GridConfig {
   /** Hex layout phase, retained when top margin rows are inserted or removed. Not a node identity. */
   hexRowOffset?: 0 | 1;
+  /** Triangle orientation phase, retained on odd top/left margin edits. Not a node identity. */
+  trianglePhase?: 0 | 1;
   /** Clockwise display rotation in degrees; logical cell/edge IDs remain unchanged. */
   boardRotation?: number;
   rows: number;

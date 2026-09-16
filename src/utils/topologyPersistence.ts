@@ -35,6 +35,9 @@ export function restoreBoard(grid: GridConfig, settings: Settings): { topology: 
   if (grid.hexRowOffset !== undefined && grid.hexRowOffset !== 0 && grid.hexRowOffset !== 1) {
     throw new Error('Invalid grid hex row offset');
   }
+  if (grid.trianglePhase !== undefined && grid.trianglePhase !== 0 && grid.trianglePhase !== 1) {
+    throw new Error('Invalid grid triangle phase');
+  }
   const migratedSculpt = settings.topology !== undefined
     ? restoreLegacySculptSnapshot(settings.topology, grid, settings) : null;
   let topology = settings.topology !== undefined
@@ -46,6 +49,9 @@ export function restoreBoard(grid: GridConfig, settings: Settings): { topology: 
     : createGridReferenceTopology(grid);
   if (grid.gridType === 'hex' && (grid.hexRowOffset ?? 0) !== (topology.sourceConfig?.hexRowOffset ?? 0)) {
     throw new Error('Grid and topology disagree on hex row offset');
+  }
+  if (grid.gridType === 'triangle' && (grid.trianglePhase ?? 0) !== (topology.sourceConfig?.trianglePhase ?? 0)) {
+    throw new Error('Grid and topology disagree on triangle phase');
   }
   if (topology.mergeBase) {
     const canonical = (groups: string[][]) => JSON.stringify(groups.map(group => [...group].sort()).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))));

@@ -36,7 +36,9 @@ setGrid・resizeGrid・プレビュー・公開resizeTopology/expandTopology/shr
 
 ## 未対応範囲
 
-三角格子・その他の格子、独自形状、結合・分割・彫刻を伴う構造変更の再生成経路は未移行。
+[三角格子のTopology編集](triangle-extent-identity.md)も共通編集器へ移行した。
+結合・分割の保持については[結合後の編集](merged-extent-identity.md)と[分割の契約](board-split-identity.md)を参照。
+その他の格子、独自形状、彫刻を伴う構造変更の再生成経路は未移行。
 格子設定がsquare/hexでも、実際のグラフが規則的な格子ではない場合に推測で対応を付けない。
 元座標のない旧形式の変形済み盤面も、形状の一致を検証できなければこの編集器の対象外になる。
 既存の代替経路にはID再割当ての課題が残るため、頂点塗りPRのマージ準備完了とはしない。

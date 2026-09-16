@@ -62,7 +62,10 @@ export function resizeEditedExtent(topology: GridTopology, before: GridConfig, a
     if (!projected) return null;
     current = projected;
   }
-  const grid = editedGrid(current, { ...after, ...(base.sourceConfig?.hexRowOffset !== undefined && { hexRowOffset: base.sourceConfig.hexRowOffset }) });
+  const grid = editedGrid(current, { ...after,
+    ...(base.sourceConfig?.hexRowOffset !== undefined && { hexRowOffset: base.sourceConfig.hexRowOffset }),
+    ...(base.sourceConfig?.trianglePhase !== undefined && { trianglePhase: base.sourceConfig.trianglePhase }),
+  });
   for (const key of ['voidCells', 'disabledCells', 'outboardCells'] as const) if (grid[key]) {
     grid[key] = grid[key]!.flatMap(id => replacements.get(id) ?? [id]).filter(id => current.cells.has(id));
   }

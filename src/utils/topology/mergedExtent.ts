@@ -76,6 +76,7 @@ export function resizeMergedExtent(topology: GridTopology, before: GridConfig, a
   if (!merged) return null;
   const grid: GridConfig = { ...after,
     ...(resized.sourceConfig?.hexRowOffset !== undefined && { hexRowOffset: resized.sourceConfig.hexRowOffset }),
+    ...(resized.sourceConfig?.trianglePhase !== undefined && { trianglePhase: resized.sourceConfig.trianglePhase }),
     mergedCells: groups.length ? groups.map(group => group.cellIds) : undefined,
   };
   for (const key of ['voidCells', 'disabledCells', 'outboardCells'] as const) {
