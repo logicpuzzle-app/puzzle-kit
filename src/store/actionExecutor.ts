@@ -456,6 +456,10 @@ export class ActionExecutor {
         }));
         break;
 
+      case 'SET_BOARD_ROTATION':
+        set((state) => ({ grid: { ...state.grid, boardRotation: action.after } }));
+        break;
+
       case 'SET_GRID':
         set((state) => ({
           grid: { ...state.grid, ...action.grid },

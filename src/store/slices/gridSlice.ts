@@ -2,6 +2,7 @@
  * Grid Slice - Grid configuration, topology, and cell operations
  */
 
+import { normalizeBoardRotation } from '../../utils/boardLayout';
 import type { GridConfig } from '../../types';
 import type { GridSlice, SliceCreator, PuzzleStore } from './types';
 import type { TopologyPreset, GridTopology } from '../../utils/gridTopology';
@@ -124,6 +125,15 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
         ...(forceTopology ? { useTopology: true } : {}),
       };
     }),
+
+  setBoardRotation: (angle) => set((state) => {
+    if (!Number.isFinite(angle)) return {};
+    const before = normalizeBoardRotation(state.grid.boardRotation);
+    const after = normalizeBoardRotation(angle);
+    if (before === after) return {};
+    state.historyManager.addAction({ type: 'SET_BOARD_ROTATION', before, after });
+    return { grid: { ...state.grid, boardRotation: after } };
+  }),
 
   // Topology mode
   useTopology: true,

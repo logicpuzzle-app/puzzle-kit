@@ -306,6 +306,8 @@ export const applyActionToState = (
     case 'EDIT_GRID_GEOMETRY':
       // Restore exact snapshots, including removal of optional geometry fields.
       return { grid: action.after.grid, topology: action.after.topology };
+    case 'SET_BOARD_ROTATION':
+      return { grid: { ...state.grid, boardRotation: action.after } };
     case 'SET_GRID':
       return {
         grid: { ...state.grid, ...action.grid },

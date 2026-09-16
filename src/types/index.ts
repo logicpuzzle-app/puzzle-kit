@@ -469,6 +469,8 @@ export type IsometricFace = 'top' | 'left' | 'right' | 'bottom';
 export type IsometricView = 'exterior' | 'interior';
 
 export interface GridConfig {
+  /** Clockwise display rotation in degrees; logical cell/edge IDs remain unchanged. */
+  boardRotation?: number;
   rows: number;
   cols: number;
   level?: number; // for iso/cube grids (height/depth)
