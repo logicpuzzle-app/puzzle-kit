@@ -1,0 +1,119 @@
+{
+  "before": {
+    "commit": "3cd1bf0b17b4dc3367cf54e964b0ef447edfba64",
+    "createdAt": "2026-09-16T15:26:50.630Z",
+    "stats": {
+      "startTime": "2026-09-16T15:26:51.173Z",
+      "duration": 27531.32,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "testSha256": "0bae8c07670322fd3e127d03aaad0bdd3f3964992c0a3af1ab67bada1ab949d2",
+    "fixtureSha256": "f7dbf53acec5443e0126a3e6ef7f6a43c28246c8af6655244009790e8ab25713",
+    "tests": [
+      {
+        "title": "keyboard deletes the cell symbol and preserves the same-ID vertex symbol",
+        "project": "chromium",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Expected vertex circle at x=20; received cell circle at x=40."
+      },
+      {
+        "title": "keyboard text keeps cell identity alongside a same-ID vertex note",
+        "project": "chromium",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Expected visible keyboard text; no text element rendered."
+      }
+    ]
+  },
+  "after": {
+    "commit": "6706c24f7c66af3d2b1f0dc1a62190d16f9b15c2",
+    "createdAt": "2026-09-16T15:28:06.660Z",
+    "stats": {
+      "startTime": "2026-09-16T15:28:07.078Z",
+      "duration": 5059.385,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "testSha256": "0bae8c07670322fd3e127d03aaad0bdd3f3964992c0a3af1ab67bada1ab949d2",
+    "fixtureSha256": "f7dbf53acec5443e0126a3e6ef7f6a43c28246c8af6655244009790e8ab25713",
+    "tests": [
+      {
+        "title": "keyboard deletes the cell symbol and preserves the same-ID vertex symbol",
+        "project": "chromium",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "keyboard text keeps cell identity alongside a same-ID vertex note",
+        "project": "chromium",
+        "status": "passed",
+        "runtimeErrors": []
+      }
+    ]
+  },
+  "scope": "Desktop Chromium; native File Open/Save, keyboard cursor navigation, Delete and ? input, Undo/Redo, save/reload. No internal state injection. Before stops on the reproduced error; subsequent history/persistence checks run in After. No mobile or physical-device claim.",
+  "files": {
+    "after-chromium-delete-initial.png": {
+      "sha256": "15c09c8350d01d599613693625d78c85703edccb819b9b1f4c3c27b4987c3026",
+      "bytes": 37454
+    },
+    "after-chromium-delete.png": {
+      "sha256": "e6b0eea500b8502ab7d9c884a0410e616e1d98d5b3c38e50d909b02db590da7e",
+      "bytes": 36957
+    },
+    "after-chromium-delete.webm": {
+      "sha256": "48298226fb4cb33b73aa8229ae0c4aea8ab28dce60d363d3d4b611fb2e91c86d",
+      "bytes": 77812,
+      "durationSeconds": 3.04,
+      "fullDecode": "passed"
+    },
+    "after-chromium-input-initial.png": {
+      "sha256": "6690ed4bc6bf3698db7139087c38bdf96ce5f572e4ec1b04e7aeb3757cb55ac2",
+      "bytes": 37005
+    },
+    "after-chromium-input.png": {
+      "sha256": "97a1b84d7c4cf975d202c7baae6968cf6ddeaad44f6ed37eedc3a410b5e2c881",
+      "bytes": 37247
+    },
+    "after-chromium-input.webm": {
+      "sha256": "bb52d2327cd71ea2ad3898b3beb5e7dc565270dec0a68f695343216c210a2ab4",
+      "bytes": 76486,
+      "durationSeconds": 2.04,
+      "fullDecode": "passed"
+    },
+    "before-chromium-delete-initial.png": {
+      "sha256": "4f73b97d7cd9b532202d84540e9763c27b9a6b566d42fa03bf308d134e33978d",
+      "bytes": 37272
+    },
+    "before-chromium-delete.png": {
+      "sha256": "63dc3afcd99d89cc4f9afc43b9c108c67febb851fbb313438606881e9b5d0a52",
+      "bytes": 36803
+    },
+    "before-chromium-delete.webm": {
+      "sha256": "754e7fa08722da7ba1bd34fcd7ac96e0a62a327d9f2df0aec63bdbe8a93c9bf4",
+      "bytes": 168184,
+      "durationSeconds": 14.16,
+      "fullDecode": "passed"
+    },
+    "before-chromium-input-initial.png": {
+      "sha256": "f4815c946b4f40fe6ef6fa156f17f9d90438e4621e8646a4d2747d8c3389371a",
+      "bytes": 36320
+    },
+    "before-chromium-input.png": {
+      "sha256": "e7cc503f66c498ef5d50e4387297024ccf0dd8f547add7fb21a1d24ccd59bc11",
+      "bytes": 36266
+    },
+    "before-chromium-input.webm": {
+      "sha256": "1705063905e980d7d0ee8a06371f4b89e1fa253ec1b2de425e0defd0ff77e2a9",
+      "bytes": 172601,
+      "durationSeconds": 13.84,
+      "fullDecode": "passed"
+    }
+  }
+}
