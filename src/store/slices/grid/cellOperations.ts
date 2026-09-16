@@ -4,6 +4,7 @@
  */
 import type { GridConfig } from '../../../types';
 import type { PuzzleStore } from '../types';
+import { applyGridCellExclusions } from '../../../utils/topology/gridExclusions';
 import { applyCellExclusions } from '../../../utils/topology/exclusions';
 import { prepareExclusionBase } from '../../../utils/topology/legacyExclusions';
 import {
@@ -54,7 +55,8 @@ export const toggleCellDisabled = (
     disabledCells: newLegacyCells.length > 0 ? newLegacyCells : undefined,
   };
 
-  if (state.useTopology && state.topology) {
+  if (state.topology) {
+    if (!state.useTopology) return { grid: newGrid, topology: applyGridCellExclusions(state.topology, newGrid) };
     const base = prepareExclusionBase(state.topology, state.grid, state.topologyPreset, state.topologyIntensity);
     const newTopology = applyCellExclusions(base, newGrid);
     return { grid: newGrid, topology: newTopology };
@@ -113,7 +115,8 @@ export const setCellDisabled = (
 
   // Visibility projection also works during a drag; no topology regeneration is
   // required. Keep the legacy batching argument for callers of this API.
-  if (state.useTopology && state.topology) {
+  if (state.topology) {
+    if (!state.useTopology) return { grid: newGrid, topology: applyGridCellExclusions(state.topology, newGrid) };
     const base = prepareExclusionBase(state.topology, state.grid, state.topologyPreset, state.topologyIntensity);
     const newTopology = applyCellExclusions(base, newGrid);
     return { grid: newGrid, topology: newTopology };

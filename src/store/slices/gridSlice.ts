@@ -13,6 +13,8 @@ import {
   resizeTopology,
 } from '../../utils/gridTopology';
 import { remapLineEdgeIdsForTopology } from '../../utils/lineTopology';
+import { applyGridCellExclusions, createGridReferenceTopology } from '../../utils/topology/gridExclusions';
+import { getCellIndexById } from '../../utils/gridUtils';
 import { applyCellExclusions } from '../../utils/topology/exclusions';
 import { scaleTopologyLayout } from '../../utils/topology/layout';
 import { prepareExclusionBase } from '../../utils/topology/legacyExclusions';
@@ -92,9 +94,9 @@ function editSquareExtent(state: PuzzleStore, newGrid: GridConfig): Partial<Puzz
   const full = resized.exclusionBase ?? resized;
   const grid = { ...newGrid };
   for (const key of ['voidCells', 'disabledCells', 'outboardCells'] as const) {
-    if (grid[key]) grid[key] = grid[key]!.filter(id => full.cells.has(id));
+    if (grid[key]) grid[key] = grid[key]!.filter(id => state.useTopology ? full.cells.has(id) : getCellIndexById(id, grid) !== null);
   }
-  const topology = applyCellExclusions(resized, grid);
+  const topology = state.useTopology ? applyCellExclusions(resized, grid) : applyGridCellExclusions(resized, grid);
   const filtered = retainTopologyPuzzle(state.puzzle, before, topology);
   // Legacy cell/line records use their own Grid-format coordinate system. Only
   // the new vertex notes reference this retained graph in that renderer mode.
@@ -163,13 +165,14 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       if (hasLayoutChange && state.topology) {
         const base = prepareExclusionBase(state.topology, state.grid, nextUseTopology ? state.topologyPreset : 'square', state.topologyIntensity);
         newTopology = scaleTopologyLayout(base, state.grid, newGrid);
-        if (hasExclusionChange) newTopology = applyCellExclusions(newTopology, newGrid);
+        if (hasExclusionChange || !nextUseTopology) newTopology = nextUseTopology
+          ? applyCellExclusions(newTopology, newGrid) : applyGridCellExclusions(newTopology, newGrid);
       } else if (hasTopologyChange) {
-        const base = gridConfigToTopology(newGrid);
-        newTopology = applyTopologyPreset(base, {
-          preset: nextUseTopology ? state.topologyPreset : 'square',
+        const base = nextUseTopology ? gridConfigToTopology(newGrid) : createGridReferenceTopology(newGrid);
+        newTopology = nextUseTopology ? applyTopologyPreset(base, {
+          preset: state.topologyPreset,
           intensity: state.topologyIntensity,
-        });
+        }) : base;
         if (nextUseTopology && newTopology) {
           nextPuzzle = {
             ...state.puzzle,
@@ -186,7 +189,7 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       }
       if (!hasTopologyChange && hasExclusionChange && state.topology) {
         const base = prepareExclusionBase(state.topology, state.grid, nextUseTopology ? state.topologyPreset : 'square', state.topologyIntensity);
-        newTopology = applyCellExclusions(base, newGrid);
+        newTopology = nextUseTopology ? applyCellExclusions(base, newGrid) : applyGridCellExclusions(base, newGrid);
       }
       const result = {
         grid: newGrid,
@@ -216,7 +219,7 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
     const state = get();
     if (state.topology) {
       const base = prepareExclusionBase(state.topology, state.grid, state.useTopology ? state.topologyPreset : 'square', state.topologyIntensity);
-      set({ topology: applyCellExclusions(base, state.grid) });
+      set({ topology: state.useTopology ? applyCellExclusions(base, state.grid) : applyGridCellExclusions(base, state.grid) });
     } else if (state.useTopology) {
       get().applyTopologyPreset();
     }

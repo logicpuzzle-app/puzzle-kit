@@ -2,6 +2,7 @@ import type { GridConfig, PuzzleExport } from '../types';
 import type { GridTopology, TopologyPreset } from './gridTopology';
 import { applyTopologyPreset, gridConfigToTopology } from './gridTopology';
 import { deserializeTopology, serializeTopology } from './serialization';
+import { createGridReferenceTopology } from './topology/gridExclusions';
 import { prepareExclusionBase } from './topology/legacyExclusions';
 
 type Settings = NonNullable<PuzzleExport['topologySettings']>;
@@ -30,7 +31,7 @@ export function restoreTopology(grid: GridConfig, settings: Settings): GridTopol
         preset: settings.topologyPreset as TopologyPreset,
         intensity: settings.topologyIntensity,
       })
-    : gridConfigToTopology(grid);
+    : createGridReferenceTopology(grid);
   topology.appliedPreset = settings.topology !== undefined || settings.useTopology
     ? { preset: settings.topologyPreset as TopologyPreset, intensity: settings.topologyIntensity }
     : { preset: 'square', intensity: 0.5 };

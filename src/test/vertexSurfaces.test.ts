@@ -100,3 +100,33 @@ it('retains a vertex graph for legacy-rendered documents across editing, save/lo
   store.getState().undo();
   expect(store.getState().topology!.vertices.get(vertex.id)?.position).toEqual({ x: 100, y: 100 });
 });
+
+it('clips legacy exclusions after opaque-ID expansion and restores hidden notes from the file', () => {
+  const store = createPuzzleStore().useStore;
+  store.getState().setUseTopology(false);
+  store.getState().newPuzzle({ rows: 2, cols: 2, cellSize: 40, outerPadding: 20 });
+  store.getState().setGrid({ cols: 3, marginLeft: 1 });
+  const vertex = [...store.getState().topology!.vertices.values()].find(v => v.position.x === 180 && v.position.y === 100)!;
+  const id = store.getState().addVertexSurface({ vertexId: vertex.id, layer: 'answer', color: '#ff0000' });
+  const region = getVertexSurfaceRegion(store.getState().topology!, vertex.id);
+  expect(region).not.toBeNull();
+  // Grid-format references are relative to the playable board, while topology
+  // indices include the new left margin; the new cell has an opaque UUID.
+  store.getState().setCellDisabled('cell-1-2', true);
+  expect(getVertexSurfaceRegion(store.getState().topology!, vertex.id)).toBeNull();
+  expect(store.getState().puzzle.answer.vertexSurfaces![id].vertexId).toBe(vertex.id);
+  expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
+  store.getState().setCellDisabled('cell-1-2', false);
+  expect(getVertexSurfaceRegion(store.getState().topology!, vertex.id)).toEqual(region);
+  store.getState().undo();
+  expect(getVertexSurfaceRegion(store.getState().topology!, vertex.id)).toBeNull();
+  const legacy = JSON.parse(store.getState().exportPuzzle());
+  legacy.version = '1.1.0';
+  delete legacy.topologySettings.topology;
+  legacy.state.answer.vertexSurfaces = {};
+  expect(store.getState().importPuzzle(JSON.stringify(legacy))).toBe(true);
+  expect([...store.getState().topology!.cells.values()].some(c => c.index?.[0] === 1 && c.index?.[1] === 3)).toBe(false);
+  store.getState().setCellDisabled('cell-1-2', false);
+  expect([...store.getState().topology!.cells.values()].find(c => c.index?.[0] === 1 && c.index?.[1] === 3)?.center).toEqual({ x: 160, y: 80 });
+
+});
