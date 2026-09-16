@@ -17,7 +17,7 @@ import { migrationRegistry } from '../../migrations';
 import { mergeDirectionalCluesIntoNumbers } from '../../utils/legacyDirectionalClues';
 import { syncCountersFromPuzzleState } from '../../utils/idGenerator';
 import { freshPuzzleSession } from '../puzzleSession';
-import { captureTopologySettings, restoreTopology } from '../../utils/topologyPersistence';
+import { captureTopologySettings, restoredGrid, restoreTopology } from '../../utils/topologyPersistence';
 
 export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
   newPuzzle: (options = {}) => {
@@ -168,7 +168,7 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
         syncCountersFromPuzzleState(normalizedState);
         set({
           ...freshPuzzleSession(get()),
-          grid: data.grid,
+          grid: restoredGrid(data.grid, topology),
           puzzle: normalizedState,
           useTopology,
           topologyPreset,

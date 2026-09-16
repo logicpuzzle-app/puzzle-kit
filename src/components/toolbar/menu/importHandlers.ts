@@ -13,7 +13,7 @@ import {
   generatePuzzlinkUrl,
 } from '../../../utils/penpaCompat';
 import { syncCountersFromPuzzleState } from '../../../utils/idGenerator';
-import { restoreTopology } from '../../../utils/topologyPersistence';
+import { restoredGrid, restoreTopology } from '../../../utils/topologyPersistence';
 import { restorePuzzleStateFromExport } from '../../../utils/puzzleExport';
 import { loadAutoSave, parseShareUrl } from '../../../utils/serialization';
 import { getDefaultStorageAdapter } from '../../../modules/storage';
@@ -64,7 +64,7 @@ export const loadPuzzleData = (
   syncCountersFromPuzzleState(normalizedState);
   store.setState({
     ...freshPuzzleSession(store.getState()),
-    grid: data.grid,
+    grid: restoredGrid(data.grid, loadedTopology),
     puzzle: normalizedState,
     topology: loadedTopology,
     useTopology: loadedUseTopology,

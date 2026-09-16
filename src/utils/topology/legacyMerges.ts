@@ -1,3 +1,4 @@
+import { matchesLegacyGraph } from './legacyGraph';
 import { v4 as uuid } from 'uuid';
 import type { GridConfig, Point } from '../../types';
 import type { GridTopology, TopologyCell, TopologyEdge, TopologyVertex } from './types';
@@ -22,26 +23,7 @@ export function prepareLegacyMerges(topology: GridTopology, grid: GridConfig): G
   const preset = topology.appliedPreset ?? { preset: 'square' as const, intensity: 0.5 };
   const generated = gridConfigToTopology(grid);
   const expected = applyTopologyPreset(generated, preset);
-  if (full.cells.size !== expected.cells.size || full.vertices.size !== expected.vertices.size || full.edges.size !== expected.edges.size
-    || !same(full.bounds, expected.bounds) || (full.deformationBounds !== undefined && !same(full.deformationBounds, expected.deformationBounds))
-    || [...full.cells].some(([id, cell]) => {
-      const other = expected.cells.get(id);
-      return !other || !!cell.outboard !== !!other.outboard || !same(cell.center, other.center) || !same(cell.boundaryVertices, other.boundaryVertices)
-        || !same(cell.boundaryEdges, other.boundaryEdges) || !same(cell.originalCells, other.originalCells)
-        || !same(cell.adjacentCells, other.adjacentCells) || (cell.baseCenter !== undefined && !same(cell.baseCenter, other.baseCenter));
-    })
-    || [...full.vertices].some(([id, vertex]) => {
-      const other = expected.vertices.get(id);
-      return !other || !same(vertex.position, other.position) || !same(vertex.adjacentCells, other.adjacentCells)
-        || !same(vertex.adjacentEdges, other.adjacentEdges) || !same(vertex.adjacentVertices, other.adjacentVertices)
-        || (vertex.basePosition !== undefined && !same(vertex.basePosition, other.basePosition));
-    })
-    || [...full.edges].some(([id, edge]) => {
-      const other = expected.edges.get(id);
-      return !other || edge.isBoundary !== other.isBoundary || edge.startVertex !== other.startVertex || edge.endVertex !== other.endVertex
-        || !same(edge.midpoint, other.midpoint) || !same(edge.adjacentCells, other.adjacentCells)
-        || (edge.baseMidpoint !== undefined && !same(edge.baseMidpoint, other.baseMidpoint));
-    })) return topology;
+  if (!matchesLegacyGraph(full, expected)) return topology;
 
   const sourceGrid = { ...grid, mergedCells: undefined };
   const rawSource = gridConfigToTopology(sourceGrid);

@@ -1,0 +1,840 @@
+{
+  "version": "1.4.0",
+  "grid": {
+    "rows": 1,
+    "cols": 3,
+    "cellSize": 60,
+    "outerPadding": 20,
+    "showGrid": true,
+    "gridStyle": "normal",
+    "gridType": "square",
+    "marginTop": 0,
+    "marginBottom": 0,
+    "marginLeft": 0,
+    "marginRight": 0,
+    "frameStyle": "normal",
+    "frameColor": "#000000",
+    "gridColor": "#000000",
+    "backgroundColor": "#ffffff",
+    "splitLines": [
+      {
+        "cellId": "cell-0-0",
+        "startPoint": {
+          "type": "edge",
+          "edgeId": "edge-0",
+          "t": 0.4
+        },
+        "endPoint": {
+          "type": "vertex",
+          "vertexId": "vertex-2"
+        }
+      },
+      {
+        "cellId": "cell-0-2",
+        "startPoint": {
+          "type": "vertex",
+          "vertexId": "vertex-4"
+        },
+        "endPoint": {
+          "type": "vertex",
+          "vertexId": "vertex-7"
+        }
+      }
+    ]
+  },
+  "state": {
+    "problem": {
+      "surfaces": {},
+      "lines": {
+        "edge-edge-4": {
+          "from": "vertex-3",
+          "to": "vertex-4",
+          "edgeId": "edge-4",
+          "lineTarget": "edge",
+          "color": "#0000ff",
+          "thickness": "thick",
+          "style": "solid",
+          "id": "edge-edge-4"
+        }
+      },
+      "edges": {},
+      "walls": {},
+      "numbers": {
+        "n0": {
+          "cellId": "cell-0-0-a",
+          "value": "7",
+          "size": "medium",
+          "position": "center",
+          "color": "#000000",
+          "id": "n0"
+        },
+        "n1": {
+          "cellId": "cell-0-2-a",
+          "value": "9",
+          "size": "medium",
+          "position": "center",
+          "color": "#000000",
+          "id": "n1"
+        },
+        "n2": {
+          "cellId": "cell-0-1",
+          "value": "17",
+          "size": "medium",
+          "position": "center",
+          "color": "#000000",
+          "id": "n2"
+        }
+      },
+      "symbols": {},
+      "cages": {},
+      "specials": {},
+      "boxLines": {},
+      "vertexSurfaces": {
+        "s0": {
+          "vertexId": "vertex-4",
+          "color": "#ff0000",
+          "displayMode": "dot",
+          "id": "s0"
+        },
+        "s1": {
+          "vertexId": "vertex-0",
+          "color": "#ff8000",
+          "displayMode": "dot",
+          "id": "s1"
+        }
+      },
+      "directionalClues": {}
+    },
+    "answer": {
+      "surfaces": {},
+      "lines": {},
+      "edges": {},
+      "walls": {},
+      "numbers": {},
+      "symbols": {},
+      "cages": {},
+      "specials": {},
+      "boxLines": {},
+      "directionalClues": {}
+    }
+  },
+  "topologySettings": {
+    "useTopology": true,
+    "topologyPreset": "square",
+    "topologyIntensity": 0.5,
+    "topology": {
+      "cells": [
+        [
+          "cell-0-0-a",
+          {
+            "id": "cell-0-0-a",
+            "center": {
+              "x": 68,
+              "y": 40
+            },
+            "boundaryVertices": [
+              "vertex-0",
+              "vertex-1",
+              "vertex-2"
+            ],
+            "adjacentCells": [
+              "cell-0-1",
+              "cell-0-0-b"
+            ],
+            "boundaryEdges": [
+              "edge-0",
+              "edge-1",
+              "edge-2"
+            ],
+            "index": [
+              0,
+              0
+            ],
+            "row": 0,
+            "col": 0,
+            "originalCells": [
+              "cell-0-0"
+            ]
+          }
+        ],
+        [
+          "cell-0-0-b",
+          {
+            "id": "cell-0-0-b",
+            "center": {
+              "x": 41,
+              "y": 50
+            },
+            "boundaryVertices": [
+              "vertex-2",
+              "vertex-3",
+              "vertex-4",
+              "vertex-0"
+            ],
+            "adjacentCells": [
+              "cell-0-0-a"
+            ],
+            "boundaryEdges": [
+              "edge-3",
+              "edge-4",
+              "edge-5",
+              "edge-2"
+            ],
+            "index": [
+              0,
+              0
+            ],
+            "row": 0,
+            "col": 0,
+            "originalCells": [
+              "cell-0-0"
+            ]
+          }
+        ],
+        [
+          "cell-0-1",
+          {
+            "id": "cell-0-1",
+            "center": {
+              "x": 110,
+              "y": 50
+            },
+            "boundaryVertices": [
+              "vertex-1",
+              "vertex-5",
+              "vertex-6",
+              "vertex-2"
+            ],
+            "adjacentCells": [
+              "cell-0-2-b",
+              "cell-0-0-a"
+            ],
+            "boundaryEdges": [
+              "edge-6",
+              "edge-7",
+              "edge-8",
+              "edge-1"
+            ],
+            "index": [
+              0,
+              1
+            ],
+            "row": 0,
+            "col": 1,
+            "originalCells": [
+              "cell-0-1"
+            ]
+          }
+        ],
+        [
+          "cell-0-2-a",
+          {
+            "id": "cell-0-2-a",
+            "center": {
+              "x": 180,
+              "y": 40
+            },
+            "boundaryVertices": [
+              "vertex-5",
+              "vertex-7",
+              "vertex-8"
+            ],
+            "adjacentCells": [
+              "cell-0-2-b"
+            ],
+            "boundaryEdges": [
+              "edge-9",
+              "edge-10",
+              "edge-11"
+            ],
+            "index": [
+              0,
+              2
+            ],
+            "row": 0,
+            "col": 2,
+            "originalCells": [
+              "cell-0-2"
+            ]
+          }
+        ],
+        [
+          "cell-0-2-b",
+          {
+            "id": "cell-0-2-b",
+            "center": {
+              "x": 160,
+              "y": 60
+            },
+            "boundaryVertices": [
+              "vertex-8",
+              "vertex-6",
+              "vertex-5"
+            ],
+            "adjacentCells": [
+              "cell-0-1",
+              "cell-0-2-a"
+            ],
+            "boundaryEdges": [
+              "edge-12",
+              "edge-7",
+              "edge-11"
+            ],
+            "index": [
+              0,
+              2
+            ],
+            "row": 0,
+            "col": 2,
+            "originalCells": [
+              "cell-0-2"
+            ]
+          }
+        ]
+      ],
+      "vertices": [
+        [
+          "vertex-0",
+          {
+            "id": "vertex-0",
+            "position": {
+              "x": 44,
+              "y": 20
+            },
+            "adjacentCells": [
+              "cell-0-0-a",
+              "cell-0-0-b"
+            ],
+            "adjacentEdges": [
+              "edge-0",
+              "edge-2",
+              "edge-5"
+            ],
+            "adjacentVertices": [
+              "vertex-1",
+              "vertex-2",
+              "vertex-4"
+            ],
+            "index": [
+              0,
+              0
+            ],
+            "row": 0,
+            "col": 0
+          }
+        ],
+        [
+          "vertex-1",
+          {
+            "id": "vertex-1",
+            "position": {
+              "x": 80,
+              "y": 20
+            },
+            "adjacentCells": [
+              "cell-0-0-a",
+              "cell-0-1"
+            ],
+            "adjacentEdges": [
+              "edge-0",
+              "edge-1",
+              "edge-6"
+            ],
+            "adjacentVertices": [
+              "vertex-0",
+              "vertex-2",
+              "vertex-5"
+            ],
+            "index": [
+              0,
+              1
+            ],
+            "row": 0,
+            "col": 1
+          }
+        ],
+        [
+          "vertex-2",
+          {
+            "id": "vertex-2",
+            "position": {
+              "x": 80,
+              "y": 80
+            },
+            "adjacentCells": [
+              "cell-0-0-a",
+              "cell-0-0-b",
+              "cell-0-1"
+            ],
+            "adjacentEdges": [
+              "edge-1",
+              "edge-2",
+              "edge-3",
+              "edge-8"
+            ],
+            "adjacentVertices": [
+              "vertex-1",
+              "vertex-0",
+              "vertex-3",
+              "vertex-6"
+            ],
+            "index": [
+              1,
+              1
+            ],
+            "row": 1,
+            "col": 1
+          }
+        ],
+        [
+          "vertex-3",
+          {
+            "id": "vertex-3",
+            "position": {
+              "x": 20,
+              "y": 80
+            },
+            "adjacentCells": [
+              "cell-0-0-b"
+            ],
+            "adjacentEdges": [
+              "edge-3",
+              "edge-4"
+            ],
+            "adjacentVertices": [
+              "vertex-2",
+              "vertex-4"
+            ],
+            "index": [
+              1,
+              0
+            ],
+            "row": 1,
+            "col": 0
+          }
+        ],
+        [
+          "vertex-4",
+          {
+            "id": "vertex-4",
+            "position": {
+              "x": 20,
+              "y": 20
+            },
+            "adjacentCells": [
+              "cell-0-0-b"
+            ],
+            "adjacentEdges": [
+              "edge-4",
+              "edge-5"
+            ],
+            "adjacentVertices": [
+              "vertex-3",
+              "vertex-0"
+            ],
+            "index": [
+              0,
+              0
+            ],
+            "row": 0,
+            "col": 0
+          }
+        ],
+        [
+          "vertex-5",
+          {
+            "id": "vertex-5",
+            "position": {
+              "x": 140,
+              "y": 20
+            },
+            "adjacentCells": [
+              "cell-0-1",
+              "cell-0-2-a",
+              "cell-0-2-b"
+            ],
+            "adjacentEdges": [
+              "edge-6",
+              "edge-7",
+              "edge-9",
+              "edge-11"
+            ],
+            "adjacentVertices": [
+              "vertex-1",
+              "vertex-6",
+              "vertex-7",
+              "vertex-8"
+            ],
+            "index": [
+              0,
+              2
+            ],
+            "row": 0,
+            "col": 2
+          }
+        ],
+        [
+          "vertex-6",
+          {
+            "id": "vertex-6",
+            "position": {
+              "x": 140,
+              "y": 80
+            },
+            "adjacentCells": [
+              "cell-0-1",
+              "cell-0-2-b"
+            ],
+            "adjacentEdges": [
+              "edge-7",
+              "edge-8",
+              "edge-12"
+            ],
+            "adjacentVertices": [
+              "vertex-5",
+              "vertex-2",
+              "vertex-8"
+            ],
+            "index": [
+              1,
+              2
+            ],
+            "row": 1,
+            "col": 2
+          }
+        ],
+        [
+          "vertex-7",
+          {
+            "id": "vertex-7",
+            "position": {
+              "x": 200,
+              "y": 20
+            },
+            "adjacentCells": [
+              "cell-0-2-a"
+            ],
+            "adjacentEdges": [
+              "edge-9",
+              "edge-10"
+            ],
+            "adjacentVertices": [
+              "vertex-5",
+              "vertex-8"
+            ],
+            "index": [
+              0,
+              3
+            ],
+            "row": 0,
+            "col": 3
+          }
+        ],
+        [
+          "vertex-8",
+          {
+            "id": "vertex-8",
+            "position": {
+              "x": 200,
+              "y": 80
+            },
+            "adjacentCells": [
+              "cell-0-2-a",
+              "cell-0-2-b"
+            ],
+            "adjacentEdges": [
+              "edge-10",
+              "edge-11",
+              "edge-12"
+            ],
+            "adjacentVertices": [
+              "vertex-7",
+              "vertex-5",
+              "vertex-6"
+            ],
+            "index": [
+              1,
+              3
+            ],
+            "row": 1,
+            "col": 3
+          }
+        ]
+      ],
+      "edges": [
+        [
+          "edge-0",
+          {
+            "id": "edge-0",
+            "midpoint": {
+              "x": 62,
+              "y": 20
+            },
+            "startVertex": "vertex-0",
+            "endVertex": "vertex-1",
+            "adjacentCells": [
+              "cell-0-0-a"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "edge-1",
+          {
+            "id": "edge-1",
+            "midpoint": {
+              "x": 80,
+              "y": 50
+            },
+            "startVertex": "vertex-1",
+            "endVertex": "vertex-2",
+            "adjacentCells": [
+              "cell-0-0-a",
+              "cell-0-1"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "edge-2",
+          {
+            "id": "edge-2",
+            "midpoint": {
+              "x": 62,
+              "y": 50
+            },
+            "startVertex": "vertex-0",
+            "endVertex": "vertex-2",
+            "adjacentCells": [
+              "cell-0-0-a",
+              "cell-0-0-b"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "edge-3",
+          {
+            "id": "edge-3",
+            "midpoint": {
+              "x": 50,
+              "y": 80
+            },
+            "startVertex": "vertex-2",
+            "endVertex": "vertex-3",
+            "adjacentCells": [
+              "cell-0-0-b"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "edge-4",
+          {
+            "id": "edge-4",
+            "midpoint": {
+              "x": 20,
+              "y": 50
+            },
+            "startVertex": "vertex-3",
+            "endVertex": "vertex-4",
+            "adjacentCells": [
+              "cell-0-0-b"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "edge-5",
+          {
+            "id": "edge-5",
+            "midpoint": {
+              "x": 32,
+              "y": 20
+            },
+            "startVertex": "vertex-0",
+            "endVertex": "vertex-4",
+            "adjacentCells": [
+              "cell-0-0-b"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "edge-6",
+          {
+            "id": "edge-6",
+            "midpoint": {
+              "x": 110,
+              "y": 20
+            },
+            "startVertex": "vertex-1",
+            "endVertex": "vertex-5",
+            "adjacentCells": [
+              "cell-0-1"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "edge-7",
+          {
+            "id": "edge-7",
+            "midpoint": {
+              "x": 140,
+              "y": 50
+            },
+            "startVertex": "vertex-5",
+            "endVertex": "vertex-6",
+            "adjacentCells": [
+              "cell-0-1",
+              "cell-0-2-b"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "edge-8",
+          {
+            "id": "edge-8",
+            "midpoint": {
+              "x": 110,
+              "y": 80
+            },
+            "startVertex": "vertex-2",
+            "endVertex": "vertex-6",
+            "adjacentCells": [
+              "cell-0-1"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "edge-9",
+          {
+            "id": "edge-9",
+            "midpoint": {
+              "x": 170,
+              "y": 20
+            },
+            "startVertex": "vertex-5",
+            "endVertex": "vertex-7",
+            "adjacentCells": [
+              "cell-0-2-a"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "edge-10",
+          {
+            "id": "edge-10",
+            "midpoint": {
+              "x": 200,
+              "y": 50
+            },
+            "startVertex": "vertex-7",
+            "endVertex": "vertex-8",
+            "adjacentCells": [
+              "cell-0-2-a"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "edge-11",
+          {
+            "id": "edge-11",
+            "midpoint": {
+              "x": 170,
+              "y": 50
+            },
+            "startVertex": "vertex-5",
+            "endVertex": "vertex-8",
+            "adjacentCells": [
+              "cell-0-2-a",
+              "cell-0-2-b"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "edge-12",
+          {
+            "id": "edge-12",
+            "midpoint": {
+              "x": 170,
+              "y": 80
+            },
+            "startVertex": "vertex-6",
+            "endVertex": "vertex-8",
+            "adjacentCells": [
+              "cell-0-2-b"
+            ],
+            "isBoundary": true
+          }
+        ]
+      ],
+      "bounds": {
+        "minX": 20,
+        "minY": 20,
+        "maxX": 200,
+        "maxY": 80,
+        "width": 220,
+        "height": 100
+      },
+      "sourceConfig": {
+        "rows": 1,
+        "cols": 3,
+        "cellSize": 60,
+        "outerPadding": 20,
+        "showGrid": true,
+        "gridStyle": "normal",
+        "gridType": "square",
+        "marginTop": 0,
+        "marginBottom": 0,
+        "marginLeft": 0,
+        "marginRight": 0,
+        "frameStyle": "normal",
+        "frameColor": "#000000",
+        "gridColor": "#000000",
+        "backgroundColor": "#ffffff",
+        "splitLines": [
+          {
+            "cellId": "cell-0-0",
+            "startPoint": {
+              "type": "edge",
+              "edgeId": "edge-0",
+              "t": 0.4
+            },
+            "endPoint": {
+              "type": "vertex",
+              "vertexId": "vertex-2"
+            }
+          },
+          {
+            "cellId": "cell-0-2",
+            "startPoint": {
+              "type": "vertex",
+              "vertexId": "vertex-4"
+            },
+            "endPoint": {
+              "type": "vertex",
+              "vertexId": "vertex-7"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "constraintSettings": {
+    "currentSchemaId": null,
+    "currentInputMode": "auto",
+    "validationOverrides": {},
+    "highlightOverrides": {}
+  },
+  "metadata": {
+    "created": "2026-09-16T07:28:53.806Z",
+    "modified": "2026-09-16T07:28:53.806Z"
+  }
+}

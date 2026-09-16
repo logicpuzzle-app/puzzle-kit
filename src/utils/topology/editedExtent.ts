@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid';
 import type { GridConfig, Point } from '../../types';
-import type { GridTopology, TopologyCell } from './types';
+import type { GridTopology, TopologyCell, TopologyEdge } from './types';
 import { resizeLatticeExtent } from './latticeExtent';
 import { fragments } from './mergedExtent';
 import { editedGrid, projectEdits, type TopologyEdit } from './retainedEdits';
@@ -13,7 +13,8 @@ export function resizeEditedExtent(topology: GridTopology, before: GridConfig, a
   if (!source || !full.editOperations) return null;
   const clean = (grid: GridConfig): GridConfig => ({ ...grid, mergedCells: undefined, splitLines: undefined, voidCells: undefined, disabledCells: undefined, outboardCells: undefined });
   const usedEdges = new Set([...source.cells.values()].flatMap(cell => cell.boundaryEdges));
-  const base = resizeLatticeExtent({ ...source, edges: new Map([...source.edges].filter(([id]) => usedEdges.has(id))) }, clean(before), clean(after));
+  const usedVertices = new Set([...source.cells.values()].flatMap(cell => cell.boundaryVertices));
+  const base = resizeLatticeExtent({ ...source, vertices: new Map([...source.vertices].filter(([id]) => usedVertices.has(id))), edges: new Map([...source.edges].filter(([id]) => usedEdges.has(id))) }, clean(before), clean(after));
   if (!base) return null;
   const anchor = [...source.cells.keys()].find(id => base.cells.has(id));
   const scale = after.cellSize / before.cellSize;
@@ -21,9 +22,11 @@ export function resizeEditedExtent(topology: GridTopology, before: GridConfig, a
     const old = source.cells.get(anchor!)!.center, next = base.cells.get(anchor!)!.center;
     return { x: next.x + (p.x - old.x) * scale, y: next.y + (p.y - old.y) * scale };
   };
-  const retained = new Map<string, TopologyCell>();
+  const retained = new Map<string, TopologyCell>(), retainedEdges = new Map<string, TopologyEdge>();
   if (anchor) {
+    for (const [id, edge] of full.edges) retainedEdges.set(id, { ...edge, midpoint: move(edge.midpoint) });
     for (const [id, cell] of full.cells) retained.set(id, { ...cell, center: move(cell.center) });
+    for (const [id, vertex] of source.vertices) if (!usedVertices.has(id)) base.vertices.set(id, { ...vertex, position: move(vertex.position) });
     for (const [id, edge] of source.edges) if (!usedEdges.has(id) && base.vertices.has(edge.startVertex) && base.vertices.has(edge.endVertex)) {
       base.edges.set(id, { ...edge, midpoint: move(edge.midpoint) });
     }
@@ -48,9 +51,14 @@ export function resizeEditedExtent(topology: GridTopology, before: GridConfig, a
       if (changed.has(op.cellId)) for (const id of op.cellIds) { retained.delete(id); changed.add(id); }
       operations.push(op);
     }
-    const next = projectEdits(base, operations, retained);
+    const next = projectEdits(base, operations, retained, retainedEdges);
     if (!next) return null;
     current = next;
+  }
+  if (!operations.length) {
+    const projected = projectEdits(base, []);
+    if (!projected) return null;
+    current = projected;
   }
   const grid = editedGrid(current, { ...after, ...(base.sourceConfig?.hexRowOffset !== undefined && { hexRowOffset: base.sourceConfig.hexRowOffset }) });
   for (const key of ['voidCells', 'disabledCells', 'outboardCells'] as const) if (grid[key]) {

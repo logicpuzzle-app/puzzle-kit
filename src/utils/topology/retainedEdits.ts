@@ -1,5 +1,6 @@
+import { projectCells } from './projectCells';
 import type { GridConfig } from '../../types';
-import type { GridTopology, TopologyCell } from './types';
+import type { GridTopology, TopologyCell, TopologyEdge } from './types';
 import { projectMerges, type MergeGroup } from './retainedMerge';
 import { projectSplit, type SplitEdit } from './retainedSplit';
 
@@ -14,7 +15,7 @@ export function retainedEdits(topology: GridTopology): { base: GridTopology; ope
   return { base: full, operations: [] };
 }
 
-export function projectEdits(base: GridTopology, operations: TopologyEdit[], retainedCells?: Map<string, TopologyCell>): GridTopology | null {
+export function projectEdits(base: GridTopology, operations: TopologyEdit[], retainedCells?: Map<string, TopologyCell>, retainedEdges?: Map<string, TopologyEdge>): GridTopology | null {
   if (base.editBase || base.mergeBase || base.exclusionBase) return null;
   let current = base;
   // Allocated IDs may disappear from the visible graph, but a later operation
@@ -40,14 +41,26 @@ export function projectEdits(base: GridTopology, operations: TopologyEdit[], ret
       next = projectMerges(current, [operation], retainedCells);
       if (next) { const { mergeBase: _base, mergeGroups: _groups, ...flat } = next; next = flat; }
     } else {
+      if (operation.boundary) {
+        const vertices = new Map(current.vertices), edges = new Map(current.edges);
+        for (const id of operation.boundary.vertices) if (!vertices.has(id)) {
+          const vertex = base.vertices.get(id); if (!vertex) return null;
+          vertices.set(id, vertex);
+        }
+        for (const id of operation.boundary.edges) if (!edges.has(id)) {
+          const edge = base.edges.get(id); if (!edge) return null;
+          edges.set(id, edge);
+        }
+        current = { ...current, vertices, edges };
+      }
       if (edgeIds.has(operation.edgeId)) return null;
       edgeIds.add(operation.edgeId);
-      next = projectSplit(current, operation, retainedCells);
+      next = projectSplit(current, operation, retainedCells, retainedEdges);
     }
     if (!next) return null;
     current = next;
   }
-  return operations.length ? { ...current, editBase: base, editOperations: operations } : current;
+  return operations.length ? { ...current, editBase: base, editOperations: operations } : projectCells(current, [...current.cells.values()]);
 }
 
 /** Explicit removal also removes dependent later operations, never unrelated
@@ -60,7 +73,7 @@ export function removeEdits(topology: GridTopology, remove: (operation: Topology
     const inputs = operation.kind === 'merge' ? operation.cellIds : [operation.cellId];
     if (inputs.some(id => !current.cells.has(id))) continue;
     kept.push(operation);
-    const next = projectEdits(base, kept, (topology.exclusionBase ?? topology).cells);
+    const next = projectEdits(base, kept, (topology.exclusionBase ?? topology).cells, (topology.exclusionBase ?? topology).edges);
     if (!next) return null;
     current = next;
   }

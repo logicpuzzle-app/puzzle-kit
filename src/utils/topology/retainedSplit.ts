@@ -1,5 +1,5 @@
 import type { Point } from '../../types';
-import type { GridTopology, TopologyCell } from './types';
+import type { GridTopology, TopologyCell, TopologyEdge } from './types';
 import { isPointInPolygon } from './helpers';
 import { projectCells } from './projectCells';
 
@@ -10,6 +10,12 @@ export interface SplitEdit {
   endVertex: string;
   edgeId: string;
   cellIds: [string, string];
+  /** Verified legacy boundary refinement, including existing edge-interior points. */
+  boundary?: { vertices: string[]; edges: string[] };
+  /** Preserve the saved orientation of a legacy diagonal. */
+  reverseEdge?: boolean;
+  /** Legacy split children inherited their parent's original-cell lineage. */
+  originalCells?: string[];
 }
 
 const cross = (a: Point, b: Point, p: Point) => (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
@@ -27,6 +33,34 @@ function validChord(points: Point[], start: number, end: number): boolean {
     if (cross(a, b, c) * cross(a, b, d) < 0 && cross(c, d, a) * cross(c, d, b) < 0) return false;
   }
   return isPointInPolygon({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, points);
+}
+
+/** A refinement may insert points along existing sides, never remove a corner,
+ * change the perimeter, or borrow an unrelated edge. Validate in base geometry
+ * so a nonlinear display preset cannot invalidate a previously valid cut. */
+function validRefinement(base: GridTopology, cell: TopologyCell, boundary: NonNullable<SplitEdit['boundary']>): boolean {
+  const ids = boundary.vertices;
+  if (ids.length < cell.boundaryVertices.length || boundary.edges.length !== ids.length || new Set(ids).size !== ids.length) return false;
+  const indices = cell.boundaryVertices.map(id => ids.indexOf(id));
+  if (indices.some(i => i < 0)) return false;
+  const point = (id: string) => { const v = base.vertices.get(id); return v?.basePosition ?? v?.position; };
+  let traversed = 0;
+  for (let side = 0; side < indices.length; side++) {
+    const a = point(cell.boundaryVertices[side]), b = point(cell.boundaryVertices[(side + 1) % indices.length]);
+    if (!a || !b) return false;
+    const length = (b.x - a.x) ** 2 + (b.y - a.y) ** 2;
+    if (length < 1e-16) return false;
+    let i = indices[side], fraction = 0;
+    do {
+      const j = (i + 1) % ids.length, p = point(ids[j]), edge = base.edges.get(boundary.edges[i]);
+      if (!p || !edge || !onSegment(a, b, p) ||
+          !((edge.startVertex === ids[i] && edge.endVertex === ids[j]) || (edge.endVertex === ids[i] && edge.startVertex === ids[j]))) return false;
+      const next = ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / length;
+      if (next <= fraction || ++traversed > ids.length) return false;
+      fraction = next; i = j;
+    } while (i !== indices[(side + 1) % indices.length]);
+  }
+  return traversed === ids.length;
 }
 
 /** Find an interior label position even for a concave polygon. Scan between
@@ -52,19 +86,22 @@ function interior(points: Point[]): Point | undefined {
 
 /** Split one current cell along an interior chord between its actual vertices.
  * Boundary nodes survive; only two cells and the new diagonal receive new IDs. */
-export function projectSplit(base: GridTopology, edit: SplitEdit, retainedCells?: Map<string, TopologyCell>): GridTopology | null {
-  const cell = base.cells.get(edit.cellId);
+export function projectSplit(base: GridTopology, edit: SplitEdit, retainedCells?: Map<string, TopologyCell>, retainedEdges?: Map<string, TopologyEdge>): GridTopology | null {
+  const source = base.cells.get(edit.cellId);
+  if (!source || (edit.boundary && !validRefinement(base, source, edit.boundary))) return null;
+  if (edit.originalCells && JSON.stringify(edit.originalCells) !== JSON.stringify(source.originalCells ?? [source.id])) return null;
+  const cell = edit.boundary ? { ...source, boundaryVertices: edit.boundary.vertices, boundaryEdges: edit.boundary.edges } : source;
   if (!cell || new Set(edit.cellIds).size !== 2 || edit.cellIds.some(id => !id || base.cells.has(id)) || !edit.edgeId || base.edges.has(edit.edgeId)) return null;
   const ids = cell.boundaryVertices, start = ids.indexOf(edit.startVertex), end = ids.indexOf(edit.endVertex), n = ids.length;
   if (start < 0 || end < 0 || start === end || (start + 1) % n === end || (end + 1) % n === start) return null;
   const points = ids.map(id => base.vertices.get(id)?.position);
-  if (points.some(p => !p) || !validChord(points as Point[], start, end)) return null;
+  if (points.some(p => !p) || ((!edit.boundary || !base.deformationBounds) && !validChord(points as Point[], start, end))) return null;
   const origins = base.deformationBounds ? ids.map(id => base.vertices.get(id)?.basePosition) : undefined;
   if (origins && (origins.some(p => !p) || !validChord(origins as Point[], start, end))) return null;
   const edges = new Map(base.edges), a = points[start]!, b = points[end]!;
-  edges.set(edit.edgeId, { id: edit.edgeId, startVertex: edit.startVertex, endVertex: edit.endVertex,
-    midpoint: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, index: null, adjacentCells: [], isBoundary: false,
-    ...(origins && { baseMidpoint: { x: (origins[start]!.x + origins[end]!.x) / 2, y: (origins[start]!.y + origins[end]!.y) / 2 } }),
+  edges.set(edit.edgeId, { id: edit.edgeId, startVertex: edit.reverseEdge ? edit.endVertex : edit.startVertex, endVertex: edit.reverseEdge ? edit.startVertex : edit.endVertex,
+    midpoint: retainedEdges?.get(edit.edgeId)?.midpoint ?? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, index: null, adjacentCells: [], isBoundary: false,
+    ...(origins && { baseMidpoint: retainedEdges?.get(edit.edgeId)?.baseMidpoint ?? { x: (origins[start]!.x + origins[end]!.x) / 2, y: (origins[start]!.y + origins[end]!.y) / 2 } }),
   });
   const children: TopologyCell[] = [];
   for (const [output, from, to] of [[0, start, end], [1, end, start]]) {
@@ -82,7 +119,7 @@ export function projectSplit(base: GridTopology, edit: SplitEdit, retainedCells?
     const baseCenter = origins ? retainedCells?.get(edit.cellIds[output])?.baseCenter ?? interior(vertices.map(id => base.vertices.get(id)!.basePosition!)) : undefined;
     if (!center || (origins && !baseCenter)) return null;
     children.push({ id: edit.cellIds[output], index: null, center, ...(baseCenter && { baseCenter }),
-      boundaryVertices: vertices, boundaryEdges, adjacentCells: [], originalCells: [cell.id], outboard: cell.outboard });
+      boundaryVertices: vertices, boundaryEdges, adjacentCells: [], originalCells: edit.originalCells ?? [cell.id], outboard: cell.outboard });
   }
   return projectCells({ ...base, edges }, [...base.cells.values()].filter(c => c.id !== cell.id).concat(children));
 }

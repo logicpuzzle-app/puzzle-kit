@@ -144,7 +144,7 @@ function finishTopologyEdit(state: PuzzleStore, edited: GridTopology, grid: Grid
 
 function editRecordedOperations(state: PuzzleStore, operations: TopologyEdit[]): Partial<PuzzleStore> {
   const full = state.topology!.exclusionBase ?? state.topology!;
-  const next = projectEdits(retainedEdits(full).base, operations, full.cells);
+  const next = projectEdits(retainedEdits(full).base, operations, full.cells, full.edges);
   return next ? finishTopologyEdit(state, next, editedGrid(next, state.grid)) : {};
 }
 

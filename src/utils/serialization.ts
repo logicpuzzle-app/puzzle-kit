@@ -586,6 +586,10 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
     editBase = deserializeTopology(serialized.editBase);
     for (const op of serialized.editOperations) {
       if (!record(op) || (op.kind !== 'merge' && op.kind !== 'split') || !Array.isArray(op.cellIds) || op.cellIds.some(id => typeof id !== 'string')) throw new Error('Invalid topology operation');
+      if (op.kind === 'split' && ((op.reverseEdge !== undefined && typeof op.reverseEdge !== 'boolean') ||
+          (op.originalCells !== undefined && (!Array.isArray(op.originalCells) || op.originalCells.some(id => typeof id !== 'string'))))) throw new Error('Invalid split metadata');
+      if (op.boundary !== undefined && (!record(op.boundary) || !Array.isArray(op.boundary.vertices) || !Array.isArray(op.boundary.edges) ||
+          [...op.boundary.vertices, ...op.boundary.edges].some(id => typeof id !== 'string'))) throw new Error('Invalid operation boundary');
       if (op.kind === 'merge' ? typeof op.id !== 'string'
         : op.cellIds.length !== 2 || [op.cellId, op.startVertex, op.endVertex, op.edgeId].some(id => typeof id !== 'string')) throw new Error('Invalid topology operation identities');
     }

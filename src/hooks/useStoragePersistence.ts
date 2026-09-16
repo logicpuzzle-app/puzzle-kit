@@ -1,3 +1,4 @@
+import { serializeTopology } from '../utils/serialization';
 /**
  * Storage Persistence Hook
  *
@@ -6,7 +7,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { usePuzzleStore, usePuzzleStoreApi } from '../store/puzzleStoreContext';
-import { restoreTopology } from '../utils/topologyPersistence';
+import { restoredGrid as normalizeRestoredGrid, restoreTopology } from '../utils/topologyPersistence';
 import {
   saveToolSettings,
   loadToolSettings,
@@ -96,19 +97,31 @@ export function useStoragePersistence() {
     // Child components may already have restored a native document. Preferences
     // must not regenerate its graph after the document's IDs have been loaded.
     if (store.getState().grid === initialGrid.current) {
-      const restoredGrid = { ...store.getState().grid, ...persistedGridConfig };
+      // Basic grid preferences omit structural edits. The saved graph's own
+      // configuration is authoritative for its shape and references.
+      const restoredGrid = { ...store.getState().grid, ...persistedGridConfig,
+        ...persistedTopologyState.deserializedTopology?.sourceConfig,
+      };
       const settings = {
         useTopology: persistedTopologyState.useTopology,
         topologyPreset: persistedTopologyState.topologyPreset,
         topologyIntensity: persistedTopologyState.topologyIntensity,
       };
-      store.setState({
-        grid: restoredGrid,
-        ...settings,
-        topologyPreset: settings.topologyPreset as typeof topologyPreset,
-        topology: persistedTopologyState.deserializedTopology ??
-          restoreTopology(restoredGrid, settings),
-      });
+      try {
+        const topology = restoreTopology(restoredGrid, { ...settings,
+          ...(persistedTopologyState.deserializedTopology && { topology: serializeTopology(persistedTopologyState.deserializedTopology) }),
+        });
+        store.setState({
+          grid: normalizeRestoredGrid(restoredGrid, topology),
+          ...settings,
+          topologyPreset: settings.topologyPreset as typeof topologyPreset,
+          topology,
+        });
+      } catch {
+        // Grid and graph preferences are stored independently. A stale pair
+        // must not replace the current board or prevent the app from opening.
+        console.warn('Inconsistent topology preferences; keeping the current board');
+      }
     }
 
     setCanvasState({

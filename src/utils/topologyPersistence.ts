@@ -1,3 +1,4 @@
+import { prepareLegacySplits } from './topology/legacySplits';
 import { editedGrid } from './topology/retainedEdits';
 import type { GridConfig, PuzzleExport } from '../types';
 import type { GridTopology, TopologyPreset } from './gridTopology';
@@ -56,8 +57,16 @@ export function restoreTopology(grid: GridConfig, settings: Settings): GridTopol
   if (topology.exclusionBase?.mergeBase) topology.exclusionBase.mergeBase.appliedPreset = topology.appliedPreset;
   if (topology.editBase) topology.editBase.appliedPreset = topology.appliedPreset;
   if (topology.exclusionBase?.editBase) topology.exclusionBase.editBase.appliedPreset = topology.appliedPreset;
-  if (settings.useTopology && !topology.editBase) topology = prepareLegacyMerges(topology, grid);
+  if (settings.useTopology && !topology.editBase) {
+    topology = prepareLegacySplits(topology, grid);
+    if (!topology.editBase) topology = prepareLegacyMerges(topology, grid);
+  }
   return settings.useTopology
     ? prepareExclusionBase(topology, grid, settings.topologyPreset as TopologyPreset, settings.topologyIntensity)
     : topology;
+}
+
+/** Import applies topology and its normalized structural configuration atomically. */
+export function restoredGrid(grid: GridConfig, topology: GridTopology): GridConfig {
+  return topology.editBase ? editedGrid(topology, grid) : grid;
 }
