@@ -56,3 +56,5 @@
 [E2E](../e2e/board-extent-identity.spec.ts)はPCとモバイルChromiumで列数を変更し、
 線・数字・塗りの表示、追加セルへの入力、保存し直し、Undo/Redoを確認する。
 採番アルゴリズムの結果をテストに複製しない。
+
+六角格子への拡張と表示変形中の対応は[共通の格子編集](hex-extent-identity.md)を参照。

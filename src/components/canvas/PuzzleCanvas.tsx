@@ -11,7 +11,7 @@ import React, { useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { getGridDimensions } from '../../utils/gridUtils';
-import { getHexSize } from '../../utils/hexGridUtils';
+import { getHexGridDimensions } from '../../utils/hexGridUtils';
 import type { NumberClickInfo, TextClickInfo } from '../../types/canvasInput';
 import { InputHandlerLayer } from './InputHandlerLayer';
 import { Grid, GridBackground, GridLines, DisabledCellsOverlay } from './Grid';
@@ -124,13 +124,11 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
       };
     }
     if (effectiveGrid.gridType === 'hex') {
-      const { width: hexWidth, height: hexHeight } = getHexSize(effectiveGrid.cellSize);
-      const rowHeight = hexHeight * 0.75;
+      const { width, height } = getHexGridDimensions(effectiveGrid);
       return {
-        x: effectiveGrid.outerPadding,
-        y: effectiveGrid.outerPadding,
-        width: effectiveGrid.cols * hexWidth + hexWidth / 2,
-        height: (effectiveGrid.rows - 1) * rowHeight + hexHeight,
+        x: effectiveGrid.outerPadding, y: effectiveGrid.outerPadding,
+        width: width - effectiveGrid.outerPadding * 2,
+        height: height - effectiveGrid.outerPadding * 2,
       };
     }
     const { outerPadding, cellSize, rows, cols, marginTop = 0, marginLeft = 0 } = effectiveGrid;
