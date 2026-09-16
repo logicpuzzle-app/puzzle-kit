@@ -317,6 +317,9 @@ export const applyActionToState = (
       // Restore exact snapshots, including removal of optional geometry fields.
       return { grid: action.after.grid, topology: action.after.topology,
         ...(action.after.topology?.appliedPreset && { topologyPreset: action.after.topology.appliedPreset.preset, topologyIntensity: action.after.topology.appliedPreset.intensity }),
+        ...(action.after.useTopology !== undefined && { useTopology: action.after.useTopology }),
+        ...(action.after.topologyPreset !== undefined && { topologyPreset: action.after.topologyPreset }),
+        ...(action.after.topologyIntensity !== undefined && { topologyIntensity: action.after.topologyIntensity }),
         ...action.after.editingState };
     case 'SET_GRID':
       return {

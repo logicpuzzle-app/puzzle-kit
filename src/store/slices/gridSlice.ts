@@ -3,6 +3,7 @@
  */
 
 import { resolveSurfaceVertex } from '../../utils/vertexSurfaces';
+import { migrateReferenceMode } from '../../utils/referenceModeMigration';
 import type { VertexSurfaceElement } from '../../types';
 import type { GridConfig } from '../../types';
 import type { GridSlice, SliceCreator, PuzzleStore } from './types';
@@ -133,12 +134,16 @@ function geometryEditingState(state: PuzzleStore) {
 // undo never restores configuration while leaving a different rendered board.
 function recordGeometryEdit(state: PuzzleStore, result: Partial<PuzzleStore>, description: string): Partial<PuzzleStore> {
   if (result === state || !result.grid) return result === state ? {} : result;
-  if (JSON.stringify(result.grid) !== JSON.stringify(state.grid) || (result.topology !== undefined && result.topology !== state.topology)) {
+  const modeChanged = result.useTopology !== undefined && result.useTopology !== state.useTopology;
+  if (JSON.stringify(result.grid) !== JSON.stringify(state.grid) || (result.topology !== undefined && result.topology !== state.topology) ||
+      modeChanged) {
     state.historyManager.addAction({
       type: 'EDIT_GRID_GEOMETRY', description,
-      before: { grid: state.grid, topology: state.topology,
+      before: { grid: state.grid, topology: state.topology, useTopology: state.useTopology,
+        ...(modeChanged && { topologyPreset: state.topologyPreset, topologyIntensity: state.topologyIntensity }),
         ...(result.puzzle !== undefined && result.puzzle !== state.puzzle && { editingState: geometryEditingState(state) }) },
-      after: { grid: result.grid, topology: result.topology ?? state.topology,
+      after: { grid: result.grid, topology: result.topology ?? state.topology, useTopology: result.useTopology ?? state.useTopology,
+        ...(modeChanged && { topologyPreset: result.topologyPreset ?? state.topologyPreset, topologyIntensity: result.topologyIntensity ?? state.topologyIntensity }),
         ...(result.puzzle !== undefined && result.puzzle !== state.puzzle && { editingState: geometryEditingState({ ...state, ...result }) }) },
     });
   }
@@ -215,13 +220,17 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
   // Topology mode
   useTopology: true,
   setUseTopology: (useTopology) => {
-    if (get().grid.gridType === 'penrose_P3' && !useTopology) {
-      return;
+    const state = get();
+    if (state.useTopology === useTopology) return { ok: true };
+    let result: Partial<PuzzleStore>;
+    try {
+      result = migrateReferenceMode(state, useTopology);
+    } catch (error) {
+      return { ok: false, reason: error instanceof Error ? error.message : 'Reference migration failed.' };
     }
-    set({ useTopology });
-    if (useTopology && !get().topology) {
-      get().applyTopologyPreset();
-    }
+    state.historyManager.endGroup();
+    set(recordGeometryEdit(state, result, 'Change reference mode'));
+    return { ok: true };
   },
 
   topology: createDefaultTopology(),

@@ -134,6 +134,9 @@ export interface EditGridGeometryAction {
 export interface GridGeometrySnapshot {
   grid: GridConfig;
   topology: GridTopology | null;
+  useTopology?: boolean;
+  topologyPreset?: import('../utils/gridTopology').TopologyPreset;
+  topologyIntensity?: number;
   editingState?: Pick<import('./slices/types').PuzzleStore,
     'puzzle' | 'trialStack' | 'trialStage' | 'selectedElements' | 'hoverCell' | 'cursorCell' | 'numberSelection'>;
 }

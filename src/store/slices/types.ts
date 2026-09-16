@@ -99,7 +99,7 @@ export interface GridSlice {
 
   // Topology mode
   useTopology: boolean;
-  setUseTopology: (useTopology: boolean) => void;
+  setUseTopology: (useTopology: boolean) => import('../../utils/referenceModeMigration').ReferenceModeChangeResult;
   topology: GridTopology | null;
   updateTopology: () => void;
 

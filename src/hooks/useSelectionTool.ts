@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { usePuzzleStore } from '../store/puzzleStoreContext';
+import { resolveBoardPoint } from '../utils/lineReferences';
 import { resolveCell } from '../utils/pointResolver';
 import { shouldAllowOutboardForTool } from '../utils/outboardPolicy';
 import { getCellId } from '../utils/gridUtils';
@@ -65,12 +66,12 @@ export function useSelectionTool({ getMousePosition }: UseSelectionToolOptions) 
         if (num.cellId === cellId) ids.push(num.id);
       }
       for (const sym of Object.values(layer.symbols)) {
-        if (sym.cellId === cellId) ids.push(sym.id);
+        if (sym.cellId === cellId && resolveBoardPoint(sym.cellId, sym.pointType, { grid, useTopology, topology })?.type === 'cell') ids.push(sym.id);
       }
 
       return ids;
     },
-    [activeLayer, puzzle]
+    [activeLayer, puzzle, grid, useTopology, topology]
   );
 
   const findElementAtPoint = useCallback(

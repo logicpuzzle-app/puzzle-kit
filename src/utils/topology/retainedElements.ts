@@ -6,10 +6,13 @@ export function retainTopologyElements(elements: PuzzleElements, before: GridTop
   const old = before.exclusionBase ?? before, next = after.exclusionBase ?? after;
   const removed = (kind: 'cells' | 'vertices' | 'edges', id: unknown) =>
     typeof id === 'string' && old[kind].has(id) && !next[kind].has(id);
-  // Legacy symbols/point lists do not carry a target kind. Match the renderer's
-  // explicit map lookup order, without interpreting any part of the ID spelling.
-  const removedPoint = (id: unknown) => typeof id === 'string' &&
-    (old.cells.has(id) ? removed('cells', id) : old.vertices.has(id) ? removed('vertices', id) : removed('edges', id));
+  // Ambiguous legacy references stay unresolved; do not delete one kind's note
+  // merely because a different kind with the same string was removed.
+  const removedPoint = (id: unknown) => {
+    if (typeof id !== 'string') return false;
+    const kinds = (['cells', 'vertices', 'edges'] as const).filter(kind => old[kind].has(id));
+    return kinds.length === 1 && removed(kinds[0], id);
+  };
   const keep = (entry: unknown, collection: string) => {
     if (!entry || typeof entry !== 'object') return true;
     const item = entry as Record<string, unknown>;
@@ -26,9 +29,11 @@ export function retainTopologyElements(elements: PuzzleElements, before: GridTop
       return !endpointRemoved(item.from) && !endpointRemoved(item.to);
     }
     if (removed('vertices', item.vertexId)) return false;
-    if (collection === 'symbols' ? removedPoint(item.cellId) : removed('cells', item.cellId)) return false;
+    if (collection === 'symbols' && item.pointType !== undefined) {
+      if (item.pointType === 'cell' ? removed('cells', item.cellId) : item.pointType === 'vertex' ? removed('vertices', item.cellId) : removed('edges', item.cellId)) return false;
+    } else if (collection === 'symbols' ? removedPoint(item.cellId) : removed('cells', item.cellId)) return false;
     if (Array.isArray(item.cells) && item.cells.some(id => removed('cells', id))) return false;
-    if (Array.isArray(item.points) && item.points.some(removedPoint)) return false;
+    if (Array.isArray(item.points) && item.points.some(id => removed('cells', id))) return false;
     return true;
   };
   const result = { ...elements };

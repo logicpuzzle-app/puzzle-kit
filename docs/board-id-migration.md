@@ -53,7 +53,7 @@
 | [LITSの判定・部屋同期・強調表示](lits-validation-identity.md) | 実セル・辺・頂点参照へ移行済み。mapだけの公開読込も実境界を補い、境界と部屋番号を履歴で復元する | 正方格子の明示indexと接続を検証し、未解決・非対応は検証不能。他ジャンル・汎用線入力の移行は継続 |
 | [ぬりみさき判定](nurimisaki-validation-identity.md) | 実セルID・行列・接続の検証へ移行済み。数字・塗りの未解決参照を成功にしない | 非対応の形状・曖昧な行列は検証不能を返す。他ジャンルの判定は継続対象 |
 | [リサイズ後の要素処理](../src/store/slices/gridSlice.ts) | from/to/positionの接頭辞で種類を判定する | 明示した対象種類と旧→新参照の対応 |
-| [汎用線入力・端点参照](line-input-identity.md) | 新しい入力は端点の種類を保持し、明示モードで実接続を解決する。線レコードIDに依存せず消去し、混合端点と矢印方向を保存する | 型なしの旧データは辺参照または一意な点から解決し、曖昧な参照を推測しない。参照モード切替時の既存線移行、公開互換APIや他ジャンルのID解析の整理は継続 |
+| [汎用線入力・端点参照](line-input-identity.md) | 新しい入力は端点の種類を保持し、明示モードで実接続を解決する。線レコードIDに依存せず消去し、混合端点と矢印方向を保存する | 型なしの旧データは辺参照または一意な点から解決し、曖昧な参照を推測しない。参照モード切替は検証した対応表による一体の移行へ変更。公開互換APIや他ジャンルのID解析の整理は継続 |
 | [LineLayer](../src/components/canvas/LineLayer.tsx)、[SolverLayer](../src/components/canvas/SolverLayer.tsx)、[要素入力](../src/hooks/tool-handlers/useElementToolHandler.ts) | `parseEdgeId` を直接呼ぶ。Grid形式とTopology形式が混在する | 形式を明示した共通resolverへの集約 |
 | [線の出力](../src/utils/puzzleExport.ts)、[重複判定](../src/utils/lineOverlap.ts)、[共通判定](../src/constraints/validators/core.ts)、[スリザーリンク](../src/constraints/validators/slitherlink.ts)、[pzpr形式処理](../src/utils/pzprv3Parser.ts) | `lineTarget` がない場合などに端点接頭辞を解釈する | 旧形式の解釈を読込境界に集め、以降は明示した対象種類を使う |
 | [結合セル操作](../src/store/slices/grid/cellOperations.ts)、[彫刻操作](../src/store/slices/grid/sculptOperations.ts)、[彫刻モード](../src/hooks/useSculptMode.ts) | `merged-N` を配列添字に、接頭辞を形状判定に使う | 元セル・形状・編集対象の明示メタデータ |
@@ -80,12 +80,12 @@
 ## 参照モード切替の移行
 
 `gridSlice.setUseTopology` はモードの変更と、必要に応じたトポロジ生成だけを行い、
-既存データの参照変換・モードを含むUndo／Redoを行っていない。
+既存データの参照変換・モードを含むUndo／Redoを行っていなかった。
 Gridで作った頂点線がTopologyへの切替で未解決となることを、
-実ストアと描画用resolverで確認済み。画面経由のQAは未実施。
+実ストアと描画用resolverで確認し、開発ハーネスによる画面操作でも再現する。
 
 移行は[参照モード切替の契約](board-id-contract.md#参照モードの切替はデータ移行として扱う)に従う。
-線だけを変換せず、数字・塗り・記号・部屋・試行・設定等の参照範囲を調べてから一体で適用する。
+[実装した移行](reference-mode-identity.md)では数字・塗り・記号・部屋・試行・設定等を一体で変換する。
 Gridモードでも保持したトポロジを参照する頂点塗りは、Grid形式のIDへ変換しない。
 変換元の形式が曖昧なデータや対応不能な形状では、推測で成功させない。
 

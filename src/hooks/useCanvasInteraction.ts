@@ -66,6 +66,7 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom, onTextCli
     activeLayer,
     gridEditMode,
     topology,
+    useTopology,
   } = usePuzzleStore();
 
   // Derived state: grid mode is when activeLayer is 'grid'
@@ -87,6 +88,12 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom, onTextCli
 
   // Derived state from machine
   const isPanning = machineState.type === 'panning';
+
+  useEffect(() => {
+    setMachineState(INITIAL_STATE);
+    setLineHoverPoint(null); setSymbolHoverPoint(null); setSymbolHoverId(null);
+    setDrawStartPoint(null); setDrawStartPosition(null); setCurrentStrokeId(null);
+  }, [useTopology]);
 
   // Clear cursor states when switching to non-editable layers
   useEffect(() => {

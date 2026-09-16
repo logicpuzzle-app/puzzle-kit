@@ -7,7 +7,7 @@
  * - Integrates with HistoryManager for undo/redo
  */
 
-import type { PuzzleAction } from './actions';
+import type { PuzzleAction, GridGeometrySnapshot } from './actions';
 import type { LineElement, PuzzleElements, LayerType, GridConfig } from '../types';
 import type { HistoryManager } from './historyManager';
 import { historyManager as defaultHistoryManager } from './historyManager';
@@ -16,7 +16,8 @@ import { historyManager as defaultHistoryManager } from './historyManager';
 // Types
 // ========================================
 
-export interface PuzzleStateSlice {
+export interface PuzzleStateSlice extends Partial<NonNullable<GridGeometrySnapshot['editingState']>>,
+  Partial<Pick<GridGeometrySnapshot, 'topology' | 'useTopology' | 'topologyPreset' | 'topologyIntensity'>> {
   puzzle: {
     problem: PuzzleElements;
     answer: PuzzleElements;
@@ -468,6 +469,17 @@ export class ActionExecutor {
               boxLines: {},
             },
           },
+        }));
+        break;
+
+      case 'EDIT_GRID_GEOMETRY':
+        set(() => ({
+          grid: action.after.grid, topology: action.after.topology,
+          ...(action.after.topology?.appliedPreset && { topologyPreset: action.after.topology.appliedPreset.preset, topologyIntensity: action.after.topology.appliedPreset.intensity }),
+          ...(action.after.useTopology !== undefined && { useTopology: action.after.useTopology }),
+          ...(action.after.topologyPreset !== undefined && { topologyPreset: action.after.topologyPreset }),
+          ...(action.after.topologyIntensity !== undefined && { topologyIntensity: action.after.topologyIntensity }),
+          ...action.after.editingState,
         }));
         break;
 

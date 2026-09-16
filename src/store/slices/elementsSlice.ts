@@ -1,4 +1,4 @@
-import { findLineByReferences, resolveLinePoints } from '../../utils/lineReferences';
+import { findLineByReferences, resolveLinePoints, resolveBoardPoint } from '../../utils/lineReferences';
 /**
  * Elements Slice - Puzzle element CRUD operations
  */
@@ -412,12 +412,13 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
   // Symbol operations
   addSymbol: (element) => {
     if (!canEditLayer(element.layer)) return '';
-    // A cell has one editable text entry; other symbol kinds may coexist.
+    const pointType = element.pointType ?? resolveBoardPoint(element.cellId, undefined, get())?.type;
+    // A scoped point has one editable text entry; other symbol kinds may coexist.
     const previous = element.symbolType.startsWith('text-')
-      ? Object.values(get().puzzle[element.layer].symbols).filter(s => s.cellId === element.cellId && s.symbolType.startsWith('text-'))
+      ? Object.values(get().puzzle[element.layer].symbols).filter(s => s.cellId === element.cellId && pointType !== undefined && resolveBoardPoint(s.cellId, s.pointType, get())?.type === pointType && s.symbolType.startsWith('text-'))
       : [];
     const id = previous[0]?.id ?? generateSymbolId();
-    const fullElement: SymbolElement = { ...element, id };
+    const fullElement: SymbolElement = { ...element, ...(pointType && { pointType }), id };
     if (previous.length === 1 && JSON.stringify(previous[0]) === JSON.stringify(fullElement)) return id;
     set((state) => {
       const symbols = { ...state.puzzle[element.layer].symbols };

@@ -379,7 +379,9 @@ export type SymbolSize = 'largest' | 'large' | 'medium' | 'small' | number;
 
 export interface SymbolElement {
   id: string;
+  /** Scoped placement reference; legacy untyped targets must resolve uniquely. */
   cellId: string;
+  pointType?: LineGridPoint;
   symbolType: string;
   size: SymbolSize;
   rotation: number;  // degrees

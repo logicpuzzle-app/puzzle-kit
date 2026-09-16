@@ -1,6 +1,6 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useEffect } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
-import { parseEdgeId } from '../../utils/gridIds';
+import { resolveBoardPoint, resolveLinePoints, sameBoardPoint } from '../../utils/lineReferences';
 import type { Point } from '../../types';
 import {
   resolveAutoMode,
@@ -63,6 +63,7 @@ export function useElementToolHandler({
 
   const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
   const isPaintSchema = currentSchemaId === 'paint';
+  useEffect(() => { setSpecialPath([]); }, [grid, topology, useTopology, activeLayer, setSpecialPath]);
 
   // Unified auto mode detection - replaces 3 separate useMemo blocks
   const autoModeInfo = useMemo(
@@ -249,6 +250,8 @@ export function useElementToolHandler({
 
       if (!target) return;
       const targetId = target.id;
+      const sameTarget = (symbol: typeof layerData.symbols[string]) => symbol.cellId === targetId &&
+        resolveBoardPoint(symbol.cellId, symbol.pointType, { grid, useTopology, topology })?.type === target.type;
 
       // Get symbol metadata for handling conflicts and side effects
       const metadata = getSymbolMetadata(symbolType);
@@ -256,10 +259,10 @@ export function useElementToolHandler({
 
       // Find existing symbol of the same type
       const existingSymbol = Object.values(
-        layerData.symbols as Record<string, { id: string; cellId: string; symbolType: string; color: string; objectKey?: string }>
+        layerData.symbols
       ).find(
         (s) =>
-          s.cellId === targetId &&
+          sameTarget(s) &&
           s.symbolType === symbolType &&
           (!objectKey || !s.objectKey || s.objectKey === objectKey)
       );
@@ -275,18 +278,16 @@ export function useElementToolHandler({
       // Helper: remove line at the same edge when adding peke
       const applyOnAddEffects = () => {
         if (metadata.onAdd?.removeLineAtEdge && targetId) {
-          const edgeParsed = parseEdgeId(targetId);
-          if (!edgeParsed) return;
-
-          const { type, row, col } = edgeParsed;
-          const vertexFrom = type === 'h' ? `vertex-${row}-${col}` : `vertex-${row}-${col}`;
-          const vertexTo = type === 'h' ? `vertex-${row}-${col + 1}` : `vertex-${row + 1}-${col}`;
-
-          const existingLine = Object.values(puzzle[dataLayer].lines).find(
-            (line) =>
-              (line.from === vertexFrom && line.to === vertexTo) ||
-              (line.from === vertexTo && line.to === vertexFrom)
-          );
+          if (target.type !== 'edge') return;
+          const context = { grid, topology, useTopology };
+          const endpoints = resolveLinePoints({ id: '', edgeId: targetId, lineTarget: 'edge',
+            layer: dataLayer, color, style: 'solid', thickness: 'normal' }, context);
+          if (!endpoints) return;
+          const existingLine = Object.values(puzzle[dataLayer].lines).find(line => {
+            const points = resolveLinePoints(line, context);
+            return points && ((sameBoardPoint(points[0], endpoints[0]) && sameBoardPoint(points[1], endpoints[1])) ||
+              (sameBoardPoint(points[0], endpoints[1]) && sameBoardPoint(points[1], endpoints[0])));
+          });
           if (existingLine) {
             removeLine(existingLine.id);
           }
@@ -296,7 +297,7 @@ export function useElementToolHandler({
       // Remove conflicting symbols
       const removeConflicts = () => {
         const conflicts = findConflictingSymbols(
-          layerData.symbols as Record<string, { id: string; cellId: string; symbolType: string; color: string; objectKey?: string }>,
+          Object.fromEntries(Object.entries(layerData.symbols).filter(([, symbol]) => sameTarget(symbol))),
           targetId,
           symbolType,
           objectKey
@@ -310,6 +311,7 @@ export function useElementToolHandler({
       const isMultiDirection = (MULTI_DIRECTION_ARROWS as readonly string[]).includes(symbolType);
       const symbolProps = {
         cellId: targetId,
+        pointType: target.type,
         symbolType,
         size: toolSettings.symbolSize,
         rotation,
@@ -421,7 +423,7 @@ export function useElementToolHandler({
       const textType = toolSettings.currentTool.replace('text-', '');
 
       const existingText = Object.values(layerData.symbols).find(
-        (s) => s.cellId === cellId && s.symbolType.startsWith('text-')
+        (s) => s.cellId === cellId && resolveBoardPoint(s.cellId, s.pointType, { grid, useTopology, topology })?.type === 'cell' && s.symbolType.startsWith('text-')
       );
 
       if (isRightClick && existingText) {
@@ -432,7 +434,7 @@ export function useElementToolHandler({
       }
       return null;
     },
-    [puzzle, activeLayer, editableLayer, toolSettings.currentTool, removeSymbol, findCellId]
+    [puzzle, activeLayer, editableLayer, toolSettings.currentTool, removeSymbol, findCellId, grid, useTopology, topology]
   );
 
   // Handle cage tool
