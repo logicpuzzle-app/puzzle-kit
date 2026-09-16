@@ -3,11 +3,15 @@ import fixture from '../../e2e/fixtures/opaque-square-board.json';
 import custom from '../../e2e/fixtures/opaque-board-ids.json';
 import { createPuzzleStore } from '../store/puzzleStore';
 import { resizeSquareExtent } from '../utils/topology/squareExtent';
+import { resizeTopology } from '../utils/topology/resize';
 
 it('extends and trims an opaque board without moving line references, deleting a shared edge, or losing undo/file state', () => {
   const store = createPuzzleStore().useStore;
   expect(store.getState().importPuzzle(JSON.stringify(fixture))).toBe(true);
   const original = store.getState().topology!, content = store.getState().puzzle;
+  const publicResult = resizeTopology(original, store.getState().grid, { ...store.getState().grid, cols: 3 });
+  expect(publicResult.topology.vertices.get('south-middle')?.position).toEqual({ x: 60, y: 100 });
+  expect(publicResult.cellIdMapping.get('room/c')).toBe('room/c');
   store.getState().setPreviewGrid({ gridType: 'square', rows: 2, cols: 3, cellSize: 40 });
   expect(store.getState().previewTopology!.vertices.get('south-middle')?.position).toEqual({ x: 60, y: 100 });
   expect(store.getState().topology).toBe(original);
