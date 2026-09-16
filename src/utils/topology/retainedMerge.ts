@@ -40,6 +40,56 @@ function validLegacyBoundary(base: GridTopology, canonical: string[], boundary: 
   });
 }
 
+/** Trace each edge-connected source component independently. Corner contact
+ * does not join two components or make their otherwise simple loops branch. */
+function sourceBoundaryLoops(base: GridTopology, members: TopologyCell[]): { vertices: string[]; edges: string[] }[] | null {
+  const edgeMembers = new Map<string, TopologyCell[]>();
+  for (const cell of members) for (const id of cell.boundaryEdges) {
+    if (!base.edges.has(id)) return null;
+    edgeMembers.set(id, [...(edgeMembers.get(id) ?? []), cell]);
+  }
+  if ([...edgeMembers.values()].some(cells => cells.length > 2)) return null;
+  const remainingCells = new Set(members.map(cell => cell.id));
+  const loops: { vertices: string[]; edges: string[] }[] = [];
+  for (const firstCell of members) {
+    if (!remainingCells.delete(firstCell.id)) continue;
+    const component = [firstCell];
+    const boundaryEdges = new Set<string>();
+    for (let i = 0; i < component.length; i++) {
+      for (const id of component[i].boundaryEdges) {
+        const incident = edgeMembers.get(id)!;
+        if (incident.length === 1) boundaryEdges.add(id);
+        for (const cell of incident) if (remainingCells.delete(cell.id)) component.push(cell);
+      }
+    }
+    if (boundaryEdges.size < 3) return null;
+    const touching = new Map<string, string[]>();
+    for (const edgeId of boundaryEdges) {
+      const edge = base.edges.get(edgeId)!;
+      for (const id of [edge.startVertex, edge.endVertex]) touching.set(id, [...(touching.get(id) ?? []), edgeId]);
+    }
+    // A branch within one component still needs a separate representation.
+    if ([...touching.values()].some(edges => edges.length !== 2)) return null;
+    while (boundaryEdges.size) {
+      const first = base.edges.get(boundaryEdges.values().next().value!)!.startVertex;
+      const loop = { vertices: [] as string[], edges: [] as string[] };
+      let vertex = first, previous: string | undefined;
+      do {
+        if (loop.vertices.includes(vertex)) return null;
+        loop.vertices.push(vertex);
+        const edgeId = touching.get(vertex)!.find(id => id !== previous)!;
+        if (!boundaryEdges.delete(edgeId)) return null;
+        const edge = base.edges.get(edgeId)!;
+        loop.edges.push(edgeId);
+        vertex = edge.startVertex === vertex ? edge.endVertex : edge.startVertex;
+        previous = edgeId;
+      } while (vertex !== first);
+      loops.push(loop);
+    }
+  }
+  return loops;
+}
+
 /** Concave cells can have their average center outside the boundary. Apply the
  * same interior rule to displayed and stored original geometry; otherwise a
  * preset reset can move a clue into another cell. No reference is reassigned. */
@@ -68,39 +118,10 @@ export function projectMerges(base: GridTopology, groups: MergeGroup[], retained
     // A verified legacy output can have a different role from its source
     // cells. This explicit boundary metadata never accompanies a new merge.
     if (group.boundary?.outboard === undefined && members.some(cell => !!cell.outboard !== !!members[0].outboard)) return null;
-    const edgeCounts = new Map<string, number>();
-    for (const cell of members) for (const id of cell.boundaryEdges) edgeCounts.set(id, (edgeCounts.get(id) ?? 0) + 1);
-    if ([...edgeCounts.values()].some(n => n > 2)) return null;
-    const boundary = [...edgeCounts].filter(([, n]) => n === 1).map(([id]) => base.edges.get(id));
-    if (boundary.length < 3 || boundary.some(edge => !edge)) return null;
-    const touching = new Map<string, string[]>();
-    for (const edge of boundary) for (const id of [edge!.startVertex, edge!.endVertex]) {
-      touching.set(id, [...(touching.get(id) ?? []), edge!.id]);
-    }
-    // New merges require one simple perimeter. A verified legacy output may
-    // have retained just one loop of disconnected members or a holed region.
-    // Enumerate actual source loops and validate against one whole loop; never
-    // connect components or infer a hull from coordinates.
-    if ([...touching.values()].some(edges => edges.length !== 2)) return null;
-    const remainingEdges = new Set(boundary.map(edge => edge!.id));
-    const loops: { vertices: string[]; edges: string[] }[] = [];
-    while (remainingEdges.size) {
-      const firstEdge = base.edges.get(remainingEdges.values().next().value!)!;
-      const first = firstEdge.startVertex;
-      const loop = { vertices: [] as string[], edges: [] as string[] };
-      let vertex = first, previous: string | undefined;
-      do {
-        if (loop.vertices.includes(vertex)) return null;
-        loop.vertices.push(vertex);
-        const edgeId = touching.get(vertex)!.find(id => id !== previous)!;
-        if (!remainingEdges.delete(edgeId)) return null;
-        const edge = base.edges.get(edgeId)!;
-        loop.edges.push(edgeId);
-        vertex = edge.startVertex === vertex ? edge.endVertex : edge.startVertex;
-        previous = edgeId;
-      } while (vertex !== first);
-      loops.push(loop);
-    }
+    // New merges require one simple perimeter. Verified legacy output may
+    // retain one loop of disconnected members, corner contacts or a hole.
+    const loops = sourceBoundaryLoops(base, members);
+    if (!loops) return null;
     let boundaryVertices: string[], boundaryEdges: string[];
     if (group.boundary) {
       if (!loops.some(loop => validLegacyBoundary(base, loop.vertices, group.boundary!))) return null;

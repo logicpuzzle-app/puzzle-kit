@@ -2,9 +2,10 @@ import { test, expect } from './fixtures';
 import { readFileSync } from 'node:fs';
 import { openPuzzleFile, savePuzzleFile } from './puzzle-file';
 
-const fixture = JSON.parse(readFileSync(new URL('./fixtures/legacy-multiple-boundaries-board.json', import.meta.url), 'utf8'));
+for (const [name, file] of [['disconnected and holed', 'legacy-multiple-boundaries-board.json'], ['corner contacts and holed', 'legacy-corner-contact-board.json']]) {
+const fixture = JSON.parse(readFileSync(new URL(`./fixtures/${file}`, import.meta.url), 'utf8'));
 
-test('legacy disconnected and holed merges preserve saved boundaries and restore all members @production', async ({ page, isMobile }, info) => {
+test(`legacy ${name} merges preserve saved boundaries and restore all members @production`, async ({ page, isMobile }, info) => {
   await page.goto('/master');
   await openPuzzleFile(page, Buffer.from(JSON.stringify(fixture)));
   const original = await savePuzzleFile(page);
@@ -57,3 +58,5 @@ test('legacy disconnected and holed merges preserve saved boundaries and restore
   expect(reloaded.state).toEqual(restored.state);
   await page.screenshot({ path: info.outputPath('legacy-boundary-reloaded.png') });
 });
+
+}

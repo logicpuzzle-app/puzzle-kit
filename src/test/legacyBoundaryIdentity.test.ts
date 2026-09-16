@@ -1,11 +1,13 @@
 import { expect, it } from 'vitest';
-import fixture from '../../e2e/fixtures/legacy-multiple-boundaries-board.json';
+import disconnected from '../../e2e/fixtures/legacy-multiple-boundaries-board.json';
+import cornerContact from '../../e2e/fixtures/legacy-corner-contact-board.json';
 import { createPuzzleStore } from '../store/puzzleStore';
 import { gridConfigToTopology } from '../utils/gridTopology';
 import { serializeTopology } from '../utils/serialization';
 import type { GridConfig } from '../types';
 
-it.each([false, true])('preserves archived disconnected/holed legacy output and restores all source IDs, hidden source=%s', hidden => {
+const examples = [{ name: 'disconnected', fixture: disconnected }, { name: 'corner contacts', fixture: cornerContact }];
+it.each(examples.flatMap(example => [false, true].map(hidden => ({ ...example, hidden }))))('preserves archived $name/holed output and restores source IDs, hidden=$hidden', ({ fixture, hidden }) => {
   const store = createPuzzleStore().useStore;
   const grid: GridConfig = { ...fixture.grid, ...(hidden && { voidCells: ['cell-2-3'] }) };
   const graph = hidden ? gridConfigToTopology(grid) : undefined;
