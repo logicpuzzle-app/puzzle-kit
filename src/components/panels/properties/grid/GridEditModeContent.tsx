@@ -3,6 +3,7 @@
  */
 
 import React from 'react';
+import { currentMergeGroups } from '../../../../utils/topology/retainedEdits';
 import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../../../store/puzzleStoreContext';
 
@@ -11,7 +12,7 @@ export const GridMergeContent: React.FC = () => {
   const { t } = useTranslation();
   const { grid, topology, unmergeCells } = usePuzzleStore();
 
-  const groups = topology?.mergeGroups ?? [];
+  const groups = currentMergeGroups(topology);
   const mergedCount = grid.mergedCells?.length ?? 0;
   const totalMergedCells = grid.mergedCells?.reduce((sum, group) => sum + group.length, 0) ?? 0;
 
@@ -62,12 +63,18 @@ export const GridMergeContent: React.FC = () => {
 // Split mode content
 export const GridSplitContent: React.FC = () => {
   const { t } = useTranslation();
-
+  const { grid, topology, removeSplitLine, clearSplitLines } = usePuzzleStore();
+  const splits = (topology?.editOperations ?? []).filter(op => op.kind === 'split');
   return (
     <div className="space-y-3">
-      <div className="text-xs text-office-text-secondary italic">
-        {t('gridEdit.splitNotImplemented')}
-      </div>
+      <p className="text-xs text-office-text-secondary">{t('gridEdit.splitHelp')}</p>
+      <p className="text-xs text-office-text-secondary">{t('gridEdit.splitAnnotations')}</p>
+      {!!grid.splitLines?.length && !splits.length && <p role="status" className="text-xs text-office-text-secondary">{t('gridEdit.splitSourceMissing')}</p>}
+      {splits.map((split, i) => <div key={split.edgeId} className="flex items-center justify-between text-xs">
+        <span>{t('gridEdit.split')} {i + 1}</span>
+        <button className="px-2 py-1 border border-office-border rounded-sm" onClick={() => removeSplitLine(split.cellId)}>{t('gridEdit.restoreSplit')}</button>
+      </div>)}
+      {splits.length > 0 && <button className="px-2 py-1 text-xs border border-office-border rounded-sm" onClick={clearSplitLines}>{t('gridEdit.restoreAllSplits')}</button>}
     </div>
   );
 };

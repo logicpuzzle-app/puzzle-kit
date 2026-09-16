@@ -80,6 +80,8 @@ export const GridShapeContent: React.FC = () => {
     setGrid,
     useTopology,
     topology,
+    previewTopology,
+    previewGrid,
     topologyPreset,
     topologyIntensity,
     setTopologyPreset,
@@ -141,6 +143,8 @@ export const GridShapeContent: React.FC = () => {
     (isIso && facesChanged()) ||
     (isIso && pendingIsoView !== (grid.isometricView ?? 'exterior'));
 
+  const unsupportedEdit = !!topology?.editBase && hasChanges && previewGrid !== null && previewTopology === null;
+
   // Auto-preview when values change
   useEffect(() => {
     if (hasChanges) {
@@ -192,6 +196,7 @@ export const GridShapeContent: React.FC = () => {
 
   return (
     <div className="space-y-2">
+      {unsupportedEdit && <p role="status" className="text-xs text-office-text-secondary">{t('gridEdit.unsupportedSplitResize')}</p>}
       {/* Grid Type and Size */}
       <div>
         <label className="block text-xs text-office-text-secondary mb-1">
@@ -430,7 +435,7 @@ export const GridShapeContent: React.FC = () => {
               : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
           }`}
           onClick={handleApply}
-          disabled={!hasChanges}
+          disabled={!hasChanges || unsupportedEdit}
         >
           {t('common.apply')}
         </button>

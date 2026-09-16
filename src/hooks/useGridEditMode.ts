@@ -16,7 +16,7 @@ interface UseGridEditModeOptions {
 }
 
 export function useGridEditMode({ topology }: UseGridEditModeOptions) {
-  const { mergeCells, unmergeCells, addSplitLine } = usePuzzleStore();
+  const { mergeCells, unmergeCells, addSplitLine, removeSplitLine } = usePuzzleStore();
 
   // Merge mode state
   const [mergingCells, setMergingCells] = useState<string[]>([]);
@@ -113,6 +113,8 @@ export function useGridEditMode({ topology }: UseGridEditModeOptions) {
   const handleSplitMode = useCallback(
     (point: Point, isStart: boolean, isEnd: boolean, isRightClick: boolean) => {
       if (isRightClick) {
+        const cellId = findCellAtPoint(point);
+        if (cellId) removeSplitLine(cellId);
         setSplitStartVertex(null);
         setSplitHoverVertex(null);
         return;
@@ -145,7 +147,7 @@ export function useGridEditMode({ topology }: UseGridEditModeOptions) {
         setSplitHoverVertex(vertexId);
       }
     },
-    [findNearestVertexAtPoint, splitStartVertex, topology, addSplitLine]
+    [findNearestVertexAtPoint, findCellAtPoint, splitStartVertex, topology, addSplitLine, removeSplitLine]
   );
 
   /**
