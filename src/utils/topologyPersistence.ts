@@ -1,3 +1,4 @@
+import { restoreLegacySculptSnapshot } from './topology/legacySculptSnapshot';
 import { prepareLegacyArchivedEdits } from './topology/legacyArchivedEdits';
 import { prepareLegacySplits } from './topology/legacySplits';
 import { editedGrid } from './topology/retainedEdits';
@@ -34,8 +35,10 @@ export function restoreBoard(grid: GridConfig, settings: Settings): { topology: 
   if (grid.hexRowOffset !== undefined && grid.hexRowOffset !== 0 && grid.hexRowOffset !== 1) {
     throw new Error('Invalid grid hex row offset');
   }
+  const migratedSculpt = settings.topology !== undefined
+    ? restoreLegacySculptSnapshot(settings.topology, grid, settings) : null;
   let topology = settings.topology !== undefined
-    ? deserializeTopology(settings.topology)
+    ? deserializeTopology(migratedSculpt ? serializeTopology(migratedSculpt) : settings.topology)
     : settings.useTopology ? applyTopologyPreset(gridConfigToTopology(grid), {
         preset: settings.topologyPreset as TopologyPreset,
         intensity: settings.topologyIntensity,
@@ -48,9 +51,10 @@ export function restoreBoard(grid: GridConfig, settings: Settings): { topology: 
     const canonical = (groups: string[][]) => JSON.stringify(groups.map(group => [...group].sort()).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))));
     if (canonical(grid.mergedCells ?? []) !== canonical(topology.mergeGroups!.map(group => group.cellIds))) throw new Error('Grid and topology disagree on merges');
   }
-  if (topology.editBase) {
+  if (topology.editBase && settings.topology?.editBase) {
     const expected = editedGrid(topology, grid);
-    if (JSON.stringify(grid.mergedCells ?? []) !== JSON.stringify(expected.mergedCells ?? []) || JSON.stringify(grid.splitLines ?? []) !== JSON.stringify(expected.splitLines ?? [])) throw new Error('Grid and topology disagree on structural edits');
+    if (JSON.stringify(grid.mergedCells ?? []) !== JSON.stringify(expected.mergedCells ?? []) || JSON.stringify(grid.splitLines ?? []) !== JSON.stringify(expected.splitLines ?? [])
+      || JSON.stringify(grid.sculptOperations ?? []) !== JSON.stringify(expected.sculptOperations ?? [])) throw new Error('Grid and topology disagree on structural edits');
   }
   topology.appliedPreset = settings.topology !== undefined || settings.useTopology
     ? { preset: settings.topologyPreset as TopologyPreset, intensity: settings.topologyIntensity }
