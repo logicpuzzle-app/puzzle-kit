@@ -9,7 +9,7 @@ test('#6 board rotation: controls, input, history, persistence and image export'
   await openPuzzleFile(page, fixture);
   const surface = page.locator('#puzzle-canvas .surface-layer-problem');
   await expect(surface.locator('polygon')).toHaveCount(1);
-  if (isRecordingQA(info)) await page.screenshot({ path: info.outputPath('rotated-board.png') });
+  if (isRecordingQA(info)) await page.screenshot({ path: info.outputPath('board-screen.png') });
 
   for (const format of ['PNG', 'SVG']) {
     await page.getByRole('button', { name: 'File', exact: true }).click();
@@ -108,14 +108,13 @@ test('#6 Paint: rotated image handles and dragging follow the visible image', { 
   await page.getByRole('button', { name: 'Image Adjust', exact: true }).click();
   const handle = page.locator('div[title="Scale"]').filter({ hasText: '↖' });
   await expect(handle).toBeVisible();
-  const corner = await image.evaluate(img => {
-    const element = img as SVGGraphicsElement; const b = element.getBBox();
-    const p = new DOMPoint(b.x, b.y).matrixTransform(element.getScreenCTM()!);
-    return { x: p.x, y: p.y };
-  });
-  const h = (await handle.boundingBox())!;
-  expect(Math.abs(h.x + h.width / 2 - corner.x)).toBeLessThan(2);
-  expect(Math.abs(h.y + h.height / 2 - corner.y)).toBeLessThan(2);
+  await expect.poll(() => page.evaluate(() => {
+    const image = document.querySelector<SVGGraphicsElement>('#puzzle-canvas .background-image-layer image')!;
+    const handle = [...document.querySelectorAll<HTMLDivElement>('div[title="Scale"]')].find(el => el.textContent === '↖')!;
+    const b = image.getBBox(); const h = handle.getBoundingClientRect();
+    const p = new DOMPoint(b.x, b.y).matrixTransform(image.getScreenCTM()!);
+    return Math.max(Math.abs(h.x + h.width / 2 - p.x), Math.abs(h.y + h.height / 2 - p.y));
+  })).toBeLessThan(2);
   const before = (await imageBox())!;
   await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2);
   await page.mouse.down();
