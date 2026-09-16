@@ -28,7 +28,9 @@ export function prepareLegacyArchivedEdits(topology: GridTopology, grid: GridCon
   const migrated = prepareLegacyEditedExclusions(archive, sourceGrid);
   let source = migrated?.topology ?? prepareLegacySplits(archive, sourceGrid);
   if (!source.editBase) source = prepareLegacyMerges(source, sourceGrid);
-  if (!source.editBase && !source.mergeBase) return null;
+  // A verified excluded legacy graph may have no realized operations at all.
+  // Keep its restored source and normalize away the stale requested groups.
+  if (!migrated && !source.editBase && !source.mergeBase) return null;
   // An incomplete old archive may acquire a complete source and a visibility
   // projection during migration. Keep one flat archive, never nested masks.
   const full = source.exclusionBase ?? source;

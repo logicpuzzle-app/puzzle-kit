@@ -1,3 +1,4 @@
+import { applyCellExclusions } from '../utils/topology/exclusions';
 import { afterEach, expect, it } from 'vitest';
 import { createElement, type ReactNode } from 'react';
 import { cleanup, renderHook } from '@testing-library/react';
@@ -193,9 +194,11 @@ it('keeps later merge IDs when an earlier configured group has no surviving sour
 });
 
 
-it('removes an unrealized legacy merge setting atomically with restoring its hidden source, allowing a new undoable merge', () => {
+it.each([false, true])('removes an unrealized legacy merge setting with its hidden source, archived=%s', archived => {
   const store = createPuzzleStore().useStore;
-  expect(store.getState().importPuzzle(JSON.stringify(inactive))).toBe(true);
+  const document = archived ? { ...inactive, topologySettings: { ...inactive.topologySettings, topology:
+    serializeTopology(applyCellExclusions(deserializeTopology(inactive.topologySettings.topology), inactive.grid as GridConfig)) } } : inactive;
+  expect(store.getState().importPuzzle(JSON.stringify(document))).toBe(true);
   const before = store.getState(), topology = before.topology!;
   expect(before.grid.mergedCells).toBeUndefined();
   expect(topology.editBase).toBeUndefined();
