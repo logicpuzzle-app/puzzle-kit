@@ -7,7 +7,7 @@ import { serializeTopology } from '../utils/serialization';
 
 import { useEffect, useRef, useCallback } from 'react';
 import { usePuzzleStore, usePuzzleStoreApi } from '../store/puzzleStoreContext';
-import { restoredGrid as normalizeRestoredGrid, restoreTopology } from '../utils/topologyPersistence';
+import { restoreBoard } from '../utils/topologyPersistence';
 import {
   saveToolSettings,
   loadToolSettings,
@@ -108,11 +108,11 @@ export function useStoragePersistence() {
         topologyIntensity: persistedTopologyState.topologyIntensity,
       };
       try {
-        const topology = restoreTopology(restoredGrid, { ...settings,
+        const { topology, grid: loadedGrid } = restoreBoard(restoredGrid, { ...settings,
           ...(persistedTopologyState.deserializedTopology && { topology: serializeTopology(persistedTopologyState.deserializedTopology) }),
         });
         store.setState({
-          grid: normalizeRestoredGrid(restoredGrid, topology),
+          grid: loadedGrid,
           ...settings,
           topologyPreset: settings.topologyPreset as typeof topologyPreset,
           topology,

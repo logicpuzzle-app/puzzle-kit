@@ -27,8 +27,9 @@ export function captureTopologySettings(state: {
   };
 }
 
-/** A present but invalid snapshot must fail, not fall back to a different board. */
-export function restoreTopology(grid: GridConfig, settings: Settings): GridTopology {
+/** Restore the graph and its normalized configuration as one result. A present
+ * invalid snapshot must fail without falling back to a different board. */
+export function restoreBoard(grid: GridConfig, settings: Settings): { topology: GridTopology; grid: GridConfig } {
   if (grid.hexRowOffset !== undefined && grid.hexRowOffset !== 0 && grid.hexRowOffset !== 1) {
     throw new Error('Invalid grid hex row offset');
   }
@@ -59,16 +60,12 @@ export function restoreTopology(grid: GridConfig, settings: Settings): GridTopol
   if (topology.editBase) topology.editBase.appliedPreset = topology.appliedPreset;
   if (topology.exclusionBase?.editBase) topology.exclusionBase.editBase.appliedPreset = topology.appliedPreset;
   if (settings.useTopology && !topology.editBase) {
-    topology = prepareLegacyEditedExclusions(topology, grid);
+    const migrated = prepareLegacyEditedExclusions(topology, grid);
+    if (migrated) ({ topology, grid } = migrated);
     topology = prepareLegacySplits(topology, grid);
     if (!topology.editBase) topology = prepareLegacyMerges(topology, grid);
   }
-  return settings.useTopology
-    ? prepareExclusionBase(topology, grid, settings.topologyPreset as TopologyPreset, settings.topologyIntensity)
-    : topology;
-}
-
-/** Import applies topology and its normalized structural configuration atomically. */
-export function restoredGrid(grid: GridConfig, topology: GridTopology): GridConfig {
-  return topology.editBase ? editedGrid(topology, grid) : grid;
+  if (topology.editBase) grid = editedGrid(topology, grid);
+  if (settings.useTopology) topology = prepareExclusionBase(topology, grid, settings.topologyPreset as TopologyPreset, settings.topologyIntensity);
+  return { topology, grid };
 }

@@ -45,14 +45,14 @@ function remapCuts(grid: GridConfig, before: GridTopology, after: GridTopology):
  * source cells are restored independently; revealing them never silently
  * extends a surviving merge. Geometry correspondence is confined to this
  * whole-graph-verified legacy generator, never applied to arbitrary native IDs. */
-export function prepareLegacyEditedExclusions(topology: GridTopology, grid: GridConfig): GridTopology {
+export function prepareLegacyEditedExclusions(topology: GridTopology, grid: GridConfig): { topology: GridTopology; grid: GridConfig } | null {
   if (topology.editBase || topology.mergeBase || topology.exclusionBase || grid.sculptOperations?.length
       || !(grid.mergedCells?.length || grid.splitLines?.length)
       || ![grid.voidCells, grid.disabledCells, grid.outboardCells].some(ids => ids?.length)
-      || new Set(grid.splitLines?.map(cut => cut.cellId)).size !== (grid.splitLines?.length ?? 0)) return topology;
+      || new Set(grid.splitLines?.map(cut => cut.cellId)).size !== (grid.splitLines?.length ?? 0)) return null;
   const preset = topology.appliedPreset ?? { preset: 'square' as const, intensity: 0.5 };
   const raw = gridConfigToTopology(grid), expected = applyTopologyPreset(raw, preset);
-  if (!matchesLegacyGraph(topology, expected)) return topology;
+  if (!matchesLegacyGraph(topology, expected)) return null;
   const sourceGrid = { ...grid, mergedCells: undefined, splitLines: undefined };
   const source = gridConfigToTopology(sourceGrid);
   const complete = gridConfigToTopology({ ...sourceGrid, voidCells: undefined, disabledCells: undefined, outboardCells: undefined });
@@ -62,17 +62,17 @@ export function prepareLegacyEditedExclusions(topology: GridTopology, grid: Grid
   const originalBefore = gridConfigToTopology({ ...grid, splitLines: undefined });
   const before = gridConfigToTopology({ ...structuralGrid, splitLines: undefined });
   const structural = remapCuts(structuralGrid, originalBefore, before);
-  if (!structural) return topology;
+  if (!structural) return null;
   const after = gridConfigToTopology(structural);
   const rawCuts = legacySplitOperations(before, structural, after);
-  if (!rawCuts) return topology;
+  if (!rawCuts) return null;
   const diagonalPairs = new Set(rawCuts.map(cut => pair(position(after.vertices.get(cut.startVertex)!.position), position(after.vertices.get(cut.endVertex)!.position))));
 
   const reserved = new Set([...topology.vertices.keys(), ...topology.edges.keys()]);
   const fresh = () => { let id: string; do { id = uuid(); } while (reserved.has(id)); reserved.add(id); return id; };
   const vertexAt = new Map([...raw.vertices.values()].map(vertex => [position(vertex.position), vertex.id]));
   const edgeAt = new Map([...raw.edges.values()].map(edge => [pair(edge.startVertex, edge.endVertex), edge.id]));
-  if (vertexAt.size !== raw.vertices.size || edgeAt.size !== raw.edges.size) return topology;
+  if (vertexAt.size !== raw.vertices.size || edgeAt.size !== raw.edges.size) return null;
   const remapGraph = (graph: GridTopology, isSource = false): GridTopology | null => {
     const vertexIds = new Map<string, string>(), edgeIds = new Map<string, string>();
     for (const [id, vertex] of graph.vertices) {
@@ -106,9 +106,9 @@ export function prepareLegacyEditedExclusions(topology: GridTopology, grid: Grid
     };
   };
   const mappedBase = remapGraph(complete, true), mappedBefore = remapGraph(before), mappedAfter = remapGraph(after);
-  if (!mappedBase || !mappedBefore || !mappedAfter) return topology;
+  if (!mappedBase || !mappedBefore || !mappedAfter) return null;
   const cuts = legacySplitOperations(before, structural, mappedAfter);
-  if (!cuts) return topology;
+  if (!cuts) return null;
   const diagonals = new Set(cuts.map(cut => cut.edgeId));
   const edits: TopologyEdit[] = [];
   for (const requested of grid.mergedCells ?? []) {
@@ -116,13 +116,12 @@ export function prepareLegacyEditedExclusions(topology: GridTopology, grid: Grid
     if (!members.length) continue; // No merged entity existed for this group.
     const matches = [...mappedBefore.cells.values()].filter(cell => !source.cells.has(cell.id)
       && cell.originalCells?.length === members.length && members.every(id => cell.originalCells!.includes(id)));
-    if (matches.length !== 1) return topology;
+    if (matches.length !== 1) return null;
     const cell = matches[0];
     edits.push({ kind: 'merge', id: cell.id, cellIds: members,
       boundary: { vertices: cell.boundaryVertices, edges: cell.boundaryEdges } });
   }
   edits.push(...cuts);
-  if (!edits.length) return topology;
   // Archive the old perimeter, including coalesced edges, dropped corners and
   // edge-interior split points. Never replace it with a newly generated outline.
   for (const graph of [mappedBefore, mappedAfter]) {
@@ -133,17 +132,17 @@ export function prepareLegacyEditedExclusions(topology: GridTopology, grid: Grid
       ...edge, adjacentCells: [], isBoundary: false,
     });
   }
-  if ([...diagonals].some(id => mappedBase.edges.has(id))) return topology;
+  if ([...diagonals].some(id => mappedBase.edges.has(id))) return null;
   const retainedCells = new Map([...mappedBefore.cells, ...mappedAfter.cells]);
   const projected = projectEdits(mappedBase, edits, retainedCells, mappedAfter.edges);
-  if (!projected) return topology;
+  if (!projected) return null;
   const visible = applyCellExclusions(projected, grid);
-  if (!matchesLegacyGraph({ ...visible, bounds: raw.bounds }, raw, true)) return topology;
+  if (!matchesLegacyGraph({ ...visible, bounds: raw.bounds }, raw, true)) return null;
   // Hidden and archived nodes use the original deformation frame too. Reusing
   // the complete board's frame would move old notes when a preset is reapplied.
   const frame = preset.preset === 'square' || preset.preset === 'pyramid' ? {} : { deformationBounds: raw.bounds };
   const transformed = applyTopologyPreset({ ...projected, ...frame,
-    editBase: { ...mappedBase, ...frame } }, preset);
+    ...(edits.length && { editBase: { ...mappedBase, ...frame } }) }, preset);
   const full = { ...transformed,
     cells: new Map([...transformed.cells].map(([id, cell]) => [id, { ...cell, ...topology.cells.get(id),
       adjacentCells: cell.adjacentCells, ...(cell.baseCenter && { baseCenter: cell.baseCenter }) }])),
@@ -156,9 +155,9 @@ export function prepareLegacyEditedExclusions(topology: GridTopology, grid: Grid
   const config = editedGrid(full, grid);
   const result = applyCellExclusions({ ...full, sourceConfig: config }, config);
   // Leave the saved visible graph (including ordering/index metadata) intact.
-  return { ...result, bounds: topology.bounds,
+  return { grid: config, topology: { ...result, bounds: topology.bounds,
     cells: new Map([...topology.cells].map(([id, cell]) => [id, { ...cell, ...(full.cells.get(id)!.baseCenter && { baseCenter: full.cells.get(id)!.baseCenter }) }])),
     vertices: new Map([...topology.vertices].map(([id, vertex]) => [id, { ...vertex, ...(full.vertices.get(id)!.basePosition && { basePosition: full.vertices.get(id)!.basePosition }) }])),
     edges: new Map([...topology.edges].map(([id, edge]) => [id, { ...edge, ...(full.edges.get(id)!.baseMidpoint && { baseMidpoint: full.edges.get(id)!.baseMidpoint }) }])),
-  };
+  } };
 }

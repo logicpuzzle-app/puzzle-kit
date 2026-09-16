@@ -13,7 +13,7 @@ import {
   generatePuzzlinkUrl,
 } from '../../../utils/penpaCompat';
 import { syncCountersFromPuzzleState } from '../../../utils/idGenerator';
-import { restoredGrid, restoreTopology } from '../../../utils/topologyPersistence';
+import { restoreBoard } from '../../../utils/topologyPersistence';
 import { restorePuzzleStateFromExport } from '../../../utils/puzzleExport';
 import { loadAutoSave, parseShareUrl } from '../../../utils/serialization';
 import { getDefaultStorageAdapter } from '../../../modules/storage';
@@ -54,7 +54,7 @@ export const loadPuzzleData = (
   const loadedTopologyPreset = (data.topologySettings?.topologyPreset ?? storeState.topologyPreset) as typeof storeState.topologyPreset;
   const loadedTopologyIntensity = data.topologySettings?.topologyIntensity ?? storeState.topologyIntensity;
 
-  const loadedTopology = restoreTopology(data.grid, {
+  const { topology: loadedTopology, grid: loadedGrid } = restoreBoard(data.grid, {
     useTopology: loadedUseTopology,
     topologyPreset: loadedTopologyPreset,
     topologyIntensity: loadedTopologyIntensity,
@@ -64,7 +64,7 @@ export const loadPuzzleData = (
   syncCountersFromPuzzleState(normalizedState);
   store.setState({
     ...freshPuzzleSession(store.getState()),
-    grid: restoredGrid(data.grid, loadedTopology),
+    grid: loadedGrid,
     puzzle: normalizedState,
     topology: loadedTopology,
     useTopology: loadedUseTopology,

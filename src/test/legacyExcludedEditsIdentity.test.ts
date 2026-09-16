@@ -1,8 +1,14 @@
-import { expect, it } from 'vitest';
+import { afterEach, expect, it } from 'vitest';
+import { createElement, type ReactNode } from 'react';
+import { cleanup, renderHook } from '@testing-library/react';
+import { PuzzleStoreProvider } from '../store/puzzleStoreContext';
+import { useStoragePersistence } from '../hooks/useStoragePersistence';
+import { saveGridConfig, saveTopologyState } from '../utils/storage';
+import inactive from '../../e2e/fixtures/legacy-inactive-groups-board.json';
 import fixture from '../../e2e/fixtures/legacy-excluded-edits-board.json';
 import { createPuzzleStore } from '../store/puzzleStore';
 import { applyTopologyPreset, gridConfigToTopology } from '../utils/gridTopology';
-import { serializeTopology } from '../utils/serialization';
+import { deserializeTopology, serializeTopology } from '../utils/serialization';
 import type { GridConfig } from '../types';
 
 it('restores legacy cuts and merges with excluded source cells without moving surviving IDs or notes', () => {
@@ -91,6 +97,8 @@ it('does not invent structural or hidden sources for a custom graph that differs
   const before = store.getState();
   expect(before.topology!.editBase).toBeUndefined();
   expect(before.topology!.exclusionBase).toBeUndefined();
+  expect(before.grid.mergedCells).toEqual(custom.grid.mergedCells);
+  expect(before.grid.splitLines).toEqual(custom.grid.splitLines);
   store.getState().clearSplitLines();
   expect(store.getState().topology).toBe(before.topology);
   expect(store.getState().puzzle).toBe(before.puzzle);
@@ -180,4 +188,49 @@ it('keeps later merge IDs when an earlier configured group has no surviving sour
   store.getState().toggleCellDisabled('cell-0-0');
   expect(store.getState().topology!.cells.has('cell-0-0')).toBe(true);
   expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
+});
+
+
+it('removes an unrealized legacy merge setting atomically with restoring its hidden source, allowing a new undoable merge', () => {
+  const store = createPuzzleStore().useStore;
+  expect(store.getState().importPuzzle(JSON.stringify(inactive))).toBe(true);
+  const before = store.getState(), topology = before.topology!;
+  expect(before.grid.mergedCells).toBeUndefined();
+  expect(topology.editBase).toBeUndefined();
+  expect(topology.editOperations).toBeUndefined();
+  expect(topology.exclusionBase!.cells.size).toBe(3);
+  for (const key of ['cells', 'vertices', 'edges'] as const) expect(serializeTopology(topology)[key]).toEqual(inactive.topologySettings.topology[key]);
+  expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
+  store.getState().setGrid({ voidCells: undefined });
+  expect(store.getState().topology!.cells.size).toBe(3);
+  expect(store.getState().topology!.cells.has('merged-0')).toBe(false);
+  const restored = store.getState();
+  store.getState().mergeCells(['cell-0-0', 'cell-0-1']);
+  const group = store.getState().topology!.mergeGroups![0];
+  expect(group.cellIds).toEqual(['cell-0-0', 'cell-0-1']);
+  expect(group.id).not.toBe('merged-0');
+  expect(store.getState().topology!.cells.size).toBe(2);
+  expect(store.getState().puzzle).toEqual(before.puzzle);
+  for (const [id, vertex] of topology.vertices) expect(store.getState().topology!.vertices.get(id)!.position).toEqual(vertex.position);
+  store.getState().undo(); expect(store.getState().topology).toBe(restored.topology);
+  store.getState().redo();
+  expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
+  expect(store.getState().topology!.mergeGroups).toEqual([group]);
+  expect(store.getState().puzzle).toEqual(before.puzzle);
+});
+
+afterEach(() => { cleanup(); localStorage.clear(); });
+it('restores the normalized graph and settings together from persisted topology preferences', () => {
+  saveGridConfig({ ...inactive.grid as GridConfig, rows: 9, mergedCells: undefined });
+  saveTopologyState(deserializeTopology(inactive.topologySettings.topology), true, 'square', 0.5);
+  const store = createPuzzleStore().useStore;
+  renderHook(() => useStoragePersistence(), { wrapper: ({ children }: { children: ReactNode }) =>
+    createElement(PuzzleStoreProvider, { store, children }) });
+  expect(store.getState().grid.rows).toBe(1);
+  expect(store.getState().grid.mergedCells).toBeUndefined();
+  expect(store.getState().topology!.exclusionBase!.cells.size).toBe(3);
+  expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
+  store.getState().setGrid({ voidCells: undefined });
+  store.getState().mergeCells(['cell-0-0', 'cell-0-1']);
+  expect(store.getState().topology!.mergeGroups![0].cellIds).toEqual(['cell-0-0', 'cell-0-1']);
 });

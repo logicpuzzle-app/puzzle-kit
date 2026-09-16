@@ -17,7 +17,7 @@ import { migrationRegistry } from '../../migrations';
 import { mergeDirectionalCluesIntoNumbers } from '../../utils/legacyDirectionalClues';
 import { syncCountersFromPuzzleState } from '../../utils/idGenerator';
 import { freshPuzzleSession } from '../puzzleSession';
-import { captureTopologySettings, restoredGrid, restoreTopology } from '../../utils/topologyPersistence';
+import { captureTopologySettings, restoreBoard } from '../../utils/topologyPersistence';
 
 export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
   newPuzzle: (options = {}) => {
@@ -137,7 +137,7 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
         const validationOverrides = data.constraintSettings?.validationOverrides ?? {};
         const highlightOverrides = data.constraintSettings?.highlightOverrides ?? {};
 
-        const topology = restoreTopology(data.grid, {
+        const { topology, grid: loadedGrid } = restoreBoard(data.grid, {
           useTopology, topologyPreset, topologyIntensity,
           ...data.topologySettings,
         });
@@ -168,7 +168,7 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
         syncCountersFromPuzzleState(normalizedState);
         set({
           ...freshPuzzleSession(get()),
-          grid: restoredGrid(data.grid, topology),
+          grid: loadedGrid,
           puzzle: normalizedState,
           useTopology,
           topologyPreset,
