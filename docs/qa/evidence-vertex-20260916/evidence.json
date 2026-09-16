@@ -1,0 +1,222 @@
+{
+  "before": {
+    "commit": "80fd3e3617f74ee5b1ac75587635a3567e57cbc2",
+    "createdAt": "2026-09-16T04:08:04.250Z",
+    "runner": "Playwright + Chromium, Vite dev server; desktop mouse / Pixel 7 touchscreen input",
+    "stats": {
+      "startTime": "2026-09-16T04:08:04.907Z",
+      "duration": 3680.5539999999996,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "testSha256": "1e27c982117f072aa64705b68e7ae0e5196b98628b37ddcb6827aaa6e75a6b6a",
+    "fixtureSha256": {
+      "vertex-surfaces.json": "9b394821c62334c347b5e9a82e1ef232c653ac9e5fa22fe9b7d226997bc2d839",
+      "vertex-surfaces-hex.json": "6af9d1ad7b6e0a46b00c192f8ef331a489729d0fc1c69c7d1b87875c3742b38d"
+    },
+    "tests": [
+      {
+        "title": "#29 vertex surfaces: dual-grid pixels, painting, history and saved separation",
+        "project": "chromium",
+        "status": "failed",
+        "runtimeErrors": [],
+        "video": "before-chromium.webm",
+        "failure": "The stored vertex shade is not rendered: the expected red PNG pixel remains white."
+      },
+      {
+        "title": "#29 vertex surfaces: dual-grid pixels, painting, history and saved separation",
+        "project": "mobile-chrome",
+        "status": "failed",
+        "runtimeErrors": [],
+        "video": "before-mobile-chrome.webm",
+        "failure": "The stored vertex shade is not rendered: the expected red PNG pixel remains white."
+      }
+    ]
+  },
+  "after": {
+    "commit": "a840e7a9dcc8a618fd26c1001de278510cee9e71",
+    "createdAt": "2026-09-16T04:13:20.605Z",
+    "runner": "Playwright + Chromium, Vite dev server; desktop mouse / Pixel 7 touchscreen input",
+    "stats": {
+      "startTime": "2026-09-16T04:13:21.013Z",
+      "duration": 10751.258,
+      "expected": 4,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "testSha256": "1e27c982117f072aa64705b68e7ae0e5196b98628b37ddcb6827aaa6e75a6b6a",
+    "fixtureSha256": {
+      "vertex-surfaces.json": "9b394821c62334c347b5e9a82e1ef232c653ac9e5fa22fe9b7d226997bc2d839",
+      "vertex-surfaces-hex.json": "6af9d1ad7b6e0a46b00c192f8ef331a489729d0fc1c69c7d1b87875c3742b38d"
+    },
+    "tests": [
+      {
+        "title": "vertex notes are editable in Paint, Edit and Player without changing problem marks @production",
+        "project": "chromium",
+        "status": "passed",
+        "runtimeErrors": [],
+        "video": "after-chromium-views.webm"
+      },
+      {
+        "title": "vertex notes are editable in Paint, Edit and Player without changing problem marks @production",
+        "project": "mobile-chrome",
+        "status": "passed",
+        "runtimeErrors": [],
+        "video": "after-mobile-chrome-views.webm"
+      },
+      {
+        "title": "#29 vertex surfaces: dual-grid pixels, painting, history and saved separation",
+        "project": "chromium",
+        "status": "passed",
+        "runtimeErrors": [],
+        "video": "after-chromium.webm"
+      },
+      {
+        "title": "#29 vertex surfaces: dual-grid pixels, painting, history and saved separation",
+        "project": "mobile-chrome",
+        "status": "passed",
+        "runtimeErrors": [],
+        "video": "after-mobile-chrome.webm"
+      }
+    ]
+  },
+  "fixture": "Synthetic opaque-ID 2x2 board with a cell-center loop and red central vertex shade; a separate custom hexagonal cell tests clipping at the board boundary.",
+  "scope": "Vertex Fill/Dot, erase, mouse drag/mobile tap, both layers, PNG and native file, exclusion and restore, legacy Grid resize/exclusion; Paint/Edit/Player answer-only editing and clear-layer Undo. Unsupported topology regeneration remains a merge blocker.",
+  "files": {
+    "after-chromium-controls.png": {
+      "sha256": "acc51113ee82a33d41b01fabdf22965e5fb471e01e15c89f44895d8a28bfde4e",
+      "bytes": 43222
+    },
+    "after-chromium-edit.png": {
+      "sha256": "fea3e2f69c162e0c5fd3ec3087ef745717e18576b2157352dd6e6dab4a3f3dbc",
+      "bytes": 26188
+    },
+    "after-chromium-excluded.png": {
+      "sha256": "4c69f8844126450bc1e68fa6cb64fe49481a864251b430a811a12fe64c76649c",
+      "bytes": 985
+    },
+    "after-chromium-hex-dot.png": {
+      "sha256": "e448ace26223d91c189c847c8c300f081b67173ce0cb5b9d8e6b2fa7cf804acb",
+      "bytes": 29774
+    },
+    "after-chromium-hex-export.png": {
+      "sha256": "7e0d7b914a2ab761fd4ae141b5b0e29d3f1a4974712f6a3cd01c7ff7db512cd3",
+      "bytes": 2256
+    },
+    "after-chromium-legacy-excluded.png": {
+      "sha256": "4b8de844f567a054a1201ae60e78202d89ceed91ae3accef2c811d3e07824c28",
+      "bytes": 29973
+    },
+    "after-chromium-legacy-resized.png": {
+      "sha256": "9bc269715badce238415e7d1bc5d79c62ba4110bc5006135a2838da1ff952c98",
+      "bytes": 29888
+    },
+    "after-chromium-paint.png": {
+      "sha256": "ce9e2b3f79495c396f3b6859b1e1d73b07fb08525e5ffc4f74212e8353a74257",
+      "bytes": 36315
+    },
+    "after-chromium-player.png": {
+      "sha256": "0a65b9c3df95882b5ed97951075566e4ff9ff4a8bd24039b4824f38b5435528d",
+      "bytes": 27686
+    },
+    "after-chromium-views.webm": {
+      "sha256": "161bcb5b165770954a6f65f93e7ef9afbd825dc500c19bf543c5b420098791f3",
+      "bytes": 91530,
+      "durationSeconds": 4.4,
+      "fullDecode": "passed"
+    },
+    "after-chromium.png": {
+      "sha256": "89542456facd178eeeb642ae9ac7061dedf512c595631143c3076b9dd7fe295c",
+      "bytes": 43203
+    },
+    "after-chromium.webm": {
+      "sha256": "ab21277394516e4d8ee3ef1ab1ac7657c159900b8284e932052090bd0bc6e62f",
+      "bytes": 157999,
+      "durationSeconds": 5.48,
+      "fullDecode": "passed"
+    },
+    "after-mobile-chrome-controls.png": {
+      "sha256": "83d98ca89f2ab0c8d9b53e8b861cc314e8f9820b79213b78bb45ae5d31882a50",
+      "bytes": 70009
+    },
+    "after-mobile-chrome-edit.png": {
+      "sha256": "075e9ba738c4197a7aa2ec34c2ec33d3697399bedad55efb0b6cc3abd936cf29",
+      "bytes": 74433
+    },
+    "after-mobile-chrome-excluded.png": {
+      "sha256": "4c69f8844126450bc1e68fa6cb64fe49481a864251b430a811a12fe64c76649c",
+      "bytes": 985
+    },
+    "after-mobile-chrome-hex-dot.png": {
+      "sha256": "62c8e7f6aa76379db00c8fc2761d18eda5c8ef4ce530022d6bc6db8cffa7da5e",
+      "bytes": 67180
+    },
+    "after-mobile-chrome-hex-export.png": {
+      "sha256": "7e0d7b914a2ab761fd4ae141b5b0e29d3f1a4974712f6a3cd01c7ff7db512cd3",
+      "bytes": 2256
+    },
+    "after-mobile-chrome-legacy-excluded.png": {
+      "sha256": "b4c66df8bbc6f8d2fdc66fa7bfa7f97484b59395a1f8982947d361a57ae27132",
+      "bytes": 77728
+    },
+    "after-mobile-chrome-legacy-resized.png": {
+      "sha256": "531a6a23ef62767c6e4a7409324fa03166b88768c7e03c2e562c381573d7d237",
+      "bytes": 78612
+    },
+    "after-mobile-chrome-paint.png": {
+      "sha256": "1e1557f04b6b14827b38702993dc2c6042ac1a822c9cfe563e179edad6c03561",
+      "bytes": 86365
+    },
+    "after-mobile-chrome-player.png": {
+      "sha256": "4b3ee03d55ab890516b74d777a5472e781038b177296dd84e2f33883154ea392",
+      "bytes": 84394
+    },
+    "after-mobile-chrome-views.webm": {
+      "sha256": "fabb738bcadc501e8d53b2b1eec2b6ee54ea5fbeb7c246e60dfb7dd7cbb083c7",
+      "bytes": 160025,
+      "durationSeconds": 4.16,
+      "fullDecode": "passed"
+    },
+    "after-mobile-chrome.png": {
+      "sha256": "43c0960733893065cacb7a5d2ddc8eae0d543f1166418bdc3cfa3c5e79074f58",
+      "bytes": 76209
+    },
+    "after-mobile-chrome.webm": {
+      "sha256": "ceefcd8cffcbff9ed1a0621e2137f7fa067a175a639b528bbe4b53bf0191de83",
+      "bytes": 306133,
+      "durationSeconds": 4.8,
+      "fullDecode": "passed"
+    },
+    "before-chromium-export.png": {
+      "sha256": "902b2b5fa77887d5fb9c30ec4740f46eedbbcffa9f689a07202ee56871ed139d",
+      "bytes": 1081
+    },
+    "before-chromium.png": {
+      "sha256": "26bedf833d2293e139cd02648a895e90f2305c42441e545c766c9772cc170440",
+      "bytes": 43165
+    },
+    "before-chromium.webm": {
+      "sha256": "db6182ce32be7e697242d00729bcf768682f4f60b87e394de47278e17a3fd57e",
+      "bytes": 41417,
+      "durationSeconds": 3.2,
+      "fullDecode": "passed"
+    },
+    "before-mobile-chrome-export.png": {
+      "sha256": "902b2b5fa77887d5fb9c30ec4740f46eedbbcffa9f689a07202ee56871ed139d",
+      "bytes": 1081
+    },
+    "before-mobile-chrome.png": {
+      "sha256": "846ecee0d1ec0bdeb66fce7f68a7f9bee4d539c202a8cb944fae01688834f081",
+      "bytes": 76136
+    },
+    "before-mobile-chrome.webm": {
+      "sha256": "3c8c07e37933d56a6ace636bdc4d2a1c75d13a48d779c35c5ef2061df022bcc2",
+      "bytes": 53009,
+      "durationSeconds": 3.24,
+      "fullDecode": "passed"
+    }
+  }
+}
