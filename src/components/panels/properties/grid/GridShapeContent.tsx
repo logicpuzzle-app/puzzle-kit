@@ -145,7 +145,8 @@ export const GridShapeContent: React.FC = () => {
 
   const unsupportedEdit = !!topology && hasChanges && previewGrid !== null && previewTopology === null;
   const isometricExtentEdit = grid.gridType === 'iso' && isIso &&
-    (pendingRows !== grid.rows || effectiveCols !== grid.cols || pendingLevel !== (grid.level ?? 1));
+    (pendingRows !== grid.rows || effectiveCols !== grid.cols || pendingLevel !== (grid.level ?? 1)
+      || pendingIsoView !== (grid.isometricView ?? 'exterior'));
 
   // Auto-preview when values change
   useEffect(() => {
