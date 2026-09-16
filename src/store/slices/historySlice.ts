@@ -27,6 +27,8 @@ export const applyActionToState = (
   };
 
   switch (action.type) {
+    case 'SET_KAKURO_CLUES':
+      return { puzzle: { ...state.puzzle, problem: { ...state.puzzle.problem, clueCells: action.after } } };
     case 'ADD_BOXLINE':
     case 'REMOVE_BOXLINE': {
       const layer = action.element.layer;

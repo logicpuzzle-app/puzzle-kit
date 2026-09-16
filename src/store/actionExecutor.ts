@@ -456,6 +456,9 @@ export class ActionExecutor {
         }));
         break;
 
+      case 'SET_KAKURO_CLUES':
+        set(state => ({ puzzle: { ...state.puzzle, problem: { ...state.puzzle.problem, clueCells: action.after } } }));
+        break;
       case 'SET_GRID':
         set((state) => ({
           grid: { ...state.grid, ...action.grid },

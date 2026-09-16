@@ -22,6 +22,7 @@ import {
   nanroSchema,
   paintSchema,
   sudokuSchema,
+  kakuroSchema,
 } from './schemas';
 
 /**
@@ -50,6 +51,7 @@ class ConstraintCatalogImpl implements IConstraintCatalog {
     this.registerSchema(nanroSchema);
     this.registerSchema(paintSchema);
     this.registerSchema(sudokuSchema);
+    this.registerSchema(kakuroSchema);
   }
 
   /**

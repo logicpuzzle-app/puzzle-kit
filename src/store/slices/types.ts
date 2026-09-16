@@ -159,6 +159,7 @@ export interface ElementsSlice {
   removeEdge: (id: string) => void;
   addWall: (element: Omit<WallElement, 'id'>) => string;
   removeWall: (id: string) => void;
+  setKakuroClue: (cellId: string, values: { horizontal: number | null; vertical: number | null } | null) => void;
   addNumber: (element: Omit<NumberElement, 'id'>) => string;
   removeNumber: (id: string) => void;
   updateNumber: (id: string, value: string, appearance?: Partial<Pick<NumberElement, 'color' | 'size'>>) => void;

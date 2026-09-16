@@ -1,3 +1,4 @@
+import { restoreKakuroClues } from './kakuro';
 /**
  * Puzzle Export Utilities
  *
@@ -128,6 +129,7 @@ export function restoreLayerToPuzzleElements(
   );
   const restored: PuzzleElements & { directionalClues?: Record<string, any> } = {
     ...elements,
+    ...(elements.clueCells !== undefined ? { clueCells: restoreKakuroClues(elements.clueCells) } : {}),
     ...(elements.lineGroups ? { lineGroups: restoreLayerToElements(elements.lineGroups, layer) } : {}),
     surfaces: restoreLayerToElements(elements.surfaces || {}, layer),
     lines: mergedLines,

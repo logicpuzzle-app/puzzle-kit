@@ -60,7 +60,7 @@ export const kakuroSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'kakuro',
-        checklist: ['checkSameNumberInLine'],
+        checklist: ['checkSameNumberInLine_kakuro'],
         failcodes: ['nmDupRow'],
       },
     },
@@ -73,7 +73,7 @@ export const kakuroSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'kakuro',
-        checklist: ['checkSumOfNumberInLine'],
+        checklist: ['checkSumOfNumberInLine_kakuro'],
         failcodes: ['nmSumRowNe'],
       },
     },
@@ -86,7 +86,7 @@ export const kakuroSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'kakuro',
-        checklist: ['checkNoNumCell'],
+        checklist: ['checkNoNumCell_kakuro'],
         failcodes: ['ceEmpty'],
       },
     },
