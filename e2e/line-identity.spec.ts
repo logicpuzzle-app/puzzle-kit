@@ -72,6 +72,13 @@ test('line input uses actual adjacency when IDs look like other Grid coordinates
   const arrowPoints = await polygon.evaluate(node => [...(node as SVGPolygonElement).points].map(p => ({ x: p.x, y: p.y })));
   expect(Math.min(...arrowPoints.map(p => p.x))).toBeCloseTo(left[1].center.x);
   expect(Math.max(...arrowPoints.map(p => p.x))).toBeGreaterThan(left[1].center.x);
+  // Clear the desktop selection/cursor from the arrow tip through a harmless board click.
+  if (!isMobile) {
+    const blank = topology.cells.find(([, c]) => c.index?.[0] === 2 && c.index?.[1] === 2)![1].center;
+    const idle = await point(page, blank.x, blank.y);
+    await page.mouse.click(idle.x, idle.y);
+    expect((await savePuzzleFile(page)).state).toEqual(arrowFile.state);
+  }
   await page.screenshot({ animations: 'disabled', path: info.outputPath('line-arrow.png') });
   await openPuzzleFile(page, Buffer.from(JSON.stringify(arrowFile)));
   expect((await savePuzzleFile(page)).state).toEqual(arrowFile.state);
