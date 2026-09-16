@@ -36,6 +36,9 @@ npm run build:lib
 
 ## Development and QA
 
+Board and reference changes follow the [board ID contract](docs/board-id-contract.md)
+and its [migration inventory](docs/board-id-migration.md).
+
 See [Testing and development harness](docs/testing.md) for unit/E2E commands,
 local scenario debugging, and before/after video capture. The latest verification is in [touch and WebKit QA results](docs/qa/2026-09-06-touch-webkit.md),
 with [before/after recordings](docs/qa/evidence-touch-webkit-20260906/README.md).

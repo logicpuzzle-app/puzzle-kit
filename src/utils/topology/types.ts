@@ -2,6 +2,10 @@
  * GridTopology Types
  *
  * Type definitions for topology-based grid representation.
+ *
+ * ID policy: docs/board-id-contract.md. IDs are opaque keys scoped to a board
+ * and entity kind; use explicit geometry, index, and adjacency metadata.
+ * Current regeneration/persistence gaps are tracked in docs/board-id-migration.md.
  */
 
 import type { Point } from '../../types';
@@ -15,7 +19,7 @@ export type TopologyNodeType = 'cell' | 'vertex' | 'edge';
  * A node in the grid topology (cell center, vertex, or edge midpoint)
  */
 export interface TopologyNode {
-  /** Unique identifier for this node */
+  /** Opaque identifier; resolve with the board and explicit node type. */
   id: string;
   /** Type of node */
   type: TopologyNodeType;
@@ -37,7 +41,7 @@ export type Index = [number | null, number | null] | null;
  * A cell in the topology with its boundary vertices
  */
 export interface TopologyCell {
-  /** Cell ID */
+  /** Opaque cell key; its spelling does not encode coordinates or shape. */
   id: string;
   /** Center position */
   center: Point;
@@ -48,9 +52,9 @@ export interface TopologyCell {
   /** IDs of edges on the boundary */
   boundaryEdges: string[];
   /**
-   * Grid index [row, col] for stable reference without parsing cellId.
-   * - For regular grids: [row, col] is always set
-   * - For special topologies where index is not applicable: null
+   * Optional grid index [row, col], not a persistent identity.
+   * Check for missing/null components. Generic topology does not guarantee
+   * index uniqueness or stability across edits; never fall back to ID parsing.
    */
   index?: Index;
   /** @deprecated Use index instead. Original row for square grids */
@@ -76,7 +80,7 @@ export interface TopologyCell {
  * A vertex in the topology
  */
 export interface TopologyVertex {
-  /** Vertex ID */
+  /** Opaque vertex key; its spelling does not encode coordinates or order. */
   id: string;
   /** Position */
   position: Point;
@@ -87,9 +91,9 @@ export interface TopologyVertex {
   /** IDs of adjacent vertices (connected by an edge) */
   adjacentVertices: string[];
   /**
-   * Grid index [row, col] for stable reference without parsing vertexId.
-   * - For regular grids: [row, col] is always set
-   * - For special topologies where index is not applicable: null
+   * Optional grid index [row, col], not a persistent identity.
+   * Check for missing/null components. Generic topology does not guarantee
+   * index uniqueness or stability across edits; never fall back to ID parsing.
    */
   index?: Index;
   /** @deprecated Use index instead. Original row for square grids */
@@ -102,7 +106,7 @@ export interface TopologyVertex {
  * An edge in the topology (between two vertices)
  */
 export interface TopologyEdge {
-  /** Edge ID */
+  /** Opaque edge key; use startVertex/endVertex and explicit direction metadata. */
   id: string;
   /** Midpoint position */
   midpoint: Point;
@@ -117,9 +121,9 @@ export interface TopologyEdge {
   /** Direction: 'h' for horizontal, 'v' for vertical (for square grids) */
   direction?: 'h' | 'v';
   /**
-   * Grid index [row, col] for stable reference without parsing edgeId.
-   * - For regular grids: [row, col] is always set
-   * - For special topologies where index is not applicable: null
+   * Optional grid index [row, col], not a persistent identity.
+   * Check for missing/null components. Generic topology does not guarantee
+   * index uniqueness or stability across edits; never fall back to ID parsing.
    */
   index?: Index;
   /** @deprecated Use index instead. Original row for square grids */
@@ -164,7 +168,7 @@ export interface CellDefinition {
   /** Optional list of original cell ids */
   originalCells?: string[];
   /**
-   * Grid index [row, col] for stable reference.
+   * Optional grid index [row, col], not a persistent identity.
    * If provided, will be copied to the resulting TopologyCell.
    */
   index?: Index;
