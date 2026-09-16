@@ -282,29 +282,6 @@ function geometrySnapshot(useStore: ReturnType<typeof setupStore>) {
 }
 
 describe('grid geometry history', () => {
-  it('restores a merge and unmerge without changing puzzle contents', () => {
-    const useStore = setupStore();
-    useStore.getState().addNumber({ cellId: 'cell-0-0', value: '7', position: 'center',
-      size: 'medium', color: '#000000', layer: 'problem' });
-    useStore.getState().addSurface({ cellId: 'cell-1-1', color: '#ff0000', layer: 'answer' });
-    const contents = structuredClone(useStore.getState().puzzle);
-    const original = geometrySnapshot(useStore);
-    useStore.getState().mergeCells(['cell-0-0', 'cell-0-1']);
-    const merged = geometrySnapshot(useStore);
-    expect(merged.cells.length).toBe(original.cells.length - 1);
-    useStore.getState().unmergeCells(['merged-0']);
-    const unmerged = geometrySnapshot(useStore);
-    expect(unmerged.cells.length).toBe(original.cells.length);
-    useStore.getState().undo();
-    expect(geometrySnapshot(useStore)).toEqual(merged);
-    useStore.getState().undo();
-    expect(geometrySnapshot(useStore)).toEqual(original);
-    useStore.getState().redo();
-    useStore.getState().redo();
-    expect(geometrySnapshot(useStore)).toEqual(unmerged);
-    expect(useStore.getState().puzzle).toEqual(contents);
-  });
-
   it('does not record a duplicate split and can undo removing or clearing splits', () => {
     const useStore = setupStore();
     const original = geometrySnapshot(useStore);

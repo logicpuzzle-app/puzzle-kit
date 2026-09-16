@@ -1,6 +1,7 @@
 import pako from 'pako';
 import type { PuzzleExport, GridConfig, PuzzleState } from '../types';
 import type { GridTopology, TopologyCell, TopologyVertex, TopologyEdge } from './topology/types';
+import { projectMerges } from './topology/retainedMerge';
 import { PUZZLE_EXPORT_VERSION } from '../constants/version';
 
 // Penpa-compatible compression using zlib
@@ -456,6 +457,8 @@ export function downloadAsPng(blob: Blob, filename = 'puzzle.png'): void {
  * Serializable topology format (uses arrays instead of Maps)
  */
 export interface SerializedTopology {
+  mergeBase?: SerializedTopology;
+  mergeGroups?: GridTopology['mergeGroups'];
   exclusionBase?: SerializedTopology;
   deformationBounds?: GridTopology['bounds'];
   cells: [string, TopologyCell][];
@@ -471,6 +474,7 @@ export interface SerializedTopology {
 export function serializeTopology(topology: GridTopology): SerializedTopology {
   return {
     ...(topology.exclusionBase ? { exclusionBase: serializeTopology(topology.exclusionBase) } : {}),
+    ...(topology.mergeBase && { mergeBase: serializeTopology(topology.mergeBase), mergeGroups: topology.mergeGroups }),
     cells: Array.from(topology.cells.entries()),
     vertices: Array.from(topology.vertices.entries()),
     edges: Array.from(topology.edges.entries()),
@@ -571,11 +575,40 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
       throw new Error('Invalid edge geometry or reference');
     }
   }
+  let mergeBase: GridTopology | undefined;
+  if (serialized.mergeBase !== undefined) {
+    if (!record(serialized.mergeBase) || serialized.mergeBase.mergeBase !== undefined || serialized.mergeBase.exclusionBase !== undefined || !Array.isArray(serialized.mergeGroups) || !serialized.mergeGroups.length) {
+      throw new Error('Invalid merge source graph');
+    }
+    mergeBase = deserializeTopology(serialized.mergeBase);
+    if (serialized.mergeGroups.some(group => !record(group) || typeof group.id !== 'string' || !Array.isArray(group.cellIds) || group.cellIds.some(id => typeof id !== 'string'))) {
+      throw new Error('Invalid merge groups');
+    }
+    const projected = projectMerges(mergeBase, serialized.mergeGroups);
+    const full = exclusionBase ?? { cells, vertices, edges };
+    if (!projected || full.cells.size !== projected.cells.size || full.vertices.size !== projected.vertices.size || full.edges.size !== projected.edges.size) throw new Error('Merge graph does not match its source');
+    for (const [id, cell] of full.cells) {
+      const expected = projected.cells.get(id);
+      const source = mergeBase.cells.get(id);
+      if (source && (JSON.stringify(source.center) !== JSON.stringify(cell.center) || JSON.stringify(source.baseCenter) !== JSON.stringify(cell.baseCenter))) throw new Error('Merge source moves a surviving cell');
+      if (!expected || JSON.stringify(expected.boundaryVertices) !== JSON.stringify(cell.boundaryVertices) || JSON.stringify(expected.boundaryEdges) !== JSON.stringify(cell.boundaryEdges)) throw new Error('Merge source reassigns a cell');
+    }
+    for (const [id, vertex] of full.vertices) {
+      const source = mergeBase.vertices.get(id);
+      if (!source || JSON.stringify(source.position) !== JSON.stringify(vertex.position) || JSON.stringify(source.basePosition) !== JSON.stringify(vertex.basePosition)) throw new Error('Merge source reassigns a vertex');
+    }
+    for (const [id, edge] of full.edges) {
+      const source = mergeBase.edges.get(id);
+      if (!source || source.startVertex !== edge.startVertex || source.endVertex !== edge.endVertex || JSON.stringify(source.midpoint) !== JSON.stringify(edge.midpoint) || JSON.stringify(source.baseMidpoint) !== JSON.stringify(edge.baseMidpoint)) throw new Error('Merge source reassigns an edge');
+    }
+    if (exclusionBase && (JSON.stringify(serialized.mergeGroups) !== JSON.stringify(serialized.exclusionBase!.mergeGroups) || JSON.stringify(serialized.mergeBase) !== JSON.stringify(serialized.exclusionBase!.mergeBase))) throw new Error('Inconsistent hidden merge source');
+  } else if (serialized.mergeGroups !== undefined || exclusionBase?.mergeBase) throw new Error('Missing merge source graph');
   return {
     cells,
     vertices,
     edges,
     ...(exclusionBase ? { exclusionBase } : {}),
+    ...(mergeBase ? { mergeBase, mergeGroups: serialized.mergeGroups } : {}),
     bounds: serialized.bounds,
     ...(serialized.deformationBounds && { deformationBounds: serialized.deformationBounds }),
     sourceConfig: serialized.sourceConfig,

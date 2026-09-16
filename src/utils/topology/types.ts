@@ -142,6 +142,10 @@ export interface TopologyEdge {
  * Complete grid topology
  */
 export interface GridTopology {
+  /** Actual graph before reversible cell merges; no nested merge/exclusion base. */
+  mergeBase?: GridTopology;
+  /** Explicit merged-cell identity and its source cells, never an ID suffix. */
+  mergeGroups?: import('./retainedMerge').MergeGroup[];
   /** Runtime metadata for the rendered graph; saved in topologySettings, not node IDs. */
   appliedPreset?: { preset: TopologyPreset; intensity: number };
   /** Same board before temporary exclusions. One level only; IDs are preserved. */

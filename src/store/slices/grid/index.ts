@@ -6,6 +6,7 @@ export {
   toggleCellDisabled,
   setCellDisabled,
   mergeCells,
+  setMergedCellGroups,
   unmergeCells,
   addSplitLine,
   removeSplitLine,

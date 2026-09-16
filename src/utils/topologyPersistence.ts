@@ -38,10 +38,16 @@ export function restoreTopology(grid: GridConfig, settings: Settings): GridTopol
   if (grid.gridType === 'hex' && (grid.hexRowOffset ?? 0) !== (topology.sourceConfig?.hexRowOffset ?? 0)) {
     throw new Error('Grid and topology disagree on hex row offset');
   }
+  if (topology.mergeBase) {
+    const canonical = (groups: string[][]) => JSON.stringify(groups.map(group => [...group].sort()).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))));
+    if (canonical(grid.mergedCells ?? []) !== canonical(topology.mergeGroups!.map(group => group.cellIds))) throw new Error('Grid and topology disagree on merges');
+  }
   topology.appliedPreset = settings.topology !== undefined || settings.useTopology
     ? { preset: settings.topologyPreset as TopologyPreset, intensity: settings.topologyIntensity }
     : { preset: 'square', intensity: 0.5 };
   if (topology.exclusionBase) topology.exclusionBase.appliedPreset = topology.appliedPreset;
+  if (topology.mergeBase) topology.mergeBase.appliedPreset = topology.appliedPreset;
+  if (topology.exclusionBase?.mergeBase) topology.exclusionBase.mergeBase.appliedPreset = topology.appliedPreset;
   return settings.useTopology
     ? prepareExclusionBase(topology, grid, settings.topologyPreset as TopologyPreset, settings.topologyIntensity)
     : topology;

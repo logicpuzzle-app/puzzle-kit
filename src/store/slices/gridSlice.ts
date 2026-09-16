@@ -26,6 +26,7 @@ import {
   toggleCellDisabled,
   setCellDisabled,
   mergeCells,
+  setMergedCellGroups,
   unmergeCells,
   addSplitLine,
   removeSplitLine,
@@ -148,6 +149,9 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
   setGrid: (gridUpdate) =>
     set((state) => {
       const newGrid = { ...state.grid, ...gridUpdate };
+      if (Object.keys(gridUpdate).length === 1 && Object.prototype.hasOwnProperty.call(gridUpdate, 'mergedCells')) {
+        return recordGeometryEdit(state, setMergedCellGroups(state, gridUpdate.mergedCells), 'Edit cell merges');
+      }
       const extentEdit = editGridExtent(state, newGrid);
       if (extentEdit) return recordGeometryEdit(state, extentEdit, 'Resize board');
       const forceTopology = newGrid.gridType === 'penrose_P3';

@@ -2,6 +2,9 @@
  * Cell operations for grid slice
  * Handles cell enabled/disabled, merge/unmerge, and split lines
  */
+import { v4 as uuid } from 'uuid';
+import { addMergeGroup, projectMerges, type MergeGroup } from '../../../utils/topology/retainedMerge';
+import { retainTopologyElements, retainTopologyPuzzle } from '../../../utils/topology/retainedElements';
 import type { GridConfig } from '../../../types';
 import type { PuzzleStore } from '../types';
 import { applyGridCellExclusions } from '../../../utils/topology/gridExclusions';
@@ -125,110 +128,54 @@ export const setCellDisabled = (
   return { grid: newGrid };
 };
 
-/**
- * Merge cells together
- */
-export const mergeCells = (
-  state: PuzzleStore,
-  cellIds: string[]
-): Partial<PuzzleStore> => {
-  if (cellIds.length < 2) return {};
-
-  const currentMerged = state.grid.mergedCells || [];
-
-  const resolveIds = (ids: string[]) => {
-    const expanded: string[] = [];
-    ids.forEach((id) => {
-      const m = id.match(/^merged-(\d+)$/);
-      if (m) {
-        const idx = parseInt(m[1], 10);
-        if (currentMerged[idx]) {
-          expanded.push(...currentMerged[idx]);
-          return;
-        }
-      }
-      expanded.push(id);
-    });
-    return expanded;
+/** Apply explicit groups to the current graph, preserving every surviving node. */
+function editMerges(state: PuzzleStore, groups: MergeGroup[]): Partial<PuzzleStore> {
+  if (!state.topology || !state.useTopology) return {};
+  const full = state.topology.exclusionBase ?? state.topology;
+  const original = full.mergeBase ?? full;
+  const merged = projectMerges(original, groups, full.cells);
+  if (!merged) return {};
+  const grid = { ...state.grid, mergedCells: groups.length ? groups.map(group => group.cellIds) : undefined };
+  for (const key of ['voidCells', 'disabledCells', 'outboardCells'] as const) if (grid[key]) grid[key] = grid[key]!.filter(id => merged.cells.has(id));
+  const topology = applyCellExclusions({ ...merged, sourceConfig: grid }, grid);
+  const puzzle = retainTopologyPuzzle(state.puzzle, full, topology);
+  const live = new Set([puzzle.problem, puzzle.answer].flatMap(layer => Object.values(layer).flatMap(collection => collection && typeof collection === 'object' ? Object.keys(collection) : [])));
+  return { grid, topology, puzzle,
+    trialStack: state.trialStack.map(layer => retainTopologyElements(layer, full, topology)),
+    selectedElements: state.selectedElements.filter(id => live.has(id)),
+    hoverCell: state.hoverCell && topology.cells.has(state.hoverCell) ? state.hoverCell : null,
+    cursorCell: state.cursorCell && topology.cells.has(state.cursorCell) ? state.cursorCell : null,
+    numberSelection: null,
   };
+}
 
-  const expandedCellIds = resolveIds(cellIds);
-
-  // Check if any cells are already in a merged group
-  const existingGroupIndices: number[] = [];
-  expandedCellIds.forEach((cellId) => {
-    currentMerged.forEach((group, idx) => {
-      if (group.includes(cellId) && !existingGroupIndices.includes(idx)) {
-        existingGroupIndices.push(idx);
-      }
-    });
-  });
-
-  // Combine all cells from existing groups with new cells
-  let allCells = [...expandedCellIds];
-  existingGroupIndices.forEach((idx) => {
-    allCells = [...allCells, ...currentMerged[idx]];
-  });
-  allCells = [...new Set(allCells)];
-
-  // Remove old groups and add new combined group
-  const newMerged = currentMerged.filter((_, idx) => !existingGroupIndices.includes(idx));
-  newMerged.push(allCells);
-
-  const grid = { ...state.grid, mergedCells: newMerged };
-  let topology = state.topology;
-  if (state.useTopology) {
-    const base = gridConfigToTopology(grid);
-    topology = applyTopologyPreset(base, {
-      preset: state.topologyPreset,
-      intensity: state.topologyIntensity,
-    });
-  }
-  return { grid, topology };
+export const mergeCells = (state: PuzzleStore, cellIds: string[]): Partial<PuzzleStore> => {
+  if (!state.topology || !state.useTopology) return {};
+  // A saved legacy merge without its source graph needs an explicit migration;
+  // do not regenerate an arbitrary native graph from its Grid settings.
+  const full = state.topology.exclusionBase ?? state.topology;
+  if (state.grid.mergedCells?.length && !full.mergeBase) return {};
+  const groups = addMergeGroup(state.topology, cellIds);
+  return groups ? editMerges(state, groups) : {};
 };
 
-/**
- * Unmerge cells
- */
-export const unmergeCells = (
-  state: PuzzleStore,
-  cellIds: string[]
-): Partial<PuzzleStore> | typeof state => {
-  const currentMerged = state.grid.mergedCells || [];
-  if (currentMerged.length === 0) return state;
+export const unmergeCells = (state: PuzzleStore, cellIds: string[]): Partial<PuzzleStore> => {
+  const full = state.topology?.exclusionBase ?? state.topology;
+  if (!full?.mergeBase || !full.mergeGroups) return {};
+  const selected = new Set(cellIds);
+  const groups = full.mergeGroups.filter(group => !selected.has(group.id));
+  return groups.length === full.mergeGroups.length ? {} : editMerges(state, groups);
+};
 
-  const resolveIds = (ids: string[]) => {
-    const expanded: string[] = [];
-    ids.forEach((id) => {
-      const m = id.match(/^merged-(\d+)$/);
-      if (m) {
-        const idx = parseInt(m[1], 10);
-        if (currentMerged[idx]) {
-          expanded.push(...currentMerged[idx]);
-          return;
-        }
-      }
-      expanded.push(id);
-    });
-    return expanded;
-  };
-
-  const expanded = resolveIds(cellIds);
-
-  const newMerged = currentMerged
-    .map((group) => group.filter((id) => !expanded.includes(id)))
-    .filter((group) => group.length >= 2);
-
-  const grid = { ...state.grid, mergedCells: newMerged.length > 0 ? newMerged : undefined };
-  let topology = state.topology;
-  if (state.useTopology) {
-    const base = gridConfigToTopology(grid);
-    topology = applyTopologyPreset(base, {
-      preset: state.topologyPreset,
-      intensity: state.topologyIntensity,
-    });
-  }
-  return { grid, topology };
+/** Grid-config API accepts explicit source-cell groups, not merged-ID indexes. */
+export const setMergedCellGroups = (state: PuzzleStore, members: string[][] | undefined): Partial<PuzzleStore> => {
+  const full = state.topology?.exclusionBase ?? state.topology;
+  if (!full || !state.useTopology || (state.grid.mergedCells?.length && !full.mergeBase)) return {};
+  const groups = (members ?? []).map(cellIds => {
+    const prior = full.mergeGroups?.find(group => group.cellIds.length === cellIds.length && group.cellIds.every(id => cellIds.includes(id)));
+    return prior ?? { id: uuid(), cellIds };
+  });
+  return editMerges(state, groups);
 };
 
 /**
