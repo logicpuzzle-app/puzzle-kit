@@ -809,7 +809,7 @@ export const en = {
   'gridEdit.excludeMode': 'Exclude mode',
   'gridEdit.excludeMode.void': 'Void',
   'gridEdit.excludeMode.outboard': 'Outboard',
-  'gridEdit.excludeMode.voidHelp': 'Cells are completely removed from the grid.',
+  'gridEdit.excludeMode.voidHelp': 'Cells are temporarily hidden. Click again to restore them.',
   'gridEdit.excludeMode.outboardHelp': 'Cells become hint areas outside the main grid.',
   'gridEdit.voidCells': 'Void cells',
   'gridEdit.outboardCells': 'Outboard cells',
