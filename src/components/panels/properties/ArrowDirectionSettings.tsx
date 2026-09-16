@@ -31,12 +31,12 @@ export const ArrowDirectionSettings: React.FC = () => {
     grid,
   } = usePuzzleStore();
 
-  const { findCellIdByRowCol } = useCellFinder();
+  const { resolveSelection } = useCellFinder();
   const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
   const dataLayer = editableLayer ?? toDataLayer(activeLayer);
 
   // Track previous selection to detect changes
-  const prevSelectionRef = useRef<{ row: number; col: number } | null>(null);
+  const prevSelectionRef = useRef<typeof numberSelection>(null);
 
   // Reset arrowDirection to -1 when cursor moves to a different cell
   useEffect(() => {
@@ -48,7 +48,7 @@ export const ArrowDirectionSettings: React.FC = () => {
       (prevSelection === null && currentSelection !== null) ||
       (prevSelection !== null && currentSelection === null) ||
       (prevSelection !== null && currentSelection !== null &&
-        (prevSelection.row !== currentSelection.row || prevSelection.col !== currentSelection.col));
+        (prevSelection.cellId !== currentSelection.cellId));
 
     if (selectionChanged) {
       setToolSettings({ arrowDirection: -1 });
@@ -60,7 +60,7 @@ export const ArrowDirectionSettings: React.FC = () => {
   // Get current cell's directional number info (using cellId)
   const currentCellClue = useMemo(() => {
     if (!numberSelection) return null;
-    const cellId = findCellIdByRowCol(numberSelection.row, numberSelection.col);
+    const cellId = resolveSelection(numberSelection);
     if (!cellId) return null;
     const directionalEntry = findDirectionalNumberByCellId(puzzle[dataLayer].numbers, cellId);
     const entry = directionalEntry
@@ -76,19 +76,19 @@ export const ArrowDirectionSettings: React.FC = () => {
       angle: entry.angle,
       color: entry.color,
     };
-  }, [numberSelection, findCellIdByRowCol, puzzle, dataLayer]);
+  }, [numberSelection, resolveSelection, puzzle, dataLayer]);
 
   // Get current cell's regular number (for conversion to directionalClue)
   const currentCellNumber = useMemo(() => {
     if (!numberSelection) return null;
-    const cellId = findCellIdByRowCol(numberSelection.row, numberSelection.col);
+    const cellId = resolveSelection(numberSelection);
     if (!cellId) return null;
     const entry = findNumberEntry(puzzle[dataLayer].numbers, cellId, 'center');
     if (!entry) return null;
     const { id, number } = entry;
     if (isDirectionalNumber(number)) return null;
     return { id, cellId, value: number.value };
-  }, [numberSelection, findCellIdByRowCol, puzzle, dataLayer]);
+  }, [numberSelection, resolveSelection, puzzle, dataLayer]);
 
   // The active direction to highlight: use cell's clue direction if available, otherwise tool setting
   const activeDirection = currentCellClue?.direction ?? toolSettings.arrowDirection;
@@ -101,9 +101,9 @@ export const ArrowDirectionSettings: React.FC = () => {
 
     if (!numberSelection || !editableLayer) return;
 
-    const cellId = findCellIdByRowCol(numberSelection.row, numberSelection.col);
+    const cellId = resolveSelection(numberSelection);
     if (!cellId) return;
-    const cellIndex = numberSelection.row * grid.cols + numberSelection.col;
+    const cellIndex = numberSelection.row !== undefined && numberSelection.col !== undefined ? numberSelection.row * grid.cols + numberSelection.col : undefined;
 
   // Update existing directional number if present (update direction, keep value/char/color)
     if (currentCellClue) {
@@ -149,9 +149,9 @@ export const ArrowDirectionSettings: React.FC = () => {
 
     if (!numberSelection || !editableLayer) return;
 
-    const cellId = findCellIdByRowCol(numberSelection.row, numberSelection.col);
+    const cellId = resolveSelection(numberSelection);
     if (!cellId) return;
-    const cellIndex = numberSelection.row * grid.cols + numberSelection.col;
+    const cellIndex = numberSelection.row !== undefined && numberSelection.col !== undefined ? numberSelection.row * grid.cols + numberSelection.col : undefined;
 
   // Update existing directional number if present (keep color)
     if (currentCellClue) {

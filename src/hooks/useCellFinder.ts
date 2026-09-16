@@ -1,3 +1,4 @@
+import { resolveCellSelection, moveCellSelection, type CellSelectionRequest } from '../utils/cellSelection';
 /**
  * useCellFinder - Unified hook for finding cells at a point
  *
@@ -6,7 +7,7 @@
  */
 
 import { useCallback } from 'react';
-import { usePuzzleStore } from '../store/puzzleStoreContext';
+import { usePuzzleStore, usePuzzleStoreApi } from '../store/puzzleStoreContext';
 import { resolveCell } from '../utils/pointResolver';
 import type { Point } from '../types';
 
@@ -26,6 +27,7 @@ export interface CellInfo {
  */
 export function useCellFinder() {
   const { grid, useTopology, topology } = usePuzzleStore();
+  const store = usePuzzleStoreApi();
 
   /**
    * Find the cell at a given point
@@ -45,40 +47,17 @@ export function useCellFinder() {
     [grid, useTopology, topology]
   );
 
-  /**
-   * Find cell ID by row/col (handles topology merged cells)
-   */
-  const findCellIdByRowCol = useCallback(
-    (row: number, col: number): string | null => {
-      if (!useTopology || !topology) {
-        return `cell-${row}-${col}`;
-      }
-
-      const targetCellId = `cell-${row}-${col}`;
-
-      // First, check for direct match by row/col
-      const candidates = Array.from(topology.cells.values()).filter(
-        c => c.row === row && c.col === col
-      );
-      if (candidates.length > 0) {
-        const hex = candidates.find(c => c.id.includes('hex'));
-        return (hex ?? candidates[0]).id;
-      }
-
-      // If not found, check for merged cells that contain this cell
-      for (const cell of topology.cells.values()) {
-        if (cell.originalCells && cell.originalCells.includes(targetCellId)) {
-          return cell.id;
-        }
-      }
-
-      return null;
-    },
-    [useTopology, topology]
-  );
+  const resolveSelection = useCallback((target: CellSelectionRequest | null) =>
+    resolveCellSelection(store.getState(), target)?.cellId ?? null, [store]);
+  const findCellIdByRowCol = useCallback((row: number, col: number) =>
+    resolveSelection({ row, col }), [resolveSelection]);
+  const moveSelection = useCallback((target: CellSelectionRequest, delta: { dr: number; dc: number }) =>
+    moveCellSelection(store.getState(), target, delta), [store]);
 
   return {
     findCellAtPoint,
     findCellIdByRowCol,
+    resolveSelection,
+    moveSelection,
   };
 }

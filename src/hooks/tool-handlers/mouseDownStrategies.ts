@@ -65,7 +65,7 @@ export interface MouseDownResult {
  * Actions that strategies can request
  */
 export type MouseDownAction =
-  | { type: 'setNumberSelection'; row: number; col: number }
+  | { type: 'setNumberSelection'; cellId: string }
   | { type: 'handleNumberTool'; point: Point; isRightButton: boolean; options?: { cellId: string } }
   | { type: 'handleSelectTool'; point: Point; shiftKey: boolean }
   | { type: 'handleTextTool'; point: Point; isRightButton: boolean }
@@ -116,7 +116,7 @@ export function handleDirecMouseDown(
   return {
     handled: true,
     flickState,
-    action: { type: 'setNumberSelection', row: cellInfo.row, col: cellInfo.col },
+    action: { type: 'setNumberSelection', cellId: cellInfo.cellId },
   };
 }
 
@@ -288,12 +288,13 @@ export function handleNumberToolMouseDown(
   cellInfo: CellInfo | null,
   existingDirectionalClueId: string | null
 ): MouseDownResult {
-  if (!cellInfo || cellInfo.row === undefined || cellInfo.col === undefined) {
+  if (!cellInfo) {
     return { handled: false };
   }
 
   // For directional number tool: use flick input
   if (ctx.currentTool === 'number-directional') {
+    if (cellInfo.row === undefined || cellInfo.col === undefined) return { handled: true };
     const flickState: FlickState = {
       startCell: { row: cellInfo.row, col: cellInfo.col },
       startCellId: cellInfo.cellId,
@@ -318,7 +319,7 @@ export function handleNumberToolMouseDown(
     return {
       handled: true,
       flickState,
-      action: { type: 'setNumberSelection', row: cellInfo.row, col: cellInfo.col },
+      action: { type: 'setNumberSelection', cellId: cellInfo.cellId },
     };
   }
 

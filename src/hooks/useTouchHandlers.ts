@@ -250,8 +250,8 @@ export function useTouchHandlers({
       const cellInfo = findCellAtPoint(point, {
         allowOutboard: shouldAllowOutboardForTool(tool, activeLayer),
       });
-      if (cellInfo?.row !== undefined && cellInfo.col !== undefined) {
-        setNumberSelection({ row: cellInfo.row, col: cellInfo.col });
+      if (cellInfo) {
+        setNumberSelection({ cellId: cellInfo.cellId });
       }
       if ((toolSettings.numberInputMode ?? 'number') !== 'number') {
         return;

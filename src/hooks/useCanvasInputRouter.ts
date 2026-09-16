@@ -220,7 +220,7 @@ export function useCanvasInputRouter({
   ): void => {
     switch (action.type) {
       case 'setNumberSelection':
-        setNumberSelection({ row: action.row, col: action.col });
+        setNumberSelection({ cellId: action.cellId });
         break;
       case 'handleNumberTool': {
         const result = handleNumberTool(action.point, action.isRightButton, action.options);
@@ -308,8 +308,8 @@ export function useCanvasInputRouter({
         }
 
         if (isNumberInputMode(ctx.currentInputMode, ctx.autoConfig)) {
-          if (!cellInfo || cellInfo.row === undefined || cellInfo.col === undefined) return;
-          setNumberSelection({ row: cellInfo.row, col: cellInfo.col });
+          if (!cellInfo) return;
+          setNumberSelection({ cellId: cellInfo.cellId });
           const result = handleNumberInputMouseDown(ctx, strategyCellInfo);
           if (result.action) {
             executeMouseDownAction(result.action, e, { onNumberClick, onTextClick });
@@ -387,14 +387,14 @@ export function useCanvasInputRouter({
         const cellInfo = findCellAtPoint(point, {
           allowOutboard: shouldAllowOutboardForTool(toolSettings.currentTool, activeLayer),
         });
-        if (!cellInfo || cellInfo.row === undefined || cellInfo.col === undefined) return;
+        if (!cellInfo) return;
 
-        setNumberSelection({ row: cellInfo.row, col: cellInfo.col });
+        setNumberSelection({ cellId: cellInfo.cellId });
         if (shouldSkipNumberMouseInput(tool)) {
           return;
         }
         const strategyCellInfo = toStrategyCellInfo(cellInfo);
-        if (strategyCellInfo && !strategyCellInfo.center) {
+        if (strategyCellInfo && !strategyCellInfo.center && cellInfo.row !== undefined && cellInfo.col !== undefined) {
           strategyCellInfo.center = getCellCenter(cellInfo.row, cellInfo.col, grid);
         }
 

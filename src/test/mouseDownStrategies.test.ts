@@ -138,10 +138,11 @@ describe('Strategy Functions', () => {
     });
 
     it('initializes a right-button directional gesture and selects its cell', () => {
+      const cellInfo = createCellInfo();
       const result = handleDirecMouseDown(
-        createContext({ point: { x: 150, y: 110 }, isRightButton: true }), createCellInfo());
+        createContext({ point: { x: 150, y: 110 }, isRightButton: true }), cellInfo);
       expect(result.handled).toBe(true);
-      expect(result.action).toEqual({ type: 'setNumberSelection', row: 2, col: 3 });
+      expect(result.action).toEqual({ type: 'setNumberSelection', cellId: cellInfo.cellId });
       expect(result.flickState).toMatchObject({
         startCell: { row: 2, col: 3 }, startCellId: 'cell-2-3', startCellIndex: 21,
         startCellCenter: { x: 140, y: 100 }, startPoint: { x: 150, y: 110 },
@@ -270,7 +271,7 @@ describe('Strategy Functions', () => {
       expect(result.handled).toBe(true);
       expect(result.flickState).toBeDefined();
       expect(result.flickState?.startCellId).toBe('cell-2-3');
-      expect(result.action).toEqual({ type: 'setNumberSelection', row: 2, col: 3 });
+      expect(result.action).toEqual({ type: 'setNumberSelection', cellId: cellInfo.cellId });
     });
 
     it('removes directional number on right click for directional tool', () => {

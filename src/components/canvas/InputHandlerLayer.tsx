@@ -76,7 +76,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
   const exportPaddingTop = grid.exportPaddingTop ?? 0;
 
   // Unified cell finder hook
-  const { findCellIdByRowCol } = useCellFinder();
+  const { resolveSelection } = useCellFinder();
 
   const {
     handleWheel,
@@ -282,7 +282,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     // Determine target cellId using unified finder
     let targetCellId: string | null = null;
     if (numberSelection) {
-      targetCellId = findCellIdByRowCol(numberSelection.row, numberSelection.col);
+      targetCellId = resolveSelection(numberSelection);
     } else if (hoverCell) {
       targetCellId = hoverCell;
     }
@@ -307,7 +307,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     if (!index) return null;
     const corners = getCellCorners(index.row, index.col, grid);
     return `M ${corners[0].x} ${corners[0].y} L ${corners[1].x} ${corners[1].y} L ${corners[2].x} ${corners[2].y} L ${corners[3].x} ${corners[3].y} Z`;
-  }, [hoverCell, numberSelection, grid, toolSettings.currentTool, toolSettings.surfaceTarget, useTopology, topology, findCellIdByRowCol]);
+  }, [hoverCell, numberSelection, grid, toolSettings.currentTool, toolSettings.surfaceTarget, useTopology, topology, resolveSelection]);
 
   return (
     <svg

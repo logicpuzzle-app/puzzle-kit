@@ -1,3 +1,4 @@
+import { resolveCellSelection } from '../../utils/cellSelection';
 /**
  * Canvas Slice - Canvas viewport and interaction state
  */
@@ -51,7 +52,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set) => ({
 
   // Number tool selection
   numberSelection: null,
-  setNumberSelection: (cell) => set({ numberSelection: cell }),
+  setNumberSelection: (cell) => set(state => ({ numberSelection: resolveCellSelection(state, cell) })),
 
   // Highlighted lines (for preview in line list)
   highlightedLineIds: [],

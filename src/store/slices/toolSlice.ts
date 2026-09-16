@@ -1,3 +1,4 @@
+import { resolveCellSelection } from '../../utils/cellSelection';
 /**
  * Tool Slice - Tool settings and selection
  */
@@ -24,7 +25,7 @@ export const createToolSlice: SliceCreator<ToolSlice> = (set, get) => ({
       // set default cursor to top-left cell (0, 0)
       const newNumberSelection =
         isNumberTool && !wasNumberTool && !state.numberSelection
-          ? { row: 0, col: 0 }
+          ? resolveCellSelection(state, { row: 0, col: 0 })
           : state.numberSelection;
 
       // Clear line highlight when switching away from line-related categories

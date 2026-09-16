@@ -1,3 +1,4 @@
+import type { CellSelection, CellSelectionRequest } from '../../utils/cellSelection';
 /**
  * Shared types for store slices
  */
@@ -225,8 +226,8 @@ export interface CanvasSlice {
   setCursorCell: (cellId: string | null) => void;
 
   // Number tool selection
-  numberSelection: { row: number; col: number } | null;
-  setNumberSelection: (cell: { row: number; col: number } | null) => void;
+  numberSelection: CellSelection | null;
+  setNumberSelection: (cell: CellSelectionRequest | null) => void;
 
   // Highlighted lines (for preview in line list)
   highlightedLineIds: string[];
