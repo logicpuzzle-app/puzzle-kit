@@ -249,7 +249,7 @@ export const ToolPropertiesPanel: React.FC = () => {
               ) : null}
             </div>
           )}
-          <ColorSelector />
+          {toolSettings.currentTool !== 'number-kakuro' && <ColorSelector />}
         </>
       )}
 
@@ -530,7 +530,7 @@ export const ToolPropertiesPanel: React.FC = () => {
       {/* Number settings - size and position */}
       {toolSettings.currentCategory === 'number' && toolSettings.currentTool !== 'number-directional' && (
         <>
-          <NumberPositionSettings />
+          {toolSettings.currentTool !== 'number-kakuro' && <NumberPositionSettings />}
           <NumberInputPanel />
         </>
       )}

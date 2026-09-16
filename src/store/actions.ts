@@ -24,6 +24,7 @@ import type {
   BoxLineElement,
   GridConfig,
   PuzzleState,
+  KakuroClueElement,
 } from '../types';
 
 // ========================================
@@ -168,8 +169,15 @@ export interface EditRoomBordersAction {
 // Union of All Actions
 // ========================================
 
+export interface SetKakuroCluesAction {
+  type: 'SET_KAKURO_CLUES';
+  before: Record<string, KakuroClueElement> | undefined;
+  after: Record<string, KakuroClueElement> | undefined;
+}
+
 export type PuzzleAction =
   | EditRoomBordersAction
+  | SetKakuroCluesAction
   // Element operations
   | AddVertexSurfaceAction
   | RemoveVertexSurfaceAction
@@ -319,6 +327,8 @@ export function reverseAction(action: PuzzleAction): PuzzleAction {
   switch (action.type) {
     case 'EDIT_ROOM_BORDERS':
       return { ...action, before: action.after, after: action.before };
+    case 'SET_KAKURO_CLUES':
+      return { ...action, before: action.after, after: action.before };
     case 'UPDATE_NUMBER':
       return {
         type: 'UPDATE_NUMBER',
@@ -401,6 +411,8 @@ export function getActionDescription(action: PuzzleAction): string {
 
   // Handle special cases
   switch (action.type) {
+    case 'SET_KAKURO_CLUES':
+      return 'Edit Kakuro clue';
     case 'UPDATE_NUMBER':
       return 'Update number';
     case 'SET_ACTIVE_LAYER':

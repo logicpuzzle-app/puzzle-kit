@@ -579,6 +579,14 @@ export const en = {
   'tool.wall.normal': 'Wall',
 
   // Number tools
+  'tool.number.kakuro': 'Kakuro clue',
+  'kakuro.clue': 'Split cell clues',
+  'kakuro.selectCell': 'Select a cell on a square grid.',
+  'kakuro.across': 'Across sum (upper right)',
+  'kakuro.down': 'Down sum (lower left)',
+  'kakuro.blankHint': '0–45. Blank or 0 means no sum constraint. Both blank keeps a split wall cell.',
+  'kakuro.apply': 'Apply clue',
+  'kakuro.remove': 'Remove split cell',
   'tool.number.normal': 'Normal',
   'tool.number.directional': 'Arrow Number',
   'tool.number.large': 'Large',

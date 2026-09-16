@@ -579,6 +579,14 @@ export const ja = {
   'tool.wall.normal': '壁',
 
   // Number tools
+  'tool.number.kakuro': 'カックロのヒント',
+  'kakuro.clue': '斜線セルのヒント',
+  'kakuro.selectCell': '正方形の盤面でセルを選択してください。',
+  'kakuro.across': '右への合計（右上）',
+  'kakuro.down': '下への合計（左下）',
+  'kakuro.blankHint': '0〜45。空欄・0は合計を制約しません。両方空欄でも斜線セルを保持します。',
+  'kakuro.apply': 'ヒントを適用',
+  'kakuro.remove': '斜線セルを解除',
   'tool.number.normal': '通常',
   'tool.number.directional': '矢印数字',
   'tool.number.large': '大',

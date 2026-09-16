@@ -174,6 +174,7 @@ export type ToolType =
   | 'number-corner'
   | 'number-side'
   | 'number-candidates'
+  | 'number-kakuro'
   | 'number-directional' // Yajilin-style directional number
   // Text tools
   | 'text-alphabet'
@@ -580,6 +581,13 @@ export interface SplitLine {
 // Maps cell-{row}-{col} to room ID
 export type RoomMap = Record<string, number>;
 
+export interface KakuroClueElement {
+  id: string;
+  cellId: string;
+  horizontal: number | null;
+  vertical: number | null;
+}
+
 // Puzzle state
 export interface PuzzleElements {
   /** Visual dual-grid shading, separate from cell-based rule inputs. */
@@ -606,7 +614,7 @@ export interface PuzzleElements {
   roomMap?: RoomMap; // Optional room map for region-based puzzles
   // Optional fields for specific puzzle types
   borders?: Record<string, unknown>;
-  clueCells?: Record<string, any>;
+  clueCells?: Record<string, KakuroClueElement>;
   rowClues?: Record<string, any>;
   colClues?: Record<string, any>;
   tapaClues?: Record<string, any>;

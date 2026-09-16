@@ -37,8 +37,8 @@ function getAnswerNumber(ctx: ValidationContext, row: number, col: number): numb
 
   for (const num of Object.values(numbers)) {
     if (num.cellId === cellId) {
-      const v = parseInt(String(num.value), 10);
-      return isNaN(v) ? null : v;
+      const v = Number(num.value);
+      return Number.isInteger(v) && v >= 1 && v <= 9 ? v : null;
     }
   }
   return null;
@@ -68,7 +68,8 @@ function getClueForRun(
       const clueCells = ctx.puzzle.problem.clueCells || {};
       for (const clue of Object.values(clueCells)) {
         if (clue.cellId === cellId) {
-          return direction === 'h' ? clue.horizontal : clue.vertical;
+          const sum = direction === 'h' ? clue.horizontal : clue.vertical;
+          return typeof sum === 'number' && sum > 0 ? sum : null;
         }
       }
       break;

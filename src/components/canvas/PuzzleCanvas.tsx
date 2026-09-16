@@ -1,4 +1,5 @@
 import { AnnotationSelectionLayer } from './AnnotationSelectionLayer';
+import { KakuroClueLayer } from './KakuroClueLayer';
 /**
  * PuzzleCanvas - Main canvas component for puzzle rendering
  *
@@ -349,6 +350,8 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
           <g opacity={currentLayerOpacity}>
             <NumberLayer layer="answer" />
           </g>
+
+          <KakuroClueLayer />
 
           {/* Solution area border (rendered on top of all puzzle elements) */}
           <SolutionAreaBorderLayer />

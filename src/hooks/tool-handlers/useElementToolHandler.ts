@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useEffect } from 'react';
+import { isKakuroClueInput } from '../../utils/kakuro';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { resolveBoardPoint, resolveLinePoints, sameBoardPoint } from '../../utils/lineReferences';
 import type { Point } from '../../types';
@@ -87,8 +88,8 @@ export function useElementToolHandler({
   // Get number range based on current mode
   // Use primitive dimensions as dependencies to avoid stale memo when grid object mutates in place
   const numberRange = useMemo(
-    () => getNumberRange(grid, autoModeInfo),
-    [grid.rows, grid.cols, autoModeInfo]
+    () => currentSchemaId === 'kakuro' && editableLayer === 'answer' ? { min: 1, max: 9 } : getNumberRange(grid, autoModeInfo),
+    [grid.rows, grid.cols, autoModeInfo, currentSchemaId, editableLayer]
   );
 
   const handleNumberTool = useCallback(
@@ -96,6 +97,7 @@ export function useElementToolHandler({
       if (!editableLayer) return null;
       const cellId = options?.cellId ?? findCellId(point, { allowOutboard: shouldAllowOutboardForTool(toolSettings.currentTool, activeLayer) });
       if (!cellId) return null;
+      if (isKakuroClueInput(toolSettings.currentTool, editableLayer, currentSchemaId, showConstraintLayer)) return null;
 
       const dataLayer = editableLayer;
       const layerData = puzzle[dataLayer];
