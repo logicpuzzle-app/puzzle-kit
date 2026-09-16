@@ -42,6 +42,30 @@ test('Kakuro keeps clue selection, sums and native references on opaque cells @p
   await openPuzzleFile(page, Buffer.from(JSON.stringify(changed)));
   expect((await savePuzzleFile(page)).state).toEqual(changed.state);
   await check('Incorrect', 'kakuro-identity-reloaded.png');
+
+  // Integrate rotation with opaque selection: (80,40) becomes (120,80) at 90°.
+  // This fixed visible position is independent of the application's hit-test helper.
+  const rotated = structuredClone(changed);
+  rotated.grid.boardRotation = 90;
+  await openPuzzleFile(page, Buffer.from(JSON.stringify(rotated)));
+  await page.getByRole('button', { name: 'Problem', exact: true }).click();
+  await page.getByRole('button', { name: 'Number', exact: true }).click();
+  if (await closeProperties.isVisible()) await closeProperties.click();
+  const rotatedPoint = await point(page, 120, 80);
+  if (isMobile) await page.touchscreen.tap(rotatedPoint.x, rotatedPoint.y);
+  else await page.mouse.click(rotatedPoint.x, rotatedPoint.y);
+  if (await properties.isVisible()) await properties.click();
+  await expect(down).toHaveValue('5');
+  await down.fill('4');
+  await page.getByRole('button', { name: 'Apply clue', exact: true }).click();
+  if (await closeProperties.isVisible()) await closeProperties.click();
+  await check('Correct!', 'kakuro-identity-rotated.png');
+  const rotatedSaved = await savePuzzleFile(page);
+  expect(rotatedSaved.grid.boardRotation).toBe(90);
+  expect(rotatedSaved.topologySettings!.topology).toEqual(changed.topologySettings!.topology);
+  expect(rotatedSaved.state.answer).toEqual(changed.state.answer);
+  expect(Object.values(rotatedSaved.state.problem.clueCells!).find(c => c.cellId === 'a')?.vertical).toBe(4);
+
   Object.values(changed.state.problem.clueCells!)[0].cellId = 'cell-0-0';
   await openPuzzleFile(page, Buffer.from(JSON.stringify(changed)));
   await check('Undecided', 'kakuro-identity-unresolved.png');

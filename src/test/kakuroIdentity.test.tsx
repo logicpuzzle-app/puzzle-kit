@@ -42,6 +42,9 @@ it('edits the selected opaque cell and draws independent clues using logical cor
 it('keeps clues on surviving cells through margins and deformation, removes deleted references and restores them with undo', () => {
   const store = load();
   const original = store.getState().puzzle.problem.clueCells;
+  const topology = store.getState().topology;
+  store.getState().setBoardRotation(90);
+  expect(store.getState().topology).toBe(topology);
   store.getState().setGrid({ marginTop: 1, marginLeft: 1 });
   store.getState().setTopologyPreset('wave'); store.getState().applyTopologyPreset();
   expect(store.getState().puzzle.problem.clueCells).toEqual(original);
@@ -60,6 +63,7 @@ it('keeps clues on surviving cells through margins and deformation, removes dele
   store.getState().undo();
   expect(store.getState().puzzle.problem.clueCells).toEqual(original);
   expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
+  expect(store.getState().grid.boardRotation).toBe(90);
   expect(store.getState().checkAnswer()!.complete).toBe(true);
 });
 
