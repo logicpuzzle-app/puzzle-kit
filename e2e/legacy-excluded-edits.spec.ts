@@ -6,6 +6,7 @@ import { openPuzzleFile, savePuzzleFile } from './puzzle-file';
 const scenarios = [
   { name: 'merge/split board', file: 'legacy-excluded-edits-board.json', stableMerge: 'merged-0', restoredMembers: undefined },
   { name: 'merge members', file: 'legacy-excluded-members-board.json', stableMerge: 'merged-1', restoredMembers: ['cell-0-1', 'cell-0-2'] },
+  { name: 'outboard settings', file: 'legacy-outboard-settings-board.json', stableMerge: 'merged-1', restoredMembers: ['cell-0-1', 'cell-0-2'] },
 ];
 
 for (const scenario of scenarios) {

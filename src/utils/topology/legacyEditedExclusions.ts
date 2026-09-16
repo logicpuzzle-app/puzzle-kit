@@ -53,6 +53,11 @@ export function prepareLegacyEditedExclusions(topology: GridTopology, grid: Grid
   const preset = topology.appliedPreset ?? { preset: 'square' as const, intensity: 0.5 };
   const raw = gridConfigToTopology(grid), expected = applyTopologyPreset(raw, preset);
   if (!matchesLegacyGraph(topology, expected)) return null;
+  // The legacy merge/split generator dropped outboard flags even on untouched
+  // live cells. Keep the saved role and adjacency; reapplying stale flags would
+  // silently change that board. Hidden source settings remain until restoration.
+  const outboardCells = grid.outboardCells?.filter(id => !raw.cells.has(id) || raw.cells.get(id)!.outboard);
+  grid = { ...grid, outboardCells: outboardCells?.length ? outboardCells : undefined };
   const sourceGrid = { ...grid, mergedCells: undefined, splitLines: undefined };
   const source = gridConfigToTopology(sourceGrid);
   const complete = gridConfigToTopology({ ...sourceGrid, voidCells: undefined, disabledCells: undefined, outboardCells: undefined });

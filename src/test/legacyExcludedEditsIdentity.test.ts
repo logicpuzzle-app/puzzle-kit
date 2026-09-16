@@ -5,6 +5,7 @@ import { PuzzleStoreProvider } from '../store/puzzleStoreContext';
 import { useStoragePersistence } from '../hooks/useStoragePersistence';
 import { saveGridConfig, saveTopologyState } from '../utils/storage';
 import inactive from '../../e2e/fixtures/legacy-inactive-groups-board.json';
+import outboard from '../../e2e/fixtures/legacy-outboard-settings-board.json';
 import fixture from '../../e2e/fixtures/legacy-excluded-edits-board.json';
 import { createPuzzleStore } from '../store/puzzleStore';
 import { applyTopologyPreset, gridConfigToTopology } from '../utils/gridTopology';
@@ -90,7 +91,7 @@ it('restores a legacy disabled merged cell and its source without reusing its no
 
 it('does not invent structural or hidden sources for a custom graph that differs from the legacy generator', () => {
   const store = createPuzzleStore().useStore;
-  const custom = structuredClone(fixture);
+  const custom = structuredClone(outboard);
   const vertex = custom.topologySettings.topology.vertices[0][1] as { position: { x: number } };
   vertex.position.x += 0.25;
   expect(store.getState().importPuzzle(JSON.stringify(custom))).toBe(true);
@@ -99,6 +100,7 @@ it('does not invent structural or hidden sources for a custom graph that differs
   expect(before.topology!.exclusionBase).toBeUndefined();
   expect(before.grid.mergedCells).toEqual(custom.grid.mergedCells);
   expect(before.grid.splitLines).toEqual(custom.grid.splitLines);
+  expect(before.grid.outboardCells).toEqual(custom.grid.outboardCells);
   store.getState().clearSplitLines();
   expect(store.getState().topology).toBe(before.topology);
   expect(store.getState().puzzle).toBe(before.puzzle);
@@ -220,6 +222,35 @@ it('removes an unrealized legacy merge setting atomically with restoring its hid
 });
 
 afterEach(() => { cleanup(); localStorage.clear(); });
+it('preserves saved inboard roles when legacy structural edits lost the configured outboard flags, and accepts an explicit new role change', () => {
+  const store = createPuzzleStore().useStore;
+  expect(store.getState().importPuzzle(JSON.stringify(outboard))).toBe(true);
+  const before = store.getState(), topology = before.topology!;
+  expect(topology.editOperations).toHaveLength(3);
+  for (const key of ['cells', 'vertices', 'edges'] as const) expect(serializeTopology(topology)[key]).toEqual(outboard.topologySettings.topology[key]);
+  expect(before.grid.outboardCells).toEqual(['cell-0-1']);
+  expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
+  store.getState().setGrid({ excludeMode: 'outboard' });
+  store.getState().toggleCellDisabled('cell-0-3');
+  const marked = store.getState();
+  expect(marked.topology!.cells.get('cell-0-3')!.outboard).toBe(true);
+  expect(marked.topology!.cells.get('cell-0-3')!.adjacentCells).toEqual([]);
+  expect(marked.puzzle).toEqual(before.puzzle);
+  store.getState().clearSplitLines();
+  expect(store.getState().topology!.cells.has('merged-0')).toBe(true);
+  expect(store.getState().topology!.cells.get('cell-0-3')!.outboard).toBe(true);
+  expect(Object.values(store.getState().puzzle.problem.numbers).map(n => n.value).sort()).toEqual(['17', '9']);
+  expect(store.getState().puzzle.problem.vertexSurfaces).toEqual(before.puzzle.problem.vertexSurfaces);
+  expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
+  store.getState().toggleCellDisabled('cell-0-3');
+  expect(store.getState().topology!.cells.get('cell-0-3')!.outboard).toBeUndefined();
+  expect(store.getState().topology!.cells.get('cell-0-3')!.adjacentCells.length).toBeGreaterThan(0);
+  store.getState().undo();
+  expect(store.getState().topology!.cells.get('cell-0-3')!.outboard).toBe(true);
+  store.getState().redo();
+  expect(store.getState().topology!.cells.get('cell-0-3')!.outboard).toBeUndefined();
+});
+
 it('restores the normalized graph and settings together from persisted topology preferences', () => {
   saveGridConfig({ ...inactive.grid as GridConfig, rows: 9, mergedCells: undefined });
   saveTopologyState(deserializeTopology(inactive.topologySettings.topology), true, 'square', 0.5);
