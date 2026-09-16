@@ -2,6 +2,11 @@
  * Japanese translations for PuzzleKit
  */
 export const ja = {
+  'grid.boardRotation': '盤面の回転（°）',
+  'grid.rotateMinus': '盤面を−15°回転',
+  'grid.rotatePlus': '盤面を+15°回転',
+  'grid.applyRotation': '角度を適用',
+  'grid.resetRotation': '0°に戻す',
   "size.largest": "最大",
   "symbol.size.object": "サイズを変更する記号",
   "symbol.size.new": "新しく配置する記号",

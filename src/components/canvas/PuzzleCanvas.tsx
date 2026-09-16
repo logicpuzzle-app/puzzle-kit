@@ -10,7 +10,7 @@
 import React, { useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
-import { getGridDimensions } from '../../utils/gridUtils';
+import { getBoardLayout } from '../../utils/boardLayout';
 import { getHexSize } from '../../utils/hexGridUtils';
 import type { NumberClickInfo, TextClickInfo } from '../../types/canvasInput';
 import { InputHandlerLayer } from './InputHandlerLayer';
@@ -93,20 +93,8 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
     effectiveGrid.gridType === 'iso' ||
     effectiveGrid.gridType === 'penrose_P3';
 
-  const { width, height } = useMemo(() => {
-    // Prefer topology bounds when available (non-square tilings)
-    if (topologyPreferred && effectiveTopology) {
-      const exportPaddingLeft = effectiveGrid.exportPaddingLeft ?? 0;
-      const exportPaddingRight = effectiveGrid.exportPaddingRight ?? 0;
-      const exportPaddingTop = effectiveGrid.exportPaddingTop ?? 0;
-      const exportPaddingBottom = effectiveGrid.exportPaddingBottom ?? 0;
-      return {
-        width: effectiveTopology.bounds.width + exportPaddingLeft + exportPaddingRight,
-        height: effectiveTopology.bounds.height + exportPaddingTop + exportPaddingBottom,
-      };
-    }
-    return getGridDimensions(effectiveGrid);
-  }, [topologyPreferred, effectiveTopology, effectiveGrid]);
+  const { width, height, baseWidth, baseHeight, rotationTransform, contentTransform } =
+    getBoardLayout(effectiveGrid, effectiveTopology, useTopology);
 
   // Export padding offsets
   const exportPaddingLeft = effectiveGrid.exportPaddingLeft ?? 0;
@@ -197,14 +185,15 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
             <rect
               x={0}
               y={0}
-              width={width}
-              height={height}
+              width={baseWidth}
+              height={baseHeight}
+              transform={rotationTransform}
               fill={grid.backgroundColor}
             />
           )}
 
           {/* Grid content offset by export padding */}
-          <g transform={`translate(${exportPaddingLeft}, ${exportPaddingTop})`}>
+          <g data-board-coordinates="true" transform={contentTransform}>
 
           {/* For square grids: separate background and lines for proper surface layering */}
           {/* For non-square grids: use combined Grid component */}

@@ -17,6 +17,7 @@ interface SpecialToolPreviewProps {
     panX: number;
     panY: number;
   };
+  boardTransform?: string;
   offsetX?: number;
   offsetY?: number;
   specialToolType: 'thermo' | 'arrow' | 'cage' | 'boxline' | null;
@@ -27,6 +28,7 @@ interface SpecialToolPreviewProps {
 
 export const SpecialToolPreview: React.FC<SpecialToolPreviewProps> = ({
   canvas,
+  boardTransform,
   offsetX = 0,
   offsetY = 0,
   specialToolType,
@@ -38,7 +40,7 @@ export const SpecialToolPreview: React.FC<SpecialToolPreviewProps> = ({
     return null;
   }
 
-  const transform = `translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom}) translate(${offsetX}, ${offsetY})`;
+  const transform = `translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom}) ${boardTransform ?? `translate(${offsetX}, ${offsetY})`}`;
 
   return (
     <g data-preview="true" transform={transform}>

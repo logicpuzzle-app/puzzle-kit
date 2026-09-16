@@ -2,6 +2,7 @@
  * Export handlers for MenuBar
  * Handles JSON, SVG, and PNG exports
  */
+import { getBoardLayout } from '../../../utils/boardLayout';
 import type { StoreApi, UseBoundStore } from 'zustand';
 import {
   downloadAsJson,
@@ -72,24 +73,7 @@ export const getExportDimensions = (
   topology: GridTopology | null,
   useTopology: boolean
 ): { width: number; height: number } => {
-  if (useTopology && topology) {
-    const exportPaddingLeft = grid.exportPaddingLeft ?? 0;
-    const exportPaddingRight = grid.exportPaddingRight ?? 0;
-    const exportPaddingTop = grid.exportPaddingTop ?? 0;
-    const exportPaddingBottom = grid.exportPaddingBottom ?? 0;
-    return {
-      width: topology.bounds.width + exportPaddingLeft + exportPaddingRight,
-      height: topology.bounds.height + exportPaddingTop + exportPaddingBottom,
-    };
-  }
-
-  const { outerPadding, cellSize, rows, cols, marginTop = 0, marginBottom = 0, marginLeft = 0, marginRight = 0 } = grid;
-  const totalRows = rows + marginTop + marginBottom;
-  const totalCols = cols + marginLeft + marginRight;
-  return {
-    width: totalCols * cellSize + outerPadding * 2,
-    height: totalRows * cellSize + outerPadding * 2,
-  };
+  return getBoardLayout(grid, topology, useTopology);
 };
 
 /**

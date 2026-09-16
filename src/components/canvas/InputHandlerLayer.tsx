@@ -9,6 +9,7 @@
  * - Selection tool
  */
 
+import { getBoardLayout } from '../../utils/boardLayout';
 import React, { useMemo, RefObject } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { useCanvasInputRouter } from '../../hooks/useCanvasInputRouter';
@@ -58,6 +59,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     useTopology,
     topology: storeTopology,
     previewTopology,
+    previewGrid,
     gridEditMode,
     currentInputMode,
     activeLayer,
@@ -71,8 +73,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
 
   // Use preview topology if available (for grid shape preview)
   const topology = previewTopology ?? storeTopology;
-  const exportPaddingLeft = grid.exportPaddingLeft ?? 0;
-  const exportPaddingTop = grid.exportPaddingTop ?? 0;
+  const { contentTransform } = getBoardLayout(previewGrid ?? grid, topology, useTopology);
 
   // Unified cell finder hook
   const { findCellIdByRowCol } = useCellFinder();
@@ -322,8 +323,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       {/* Special preview (thermo/arrow/cage/boxline) */}
       <SpecialToolPreview
         canvas={canvas}
-        offsetX={exportPaddingLeft}
-        offsetY={exportPaddingTop}
+        boardTransform={contentTransform}
         specialToolType={specialToolType}
         specialPreviewPoints={specialPreviewPoints}
         specialPreviewCells={specialPreviewCells}
@@ -332,8 +332,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
       {/* All cursor overlays */}
       <CanvasCursors
         canvas={canvas}
-        offsetX={exportPaddingLeft}
-        offsetY={exportPaddingTop}
+        boardTransform={contentTransform}
         hoverCellPolygon={hoverCellPolygon}
         hoverCellRect={hoverCellRect}
         cursorCellPolygon={cursorCellPolygon}

@@ -2,7 +2,7 @@ import { useCallback, useEffect } from 'react';
 import type React from 'react';
 import type { GridConfig } from '../../types';
 import type { GridTopology } from '../../utils/gridTopology';
-import { getGridDimensions } from '../../utils/gridUtils';
+import { getBoardLayout } from '../../utils/boardLayout';
 import { usePuzzleStoreApi } from '../../store/puzzleStoreContext';
 
 type PuzzleStoreApi = ReturnType<typeof usePuzzleStoreApi>;
@@ -26,26 +26,10 @@ export const usePaintBoardCentering = ({
   setZoom,
   store,
 }: UsePaintBoardCenteringArgs) => {
-  const getBoardDimensions = useCallback(() => {
-    const topologyPreferred =
-      useTopology ||
-      grid.gridType === 'pyramid' ||
-      grid.gridType === 'iso' ||
-      grid.gridType === 'penrose_P3';
-
-    if (topologyPreferred && topology) {
-      const exportPaddingLeft = grid.exportPaddingLeft ?? 0;
-      const exportPaddingRight = grid.exportPaddingRight ?? 0;
-      const exportPaddingTop = grid.exportPaddingTop ?? 0;
-      const exportPaddingBottom = grid.exportPaddingBottom ?? 0;
-      return {
-        width: topology.bounds.width + exportPaddingLeft + exportPaddingRight,
-        height: topology.bounds.height + exportPaddingTop + exportPaddingBottom,
-      };
-    }
-
-    return getGridDimensions(grid);
-  }, [grid, topology, useTopology]);
+  const getBoardDimensions = useCallback(
+    () => getBoardLayout(grid, topology, useTopology),
+    [grid, topology, useTopology]
+  );
 
   const centerBoard = useCallback(
     (forceFit: boolean) => {

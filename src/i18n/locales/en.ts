@@ -2,6 +2,11 @@
  * English translations for PuzzleKit
  */
 export const en = {
+  'grid.boardRotation': 'Board rotation (°)',
+  'grid.rotateMinus': 'Rotate board −15°',
+  'grid.rotatePlus': 'Rotate board +15°',
+  'grid.applyRotation': 'Apply angle',
+  'grid.resetRotation': 'Reset to 0°',
   "size.largest": "Largest",
   "symbol.size.object": "Symbol to resize",
   "symbol.size.new": "New symbols",

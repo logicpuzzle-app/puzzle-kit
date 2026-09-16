@@ -21,6 +21,12 @@ export function useCanvasPoint({
 }: UseCanvasPointOptions) {
   return useCallback(
     (clientX: number, clientY: number): Point => {
+      const coordinates = svgRef.current?.querySelector<SVGGElement>('[data-board-coordinates]');
+      const matrix = coordinates?.getScreenCTM();
+      if (matrix) {
+        const point = new DOMPoint(clientX, clientY).matrixTransform(matrix.inverse());
+        return { x: point.x, y: point.y };
+      }
       return screenToSvg(
         clientX,
         clientY,
