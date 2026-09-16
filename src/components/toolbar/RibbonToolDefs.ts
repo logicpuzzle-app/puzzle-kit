@@ -32,6 +32,7 @@ export const toolGroups: Record<ToolCategory, ToolDef[]> = {
   ],
   number: [
     { id: 'number-normal', icon: '1', labelKey: 'tool.number.normal' },
+    { id: 'number-kakuro', icon: '◩', labelKey: 'tool.number.kakuro' },
     { id: 'number-directional', icon: '➤', labelKey: 'tool.number.directional' },
   ],
   text: [

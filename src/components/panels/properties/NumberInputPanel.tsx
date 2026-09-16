@@ -1,3 +1,5 @@
+import { KakuroCluePanel } from './KakuroCluePanel';
+import { isKakuroClueInput } from '../../../utils/kakuro';
 /**
  * NumberInputPanel - Numeric/Alphabet keypad for entering numbers or letters in cells
  *
@@ -42,7 +44,13 @@ type NumberInputPanelProps = {
   onLayoutChange?: (height: number) => void;
 };
 
-export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChange }) => {
+export const NumberInputPanel: React.FC<NumberInputPanelProps> = props => {
+  const { toolSettings, activeLayer, isPlayerMode, currentSchemaId, showConstraintLayer } = usePuzzleStore();
+  return isKakuroClueInput(toolSettings.currentTool, getEditableDataLayer(activeLayer, isPlayerMode), currentSchemaId, showConstraintLayer)
+    ? <KakuroCluePanel {...props} /> : <NumericInputPanel {...props} />;
+};
+
+const NumericInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChange }) => {
   const panelRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
   const [customInput, setCustomInput] = useState('');
@@ -93,7 +101,7 @@ export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChan
 
   const isDirecType = currentInputMode === 'direc' ||
     (currentInputMode === 'auto' && autoConfig.type === 'direc');
-  const maxDigits = getMaxDigitsForGrid(grid.rows, grid.cols, isDirecType);
+  const maxDigits = currentSchemaId === 'kakuro' && editableLayer === 'answer' ? 1 : getMaxDigitsForGrid(grid.rows, grid.cols, isDirecType);
 
   // Get the effective cell ID (considering merged cells)
   // Uses the same logic as InputHandlerLayer keyboard handler

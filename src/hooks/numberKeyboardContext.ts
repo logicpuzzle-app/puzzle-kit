@@ -1,3 +1,4 @@
+import { isKakuroClueInput } from '../utils/kakuro';
 import { constraintCatalog } from '../constraints';
 import { getAutoModeConfig } from '../constraints/inputModeMapping';
 import { getMaxDigitsForGrid } from './keyboardUtils';
@@ -25,7 +26,7 @@ export function getNumberInputFlags({
   tool,
   isPaintSchema,
 }: NumberInputFlagOptions): NumberInputFlags {
-  if (!editableLayer) {
+  if (!editableLayer || isKakuroClueInput(tool, editableLayer, currentSchemaId, showConstraintLayer)) {
     return { isNumberTool: false, isConstraintNumberInput: false, allowNonNumeric: false };
   }
 
@@ -65,6 +66,7 @@ export function getNumberMaxDigits({
   currentInputMode,
   currentSchemaId,
 }: MaxDigitsOptions): number {
+  if (currentSchemaId === 'kakuro' && editableLayer === 'answer') return 1;
   const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
   const isEditMode = editableLayer === 'problem';
   const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
