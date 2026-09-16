@@ -139,7 +139,7 @@ function EditApp() {
     addSymbol,
     removeSymbol,
     toolSettings,
-    activeLayer,
+    activeLayer, grid, topology, useTopology,
   });
   const [gridDialogOpen, setGridDialogOpen] = useState(false);
 

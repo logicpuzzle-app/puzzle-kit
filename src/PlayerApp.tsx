@@ -87,7 +87,7 @@ function PlayerApp() {
     addSymbol,
     removeSymbol,
     toolSettings,
-    activeLayer,
+    activeLayer, grid, topology, useTopology,
   });
 
   useEffect(() => {

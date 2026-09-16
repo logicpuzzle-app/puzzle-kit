@@ -6,7 +6,7 @@ import { createTextColorResolver } from '../../utils/textContrast';
 
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
-import { getCellCenter, getCellIndexById, getEdgeIndexById, getEdgePosition, getVertexIndexById, getVertexPosition } from '../../utils/gridUtils';
+import { resolveBoardPoint } from '../../utils/lineReferences';
 import type { SymbolElement, LayerType } from '../../types';
 import { renderSymbol } from './symbols';
 
@@ -31,44 +31,8 @@ export const SymbolLayer: React.FC<SymbolLayerProps> = ({ layer }) => {
     const elements: React.ReactElement[] = [];
 
     Object.values(layerData.symbols).forEach((symbol: SymbolElement) => {
-      let center: { x: number; y: number } | null = null;
-
-      // In topology mode, use topology positions
-      if (useTopology && topology) {
-        // Try cell
-        const cell = topology.cells.get(symbol.cellId);
-        if (cell) {
-          center = cell.center;
-        } else {
-          // Try vertex
-          const vertex = topology.vertices.get(symbol.cellId);
-          if (vertex) {
-            center = vertex.position;
-          } else {
-            // Try edge
-            const edge = topology.edges.get(symbol.cellId);
-            if (edge) {
-              center = edge.midpoint;
-            }
-          }
-        }
-      } else {
-        // Standard mode - parse different types of cellId
-        if (symbol.cellId.startsWith('vertex-')) {
-          const index = getVertexIndexById(symbol.cellId, grid);
-          if (index) center = getVertexPosition(index.row, index.col, grid);
-        } else if (symbol.cellId.startsWith('edge-h-')) {
-          const index = getEdgeIndexById(symbol.cellId, grid);
-          if (index && index.type === 'h') center = getEdgePosition('h', index.row, index.col, grid);
-        } else if (symbol.cellId.startsWith('edge-v-')) {
-          const index = getEdgeIndexById(symbol.cellId, grid);
-          if (index && index.type === 'v') center = getEdgePosition('v', index.row, index.col, grid);
-        } else {
-          // Regular cell-row-col format
-          const index = getCellIndexById(symbol.cellId, grid);
-          if (index) center = getCellCenter(index.row, index.col, grid);
-        }
-      }
+      const target = resolveBoardPoint(symbol.cellId, symbol.pointType, { grid, useTopology, topology });
+      const center = target?.position;
 
       if (!center) return;
 

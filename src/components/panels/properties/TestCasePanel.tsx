@@ -93,7 +93,12 @@ export const TestCasePanel: React.FC = () => {
       }
 
       // Enable topology mode and update topology
-      store.setUseTopology(true);
+      const modeChange = store.setUseTopology(true);
+      if (!modeChange.ok) {
+        store.setActiveLayer(currentLayer);
+        setLoadResult({ success: false, message: modeChange.reason });
+        return;
+      }
       store.updateTopology();
 
       // Restore original layer (stay in constraint mode)
