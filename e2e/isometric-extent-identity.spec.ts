@@ -70,6 +70,7 @@ test('isometric growth retains vertex notes, accepts new-cell input and restores
   await expect(page.getByRole('status')).toContainText('This board cannot be resized');
   await page.screenshot({ path: info.outputPath('isometric-unsupported.png') });
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  if (await close.isVisible()) await close.click();
   const unchanged = await savePuzzleFile(page);
   expect(unchanged.grid).toEqual(custom.grid);
   expect(unchanged.topologySettings!.topology).toEqual(custom.topologySettings!.topology);
