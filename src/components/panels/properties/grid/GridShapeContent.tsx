@@ -201,6 +201,7 @@ export const GridShapeContent: React.FC = () => {
     <div className="space-y-2">
       {unsupportedEdit && <p role="status" className="text-xs text-office-text-secondary">{t(topology?.editBase ? 'gridEdit.unsupportedSplitResize' : 'gridEdit.unsupportedResize')}</p>}
       {!unsupportedEdit && isometricExtentEdit && <p role="status" className="text-xs text-office-text-secondary">{t('gridEdit.isometricResizeNotes')}</p>}
+      {!unsupportedEdit && isIso && facesChanged() && <p role="status" className="text-xs text-office-text-secondary">{t('gridEdit.isometricFaceNotes')}</p>}
       {/* Grid Type and Size */}
       <div>
         <label className="block text-xs text-office-text-secondary mb-1">
