@@ -14,6 +14,7 @@ import {
 } from '../../utils/idGenerator';
 import type {
   SurfaceElement,
+  VertexSurfaceElement,
   LineElement,
   NumberElement,
   SymbolElement,
@@ -22,6 +23,7 @@ import type {
   BoxLineElement,
   LineGroup,
 } from '../../types';
+import { getVertexSurfaceRegion } from '../../utils/vertexSurfaces';
 import { isSymbolSize } from '../../utils/symbolSize';
 import { toDataLayer, type DataLayerType } from '../../types';
 import type { ElementsSlice, SliceCreator } from './types';
@@ -31,6 +33,8 @@ import {
 } from '../../utils/lineMerge';
 import {
   createAddSurfaceAction,
+  createAddVertexSurfaceAction,
+  createRemoveVertexSurfaceAction,
   createRemoveSurfaceAction,
   createAddLineAction,
   createRemoveLineAction,
@@ -76,6 +80,34 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
 
   return {
     puzzle: createEmptyState(),
+
+  addVertexSurface: (element) => {
+    if (!canEditLayer(element.layer)) return '';
+    const state = get();
+    const topology = state.topology;
+    if (!topology || !getVertexSurfaceRegion(topology, element.vertexId)) return '';
+    const fullElement: VertexSurfaceElement = { ...element, id: generateSurfaceId() };
+    set(state => ({ puzzle: { ...state.puzzle, [element.layer]: {
+      ...state.puzzle[element.layer],
+      vertexSurfaces: { ...state.puzzle[element.layer].vertexSurfaces, [fullElement.id]: fullElement },
+    } } }));
+    get().historyManager.addAction(createAddVertexSurfaceAction(fullElement));
+    return fullElement.id;
+  },
+
+  removeVertexSurface: (id) => {
+    const state = get();
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer) return;
+    const element = state.puzzle[layer].vertexSurfaces?.[id];
+    if (!element) return;
+    set(state => {
+      const vertexSurfaces = { ...state.puzzle[layer].vertexSurfaces };
+      delete vertexSurfaces[id];
+      return { puzzle: { ...state.puzzle, [layer]: { ...state.puzzle[layer], vertexSurfaces } } };
+    });
+    get().historyManager.addAction(createRemoveVertexSurfaceAction(id, element));
+  },
 
   // Surface operations
   addSurface: (element) => {

@@ -1,0 +1,641 @@
+{
+  "version": "1.3.0",
+  "grid": {
+    "rows": 2,
+    "cols": 2,
+    "cellSize": 40,
+    "outerPadding": 20,
+    "gridType": "square",
+    "showGrid": true,
+    "gridStyle": "normal",
+    "frameStyle": "normal",
+    "gridColor": "#cccccc",
+    "frameColor": "#000000",
+    "backgroundColor": "#ffffff"
+  },
+  "state": {
+    "problem": {
+      "surfaces": {},
+      "lines": {
+        "loop0": {
+          "id": "loop0",
+          "from": "room/a",
+          "to": "room/b",
+          "lineTarget": "cell",
+          "layer": "problem",
+          "color": "#000000",
+          "style": "solid",
+          "thickness": "normal"
+        },
+        "loop1": {
+          "id": "loop1",
+          "from": "room/b",
+          "to": "room/d",
+          "lineTarget": "cell",
+          "layer": "problem",
+          "color": "#000000",
+          "style": "solid",
+          "thickness": "normal"
+        },
+        "loop2": {
+          "id": "loop2",
+          "from": "room/d",
+          "to": "room/c",
+          "lineTarget": "cell",
+          "layer": "problem",
+          "color": "#000000",
+          "style": "solid",
+          "thickness": "normal"
+        },
+        "loop3": {
+          "id": "loop3",
+          "from": "room/c",
+          "to": "room/a",
+          "lineTarget": "cell",
+          "layer": "problem",
+          "color": "#000000",
+          "style": "solid",
+          "thickness": "normal"
+        }
+      },
+      "edges": {},
+      "walls": {},
+      "numbers": {},
+      "symbols": {},
+      "cages": {},
+      "specials": {},
+      "boxLines": {},
+      "vertexSurfaces": {
+        "center-note": {
+          "id": "center-note",
+          "vertexId": "crossing|center",
+          "color": "#ff0000",
+          "layer": "problem"
+        }
+      }
+    },
+    "answer": {
+      "surfaces": {},
+      "lines": {},
+      "edges": {},
+      "walls": {},
+      "numbers": {},
+      "symbols": {},
+      "cages": {},
+      "specials": {},
+      "boxLines": {}
+    },
+    "multicolorSurfaces": {}
+  },
+  "topologySettings": {
+    "useTopology": true,
+    "topologyPreset": "square",
+    "topologyIntensity": 0.5,
+    "topology": {
+      "cells": [
+        [
+          "room/a",
+          {
+            "id": "room/a",
+            "center": {
+              "x": 40.0,
+              "y": 40.0
+            },
+            "boundaryVertices": [
+              "NW!",
+              "north-middle",
+              "crossing|center",
+              "west/middle"
+            ],
+            "boundaryEdges": [
+              "border@0",
+              "border@1",
+              "border@2",
+              "border@3"
+            ],
+            "adjacentCells": [
+              "room/b",
+              "room/c"
+            ]
+          }
+        ],
+        [
+          "room/b",
+          {
+            "id": "room/b",
+            "center": {
+              "x": 80.0,
+              "y": 40.0
+            },
+            "boundaryVertices": [
+              "north-middle",
+              "NE?",
+              "east/middle",
+              "crossing|center"
+            ],
+            "boundaryEdges": [
+              "border@4",
+              "border@5",
+              "border@6",
+              "border@1"
+            ],
+            "adjacentCells": [
+              "room/d",
+              "room/a"
+            ]
+          }
+        ],
+        [
+          "room/c",
+          {
+            "id": "room/c",
+            "center": {
+              "x": 40.0,
+              "y": 80.0
+            },
+            "boundaryVertices": [
+              "west/middle",
+              "crossing|center",
+              "south-middle",
+              "SW!"
+            ],
+            "boundaryEdges": [
+              "border@2",
+              "border@7",
+              "border@8",
+              "border@9"
+            ],
+            "adjacentCells": [
+              "room/a",
+              "room/d"
+            ]
+          }
+        ],
+        [
+          "room/d",
+          {
+            "id": "room/d",
+            "center": {
+              "x": 80.0,
+              "y": 80.0
+            },
+            "boundaryVertices": [
+              "crossing|center",
+              "east/middle",
+              "SE?",
+              "south-middle"
+            ],
+            "boundaryEdges": [
+              "border@6",
+              "border@10",
+              "border@11",
+              "border@7"
+            ],
+            "adjacentCells": [
+              "room/b",
+              "room/c"
+            ]
+          }
+        ]
+      ],
+      "vertices": [
+        [
+          "NW!",
+          {
+            "id": "NW!",
+            "position": {
+              "x": 20,
+              "y": 20
+            },
+            "adjacentCells": [
+              "room/a"
+            ],
+            "adjacentEdges": [
+              "border@0",
+              "border@3"
+            ],
+            "adjacentVertices": [
+              "north-middle",
+              "west/middle"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "north-middle",
+          {
+            "id": "north-middle",
+            "position": {
+              "x": 60,
+              "y": 20
+            },
+            "adjacentCells": [
+              "room/a",
+              "room/b"
+            ],
+            "adjacentEdges": [
+              "border@0",
+              "border@1",
+              "border@4"
+            ],
+            "adjacentVertices": [
+              "NW!",
+              "crossing|center",
+              "NE?"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "NE?",
+          {
+            "id": "NE?",
+            "position": {
+              "x": 100,
+              "y": 20
+            },
+            "adjacentCells": [
+              "room/b"
+            ],
+            "adjacentEdges": [
+              "border@4",
+              "border@5"
+            ],
+            "adjacentVertices": [
+              "north-middle",
+              "east/middle"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "west/middle",
+          {
+            "id": "west/middle",
+            "position": {
+              "x": 20,
+              "y": 60
+            },
+            "adjacentCells": [
+              "room/a",
+              "room/c"
+            ],
+            "adjacentEdges": [
+              "border@2",
+              "border@3",
+              "border@9"
+            ],
+            "adjacentVertices": [
+              "crossing|center",
+              "NW!",
+              "SW!"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "crossing|center",
+          {
+            "id": "crossing|center",
+            "position": {
+              "x": 60,
+              "y": 60
+            },
+            "adjacentCells": [
+              "room/a",
+              "room/b",
+              "room/c",
+              "room/d"
+            ],
+            "adjacentEdges": [
+              "border@1",
+              "border@2",
+              "border@6",
+              "border@7"
+            ],
+            "adjacentVertices": [
+              "north-middle",
+              "west/middle",
+              "east/middle",
+              "south-middle"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "east/middle",
+          {
+            "id": "east/middle",
+            "position": {
+              "x": 100,
+              "y": 60
+            },
+            "adjacentCells": [
+              "room/b",
+              "room/d"
+            ],
+            "adjacentEdges": [
+              "border@5",
+              "border@6",
+              "border@10"
+            ],
+            "adjacentVertices": [
+              "NE?",
+              "crossing|center",
+              "SE?"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "SW!",
+          {
+            "id": "SW!",
+            "position": {
+              "x": 20,
+              "y": 100
+            },
+            "adjacentCells": [
+              "room/c"
+            ],
+            "adjacentEdges": [
+              "border@8",
+              "border@9"
+            ],
+            "adjacentVertices": [
+              "south-middle",
+              "west/middle"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "south-middle",
+          {
+            "id": "south-middle",
+            "position": {
+              "x": 60,
+              "y": 100
+            },
+            "adjacentCells": [
+              "room/c",
+              "room/d"
+            ],
+            "adjacentEdges": [
+              "border@7",
+              "border@8",
+              "border@11"
+            ],
+            "adjacentVertices": [
+              "crossing|center",
+              "SW!",
+              "SE?"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "SE?",
+          {
+            "id": "SE?",
+            "position": {
+              "x": 100,
+              "y": 100
+            },
+            "adjacentCells": [
+              "room/d"
+            ],
+            "adjacentEdges": [
+              "border@10",
+              "border@11"
+            ],
+            "adjacentVertices": [
+              "east/middle",
+              "south-middle"
+            ],
+            "isBoundary": true
+          }
+        ]
+      ],
+      "edges": [
+        [
+          "border@0",
+          {
+            "id": "border@0",
+            "startVertex": "NW!",
+            "endVertex": "north-middle",
+            "midpoint": {
+              "x": 40.0,
+              "y": 20.0
+            },
+            "adjacentCells": [
+              "room/a"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "border@1",
+          {
+            "id": "border@1",
+            "startVertex": "north-middle",
+            "endVertex": "crossing|center",
+            "midpoint": {
+              "x": 60.0,
+              "y": 40.0
+            },
+            "adjacentCells": [
+              "room/a",
+              "room/b"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "border@2",
+          {
+            "id": "border@2",
+            "startVertex": "crossing|center",
+            "endVertex": "west/middle",
+            "midpoint": {
+              "x": 40.0,
+              "y": 60.0
+            },
+            "adjacentCells": [
+              "room/a",
+              "room/c"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "border@3",
+          {
+            "id": "border@3",
+            "startVertex": "west/middle",
+            "endVertex": "NW!",
+            "midpoint": {
+              "x": 20.0,
+              "y": 40.0
+            },
+            "adjacentCells": [
+              "room/a"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "border@4",
+          {
+            "id": "border@4",
+            "startVertex": "north-middle",
+            "endVertex": "NE?",
+            "midpoint": {
+              "x": 80.0,
+              "y": 20.0
+            },
+            "adjacentCells": [
+              "room/b"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "border@5",
+          {
+            "id": "border@5",
+            "startVertex": "NE?",
+            "endVertex": "east/middle",
+            "midpoint": {
+              "x": 100.0,
+              "y": 40.0
+            },
+            "adjacentCells": [
+              "room/b"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "border@6",
+          {
+            "id": "border@6",
+            "startVertex": "east/middle",
+            "endVertex": "crossing|center",
+            "midpoint": {
+              "x": 80.0,
+              "y": 60.0
+            },
+            "adjacentCells": [
+              "room/b",
+              "room/d"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "border@7",
+          {
+            "id": "border@7",
+            "startVertex": "crossing|center",
+            "endVertex": "south-middle",
+            "midpoint": {
+              "x": 60.0,
+              "y": 80.0
+            },
+            "adjacentCells": [
+              "room/c",
+              "room/d"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "border@8",
+          {
+            "id": "border@8",
+            "startVertex": "south-middle",
+            "endVertex": "SW!",
+            "midpoint": {
+              "x": 40.0,
+              "y": 100.0
+            },
+            "adjacentCells": [
+              "room/c"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "border@9",
+          {
+            "id": "border@9",
+            "startVertex": "SW!",
+            "endVertex": "west/middle",
+            "midpoint": {
+              "x": 20.0,
+              "y": 80.0
+            },
+            "adjacentCells": [
+              "room/c"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "border@10",
+          {
+            "id": "border@10",
+            "startVertex": "east/middle",
+            "endVertex": "SE?",
+            "midpoint": {
+              "x": 100.0,
+              "y": 80.0
+            },
+            "adjacentCells": [
+              "room/d"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "border@11",
+          {
+            "id": "border@11",
+            "startVertex": "SE?",
+            "endVertex": "south-middle",
+            "midpoint": {
+              "x": 80.0,
+              "y": 100.0
+            },
+            "adjacentCells": [
+              "room/d"
+            ],
+            "isBoundary": true
+          }
+        ]
+      ],
+      "bounds": {
+        "minX": 20,
+        "minY": 20,
+        "maxX": 100,
+        "maxY": 100,
+        "width": 120,
+        "height": 120
+      },
+      "sourceConfig": {
+        "rows": 2,
+        "cols": 2,
+        "cellSize": 40,
+        "outerPadding": 20,
+        "gridType": "square",
+        "showGrid": true,
+        "gridStyle": "normal",
+        "frameStyle": "normal",
+        "gridColor": "#cccccc",
+        "frameColor": "#000000",
+        "backgroundColor": "#ffffff"
+      }
+    }
+  }
+}

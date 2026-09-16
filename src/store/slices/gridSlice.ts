@@ -2,6 +2,8 @@
  * Grid Slice - Grid configuration, topology, and cell operations
  */
 
+import { resolveSurfaceVertex } from '../../utils/vertexSurfaces';
+import type { VertexSurfaceElement } from '../../types';
 import type { GridConfig } from '../../types';
 import type { GridSlice, SliceCreator, PuzzleStore } from './types';
 import type { TopologyPreset, GridTopology } from '../../utils/gridTopology';
@@ -80,10 +82,11 @@ const createDefaultTopology = (): GridTopology => {
 const EXTENT_KEYS = new Set(['rows', 'cols', 'marginTop', 'marginBottom', 'marginLeft', 'marginRight']);
 
 function editSquareExtent(state: PuzzleStore, newGrid: GridConfig): Partial<PuzzleStore> | null {
-  if (!state.useTopology || !state.topology || state.topologyPreset !== 'square') return null;
+  if (!state.topology || (state.useTopology && state.topologyPreset !== 'square')) return null;
   const changed = [...TOPOLOGY_KEYS].filter(key => JSON.stringify(state.grid[key as keyof GridConfig]) !== JSON.stringify(newGrid[key as keyof GridConfig]));
   if (!changed.some(key => EXTENT_KEYS.has(key)) || changed.some(key => !EXTENT_KEYS.has(key) && key !== 'cellSize' && key !== 'outerPadding')) return null;
-  const before = prepareExclusionBase(state.topology, state.grid, state.topologyPreset, state.topologyIntensity);
+  const before = prepareExclusionBase(state.topology, state.grid,
+    state.useTopology ? state.topologyPreset : 'square', state.topologyIntensity);
   const resized = resizeSquareExtent(before, state.grid, newGrid);
   if (!resized) return null;
   const full = resized.exclusionBase ?? resized;
@@ -92,11 +95,19 @@ function editSquareExtent(state: PuzzleStore, newGrid: GridConfig): Partial<Puzz
     if (grid[key]) grid[key] = grid[key]!.filter(id => full.cells.has(id));
   }
   const topology = applyCellExclusions(resized, grid);
-  const puzzle = retainTopologyPuzzle(state.puzzle, before, topology);
+  const filtered = retainTopologyPuzzle(state.puzzle, before, topology);
+  // Legacy cell/line records use their own Grid-format coordinate system. Only
+  // the new vertex notes reference this retained graph in that renderer mode.
+  const retainVertexNotes = (layer: typeof state.puzzle.answer) => ({ ...layer,
+    ...(layer.vertexSurfaces && { vertexSurfaces: retainTopologyElements(layer, before, topology).vertexSurfaces }),
+  });
+  const puzzle = state.useTopology ? filtered : { ...state.puzzle,
+    problem: retainVertexNotes(state.puzzle.problem), answer: retainVertexNotes(state.puzzle.answer) };
   const liveElements = new Set([puzzle.problem, puzzle.answer].flatMap(layer =>
     Object.values(layer).flatMap(collection => collection && typeof collection === 'object' ? Object.keys(collection) : [])));
   return { grid, topology, puzzle,
-    trialStack: state.trialStack.map(layer => retainTopologyElements(layer, before, topology)),
+    trialStack: state.trialStack.map(layer => state.useTopology
+      ? retainTopologyElements(layer, before, topology) : retainVertexNotes(layer)),
     selectedElements: state.selectedElements.filter(id => liveElements.has(id)),
     hoverCell: state.hoverCell && full.cells.has(state.hoverCell) ? state.hoverCell : null,
     cursorCell: state.cursorCell && full.cells.has(state.cursorCell) ? state.cursorCell : null,
@@ -139,7 +150,7 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       const changedTopologyKeys = Object.keys(gridUpdate).filter(key => TOPOLOGY_KEYS.has(key)
         && JSON.stringify(newGrid[key as keyof GridConfig]) !== JSON.stringify(state.grid[key as keyof GridConfig]));
       const appliedPreset = state.topology?.appliedPreset;
-      const presetChanged = appliedPreset && (appliedPreset.preset !== state.topologyPreset || appliedPreset.intensity !== state.topologyIntensity);
+      const presetChanged = nextUseTopology && appliedPreset && (appliedPreset.preset !== state.topologyPreset || appliedPreset.intensity !== state.topologyIntensity);
       const hasTopologyChange = changedTopologyKeys.length > 0
         || (presetChanged && Object.keys(gridUpdate).some(key => TOPOLOGY_KEYS.has(key)));
       const hasLayoutChange = !presetChanged && changedTopologyKeys.length > 0
@@ -149,17 +160,17 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
 
       let newTopology = state.topology;
       let nextPuzzle = state.puzzle;
-      if (nextUseTopology && hasLayoutChange && state.topology) {
-        const base = prepareExclusionBase(state.topology, state.grid, state.topologyPreset, state.topologyIntensity);
+      if (hasLayoutChange && state.topology) {
+        const base = prepareExclusionBase(state.topology, state.grid, nextUseTopology ? state.topologyPreset : 'square', state.topologyIntensity);
         newTopology = scaleTopologyLayout(base, state.grid, newGrid);
         if (hasExclusionChange) newTopology = applyCellExclusions(newTopology, newGrid);
-      } else if (nextUseTopology && hasTopologyChange) {
+      } else if (hasTopologyChange) {
         const base = gridConfigToTopology(newGrid);
         newTopology = applyTopologyPreset(base, {
-          preset: state.topologyPreset,
+          preset: nextUseTopology ? state.topologyPreset : 'square',
           intensity: state.topologyIntensity,
         });
-        if (newTopology) {
+        if (nextUseTopology && newTopology) {
           nextPuzzle = {
             ...state.puzzle,
             problem: {
@@ -173,8 +184,8 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
           };
         }
       }
-      if (nextUseTopology && !hasTopologyChange && hasExclusionChange && state.topology) {
-        const base = prepareExclusionBase(state.topology, state.grid, state.topologyPreset, state.topologyIntensity);
+      if (!hasTopologyChange && hasExclusionChange && state.topology) {
+        const base = prepareExclusionBase(state.topology, state.grid, nextUseTopology ? state.topologyPreset : 'square', state.topologyIntensity);
         newTopology = applyCellExclusions(base, newGrid);
       }
       const result = {
@@ -194,7 +205,7 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       return;
     }
     set({ useTopology });
-    if (useTopology) {
+    if (useTopology && !get().topology) {
       get().applyTopologyPreset();
     }
   },
@@ -203,8 +214,8 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
 
   updateTopology: () => {
     const state = get();
-    if (state.useTopology && state.topology) {
-      const base = prepareExclusionBase(state.topology, state.grid, state.topologyPreset, state.topologyIntensity);
+    if (state.topology) {
+      const base = prepareExclusionBase(state.topology, state.grid, state.useTopology ? state.topologyPreset : 'square', state.topologyIntensity);
       set({ topology: applyCellExclusions(base, state.grid) });
     } else if (state.useTopology) {
       get().applyTopologyPreset();
@@ -340,6 +351,10 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
     const state = get();
     const oldConfig = state.grid;
     const newConfig: GridConfig = { ...oldConfig, ...configChanges };
+    if (!state.useTopology) {
+      get().setGrid(configChanges);
+      return;
+    }
     const extentEdit = editSquareExtent(state, newConfig);
     if (extentEdit) {
       set(recordGeometryEdit(state, extentEdit, 'Resize board'));
@@ -380,6 +395,8 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
 
           const elem = value as Record<string, unknown>;
           let shouldKeep = true;
+
+          if ('vertexId' in elem && typeof elem.vertexId === 'string' && !resolveSurfaceVertex(value as VertexSurfaceElement, resizeResult.topology)) shouldKeep = false;
 
           if ('cellId' in elem && typeof elem.cellId === 'string') {
             if (isCellRemoved(elem.cellId)) {
@@ -440,6 +457,7 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       const newPuzzle = {
         problem: {
           surfaces: filterElements(state.puzzle.problem.surfaces || {}),
+          ...(state.puzzle.problem.vertexSurfaces ? { vertexSurfaces: filterElements(state.puzzle.problem.vertexSurfaces) } : {}),
           lines: filterElements(state.puzzle.problem.lines || {}),
           edges: filterElements(state.puzzle.problem.edges || {}),
           walls: filterElements(state.puzzle.problem.walls || {}),
@@ -451,6 +469,7 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
         },
         answer: {
           surfaces: filterElements(state.puzzle.answer.surfaces || {}),
+          ...(state.puzzle.answer.vertexSurfaces ? { vertexSurfaces: filterElements(state.puzzle.answer.vertexSurfaces) } : {}),
           lines: filterElements(state.puzzle.answer.lines || {}),
           edges: filterElements(state.puzzle.answer.edges || {}),
           walls: filterElements(state.puzzle.answer.walls || {}),

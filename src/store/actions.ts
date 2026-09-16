@@ -13,6 +13,7 @@ import type {
   LayerType,
   DataLayerType,
   SurfaceElement,
+  VertexSurfaceElement,
   LineElement,
   EdgeElement,
   WallElement,
@@ -32,6 +33,7 @@ import type {
 // Map element names to their types
 type ElementTypeMap = {
   SURFACE: SurfaceElement;
+  VERTEX_SURFACE: VertexSurfaceElement;
   LINE: LineElement;
   EDGE: EdgeElement;
   WALL: WallElement;
@@ -62,6 +64,8 @@ interface RemoveElementAction<N extends ElementName> {
 }
 
 // Specific element actions (for type inference)
+export type AddVertexSurfaceAction = AddElementAction<'VERTEX_SURFACE'>;
+export type RemoveVertexSurfaceAction = RemoveElementAction<'VERTEX_SURFACE'>;
 export type AddSurfaceAction = AddElementAction<'SURFACE'>;
 export type RemoveSurfaceAction = RemoveElementAction<'SURFACE'>;
 export type AddLineAction = AddElementAction<'LINE'>;
@@ -156,6 +160,8 @@ export interface BatchAction {
 
 export type PuzzleAction =
   // Element operations
+  | AddVertexSurfaceAction
+  | RemoveVertexSurfaceAction
   | AddSurfaceAction
   | RemoveSurfaceAction
   | AddLineAction
@@ -205,6 +211,9 @@ function createRemoveActionCreator<N extends ElementName>(name: N) {
     element,
   });
 }
+
+export const createAddVertexSurfaceAction = createAddActionCreator('VERTEX_SURFACE');
+export const createRemoveVertexSurfaceAction = createRemoveActionCreator('VERTEX_SURFACE');
 
 // Element action creators using the factories
 export const createAddSurfaceAction = createAddActionCreator('SURFACE');
@@ -346,6 +355,8 @@ export function reverseAction(action: PuzzleAction): PuzzleAction {
 
 // Description mapping for element actions
 const ELEMENT_ACTION_DESCRIPTIONS: Record<string, string> = {
+  ADD_VERTEX_SURFACE: 'Shade vertex',
+  REMOVE_VERTEX_SURFACE: 'Erase vertex shading',
   ADD_SURFACE: 'Add surface',
   REMOVE_SURFACE: 'Remove surface',
   ADD_LINE: 'Add line',

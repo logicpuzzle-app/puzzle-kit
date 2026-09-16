@@ -5,6 +5,7 @@
  * - 1.0.0: Initial format with full layer fields in elements
  * - 1.1.0: Optimized format - layer fields stripped (inferred from problem/answer structure)
  * - 1.2.0: Optional topology snapshot preserves native board IDs and connections
+ * - 1.3.0: Vertex shading notes; retain their graph in legacy grid rendering too
  *
  * Versioning policy:
  * - Major version: Breaking changes, no backward compatibility
@@ -12,4 +13,4 @@
  * - Patch version: Bug fixes
  */
 
-export const PUZZLE_EXPORT_VERSION = '1.2.0';
+export const PUZZLE_EXPORT_VERSION = '1.3.0';

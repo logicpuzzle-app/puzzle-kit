@@ -318,8 +318,8 @@ export function saveTopologyState(
   const data: PersistedTopologyState = {
     topology: topology ? serializeTopology(topology) : null,
     useTopology,
-    topologyPreset: (useTopology ? topology?.appliedPreset?.preset : undefined) ?? topologyPreset,
-    topologyIntensity: (useTopology ? topology?.appliedPreset?.intensity : undefined) ?? topologyIntensity,
+    topologyPreset: topology?.appliedPreset?.preset ?? topologyPreset,
+    topologyIntensity: topology?.appliedPreset?.intensity ?? topologyIntensity,
   };
   return setItem(STORAGE_KEYS.TOPOLOGY, data);
 }

@@ -15,9 +15,9 @@ export function captureTopologySettings(state: {
 }): Settings {
   return {
     useTopology: state.useTopology,
-    topologyPreset: (state.useTopology ? state.topology?.appliedPreset?.preset : undefined) ?? state.topologyPreset,
-    topologyIntensity: (state.useTopology ? state.topology?.appliedPreset?.intensity : undefined) ?? state.topologyIntensity,
-    ...(state.useTopology && state.topology
+    topologyPreset: state.topology?.appliedPreset?.preset ?? state.topologyPreset,
+    topologyIntensity: state.topology?.appliedPreset?.intensity ?? state.topologyIntensity,
+    ...(state.topology
       ? { topology: serializeTopology(state.topology) } : {}),
   };
 }
@@ -31,7 +31,9 @@ export function restoreTopology(grid: GridConfig, settings: Settings): GridTopol
         intensity: settings.topologyIntensity,
       })
     : gridConfigToTopology(grid);
-  topology.appliedPreset = { preset: settings.topologyPreset as TopologyPreset, intensity: settings.topologyIntensity };
+  topology.appliedPreset = settings.topology !== undefined || settings.useTopology
+    ? { preset: settings.topologyPreset as TopologyPreset, intensity: settings.topologyIntensity }
+    : { preset: 'square', intensity: 0.5 };
   if (topology.exclusionBase) topology.exclusionBase.appliedPreset = topology.appliedPreset;
   return settings.useTopology
     ? prepareExclusionBase(topology, grid, settings.topologyPreset as TopologyPreset, settings.topologyIntensity)

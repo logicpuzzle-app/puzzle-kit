@@ -269,6 +269,14 @@ export interface GridPoint {
 export type SurfaceDisplayMode = 'fill' | 'dot';
 
 // Drawing elements
+export interface VertexSurfaceElement {
+  id: string;
+  vertexId: string;
+  color: string;
+  layer: DataLayerType;
+  displayMode?: SurfaceDisplayMode;
+}
+
 export interface SurfaceElement {
   id: string;
   cellId: string;
@@ -561,6 +569,8 @@ export type RoomMap = Record<string, number>;
 
 // Puzzle state
 export interface PuzzleElements {
+  /** Visual dual-grid shading, separate from cell-based rule inputs. */
+  vertexSurfaces?: Record<string, VertexSurfaceElement>;
   surfaces: Record<string, SurfaceElement>;
   lines: Record<string, LineElement>;
   /**
@@ -637,6 +647,7 @@ export interface MulticolorSwatch {
 
 // Tool settings
 export interface ToolSettings {
+  surfaceTarget?: 'cell' | 'vertex';
   currentTool: ToolType;
   currentCategory: ToolCategory;
   color: string;

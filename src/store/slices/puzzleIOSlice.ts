@@ -60,7 +60,7 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
           preset: state.topologyPreset,
           intensity: state.topologyIntensity,
         })
-      : null;
+      : applyTopologyPreset(baseTopology, { preset: 'square', intensity: 0.5 });
 
     set({
       ...freshPuzzleSession(state),

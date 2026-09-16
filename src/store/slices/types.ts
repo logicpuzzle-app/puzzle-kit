@@ -13,6 +13,7 @@ import type {
   CanvasState,
   ToolSettings,
   SurfaceElement,
+  VertexSurfaceElement,
   LineElement,
   LineGroup,
   EdgeElement,
@@ -147,6 +148,8 @@ export interface GridSlice {
 }
 
 export interface ElementsSlice {
+  addVertexSurface: (element: Omit<VertexSurfaceElement, 'id'>) => string;
+  removeVertexSurface: (id: string) => void;
   puzzle: PuzzleState;
 
   // Element operations

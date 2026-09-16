@@ -143,6 +143,17 @@ export class ActionExecutor {
     };
 
     switch (action.type) {
+      case 'ADD_VERTEX_SURFACE':
+      case 'REMOVE_VERTEX_SURFACE':
+        set((state) => {
+          const layer = action.element.layer;
+          const vertexSurfaces = { ...state.puzzle[layer].vertexSurfaces };
+          if (action.type === 'ADD_VERTEX_SURFACE') vertexSurfaces[action.element.id] = action.element;
+          else delete vertexSurfaces[action.id];
+          return { puzzle: { ...state.puzzle, [layer]: { ...state.puzzle[layer], vertexSurfaces } } };
+        });
+        break;
+
       case 'ADD_SURFACE':
         set((state) => ({
           puzzle: {

@@ -35,6 +35,14 @@ export const applyActionToState = (
       else delete boxLines[action.id];
       return { puzzle: { ...state.puzzle, [layer]: { ...state.puzzle[layer], boxLines } } };
     }
+    case 'ADD_VERTEX_SURFACE':
+    case 'REMOVE_VERTEX_SURFACE': {
+      const layer = action.element.layer;
+      const vertexSurfaces = { ...state.puzzle[layer].vertexSurfaces };
+      if (action.type === 'ADD_VERTEX_SURFACE') vertexSurfaces[action.element.id] = action.element;
+      else delete vertexSurfaces[action.id];
+      return { puzzle: { ...state.puzzle, [layer]: { ...state.puzzle[layer], vertexSurfaces } } };
+    }
     case 'ADD_SURFACE': {
       const layer = action.element.layer;
       return {
