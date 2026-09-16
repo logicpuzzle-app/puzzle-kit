@@ -38,3 +38,5 @@ Unitは両レイヤーの注記の整理とUndo、試行の復元、独立した
 
 最終差分の検証: Unit607件（76ファイル）、本番Chromium E2E72件、開発E2E172件成功（各既存skip1件）。
 型・E2E型・アプリ/library build・solver source map検証成功。
+
+後続の[旧結合ファイルの移行QA](2026-09-16-legacy-merge-identity.md)では、既知の旧生成器に一致するファイルの解除に対応した。
