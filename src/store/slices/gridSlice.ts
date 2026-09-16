@@ -126,8 +126,8 @@ function geometryEditingState(state: PuzzleStore) {
 // Geometry operations are immutable. Keep matching grid/topology snapshots so
 // undo never restores configuration while leaving a different rendered board.
 function recordGeometryEdit(state: PuzzleStore, result: Partial<PuzzleStore>, description: string): Partial<PuzzleStore> {
-  if (result === state || !result.grid || result.grid === state.grid) return result === state ? {} : result;
-  if (JSON.stringify(result.grid) !== JSON.stringify(state.grid)) {
+  if (result === state || !result.grid) return result === state ? {} : result;
+  if (JSON.stringify(result.grid) !== JSON.stringify(state.grid) || (result.topology !== undefined && result.topology !== state.topology)) {
     state.historyManager.addAction({
       type: 'EDIT_GRID_GEOMETRY', description,
       before: { grid: state.grid, topology: state.topology,
@@ -155,7 +155,7 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       const presetChanged = nextUseTopology && appliedPreset && (appliedPreset.preset !== state.topologyPreset || appliedPreset.intensity !== state.topologyIntensity);
       const hasTopologyChange = changedTopologyKeys.length > 0
         || (presetChanged && Object.keys(gridUpdate).some(key => TOPOLOGY_KEYS.has(key)));
-      const hasLayoutChange = !presetChanged && changedTopologyKeys.length > 0
+      const hasLayoutChange = (changedTopologyKeys.length > 0 || (presetChanged && Object.keys(gridUpdate).some(key => TOPOLOGY_KEYS.has(key))))
         && changedTopologyKeys.every(key => key === 'cellSize' || key === 'outerPadding');
       const hasExclusionChange = ['voidCells', 'disabledCells', 'outboardCells']
         .some(key => Object.prototype.hasOwnProperty.call(gridUpdate, key));
@@ -165,6 +165,7 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       if (hasLayoutChange && state.topology) {
         const base = prepareExclusionBase(state.topology, state.grid, nextUseTopology ? state.topologyPreset : 'square', state.topologyIntensity);
         newTopology = scaleTopologyLayout(base, state.grid, newGrid);
+        if (presetChanged) newTopology = applyTopologyPreset(newTopology, { preset: state.topologyPreset, intensity: state.topologyIntensity });
         if (hasExclusionChange || !nextUseTopology) newTopology = nextUseTopology
           ? applyCellExclusions(newTopology, newGrid) : applyGridCellExclusions(newTopology, newGrid);
       } else if (hasTopologyChange) {
@@ -233,25 +234,9 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
 
   applyTopologyPreset: () => {
     const state = get();
-    const baseTopology = gridConfigToTopology(state.grid);
-    const transformedTopology = applyTopologyPreset(baseTopology, {
-      preset: state.topologyPreset,
-      intensity: state.topologyIntensity,
-    });
-    set({
-      topology: transformedTopology,
-      puzzle: {
-        ...state.puzzle,
-        problem: {
-          ...state.puzzle.problem,
-          lines: remapLineEdgeIdsForTopology(state.puzzle.problem.lines, transformedTopology, state.grid),
-        },
-        answer: {
-          ...state.puzzle.answer,
-          lines: remapLineEdgeIdsForTopology(state.puzzle.answer.lines, transformedTopology, state.grid),
-        },
-      },
-    });
+    const base = state.topology ?? gridConfigToTopology(state.grid);
+    const topology = applyTopologyPreset(base, { preset: state.topologyPreset, intensity: state.topologyIntensity });
+    set(recordGeometryEdit(state, { grid: state.grid, topology }, 'Change board deformation'));
   },
 
   // Preview topology
@@ -275,12 +260,13 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       };
       const appliedPreset = state.topology?.appliedPreset;
       const presetChanged = appliedPreset && (appliedPreset.preset !== state.topologyPreset || appliedPreset.intensity !== state.topologyIntensity);
-      const layoutOnly = !presetChanged && Object.entries(previewGridConfig).every(([key, value]) =>
+      const layoutOnly = Object.entries(previewGridConfig).every(([key, value]) =>
         key === 'cellSize' || key === 'outerPadding'
         || JSON.stringify(value) === JSON.stringify(state.grid[key as keyof GridConfig]));
       const extentPreview = editSquareExtent(state, previewGridConfig)?.topology;
-      const previewTopo = extentPreview ?? (layoutOnly && state.useTopology && state.topology
-        ? scaleTopologyLayout(state.topology, state.grid, previewGridConfig)
+      const layout = layoutOnly && state.topology ? scaleTopologyLayout(state.topology, state.grid, previewGridConfig) : null;
+      const previewTopo = extentPreview ?? (layout
+        ? (presetChanged ? applyTopologyPreset(layout, { preset: state.topologyPreset, intensity: state.topologyIntensity }) : layout)
         : applyTopologyPreset(gridConfigToTopology(previewGridConfig), {
             preset: state.topologyPreset,
             intensity: state.topologyIntensity,

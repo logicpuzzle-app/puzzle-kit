@@ -45,6 +45,8 @@ export interface TopologyCell {
   id: string;
   /** Center position */
   center: Point;
+  /** Position before the current visual deformation; retained across native save/load. */
+  baseCenter?: Point;
   /** Ordered list of vertex IDs forming the cell boundary (clockwise) */
   boundaryVertices: string[];
   /** IDs of adjacent cells (sharing an edge) - excludes outboard cells */
@@ -84,6 +86,8 @@ export interface TopologyVertex {
   id: string;
   /** Position */
   position: Point;
+  /** Position before the current visual deformation. */
+  basePosition?: Point;
   /** IDs of cells that share this vertex */
   adjacentCells: string[];
   /** IDs of edges connected to this vertex */
@@ -110,6 +114,8 @@ export interface TopologyEdge {
   id: string;
   /** Midpoint position */
   midpoint: Point;
+  /** Midpoint before the current visual deformation. */
+  baseMidpoint?: Point;
   /** Start vertex ID */
   startVertex: string;
   /** End vertex ID */
@@ -140,6 +146,8 @@ export interface GridTopology {
   appliedPreset?: { preset: TopologyPreset; intensity: number };
   /** Same board before temporary exclusions. One level only; IDs are preserved. */
   exclusionBase?: GridTopology;
+  /** Bounds of the original geometry used by visual presets, not an identity key. */
+  deformationBounds?: GridTopology['bounds'];
   /** All cells indexed by ID */
   cells: Map<string, TopologyCell>;
   /** All vertices indexed by ID */

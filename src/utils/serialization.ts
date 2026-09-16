@@ -457,6 +457,7 @@ export function downloadAsPng(blob: Blob, filename = 'puzzle.png'): void {
  */
 export interface SerializedTopology {
   exclusionBase?: SerializedTopology;
+  deformationBounds?: GridTopology['bounds'];
   cells: [string, TopologyCell][];
   vertices: [string, TopologyVertex][];
   edges: [string, TopologyEdge][];
@@ -474,6 +475,7 @@ export function serializeTopology(topology: GridTopology): SerializedTopology {
     vertices: Array.from(topology.vertices.entries()),
     edges: Array.from(topology.edges.entries()),
     bounds: topology.bounds,
+    ...(topology.deformationBounds && { deformationBounds: topology.deformationBounds }),
     sourceConfig: topology.sourceConfig,
   };
 }
@@ -513,19 +515,22 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
     exclusionBase = deserializeTopology(serialized.exclusionBase);
     for (const [id, vertex] of vertices) {
       const original = exclusionBase.vertices.get(id);
-      if (!original || original.position.x !== vertex.position.x || original.position.y !== vertex.position.y) {
+      if (!original || original.position.x !== vertex.position.x || original.position.y !== vertex.position.y
+          || JSON.stringify(original.basePosition) !== JSON.stringify(vertex.basePosition)) {
         throw new Error('Exclusion base reassigns a vertex ID');
       }
     }
     for (const [id, edge] of edges) {
       const original = exclusionBase.edges.get(id);
-      if (!original || original.startVertex !== edge.startVertex || original.endVertex !== edge.endVertex) {
+      if (!original || original.startVertex !== edge.startVertex || original.endVertex !== edge.endVertex
+          || JSON.stringify(original.baseMidpoint) !== JSON.stringify(edge.baseMidpoint)) {
         throw new Error('Exclusion base reassigns an edge ID');
       }
     }
     for (const [id, cell] of cells) {
       const original = exclusionBase.cells.get(id);
-      if (!original || original.center.x !== cell.center.x || original.center.y !== cell.center.y ||
+      if (!original || original.center.x !== cell.center.x || original.center.y !== cell.center.y
+          || JSON.stringify(original.baseCenter) !== JSON.stringify(cell.baseCenter) ||
           JSON.stringify(original.boundaryVertices) !== JSON.stringify(cell.boundaryVertices) ||
           JSON.stringify(original.boundaryEdges) !== JSON.stringify(cell.boundaryEdges)) {
         throw new Error('Exclusion base reassigns a cell ID');
@@ -539,20 +544,26 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
         .every(key => Number.isFinite(serialized.bounds[key as keyof GridTopology['bounds']]))) {
     throw new Error('Invalid topology bounds');
   }
+  if (serialized.deformationBounds !== undefined && (!record(serialized.deformationBounds) ||
+      !['minX', 'minY', 'maxX', 'maxY', 'width', 'height'].every(key =>
+        Number.isFinite(serialized.deformationBounds![key as keyof GridTopology['bounds']])))) {
+    throw new Error('Invalid deformation bounds');
+  }
+  const origin = (value: unknown) => serialized.deformationBounds !== undefined ? point(value) : value === undefined;
   for (const cell of cells.values()) {
-    if (!point(cell.center) || !refs(cell.boundaryVertices, vertices) ||
+    if (!point(cell.center) || !origin(cell.baseCenter) || !refs(cell.boundaryVertices, vertices) ||
         !refs(cell.boundaryEdges, edges) || !refs(cell.adjacentCells, cells)) {
       throw new Error('Invalid cell geometry or reference');
     }
   }
   for (const vertex of vertices.values()) {
-    if (!point(vertex.position) || !refs(vertex.adjacentCells, cells) ||
+    if (!point(vertex.position) || !origin(vertex.basePosition) || !refs(vertex.adjacentCells, cells) ||
         !refs(vertex.adjacentEdges, edges) || !refs(vertex.adjacentVertices, vertices)) {
       throw new Error('Invalid vertex geometry or reference');
     }
   }
   for (const edge of edges.values()) {
-    if (!point(edge.midpoint) || !vertices.has(edge.startVertex) ||
+    if (!point(edge.midpoint) || !origin(edge.baseMidpoint) || !vertices.has(edge.startVertex) ||
         !vertices.has(edge.endVertex) || !refs(edge.adjacentCells, cells)) {
       throw new Error('Invalid edge geometry or reference');
     }
@@ -563,6 +574,7 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
     edges,
     ...(exclusionBase ? { exclusionBase } : {}),
     bounds: serialized.bounds,
+    ...(serialized.deformationBounds && { deformationBounds: serialized.deformationBounds }),
     sourceConfig: serialized.sourceConfig,
   };
 }
