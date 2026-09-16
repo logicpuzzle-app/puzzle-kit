@@ -7,11 +7,12 @@
 
 ## 保存・復元の契約
 
-`puzzlekit_autosave` は256 Ki文字を超えるJSONについてLZ-StringのUTF-16圧縮を試みる。
+`puzzlekit_autosave` と設定保存は、256 Ki文字を超えるJSONについてLZ-StringのUTF-16圧縮を試みる。
 圧縮した封筒が元のJSONより小さいときだけ、その封筒を保存する。
-識別子 `puzzle-kit-autosave-lz-utf16-v1` と圧縮データを持つ内部保存形式であり、
+識別子 `puzzle-kit-storage-json-lz-utf16-v1` と圧縮データを持つ内部保存形式であり、
 ネイティブFile Saveや共有URLの形式は変えない。
 
+盤面設定のグラフも同じ圧縮処理を使い、自動保存との容量競合を減らす。
 圧縮はJSON文書全体へ適用し、ID・辞書キー・参照フィールドを置換しない。
 従来の未圧縮JSONも引き続き読める。壊れた圧縮データは復元成功にしない。
 圧縮形式を知らない旧アプリでの自動復元は保証しない。

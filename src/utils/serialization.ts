@@ -1,6 +1,6 @@
 import { projectEdits } from './topology/retainedEdits';
 import pako from 'pako';
-import LZString from 'lz-string';
+import { encodeStorageJson, decodeStorageJson } from './storageJson';
 import type { PuzzleExport, GridConfig, PuzzleState } from '../types';
 import type { GridTopology, TopologyCell, TopologyVertex, TopologyEdge } from './topology/types';
 import { projectMerges } from './topology/retainedMerge';
@@ -183,7 +183,6 @@ export function parseShareUrl(url: string): PuzzleExport | null {
 // Local storage functions
 const STORAGE_KEY = 'puzzlekit_autosave';
 const STORAGE_LIST_KEY = 'puzzlekit_saved_puzzles';
-const AUTOSAVE_ENCODING = 'puzzle-kit-autosave-lz-utf16-v1';
 
 export function autoSave(
   grid: GridConfig,
@@ -205,26 +204,15 @@ export function autoSave(
   if (topologySettings) {
     data.topologySettings = topologySettings;
   }
-  const json = JSON.stringify(data);
-  // Keep small/legacy saves readable as JSON. Large retained graphs otherwise
-  // compete with topology preferences for the browser's localStorage quota.
-  // Compress the whole document without rewriting opaque dictionary keys.
-  const compressed = json.length > 256 * 1024
-    ? JSON.stringify({ encoding: AUTOSAVE_ENCODING, data: LZString.compressToUTF16(json) }) : json;
   // One atomic write: a failed save must leave the previous document intact.
-  localStorage.setItem(STORAGE_KEY, compressed.length < json.length ? compressed : json);
+  localStorage.setItem(STORAGE_KEY, encodeStorageJson(data));
 }
 
 export function loadAutoSave(): PuzzleExport | null {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (!saved) return null;
-    const parsed = JSON.parse(saved);
-    if (parsed?.encoding === AUTOSAVE_ENCODING) {
-      if (typeof parsed.data !== 'string') return null;
-      return JSON.parse(LZString.decompressFromUTF16(parsed.data)) as PuzzleExport;
-    }
-    return parsed as PuzzleExport;
+    return decodeStorageJson<PuzzleExport>(saved);
   } catch {
     return null;
   }

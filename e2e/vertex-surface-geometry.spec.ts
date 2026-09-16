@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { buildTopologyFromCells } from '../src/utils/topology/builder';
 import { squareGridToTopology } from '../src/utils/topology/regular/square';
 import { serializeTopology } from '../src/utils/serialization';
+import { decodeStorageJson } from '../src/utils/storageJson';
 import { createEmptyElements } from '../src/store/slices/elements/state';
 import type { GridConfig, PuzzleExport } from '../src/types';
 import type { GridTopology } from '../src/utils/topology/types';
@@ -129,7 +130,10 @@ test('a fully annotated 50 by 50 board remains editable and preserves vertex ref
   await page.screenshot({ path: info.outputPath('large-board-reloaded.png') });
   // Native File Save is immediate; autosave has a separate debounce and quota.
   // Wait for that real write, then reload the page to verify the recovery path.
-  await expect.poll(() => page.evaluate(() => localStorage.getItem('puzzlekit_autosave')), { timeout: 10_000 }).not.toBeNull();
+  await expect.poll(async () => {
+    const raw = await page.evaluate(() => localStorage.getItem('puzzlekit_autosave'));
+    return raw ? decodeStorageJson<PuzzleExport>(raw).state.problem.vertexSurfaces : null;
+  }, { timeout: 10_000 }).toEqual(saved.state.problem.vertexSurfaces);
   await page.reload();
   await expect(page.locator('[data-vertex-surface]')).toHaveCount(count);
   const recovered = await savePuzzleFile(page);
