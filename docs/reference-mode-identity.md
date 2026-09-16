@@ -49,3 +49,5 @@ Gridで保存・再読込した後に以前の変形プリセットを再開す�
 描画操作をPlaywright + Chromiumで検証する。これはハーネス経由のAPI QAであり、
 通常の製品画面にモード切替UIが存在するという主張にはしない。
 同じ操作のBefore／After画像・動画を残す。
+
+[Before／Afterの画像・動画と検証結果](qa/2026-09-17-reference-mode.md)を参照。
