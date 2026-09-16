@@ -29,7 +29,11 @@ test('legacy disconnected and holed merges preserve saved boundaries and restore
   const partialCells = new Map(partial.topologySettings!.topology!.cells);
   expect(partialCells.has('merged-0')).toBe(false);
   for (const id of fixture.grid.mergedCells[0]) expect(partialCells.has(id)).toBe(true);
-  expect(partialCells.get('merged-1')).toEqual(new Map(original.topologySettings!.topology!.cells).get('merged-1'));
+  const retained = new Map(original.topologySettings!.topology!.cells).get('merged-1')!;
+  // Legacy row/column hints are normalized after an edit. Identity, actual
+  // geometry and source membership must survive independently of those hints.
+  expect(partialCells.get(retained.id)).toMatchObject({ id: retained.id, center: retained.center,
+    boundaryVertices: retained.boundaryVertices, boundaryEdges: retained.boundaryEdges, originalCells: retained.originalCells });
   await expect(page.locator('.number-layer-problem')).toContainText('17');
   await expect(page.locator('.number-layer-problem')).toContainText('9');
   expect(partial.state.problem.vertexSurfaces).toEqual(original.state.problem.vertexSurfaces);
