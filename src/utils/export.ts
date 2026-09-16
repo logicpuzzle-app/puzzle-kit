@@ -265,11 +265,13 @@ export function exportToJson(
   state: PuzzleState,
   grid: GridConfig,
   metadata?: Record<string, unknown>,
-  topologySettings?: import('../types').PuzzleExport['topologySettings']
+  topologySettings?: import('../types').PuzzleExport['topologySettings'],
+  constraintSettings?: import('../types').PuzzleExport['constraintSettings']
 ): string {
   const exportData = {
     version: PUZZLE_EXPORT_VERSION,
     format: 'puzzle-kit',
+    ...(constraintSettings ? { constraintSettings } : {}),
     grid,
     state,
     ...(topologySettings ? { topologySettings } : {}),

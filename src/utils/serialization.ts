@@ -84,10 +84,12 @@ export function serializePuzzle(
   grid: GridConfig,
   state: PuzzleState,
   metadata?: PuzzleExport['metadata'],
-  topologySettings?: PuzzleExport['topologySettings']
+  topologySettings?: PuzzleExport['topologySettings'],
+  constraintSettings?: PuzzleExport['constraintSettings']
 ): string {
   const data: PuzzleExport = {
     version: PUZZLE_VERSION,
+    ...(constraintSettings ? { constraintSettings } : {}),
     grid,
     state,
     metadata: {
@@ -158,9 +160,10 @@ export function generateShareUrl(
   grid: GridConfig,
   state: PuzzleState,
   metadata?: PuzzleExport['metadata'],
-  topologySettings?: PuzzleExport['topologySettings']
+  topologySettings?: PuzzleExport['topologySettings'],
+  constraintSettings?: PuzzleExport['constraintSettings']
 ): string {
-  const encoded = serializePuzzle(grid, state, metadata, topologySettings);
+  const encoded = serializePuzzle(grid, state, metadata, topologySettings, constraintSettings);
   const baseUrl = window.location.origin + window.location.pathname;
   return `${baseUrl}?p=${encoded}`;
 }
@@ -184,10 +187,12 @@ export function autoSave(
   grid: GridConfig,
   state: PuzzleState,
   metadata?: PuzzleExport['metadata'],
-  topologySettings?: PuzzleExport['topologySettings']
+  topologySettings?: PuzzleExport['topologySettings'],
+  constraintSettings?: PuzzleExport['constraintSettings']
 ): void {
   const data: PuzzleExport = {
     version: PUZZLE_VERSION,
+    ...(constraintSettings ? { constraintSettings } : {}),
     grid,
     state,
     metadata: {
@@ -237,10 +242,12 @@ export function savePuzzleToList(
   grid: GridConfig,
   state: PuzzleState,
   metadata?: PuzzleExport['metadata'],
-  topologySettings?: PuzzleExport['topologySettings']
+  topologySettings?: PuzzleExport['topologySettings'],
+  constraintSettings?: PuzzleExport['constraintSettings']
 ): void {
   const data: PuzzleExport = {
     version: PUZZLE_VERSION,
+    ...(constraintSettings ? { constraintSettings } : {}),
     grid,
     state,
     ...(topologySettings ? { topologySettings } : {}),
@@ -295,10 +302,12 @@ export function downloadAsJson(
   state: PuzzleState,
   metadata?: PuzzleExport['metadata'],
   topologySettings?: PuzzleExport['topologySettings'],
-  filename = 'puzzle.json'
+  filename = 'puzzle.json',
+  constraintSettings?: PuzzleExport['constraintSettings']
 ): void {
   const data: PuzzleExport = {
     version: PUZZLE_VERSION,
+    ...(constraintSettings ? { constraintSettings } : {}),
     grid,
     state,
     metadata: {

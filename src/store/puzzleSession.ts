@@ -13,6 +13,10 @@ export function freshPuzzleSession(state: Pick<PuzzleStore, 'canvas'>) {
     numberSelection: null,
     highlightedLineIds: [],
     drawingLineIds: [],
+    lastValidationResult: null,
+    isValidationModalOpen: false,
+    showCorrectMessage: false,
+    hasShownCorrectMessage: false,
     trialStage: 0,
     trialStack: [],
   } satisfies Partial<PuzzleStore>;

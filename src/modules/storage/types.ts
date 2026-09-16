@@ -17,6 +17,7 @@ export interface OptimizedPuzzleExport {
   state: Record<string, any>; // Optimized state without layer fields
   metadata?: PuzzleExport['metadata'];
   topologySettings?: PuzzleExport['topologySettings'];
+  constraintSettings?: PuzzleExport['constraintSettings'];
 }
 
 /**

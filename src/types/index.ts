@@ -754,9 +754,20 @@ export const DEFAULT_COLORS: ColorPalette = {
   ],
 };
 
+// Settings travel with the puzzle, independently of board identity and geometry.
+export interface PuzzleConstraintSettings {
+  currentSchemaId: string | null;
+  currentInputMode: import('../constraints/types').InputMode;
+  validationOverrides: Record<string, boolean>;
+  highlightOverrides: Record<string, boolean>;
+  showConstraintLayer?: boolean;
+  savedInputModes?: { edit: import('../constraints/types').InputMode; play: import('../constraints/types').InputMode };
+}
+
 // Export format
 export interface PuzzleExport {
   version: string;
+  constraintSettings?: PuzzleConstraintSettings;
   grid: GridConfig;
   state: PuzzleState;
   metadata?: {

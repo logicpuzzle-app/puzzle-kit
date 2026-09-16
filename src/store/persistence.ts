@@ -8,7 +8,7 @@
  * - Gzip compression for storage efficiency
  */
 
-import type { GridConfig, PuzzleState, ToolSettings } from '../types';
+import type { GridConfig, PuzzleState, ToolSettings, PuzzleConstraintSettings } from '../types';
 import type { SerializedTopology } from '../utils/serialization';
 import { compress, decompress, isCompressionSupported } from '../utils/compression';
 
@@ -21,6 +21,7 @@ export interface PersistedState {
   grid: GridConfig;
   puzzle: PuzzleState;
   toolSettings?: Partial<ToolSettings>;
+  constraintSettings?: PuzzleConstraintSettings;
   topology?: SerializedTopology;
   useTopology?: boolean;
   topologyPreset?: string;
