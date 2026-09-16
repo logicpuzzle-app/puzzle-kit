@@ -9,6 +9,9 @@ for (const scenario of ['iso-sculpt', 'iso-sculpt-cut']) {
       '.topology-grid-background > polygon, .topology-grid-layer > polygon'
     );
     await expect(cells.first()).toBeVisible();
+    // Leave a usable part of the isometric board below the harness on short screens.
+    for (let i = 0; i < 3; i++) await page.getByTitle('Zoom Out (Ctrl+-)', { exact: true }).tap();
+    await page.locator('#puzzle-canvas').scrollIntoViewIfNeeded();
     const geometry = () =>
       cells.evaluateAll((ps) =>
         ps
@@ -33,13 +36,17 @@ for (const scenario of ['iso-sculpt', 'iso-sculpt-cut']) {
           });
         }
       }
-      const found = [...candidates].find(([, v]) => v.count === 3);
-      if (!found) throw new Error('Missing isometric three-cell vertex');
-      const [x, y] = found[0].split(',').map(Number);
-      const position = new DOMPoint(x, y).matrixTransform(
-        found[1].polygon.getScreenCTM()!
-      );
-      return { x: position.x, y: position.y };
+      // The harness header can move the first vertex below a mobile viewport.
+      // touchscreen.tap does not scroll; choose an actual visible board target.
+      for (const [point, candidate] of candidates) {
+        if (candidate.count !== 3) continue;
+        const [x, y] = point.split(',').map(Number);
+        const position = new DOMPoint(x, y).matrixTransform(candidate.polygon.getScreenCTM()!);
+        if (position.x <= 0 || position.x >= innerWidth || position.y <= 0 || position.y >= innerHeight) continue;
+        if (!document.elementFromPoint(position.x, position.y)?.closest('#puzzle-canvas')) continue;
+        return { x: position.x, y: position.y };
+      }
+      throw new Error('No visible isometric three-cell vertex available for a touch');
     });
     await page.touchscreen.tap(target.x, target.y);
     await expect.poll(geometry).not.toBe(before);
