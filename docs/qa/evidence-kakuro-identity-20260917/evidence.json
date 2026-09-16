@@ -1,0 +1,146 @@
+{
+  "runs": {
+    "before": {
+      "phase": "before",
+      "createdAt": "2026-09-16T18:45:53.826Z",
+      "commit": "e6241d6a040d921fa45945ed28d7dd2591cf3e7e",
+      "branch": "feature/issue-integration",
+      "status": "?? docs/kakuro-identity.md\n?? e2e/fixtures/kakuro-opaque-board.json\n?? e2e/kakuro-identity.spec.ts\n?? src/test/kakuroIdentity.test.tsx",
+      "node": "v24.21.0",
+      "platform": "darwin",
+      "npm": "11.19.0",
+      "command": [
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/kakuro-identity.spec.ts",
+        "--project=chromium",
+        "--project=mobile-chrome",
+        "--workers=1"
+      ],
+      "exitCode": 1,
+      "testSha256": "ec0daff7c42f54a1911f7e96aabbae14190189f5a89a98f1ea3550af66226f78",
+      "fixtureSha256": "acd3f57fac4ddf1b2b1ccd313c48ab9ed57684c63703f3e05c1c8035c07591cb"
+    },
+    "after": {
+      "phase": "after",
+      "createdAt": "2026-09-16T18:50:01.936Z",
+      "commit": "1d0ada1399f732b6c5e21315529474037a7856c9",
+      "branch": "feature/issue-integration",
+      "status": "",
+      "node": "v24.21.0",
+      "platform": "darwin",
+      "npm": "11.19.0",
+      "command": [
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/kakuro-identity.spec.ts",
+        "--project=chromium",
+        "--project=mobile-chrome",
+        "--workers=1"
+      ],
+      "exitCode": 0,
+      "testSha256": "ec0daff7c42f54a1911f7e96aabbae14190189f5a89a98f1ea3550af66226f78",
+      "fixtureSha256": "acd3f57fac4ddf1b2b1ccd313c48ab9ed57684c63703f3e05c1c8035c07591cb"
+    }
+  },
+  "files": {
+    "after-chromium-correct.png": {
+      "bytes": 38607,
+      "sha256": "51d5013b5927f0676856a6dd3060cf681238944b433424f0b0d6345c63b26bea"
+    },
+    "after-chromium-reloaded.png": {
+      "bytes": 40733,
+      "sha256": "77d5e08346eb4dd5db6aabf50cb0d2188e53fc82f857c27db4d660af34f994a5"
+    },
+    "after-chromium-unresolved.png": {
+      "bytes": 56094,
+      "sha256": "2b5d44e3e31b815cf8ffcbf32e3d310760e193f54777e9ae5c4ba0eaf156af76"
+    },
+    "after-chromium-wrong-sum.png": {
+      "bytes": 41645,
+      "sha256": "65f2890b5fa313652f0eb3c698743387e369d5d351c7da8719a116c861d631ff"
+    },
+    "after-chromium.png": {
+      "bytes": 49939,
+      "sha256": "bca2cb852aac204bb9847f5ae6077c758a56fb69c2ce1936102100c0e975c8cd"
+    },
+    "after-chromium.webm": {
+      "bytes": 149280,
+      "sha256": "a916719eaed39baa20d6be604342b5925aac0b8d94355c4d5032b963b5367469",
+      "decode": "passed",
+      "chromiumPlayback": {
+        "width": 800,
+        "height": 450,
+        "duration": 2.84,
+        "time": 1.987999,
+        "frames": 67
+      }
+    },
+    "after-mobile-chrome-correct.png": {
+      "bytes": 101339,
+      "sha256": "d87744a1e96590b658e0f837001e3a30ae51aa0171033d0b582233389480b9aa"
+    },
+    "after-mobile-chrome-reloaded.png": {
+      "bytes": 109148,
+      "sha256": "6c4944f067f4e9d7cbccc984b433eebec33ae0378a87c48ef09da118c81ae8d3"
+    },
+    "after-mobile-chrome-unresolved.png": {
+      "bytes": 154071,
+      "sha256": "4334e3d22bf48e12c74c86e0ec8b0d86d7fd8a7511bd699ddcd172079c0cafe3"
+    },
+    "after-mobile-chrome-wrong-sum.png": {
+      "bytes": 109449,
+      "sha256": "4d9fc62bd99f56ae07b52052da578194c0ad75f2652b93afce0d903f07e7fb24"
+    },
+    "after-mobile-chrome.png": {
+      "bytes": 94832,
+      "sha256": "fa136f8c0380b7e901c68c9010b575195b700132736144254d832ece9c13da90"
+    },
+    "after-mobile-chrome.webm": {
+      "bytes": 193152,
+      "sha256": "319ab0ad66b61f6b8af0e49575a5ac8f61a681594e271ad42abb05ff07568a68",
+      "decode": "passed",
+      "chromiumPlayback": {
+        "width": 392,
+        "height": 800,
+        "duration": 2.56,
+        "time": 1.791999,
+        "frames": 62
+      }
+    },
+    "before-chromium.png": {
+      "bytes": 38979,
+      "sha256": "f1cfbbf4e37e5e626b62f29ba5e257eb536dfecda56514168cf4f1c269cffc8c"
+    },
+    "before-chromium.webm": {
+      "bytes": 156507,
+      "sha256": "2645a369e380ebc35d3df4aae858ee51b30613478714d82ae802326a3f05c4f5",
+      "decode": "passed",
+      "chromiumPlayback": {
+        "width": 800,
+        "height": 450,
+        "duration": 12.88,
+        "time": 9.016,
+        "frames": 112
+      }
+    },
+    "before-mobile-chrome.png": {
+      "bytes": 59367,
+      "sha256": "0b54ada27b13d183852a22d6ad4c58c7046d359c7a4b747ca728c8e87692af9d"
+    },
+    "before-mobile-chrome.webm": {
+      "bytes": 153151,
+      "sha256": "32fc3e0a0b2199a2e53f88555e9aa0e29229d9962e529856c2ea47df019117d4",
+      "decode": "passed",
+      "chromiumPlayback": {
+        "width": 392,
+        "height": 800,
+        "duration": 12.76,
+        "time": 8.931999,
+        "frames": 112
+      }
+    }
+  }
+}
