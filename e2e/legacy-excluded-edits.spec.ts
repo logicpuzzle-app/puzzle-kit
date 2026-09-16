@@ -3,9 +3,14 @@ import { readFileSync } from 'node:fs';
 import type { PuzzleExport } from '../src/types';
 import { openPuzzleFile, savePuzzleFile } from './puzzle-file';
 
-const fixture = JSON.parse(readFileSync(new URL('./fixtures/legacy-excluded-edits-board.json', import.meta.url), 'utf8')) as PuzzleExport;
+const scenarios = [
+  { name: 'merge/split board', file: 'legacy-excluded-edits-board.json', stableMerge: 'merged-0', restoredMembers: undefined },
+  { name: 'merge members', file: 'legacy-excluded-members-board.json', stableMerge: 'merged-1', restoredMembers: ['cell-0-1', 'cell-0-2'] },
+];
 
-test('legacy excluded merge/split board restores its cut with stable notes through public files and history @production', async ({ page, isMobile }, info) => {
+for (const scenario of scenarios) {
+const fixture = JSON.parse(readFileSync(new URL('./fixtures/' + scenario.file, import.meta.url), 'utf8')) as PuzzleExport;
+test(`legacy excluded ${scenario.name} restores its cut with stable notes through public files and history @production`, async ({ page, isMobile }, info) => {
   await page.goto('/master');
   await openPuzzleFile(page, Buffer.from(JSON.stringify(fixture)));
   const close = page.getByTitle('Close', { exact: true });
@@ -27,19 +32,22 @@ test('legacy excluded merge/split board restores its cut with stable notes throu
   const numbers = page.locator('.number-layer-problem text');
   await expect(numbers).toHaveText(['9', '17']);
   const restored = await savePuzzleFile(page), graph = restored.topologySettings!.topology!;
-  expect(graph.editOperations).toHaveLength(1);
-  const cells = new Map(graph.cells);
-  expect(cells.has('cell-0-2')).toBe(true);
-  expect(cells.has('cell-0-0')).toBe(false);
-  expect(cells.has('cell-1-0')).toBe(false);
-  const originalMerge = new Map(initial.topologySettings!.topology!.cells).get('merged-0')!;
-  // The neighbor changes from a child to its restored parent. Preserve identity
-  // and geometry, not stale adjacency or the legacy representative row/column.
-  expect(cells.get('merged-0')).toMatchObject({ id: originalMerge.id, center: originalMerge.center,
+  const operations = initial.topologySettings!.topology!.editOperations!;
+  const cut = operations.find(op => op.kind === 'split')!;
+  if (cut.kind !== 'split') throw new Error('Missing imported cut');
+  expect(graph.editOperations).toEqual(operations.filter(op => op.kind !== 'split'));
+  const cells = new Map(graph.cells), parent = fixture.grid.splitLines![0].cellId;
+  expect(cells.has(parent)).toBe(true);
+  for (const id of [...(fixture.grid.voidCells ?? []), ...(fixture.grid.disabledCells ?? [])]) expect(cells.has(id)).toBe(false);
+  if (scenario.restoredMembers) expect(cells.get(parent)!.originalCells).toEqual(scenario.restoredMembers);
+  const originalMerge = new Map(initial.topologySettings!.topology!.cells).get(scenario.stableMerge)!;
+  // Preserve identity and geometry while replacing any adjacent child with its
+  // restored parent; legacy representative row/column is not persistent identity.
+  expect(cells.get(scenario.stableMerge)).toMatchObject({ id: originalMerge.id, center: originalMerge.center,
     boundaryVertices: originalMerge.boundaryVertices, boundaryEdges: originalMerge.boundaryEdges,
     originalCells: originalMerge.originalCells });
-  expect(cells.get('merged-0')!.adjacentCells).toContain('cell-0-2');
-  expect(cells.get('merged-0')!.adjacentCells).not.toContain('cell-0-2-b');
+  expect([...cells.get(scenario.stableMerge)!.adjacentCells].sort()).toEqual(
+    [...new Set(originalMerge.adjacentCells.map(id => cut.cellIds.includes(id) ? parent : id))].sort());
   expect(restored.state.problem.vertexSurfaces).toEqual(initial.state.problem.vertexSurfaces);
   const beforeVertices = new Map(initial.topologySettings!.topology!.vertices);
   for (const [id, vertex] of graph.vertices) if (beforeVertices.has(id)) expect(vertex.position).toEqual(beforeVertices.get(id)!.position);
@@ -54,3 +62,4 @@ test('legacy excluded merge/split board restores its cut with stable notes throu
   await expect(numbers).toHaveText(['9', '17']);
   await page.screenshot({ path: info.outputPath('excluded-edits-reloaded.png') });
 });
+}

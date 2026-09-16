@@ -2,14 +2,12 @@ import { v4 as uuid } from 'uuid';
 import type { GridConfig, Point } from '../../types';
 import type { GridTopology, TopologyCell, TopologyEdge, TopologyVertex } from './types';
 import { gridConfigToTopology } from './converter';
-import { applySplits } from './mergeSplit';
+import { legacySplitOperations } from './legacySplitOperations';
 import { applyTopologyPreset } from './presets';
 import { prepareLegacyMerges } from './legacyMerges';
 import { matchesLegacyGraph } from './legacyGraph';
 import { editedGrid, projectEdits, type TopologyEdit } from './retainedEdits';
-import type { SplitEdit } from './retainedSplit';
 
-const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 const positionKey = (point: Point) => JSON.stringify([point.x, point.y]);
 const pair = (a: string, b: string) => JSON.stringify([a, b].sort());
 
@@ -64,29 +62,8 @@ export function prepareLegacySplits(topology: GridTopology, grid: GridConfig): G
   const operations: TopologyEdit[] = (prepared.mergeGroups ?? []).map(group => ({ ...group, kind: 'merge',
     ...(group.boundary && { boundary: { vertices: group.boundary.vertices.map(id => vertexIds.get(id)!), edges: group.boundary.edges.map(id => edgeIds.get(id)!) } }),
   }));
-  const cuts: SplitEdit[] = [];
-  for (const split of grid.splitLines) {
-    const parent = before.cells.get(split.cellId);
-    if (!parent) return topology;
-    // The old generator owns the child names; the adapter never parses or
-    // reproduces their suffix convention in application code.
-    const single = applySplits(before, { ...grid, splitLines: [split] });
-    const children = [...single.cells.keys()].filter(id => !before.cells.has(id)).map(id => topology.cells.get(id));
-    if (children.length !== 2 || children.some(cell => !cell)) return topology;
-    const [a, b] = children as [TopologyCell, TopologyCell];
-    const diagonal = a.boundaryEdges.filter(id => b.boundaryEdges.includes(id));
-    if (diagonal.length !== 1 || a.boundaryEdges.at(-1) !== diagonal[0] || b.boundaryEdges.at(-1) !== diagonal[0]) return topology;
-    const start = a.boundaryVertices[0], end = a.boundaryVertices.at(-1)!;
-    if (b.boundaryVertices[0] !== end || b.boundaryVertices.at(-1) !== start) return topology;
-    const edge = topology.edges.get(diagonal[0])!;
-    if (!((edge.startVertex === start && edge.endVertex === end) || (edge.startVertex === end && edge.endVertex === start))) return topology;
-    const boundary = { vertices: [...a.boundaryVertices.slice(0, -1), ...b.boundaryVertices.slice(0, -1)],
-      edges: [...a.boundaryEdges.slice(0, -1), ...b.boundaryEdges.slice(0, -1)] };
-    const originalCells = parent.originalCells ?? [parent.id];
-    if (!same(a.originalCells, originalCells) || !same(b.originalCells, originalCells)) return topology;
-    cuts.push({ kind: 'split', cellId: parent.id, startVertex: start, endVertex: end, edgeId: edge.id,
-      cellIds: [a.id, b.id], boundary, reverseEdge: edge.startVertex === end, originalCells });
-  }
+  const cuts = legacySplitOperations(before, grid, topology);
+  if (!cuts) return topology;
   const diagonals = new Set(cuts.map(cut => cut.edgeId));
   if ([...edges.keys()].some(id => diagonals.has(id))) return topology;
   // Edge-interior points and refined side segments belong to the source
