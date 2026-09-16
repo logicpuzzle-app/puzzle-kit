@@ -1,0 +1,224 @@
+{
+  "provenance": "Before uses unchanged 21557d7 app on Vite dev; after uses the final working implementation on production preview. Identical E2E test and fixture helper in both.",
+  "files": {
+    "after-chromium.png": {
+      "bytes": 37832,
+      "sha256": "7b995eeca6244f91c1586a57bd4860c32fea1805c6f7f489ce26156d94495c97"
+    },
+    "after-chromium.webm": {
+      "bytes": 105095,
+      "sha256": "172574fc52bbf4f5861e756facb9b23fd1cd1de79c5eddd533dcdc360418a465",
+      "decode": "passed",
+      "durationSeconds": 2.16,
+      "dimensions": {
+        "width": 800,
+        "height": 450
+      },
+      "chromiumPlayback": {
+        "width": 800,
+        "height": 450,
+        "duration": 2.16,
+        "time": 1.512,
+        "frames": 52
+      }
+    },
+    "after-mobile-chrome.png": {
+      "bytes": 109322,
+      "sha256": "e455d854477d08f442b1dbc50b94fae7d3017f86c5c93898d88fedc2b41e7a32"
+    },
+    "after-mobile-chrome.webm": {
+      "bytes": 125615,
+      "sha256": "8cb402435e9148647cf9e589d91dc28652917dd817239a7429a4b4dc3c30e91f",
+      "decode": "passed",
+      "durationSeconds": 2.08,
+      "dimensions": {
+        "width": 392,
+        "height": 800
+      },
+      "chromiumPlayback": {
+        "width": 392,
+        "height": 800,
+        "duration": 2.08,
+        "time": 1.456,
+        "frames": 54
+      }
+    },
+    "before-chromium.png": {
+      "bytes": 37730,
+      "sha256": "9f97be304a3ba71f32e21415472a0604d19c88e82d4d208be71c734dd232b2d1"
+    },
+    "before-chromium.webm": {
+      "bytes": 146331,
+      "sha256": "881277c92c8a11d334ac0cef3d7fe732d2246e8dac11254d042442c8c2493f54",
+      "decode": "passed",
+      "durationSeconds": 13.84,
+      "dimensions": {
+        "width": 800,
+        "height": 450
+      },
+      "chromiumPlayback": {
+        "width": 800,
+        "height": 450,
+        "duration": 13.84,
+        "time": 9.687999,
+        "frames": 128
+      }
+    },
+    "before-mobile-chrome.png": {
+      "bytes": 109533,
+      "sha256": "01ed6130c2c7d35a3880a9f8c583ef3d2b20e7f12211d5bc8f12cc96d1f211b0"
+    },
+    "before-mobile-chrome.webm": {
+      "bytes": 278472,
+      "sha256": "a83c986825825276e90436be1a7e4c09ac22733448814af8e643f7b2a5e6f8fb",
+      "decode": "passed",
+      "durationSeconds": 12.88,
+      "dimensions": {
+        "width": 392,
+        "height": 800
+      },
+      "chromiumPlayback": {
+        "width": 392,
+        "height": 800,
+        "duration": 12.88,
+        "time": 9.016,
+        "frames": 111
+      }
+    },
+    "triangle-original-chromium.png": {
+      "bytes": 47202,
+      "sha256": "6d454e0176162f3d3bc2d68bedff4fda5cafddcad06632f5f3511faf4889c08a"
+    },
+    "triangle-original-mobile-chrome.png": {
+      "bytes": 105970,
+      "sha256": "8b9cecfbfa4d80ba0207339fb40944e8dc36891ff35212d6b40727cea46a5188"
+    },
+    "triangle-restored-chromium.png": {
+      "bytes": 38488,
+      "sha256": "37513e918484e25ed872a68d3949ae5d37d94fbc82808b6cc7e2e3d0d291cd5d"
+    },
+    "triangle-restored-mobile-chrome.png": {
+      "bytes": 110310,
+      "sha256": "71d9eb656dc7c201c7fbb0fbede5b39cb6357601157d475d27a3cb2bf3ce43fa"
+    }
+  },
+  "before": {
+    "capture": {
+      "phase": "before",
+      "createdAt": "2026-09-16T19:39:12.362Z",
+      "commit": "21557d72fb69d77ec5f3677e2afaddf2bda5341e",
+      "branch": "feature/issue-integration",
+      "status": "?? e2e/fixtures/triangle-extent.ts\n?? e2e/triangle-extent-identity.spec.ts\n?? src/test/triangleExtentIdentity.test.ts",
+      "node": "v24.21.0",
+      "platform": "darwin",
+      "npm": "11.19.0",
+      "command": [
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/triangle-extent-identity.spec.ts",
+        "--project=chromium",
+        "--project=mobile-chrome",
+        "--workers=1"
+      ],
+      "exitCode": 1
+    },
+    "stats": {
+      "startTime": "2026-09-16T19:39:12.732Z",
+      "duration": 25201.356,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "tests": [
+      {
+        "title": "triangular growth retains vertex notes, accepts new-cell input and restores trimmed content @production",
+        "project": "chromium",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Column growth removes the referenced vertex; note path no longer exists."
+      },
+      {
+        "title": "triangular growth retains vertex notes, accepts new-cell input and restores trimmed content @production",
+        "project": "mobile-chrome",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Column growth removes the referenced vertex; note path no longer exists."
+      }
+    ],
+    "testSha256": "30c9527fab17e1f4a06579ab182945f3219a3d5410eae1beeb913e7958826935",
+    "fixtureSha256": "e0f5dc2b75647ffcce7a76ac4bfe54c61fc949450848dc3a53a57951ff44beb0"
+  },
+  "after": {
+    "capture": {
+      "phase": "after",
+      "createdAt": "2026-09-16T19:44:19.369Z",
+      "commit": "21557d72fb69d77ec5f3677e2afaddf2bda5341e",
+      "branch": "feature/issue-integration",
+      "status": "M src/store/slices/gridSlice.ts\n M src/types/index.ts\n M src/utils/hexGridUtils.ts\n M src/utils/serialization.ts\n M src/utils/topology/editedExtent.ts\n M src/utils/topology/gridExclusions.ts\n M src/utils/topology/latticeExtent.ts\n M src/utils/topology/mergedExtent.ts\n M src/utils/topology/regular/triangle.ts\n M src/utils/topologyPersistence.ts\n?? e2e/fixtures/triangle-extent.ts\n?? e2e/triangle-extent-identity.spec.ts\n?? src/test/triangleExtentIdentity.test.ts",
+      "node": "v24.21.0",
+      "platform": "darwin",
+      "npm": "11.19.0",
+      "command": [
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/triangle-extent-identity.spec.ts",
+        "--config",
+        "playwright.production.config.ts",
+        "--workers=1"
+      ],
+      "exitCode": 0
+    },
+    "stats": {
+      "startTime": "2026-09-16T19:44:19.738Z",
+      "duration": 4077.214,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "tests": [
+      {
+        "title": "triangular growth retains vertex notes, accepts new-cell input and restores trimmed content @production",
+        "project": "chromium",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "triangular growth retains vertex notes, accepts new-cell input and restores trimmed content @production",
+        "project": "mobile-chrome",
+        "status": "passed",
+        "runtimeErrors": []
+      }
+    ],
+    "testSha256": "30c9527fab17e1f4a06579ab182945f3219a3d5410eae1beeb913e7958826935",
+    "fixtureSha256": "e0f5dc2b75647ffcce7a76ac4bfe54c61fc949450848dc3a53a57951ff44beb0",
+    "sourceManifestMatchedFiles": 710,
+    "verifiedCommit": "a4f36d70453ad8844a6d3542805fc10867a4bfcd"
+  },
+  "verification": {
+    "unit": {
+      "passed": 730,
+      "files": 100
+    },
+    "production": {
+      "stats": {
+        "startTime": "2026-09-16T19:45:35.294Z",
+        "duration": 163956.268,
+        "expected": 146,
+        "skipped": 1,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "command": "npm run qa:production -- --workers=1"
+    },
+    "build": "app, library, E2E types and solver source maps passed (221/442/442)",
+    "webkit": {
+      "passed": 8,
+      "scope": "PC/Mobile regular square, hex, triangle and merged extent E2E",
+      "command": "npm run test:e2e -- e2e/triangle-extent-identity.spec.ts e2e/board-extent-identity.spec.ts e2e/hex-extent-identity.spec.ts e2e/merged-extent-identity.spec.ts --project=webkit --project=mobile-webkit --workers=1"
+    }
+  }
+}
