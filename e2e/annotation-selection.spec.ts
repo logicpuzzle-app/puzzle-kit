@@ -16,6 +16,33 @@ test('annotation selection preserves same-ID cell records while deleting vertex 
   await openPuzzleFile(page, Buffer.from(JSON.stringify(data)));
   await page.getByRole('button', { name: 'Problem', exact: true }).click();
   await page.screenshot({ path: info.outputPath('initial.png') });
+  const exportImages = async (phase: string) => {
+    let png = Buffer.alloc(0);
+    for (const format of ['SVG', 'PNG']) {
+      await page.getByRole('button', { name: 'File', exact: true }).click();
+      const pending = page.waitForEvent('download');
+      await page.getByText(`Export as ${format}`, { exact: true }).click();
+      const download = await pending;
+      const file = info.outputPath(`${phase}.${format.toLowerCase()}`);
+      await download.saveAs(file);
+      const body = readFileSync(file);
+      await info.attach(`${phase}-${format.toLowerCase()}`, { body, contentType: format === 'SVG' ? 'image/svg+xml' : 'image/png' });
+      if (format === 'SVG') {
+        const exported = await page.evaluate(source => {
+          const svg = new DOMParser().parseFromString(source, 'image/svg+xml');
+          return {
+            previews: svg.querySelectorAll('.annotation-selection, [data-preview]').length,
+            vertexNotes: svg.querySelectorAll('.vertex-surface-layer-problem [data-vertex-surface]').length,
+            symbols: svg.querySelectorAll('.symbol-layer-problem circle').length,
+            number: svg.querySelector('.number-layer-problem')?.textContent,
+          };
+        }, body.toString());
+        expect(exported).toEqual({ previews: 0, vertexNotes: 1, symbols: 1, number: '7' });
+      } else png = body;
+    }
+    return png;
+  };
+  const unselectedPng = await exportImages('unselected');
   await expect(page.getByRole('button', { name: 'Select', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Select', exact: true }).click();
   const close = page.getByTitle('Close', { exact: true });
@@ -31,6 +58,10 @@ test('annotation selection preserves same-ID cell records while deleting vertex 
   }
   await expect(page.locator('.annotation-selection circle')).toHaveCount(3);
   await page.screenshot({ path: info.outputPath('selected.png') });
+  const selectedPng = await exportImages('selected');
+  // Selection changes the editor overlay, never the exported board pixels.
+  expect(selectedPng.equals(unselectedPng)).toBe(true);
+  await expect(page.locator('.annotation-selection circle')).toHaveCount(3);
   const opener = page.getByTitle('Properties', { exact: true });
   if (await opener.isVisible()) await opener.click();
   await expect(page.getByRole('status').filter({ hasText: 'Selected: 3' })).toBeVisible();

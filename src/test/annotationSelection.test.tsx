@@ -22,7 +22,10 @@ function setup() {
 
 it('selects same-ID cell and vertex records independently and restores a grouped deletion through undo and native files', () => {
   const store = setup(), before = store.getState().puzzle;
-  expect(selectableAnnotations(store.getState()).map(a => a.position)).toEqual([{ x: 20, y: 20 }, { x: 40, y: 40 }, { x: 20, y: 20 }]);
+  expect(selectableAnnotations(store.getState())).toEqual(expect.arrayContaining([
+    { kind: 'vertexSurfaces', id: 'shared', position: { x: 20, y: 20 } },
+    { kind: 'numbers', id: 'shared', position: { x: 40, y: 40 } },
+  ]));
   store.getState().setAnnotationSelection([{ kind: 'vertexSurfaces', id: 'shared' }, { kind: 'symbols', id: 'circle' }]);
   store.getState().removeSelectedAnnotations();
   expect(store.getState().puzzle.problem.vertexSurfaces).toEqual({});
