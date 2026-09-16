@@ -741,6 +741,7 @@ export const en = {
   'grid.height': 'Height',
   'grid.level': 'Level',
   'grid.cellSize': 'Cell Size',
+  'grid.shrinkNotice': 'Shrinking the board removes numbers, lines and shading outside the new area.',
   'grid.style': 'Grid Style',
   'grid.style.normal': 'Normal',
   'grid.style.thick': 'Thick',

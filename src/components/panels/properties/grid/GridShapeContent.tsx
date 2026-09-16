@@ -395,6 +395,12 @@ export const GridShapeContent: React.FC = () => {
         </div>
       </div>
 
+      {pendingGridType === grid.gridType && (pendingRows < grid.rows || effectiveCols < grid.cols) && (
+        <p role="status" className="text-xs text-office-text-secondary">
+          {t('grid.shrinkNotice')}
+        </p>
+      )}
+
       {/* Cancel / Apply buttons */}
       <div className="flex gap-1">
         <button

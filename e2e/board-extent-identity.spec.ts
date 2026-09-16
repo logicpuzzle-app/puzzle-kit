@@ -1,0 +1,63 @@
+import { test, expect } from './fixtures';
+import { readFileSync } from 'node:fs';
+import { openPuzzleFile, savePuzzleFile } from './puzzle-file';
+import { point } from './canvas-point';
+
+const fixture = JSON.parse(readFileSync(new URL('./fixtures/opaque-square-board.json', import.meta.url), 'utf8'));
+
+test('column edits preserve opaque board references, shared borders, history and native files @production', async ({ page, isMobile }, info) => {
+  await page.goto('/master');
+  await openPuzzleFile(page, Buffer.from(JSON.stringify(fixture)));
+  const close = page.getByTitle('Close', { exact: true });
+  const shade = page.locator('.surface-layer-problem polygon');
+  const blue = page.locator('.line-layer-problem path[stroke="#0000ff"]');
+  const green = page.locator('.line-layer-answer path[stroke="#008800"]');
+  const originalBlue = 'M 60 100 L 20 100';
+  await expect(blue).toHaveAttribute('d', originalBlue);
+  const changeColumns = async (count: number) => {
+    if (await close.isVisible()) await close.click();
+    await page.getByRole('button', { name: 'Problem', exact: true }).click();
+    await page.getByRole('button', { name: 'Grid', exact: true }).click();
+    await page.getByRole('button', { name: 'Type', exact: true }).click();
+    await page.getByRole('button', { name: 'Preset', exact: true }).click();
+    const opener = page.getByTitle('Properties', { exact: true });
+    if (await opener.isVisible()) await opener.click();
+    await page.getByText('Columns', { exact: true }).locator('..').getByRole('spinbutton').fill(String(count));
+    await page.getByRole('button', { name: 'Apply', exact: true }).click();
+    if (await close.isVisible()) await close.click();
+  };
+  await changeColumns(3);
+  await page.screenshot({ path: info.outputPath('expanded-board.png') });
+  await expect(blue).toHaveAttribute('d', originalBlue);
+  await expect(shade).toHaveAttribute('points', '20,60 60,60 60,100 20,100');
+  await expect(page.locator('.number-layer-problem')).toContainText('17');
+  const expanded = await savePuzzleFile(page);
+  const vertices = new Map(expanded.topologySettings!.topology!.vertices);
+  for (const [id, vertex] of fixture.topologySettings.topology.vertices) expect(vertices.get(id)?.position).toEqual(vertex.position);
+  expect(expanded.state).toEqual(fixture.state);
+  await page.getByTitle(/Undo \(Ctrl\+Z\)/).first().click();
+  expect((await savePuzzleFile(page)).grid.cols).toBe(2);
+  await page.getByTitle(/Redo/).first().click();
+  await expect(blue).toHaveAttribute('d', originalBlue);
+  await openPuzzleFile(page, Buffer.from(JSON.stringify(expanded)));
+  await page.getByRole('button', { name: 'Problem', exact: true }).click();
+  await page.getByRole('button', { name: 'Surface', exact: true }).click();
+  if (await close.isVisible()) await close.click();
+  const target = await point(page, 120, 80);
+  if (isMobile) await page.touchscreen.tap(target.x, target.y);
+  else await page.mouse.click(target.x, target.y);
+  const painted = await savePuzzleFile(page);
+  const addedCell = expanded.topologySettings!.topology!.cells.find(([, cell]) => cell.index?.[0] === 1 && cell.index?.[1] === 2)![0];
+  expect(Object.values(painted.state.problem.surfaces).some(surface => surface.cellId === addedCell)).toBe(true);
+  await changeColumns(1);
+  // The right incident cell disappears, but the shared edge remains on the left.
+  await expect(green).toHaveAttribute('d', 'M 60 60 L 60 100');
+  await expect(blue).toHaveAttribute('d', originalBlue);
+  await expect(page.locator('.number-layer-problem')).toContainText('17');
+  const trimmed = await savePuzzleFile(page);
+  expect(trimmed.state.problem.surfaces).toEqual(fixture.state.problem.surfaces);
+  expect(trimmed.topologySettings!.topology!.cells.map(([id]) => id)).toEqual(['room/a', 'room/c']);
+  await openPuzzleFile(page, Buffer.from(JSON.stringify(trimmed)));
+  await expect(green).toHaveAttribute('d', 'M 60 60 L 60 100');
+  await page.screenshot({ path: info.outputPath('trimmed-board.png') });
+});
