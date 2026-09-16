@@ -156,4 +156,36 @@ test('#29 vertex surfaces: dual-grid pixels, painting, history and saved separat
   await openPuzzleFile(page, Buffer.from(JSON.stringify(legacyResized)));
   await expect(dot).toHaveAttribute('cy','100');
   if (isRecordingQA(info)) await page.screenshot({ path: info.outputPath('vertex-legacy-resized.png') });
+
+  // Exclude a newly allocated cell in legacy rendering. Its topology ID is
+  // opaque; a Grid-format exclusion must still hide the correct vertex region.
+  await page.getByRole('button', { name: 'Problem', exact: true }).click();
+  await page.getByRole('button', { name: 'Surface', exact: true }).click();
+  await page.getByRole('button', { name: 'Dot', exact: true }).click();
+  const legacyPoints = await page.locator('#puzzle-canvas > g').first().evaluate(g => [[140,100],[120,80]].map(([x,y]) => {
+    const p = new DOMPoint(x,y).matrixTransform((g as SVGGraphicsElement).getScreenCTM()!);
+    return { x: p.x, y: p.y };
+  }));
+  const tap = async (p: { x: number; y: number }) => {
+    if (info.project.use.hasTouch) await page.touchscreen.tap(p.x,p.y);
+    else await page.mouse.click(p.x,p.y);
+  };
+  await tap(legacyPoints[0]);
+  const newDot = page.locator('.vertex-surface-layer-problem circle[cx="140"][cy="100"]');
+  await expect(newDot).toHaveCount(1);
+  await page.getByRole('button', { name: 'Grid', exact: true }).click();
+  await page.getByRole('button', { name: 'Type', exact: true }).click();
+  await page.getByRole('button', { name: 'Exclude', exact: true }).click();
+  await tap(legacyPoints[1]);
+  await expect(newDot).toHaveCount(0);
+  await page.getByTitle(/Undo \(Ctrl\+Z\)/).first().click();
+  await expect(newDot).toHaveCount(1);
+  await page.getByTitle(/Redo/).first().click();
+  await expect(newDot).toHaveCount(0);
+  const legacyExcluded = await savePuzzleFile(page);
+  expect(Object.keys(legacyExcluded.state.problem.vertexSurfaces ?? {})).toHaveLength(2);
+  await openPuzzleFile(page, Buffer.from(JSON.stringify(legacyExcluded)));
+  await expect(newDot).toHaveCount(0);
+  if (isRecordingQA(info)) await page.screenshot({ path: info.outputPath('vertex-legacy-excluded.png') });
+
 });
