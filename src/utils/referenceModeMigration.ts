@@ -194,6 +194,6 @@ export function migrateReferenceMode(state: PuzzleStore, useTopology: boolean): 
     nextTopology = applyTopologyPreset(nextTopology, { preset, intensity });
   }
   return { useTopology, grid, topology: nextTopology, puzzle, trialStack: state.trialStack.map(elements),
-    selectedElements: [], highlightedLineIds: [], drawingLineIds: [],
+    selectedElements: [], annotationSelection: null, highlightedLineIds: [], drawingLineIds: [],
     previewGrid: null, previewTopology: null, hoverCell: null, cursorCell: null, numberSelection: null };
 }

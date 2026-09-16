@@ -1,4 +1,5 @@
 import type { CellSelection, CellSelectionRequest } from '../../utils/cellSelection';
+import type { AnnotationSelection, AnnotationRef } from '../../utils/annotationSelection';
 /**
  * Shared types for store slices
  */
@@ -216,6 +217,10 @@ export interface CanvasSlice {
   selectedElements: string[];
   setSelection: (ids: string[]) => void;
   clearSelection: () => void;
+  annotationSelection: AnnotationSelection | null;
+  setAnnotationSelection: (refs: AnnotationRef[]) => void;
+  clearAnnotationSelection: () => void;
+  removeSelectedAnnotations: () => void;
 
   // Hover cursor
   hoverCell: string | null;

@@ -4,8 +4,9 @@ import { resolveCellSelection } from '../../utils/cellSelection';
  */
 
 import type { CanvasSlice, SliceCreator } from './types';
+import { annotationScope, selectableAnnotations, selectedAnnotations, sameAnnotation } from '../../utils/annotationSelection';
 
-export const createCanvasSlice: SliceCreator<CanvasSlice> = (set) => ({
+export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
   canvas: {
     zoom: 1,
     panX: 0,
@@ -41,6 +42,31 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set) => ({
   selectedElements: [],
   setSelection: (ids) => set({ selectedElements: ids }),
   clearSelection: () => set({ selectedElements: [] }),
+
+  annotationSelection: null,
+  setAnnotationSelection: (refs) => {
+    const state = get(), scope = annotationScope(state);
+    const valid = selectableAnnotations(state).filter(a => refs.some(ref => sameAnnotation(ref, a)));
+    set({ annotationSelection: scope && valid.length ? { ...scope, refs: valid.map(({ kind, id }) => ({ kind, id })) } : null });
+  },
+  clearAnnotationSelection: () => set({ annotationSelection: null }),
+  removeSelectedAnnotations: () => {
+    const state = get(), refs = selectedAnnotations(state);
+    if (!refs.length) return;
+    state.endHistoryGroup();
+    state.startHistoryGroup();
+    try {
+      for (const ref of refs) {
+        if (ref.kind === 'vertexSurfaces') state.removeVertexSurface(ref.id);
+        else if (ref.kind === 'surfaces') state.removeSurface(ref.id);
+        else if (ref.kind === 'numbers') state.removeNumber(ref.id);
+        else state.removeSymbol(ref.id);
+      }
+    } finally {
+      state.endHistoryGroup();
+      set({ annotationSelection: null });
+    }
+  },
 
   // Hover cursor
   hoverCell: null,
