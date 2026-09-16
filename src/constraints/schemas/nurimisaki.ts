@@ -60,7 +60,7 @@ export const nurimisakiSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'nurimisaki',
-        checklist: ['checkShadeCellExist'],
+        checklist: ['checkNurimisakiShadeCellExist'],
         failcodes: ['brNoShade'],
       },
     },
@@ -73,7 +73,7 @@ export const nurimisakiSchema: ConstraintSchema = {
       defaultOn: true,
       pzpr: {
         pid: 'nurimisaki',
-        checklist: ['check2x2ShadeCell'],
+        checklist: ['checkNurimisaki2x2ShadeCell'],
         failcodes: ['cs2x2'],
       },
     },

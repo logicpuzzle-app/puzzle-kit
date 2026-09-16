@@ -216,7 +216,7 @@ export const createConstraintSlice: SliceCreator<ConstraintSlice> = (set, get) =
   hasShownCorrectMessage: false,
 
   checkAnswer: () => {
-    const { currentSchemaId, puzzle, grid, validationOverrides, topology, isSolverMode, solverResult } = get();
+    const { currentSchemaId, puzzle, grid, validationOverrides, topology, useTopology, isSolverMode, solverResult } = get();
     if (!currentSchemaId) return null;
 
     const schema = constraintCatalog.getSchema(currentSchemaId);
@@ -231,7 +231,7 @@ export const createConstraintSlice: SliceCreator<ConstraintSlice> = (set, get) =
         }
       : puzzle;
 
-    const result = runDataDrivenValidation(puzzleToValidate, grid, schema, validationOverrides, topology);
+    const result = runDataDrivenValidation(puzzleToValidate, grid, schema, validationOverrides, topology, useTopology ? 'topology' : 'grid');
 
     const shouldShowCorrectMessage = result.complete && !get().hasShownCorrectMessage;
 

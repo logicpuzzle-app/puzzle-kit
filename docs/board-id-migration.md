@@ -51,7 +51,7 @@
 | --- | --- | --- |
 | [選択状態](../src/store/slices/types.ts)、[選択処理](../src/hooks/useCanvasInputRouter.ts)、[セル検索](../src/hooks/useCellFinder.ts)、[数字キーボード](../src/hooks/useNumberKeyboard.ts)、[数字パネル](../src/components/panels/properties/NumberInputPanel.tsx) | 選択に行列番号だけを保存し、行列のないセルを選択対象から外す。検索ではIDの `hex` を優先し、数字入力では未解決時に `cell-${row}-${col}` を組み立てるため、任意ID・結合・分割セルで入力先を失う可能性がある | 選択した実際のcellIdを保持し、現在の盤面で解決する。未解決・曖昧な検索結果は入力を止め、キーボード・数字パネル・カーソルの参照先を揃える |
 | [LITS補助](../src/constraints/helpers/lits.ts)、[部屋同期](../src/store/litsRoomSync.ts) | 正規表現・splitでセル/頂点を行列に戻す。任意IDや負の行列番号に適用すると隣接・部屋の算出が欠ける | 正方形対応範囲を明示したindex lookupと明示的な接続情報 |
-| [ぬりみさき判定](../src/constraints/validators/nurimisaki.ts) | `cellId.split('-')` により読めない数字をスキップする経路がある | セルlookupと検証不能時の扱いを明示 |
+| [ぬりみさき判定](nurimisaki-validation-identity.md) | 実セルID・行列・接続の検証へ移行済み。数字・塗りの未解決参照を成功にしない | 非対応の形状・曖昧な行列は検証不能を返す。他ジャンルの判定は継続対象 |
 | [リサイズ後の要素処理](../src/store/slices/gridSlice.ts) | from/to/positionの接頭辞で種類を判定する | 明示した対象種類と旧→新参照の対応 |
 | [線入力](../src/hooks/tool-handlers/useLineToolHandler.ts)、[点参照](../src/hooks/useGridPointUtils.ts) | `startsWith('cell-')` 等で対象の種類を判定する | 入力モード・型・対象のMap |
 | [LineLayer](../src/components/canvas/LineLayer.tsx)、[SolverLayer](../src/components/canvas/SolverLayer.tsx)、[要素入力](../src/hooks/tool-handlers/useElementToolHandler.ts) | `parseEdgeId` を直接呼ぶ。Grid形式とTopology形式が混在する | 形式を明示した共通resolverへの集約 |
@@ -111,3 +111,9 @@
 
 旧除外元グラフに構造編集の元情報がない場合も、元設定と全グラフを照合して移行する。
 元グラフと現在の除外を区別し、移行後の可視グラフを再検証する。由来不明の元グラフは推測しない。
+
+## ぬりみさき判定の移行
+
+[実セル参照と参照モードを使う判定](nurimisaki-validation-identity.md)へ移行した。
+検証不能を共通runnerで区別し、入力先の欠損を正解へ置き換えない。
+MasterのFile Open/SaveとストアAPIでジャンル・検査設定の保存復元が一致しない問題は未対応として残る。

@@ -53,6 +53,8 @@ export interface ValidationContext {
   schema: ConstraintSchema;
   /** Grid topology (for topology-aware validation) */
   topology: GridTopology | null;
+  /** Explicit reference format; a topology miss never falls back to Grid IDs. */
+  referenceMode?: 'grid' | 'topology';
   /** Set of enabled rule IDs */
   enabledRules: Set<string>;
   /** List of errors (mutable - validators add to this) */
@@ -100,6 +102,8 @@ export interface CellLineInfo {
 export interface CheckResult {
   /** Whether the check passed */
   ok: boolean;
+  /** Required data/geometry cannot be resolved, so no correctness claim is possible. */
+  unavailable?: boolean;
   /** Optional tag for multi-failcode rules */
   tag?: string;
   /** Affected element IDs (cells, edges, etc.) */
@@ -338,7 +342,8 @@ export function runDataDrivenValidation(
   grid: GridConfig,
   schema: ConstraintSchema,
   validationOverrides: Record<string, boolean> = {},
-  topology: GridTopology | null = null
+  topology: GridTopology | null = null,
+  referenceMode: 'grid' | 'topology' = topology ? 'topology' : 'grid'
 ): ValidationResult {
   const errors: ValidationError[] = [];
   let unavailable = false;
@@ -359,6 +364,7 @@ export function runDataDrivenValidation(
     grid,
     schema,
     topology,
+    referenceMode,
     enabledRules,
     errors,
     getCellLines: createCellLineHelper(normalizedPuzzle, grid),
@@ -388,7 +394,10 @@ export function runDataDrivenValidation(
       }
 
       const result = checkFn(ctx);
-      if (!result.ok) {
+      if (result.unavailable) {
+        unavailable = true;
+        errors.push({ ruleId: rule.id, failcode: 'unavailable', messageKey: 'validation.unavailable', elements: result.elements });
+      } else if (!result.ok) {
         const failcode = mapFailcode(rule, result);
         errors.push({
           ruleId: rule.id,
