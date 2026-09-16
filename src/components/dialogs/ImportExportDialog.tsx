@@ -1,3 +1,4 @@
+import { captureConstraintSettings } from '../../utils/constraintPersistence';
 /**
  * Import/Export Dialog Component
  *
@@ -74,7 +75,7 @@ export const ImportExportDialog: React.FC<ImportExportDialogProps> = ({
   onExport,
 }) => {
   // Get topology info from store
-  const { useTopology, topology, topologyPreset, topologyIntensity, currentSchemaId } = usePuzzleStore();
+  const { useTopology, topology, topologyPreset, topologyIntensity, currentSchemaId, currentInputMode, validationOverrides, highlightOverrides, showConstraintLayer, savedInputModes } = usePuzzleStore();
 
   const schemaToPuzzlink: Partial<Record<string, PuzzlinkType>> = {
     nurikabe: 'nurikabe',
@@ -288,7 +289,7 @@ export const ImportExportDialog: React.FC<ImportExportDialogProps> = ({
         case 'json': {
           const json = exportToJson(puzzleState, gridConfig, undefined, captureTopologySettings({
             useTopology, topology, topologyPreset, topologyIntensity,
-          }));
+          }), captureConstraintSettings({ currentSchemaId, currentInputMode, validationOverrides, highlightOverrides, showConstraintLayer, savedInputModes }));
           const blob = new Blob([json], { type: 'application/json' });
           const url = URL.createObjectURL(blob);
           downloadDataUrl(url, 'puzzle.json');
@@ -303,7 +304,7 @@ export const ImportExportDialog: React.FC<ImportExportDialogProps> = ({
     } finally {
       setIsProcessing(false);
     }
-  }, [exportFormat, gridConfig, puzzleState, svgRef, onExport, useTopology, topology, topologyPreset, topologyIntensity, puzzlinkType]);
+  }, [exportFormat, gridConfig, puzzleState, svgRef, onExport, useTopology, topology, topologyPreset, topologyIntensity, puzzlinkType, currentSchemaId, currentInputMode, validationOverrides, highlightOverrides, showConstraintLayer, savedInputModes]);
 
   // Copy URL to clipboard
   const handleCopyUrl = useCallback(async () => {

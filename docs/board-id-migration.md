@@ -116,4 +116,4 @@
 
 [実セル参照と参照モードを使う判定](nurimisaki-validation-identity.md)へ移行した。
 検証不能を共通runnerで区別し、入力先の欠損を正解へ置き換えない。
-MasterのFile Open/SaveとストアAPIでジャンル・検査設定の保存復元が一致しない問題は未対応として残る。
+MasterのFile Open/Save・共有・自動保存は[設定保存の共通契約](constraint-settings-persistence.md)へ移行した。盤面ID・参照を変更せず、ジャンルと検査設定を一緒に復元する。

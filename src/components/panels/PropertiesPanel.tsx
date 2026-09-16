@@ -5,7 +5,7 @@
 import { SurfaceTargetControl } from './properties/SurfaceTargetControl';
 import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { usePuzzleStore, usePuzzleStoreApi } from '../../store/puzzleStoreContext';
 import { SymbolPanel } from './SymbolPanel';
 import { DirectionPanel } from './DirectionPanel';
 import { constraintCatalog } from '../../constraints';
@@ -29,7 +29,6 @@ export const PropertiesPanel: React.FC<{ suspended?: boolean }> = ({ suspended }
     currentSchemaId,
     showConstraintLayer,
     currentInputMode,
-    setInputMode,
     isSolverMode,
     isSolving,
     solverStatus,
@@ -39,21 +38,18 @@ export const PropertiesPanel: React.FC<{ suspended?: boolean }> = ({ suspended }
   const isGridMode = activeLayer === 'grid';
   const isSpecificMode = activeLayer === 'constraint';
   const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
-  const isConstraintEnabled = showConstraintLayer && currentSchema !== null;
+  const isConstraintEnabled = showConstraintLayer && Boolean(currentSchema);
 
-  // Track if this is the first render to avoid re-applying input mode on mount
-  const isFirstRender = useRef(true);
-
-  // Re-apply input mode when surfaceButtonMode changes (to update the tool for auto mode)
+  const store = usePuzzleStoreApi();
+  const previousButtonMode = useRef(toolSettings.surfaceButtonMode);
+  // Reapply only for a real button-mode change. A mount/effect replay must not
+  // overwrite an input mode just restored by a sibling's document loader.
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    if (currentInputMode === 'auto') {
-      setInputMode('auto');
-    }
-  }, [toolSettings.surfaceButtonMode, currentInputMode, setInputMode]);
+    if (previousButtonMode.current === toolSettings.surfaceButtonMode) return;
+    previousButtonMode.current = toolSettings.surfaceButtonMode;
+    const current = store.getState();
+    if (current.currentInputMode === 'auto') current.setInputMode('auto');
+  }, [toolSettings.surfaceButtonMode, store]);
 
   return (
     <PropertiesPanelFrame suspended={suspended}>

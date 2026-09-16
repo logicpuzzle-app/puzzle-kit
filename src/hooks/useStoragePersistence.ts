@@ -89,14 +89,14 @@ export function useStoragePersistence() {
     const persistedTopologyState = loadTopologyState();
     const persistedConstraintState = loadConstraintState();
 
-    // Apply to store (merge with defaults)
-    setToolSettings({
-      ...persistedToolSettings,
-    });
+    // A child may already have loaded a complete native document. Its input
+    // modes and rule settings take precedence over independent preferences.
+    const documentRestored = store.getState().grid !== initialGrid.current;
+    if (!documentRestored) setToolSettings({ ...persistedToolSettings });
 
     // Child components may already have restored a native document. Preferences
     // must not regenerate its graph after the document's IDs have been loaded.
-    if (store.getState().grid === initialGrid.current) {
+    if (!documentRestored) {
       // Basic grid preferences omit structural edits. The saved graph's own
       // configuration is authoritative for its shape and references.
       const restoredGrid = { ...store.getState().grid, ...persistedGridConfig,
@@ -128,17 +128,19 @@ export function useStoragePersistence() {
       zoom: persistedCanvasState.zoom,
     });
 
-    // Apply constraint state
-    if (persistedConstraintState.currentSchemaId !== undefined) {
-      setCurrentSchemaId(persistedConstraintState.currentSchemaId);
-    }
-    if (persistedConstraintState.currentInputMode) {
-      // Cast to InputModeType - the stored value should always be valid
-      setInputMode(persistedConstraintState.currentInputMode as Parameters<typeof setInputMode>[0]);
-    }
-    if (persistedConstraintState.validationOverrides) {
-      for (const [ruleId, enabled] of Object.entries(persistedConstraintState.validationOverrides)) {
-        setValidationOverride(ruleId, enabled);
+    // Apply constraint preferences only when no native document was restored.
+    if (!documentRestored) {
+      if (persistedConstraintState.currentSchemaId !== undefined) {
+        setCurrentSchemaId(persistedConstraintState.currentSchemaId);
+      }
+      if (persistedConstraintState.currentInputMode) {
+        // Cast to InputModeType - the stored value should always be valid
+        setInputMode(persistedConstraintState.currentInputMode as Parameters<typeof setInputMode>[0]);
+      }
+      if (persistedConstraintState.validationOverrides) {
+        for (const [ruleId, enabled] of Object.entries(persistedConstraintState.validationOverrides)) {
+          setValidationOverride(ruleId, enabled);
+        }
       }
     }
 

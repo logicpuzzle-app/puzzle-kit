@@ -12,7 +12,7 @@ import {
 } from '../../../utils/serialization';
 import { optimizePuzzleStateForExport } from '../../../utils/puzzleExport';
 import { getDefaultStorageAdapter } from '../../../modules/storage';
-import type { GridConfig, PuzzleState } from '../../../types';
+import type { GridConfig, PuzzleState, PuzzleConstraintSettings } from '../../../types';
 import type { GridTopology } from '../../../utils/topology/types';
 import type { ModalStore } from '../../../store/modalStore';
 
@@ -137,6 +137,7 @@ export const prepareSvgForExport = (
 };
 
 interface ExportHandlersOptions {
+  constraintSettings?: PuzzleConstraintSettings;
   modalStore: ModalStoreHook;
   grid: GridConfig;
   puzzle: PuzzleState;
@@ -154,6 +155,7 @@ interface ExportHandlersOptions {
 export const createExportHandlers = (options: ExportHandlersOptions) => {
   const {
     modalStore,
+    constraintSettings,
     grid,
     puzzle,
     topology,
@@ -170,7 +172,7 @@ export const createExportHandlers = (options: ExportHandlersOptions) => {
     const topologySettings = captureTopologySettings({
       topology, useTopology, topologyPreset, topologyIntensity,
     });
-    downloadAsJson(grid, puzzle, { title: 'Puzzle' }, topologySettings);
+    downloadAsJson(grid, puzzle, { title: 'Puzzle' }, topologySettings, undefined, constraintSettings);
     setActiveMenu(null);
   };
 
@@ -248,6 +250,7 @@ export const createExportHandlers = (options: ExportHandlersOptions) => {
         modified: new Date().toISOString(),
       },
       topologySettings,
+      constraintSettings,
     };
 
     try {
