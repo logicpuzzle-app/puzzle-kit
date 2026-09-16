@@ -23,12 +23,12 @@ test('Nurimisaki checks opaque cell references, wrong clues and unresolved geome
     await page.getByRole('button', { name: 'Answer', exact: true }).click();
     const button = page.getByRole('button', { name: 'Check Answer', exact: true });
     if (isMobile) await button.tap(); else await button.click();
-    await expect(page.getByText(/^(Correct!|Incorrect|Undecided)$/)).toBeVisible();
+    await expect(page.getByText(/^(Correct!|Incorrect|Undecided)$/).first()).toBeVisible();
   };
   const close = () => page.getByRole('button', { name: 'Close', exact: true }).click();
   await check();
   await page.screenshot({ path: info.outputPath('nurimisaki-valid.png') });
-  await expect(page.getByText('Correct!', { exact: true })).toBeVisible();
+  await expect(page.getByText('Correct!', { exact: true }).first()).toBeVisible();
   await close();
 
   const invalid = structuredClone(original);
@@ -54,6 +54,6 @@ test('Nurimisaki checks opaque cell references, wrong clues and unresolved geome
   expect(reloaded.state).toEqual(original.state);
   expect(reloaded.topologySettings!.topology).toEqual(original.topologySettings!.topology);
   await check();
-  await expect(page.getByText('Correct!', { exact: true })).toBeVisible();
+  await expect(page.getByText('Correct!', { exact: true }).first()).toBeVisible();
   await page.screenshot({ path: info.outputPath('nurimisaki-reloaded.png') });
 });
