@@ -50,9 +50,7 @@ export const toolGroups: Record<ToolCategory, ToolDef[]> = {
   cage: [
     { id: 'special-cage', icon: '⊞', labelKey: 'tool.special.cage' },
   ],
-  select: [
-    { id: 'select', icon: '⎕', labelKey: 'tools.select' },
-  ],
+  select: [],
 };
 
 // Main categories for the primary toolbar
@@ -63,4 +61,5 @@ export const mainCategories: CategoryDef[] = [
   { id: 'text', icon: 'T', labelKey: 'tools.text', defaultTool: 'text-free' },
   { id: 'symbol', icon: '○', labelKey: 'tools.symbol', defaultTool: 'symbol-circle' },
   { id: 'special', icon: '⊞', labelKey: 'tools.special', defaultTool: 'special-cage' },
+  { id: 'select', icon: '⎕', labelKey: 'tools.select', defaultTool: 'select' },
 ];

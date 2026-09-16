@@ -1,3 +1,4 @@
+import { AnnotationSelectionLayer } from './AnnotationSelectionLayer';
 /**
  * PuzzleCanvas - Main canvas component for puzzle rendering
  *
@@ -354,6 +355,7 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
 
           {/* Solver layer (rendered on top of everything when solver mode is active) */}
           <SolverLayer />
+          <AnnotationSelectionLayer />
           </g>
         </g>
       </InputHandlerLayer>

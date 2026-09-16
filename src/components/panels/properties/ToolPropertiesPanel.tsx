@@ -1,3 +1,4 @@
+import { AnnotationSelectionPanel } from './AnnotationSelectionPanel';
 /**
  * Tool properties panel - line style, symbol size, rotation, etc.
  */
@@ -492,6 +493,7 @@ export const ToolPropertiesPanel: React.FC = () => {
         ['special-arrow', 'special-thermo'].includes(toolSettings.currentTool) && <SpecialEditPanel />}
 
       {toolSettings.currentCategory === 'symbol' && <SymbolSizePanel />}
+      {toolSettings.currentCategory === 'select' && <AnnotationSelectionPanel />}
 
       {/* Rotation controls - only for icon submode */}
       {showRotationControls && (

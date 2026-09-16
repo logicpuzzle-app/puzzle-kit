@@ -133,3 +133,9 @@ Gridモードでも保持したトポロジを参照する頂点塗りは、Grid
 [実セル参照と参照モードを使う判定](nurimisaki-validation-identity.md)へ移行した。
 検証不能を共通runnerで区別し、入力先の欠損を正解へ置き換えない。
 MasterのFile Open/Save・共有・自動保存は[設定保存の共通契約](constraint-settings-persistence.md)へ移行した。盤面ID・参照を変更せず、ジャンルと検査設定を一緒に復元する。
+
+## 注記選択の移行
+
+Masterの[注記選択](annotation-selection.md)は盤面・レイヤー・レコード種類・IDを保持する。
+頂点塗りをセル番号へ置き換えず、同名の別種類レコードを個別に削除し、一つのUndoで戻す。
+既存の特殊図形向け文字列選択APIと混同しない。コピー／貼付、線・特殊図形への拡張は後続作業。

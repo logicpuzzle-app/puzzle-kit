@@ -184,6 +184,7 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom, onTextCli
     isSelecting,
     selectionRect,
     handleSelectTool,
+    handleSelectionPointerDown, handleSelectionPointerMove, handleSelectionPointerUp,
   } = useSelectionTool({ getMousePosition });
 
   // Build context for state machine
@@ -531,6 +532,7 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom, onTextCli
     directionalGesture,
     // Selection handlers
     handleSelectTool,
+    handleSelectionPointerDown, handleSelectionPointerMove, handleSelectionPointerUp,
     isSelecting,
     selectionRect,
     // Special tool preview

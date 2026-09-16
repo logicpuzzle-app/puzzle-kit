@@ -1,275 +1,105 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
-import { usePuzzleStore } from '../store/puzzleStoreContext';
-import { resolveBoardPoint } from '../utils/lineReferences';
-import { resolveCell } from '../utils/pointResolver';
-import { shouldAllowOutboardForTool } from '../utils/outboardPolicy';
-import { getCellId } from '../utils/gridUtils';
+import { usePuzzleStore, usePuzzleStoreApi } from '../store/puzzleStoreContext';
+import { annotationScope, sameAnnotationScope, selectedAnnotations, selectableAnnotations, sameAnnotation } from '../utils/annotationSelection';
+import type { AnnotationSelection, AnnotationRef } from '../utils/annotationSelection';
 import type { Point } from '../types';
-import { toDataLayer } from '../types';
 
-// Selection rectangle interface
-export interface SelectionRect {
-  startX: number;
-  startY: number;
-  endX: number;
-  endY: number;
+export interface SelectionRect { startX: number; startY: number; endX: number; endY: number }
+interface PendingSelection {
+  start: Point;
+  scope: Omit<AnnotationSelection, 'refs'>;
+  previous: AnnotationRef[];
+  add: boolean;
 }
 
-interface UseSelectionToolOptions {
-  getMousePosition: (e: MouseEvent) => Point;
-}
-
-/**
- * Hook providing selection tool functionality
- */
-export function useSelectionTool({ getMousePosition }: UseSelectionToolOptions) {
-  const {
-    grid,
-    puzzle,
-    activeLayer,
-    toolSettings,
-    selectedElements,
-    setSelection,
-    clearSelection,
-    useTopology,
-    topology,
-  } = usePuzzleStore();
-
-  // Helper to find cell considering topology mode
-  const findCellId = useCallback((point: Point): string | null => {
-    const cell = resolveCell(
-      point,
-      { grid, useTopology, topology },
-      { allowOutboard: shouldAllowOutboardForTool('select', activeLayer) }
-    );
-    return cell ? cell.cellId : null;
-  }, [grid, useTopology, topology, activeLayer]);
-
-  // Selection state
-  const [isSelecting, setIsSelecting] = useState(false);
+/** Point annotations retain record kinds and board scope through mouse/touch selection. */
+export function useSelectionTool({ getMousePosition }: { getMousePosition: (e: MouseEvent) => Point }) {
+  const state = usePuzzleStore();
+  const store = usePuzzleStoreApi();
   const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(null);
-  const selectionStartRef = useRef<Point | null>(null);
+  const pending = useRef<PendingSelection | null>(null);
+  const pointers = useRef(new Set<number>());
+  const captured = useRef<Element | null>(null);
+  const cancelled = useRef(false);
+  const cancelSelection = useCallback(() => { pending.current = null; setSelectionRect(null); }, []);
 
-  /**
-   * Find element at a given point
-   */
-  const collectElementsAtCell = useCallback(
-    (cellId: string): string[] => {
-      const dataLayer = toDataLayer(activeLayer);
-      const layer = puzzle[dataLayer];
-      const ids: string[] = [];
-
-      for (const surface of Object.values(layer.surfaces)) {
-        if (surface.cellId === cellId) ids.push(surface.id);
-      }
-      for (const num of Object.values(layer.numbers)) {
-        if (num.cellId === cellId) ids.push(num.id);
-      }
-      for (const sym of Object.values(layer.symbols)) {
-        if (sym.cellId === cellId && resolveBoardPoint(sym.cellId, sym.pointType, { grid, useTopology, topology })?.type === 'cell') ids.push(sym.id);
-      }
-
-      return ids;
-    },
-    [activeLayer, puzzle, grid, useTopology, topology]
-  );
-
-  const findElementAtPoint = useCallback(
-    (point: Point): string | null => {
-      const cellId = findCellId(point);
-      if (!cellId) return null;
-      const elements = collectElementsAtCell(cellId);
-      return elements[0] ?? null;
-    },
-    [collectElementsAtCell, findCellId]
-  );
-
-  /**
-   * Find elements within a rectangle
-   */
-  const findElementsInRect = useCallback(
-    (rect: SelectionRect): string[] => {
-      const minX = Math.min(rect.startX, rect.endX);
-      const maxX = Math.max(rect.startX, rect.endX);
-      const minY = Math.min(rect.startY, rect.endY);
-      const maxY = Math.max(rect.startY, rect.endY);
-      const ids: string[] = [];
-
-      const addElementsForCell = (cellId: string) => {
-        for (const id of collectElementsAtCell(cellId)) {
-          if (!ids.includes(id)) {
-            ids.push(id);
-          }
-        }
-      };
-
-      if (useTopology && topology) {
-        topology.cells.forEach((cell, cellId) => {
-          if (cell.outboard) return;
-          const { x, y } = cell.center;
-          if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
-            addElementsForCell(cellId);
-          }
-        });
-        return ids;
-      }
-
-      // Compute row/col bounds to avoid scanning full grid
-      const startCol = Math.max(
-        0,
-        Math.floor((minX - grid.outerPadding) / grid.cellSize)
-      );
-      const endCol = Math.min(
-        grid.cols - 1,
-        Math.floor((maxX - grid.outerPadding) / grid.cellSize)
-      );
-      const startRow = Math.max(
-        0,
-        Math.floor((minY - grid.outerPadding) / grid.cellSize)
-      );
-      const endRow = Math.min(
-        grid.rows - 1,
-        Math.floor((maxY - grid.outerPadding) / grid.cellSize)
-      );
-
-      for (let row = startRow; row <= endRow; row++) {
-        for (let col = startCol; col <= endCol; col++) {
-          const cellX = grid.outerPadding + col * grid.cellSize + grid.cellSize / 2;
-          const cellY = grid.outerPadding + row * grid.cellSize + grid.cellSize / 2;
-          if (cellX >= minX && cellX <= maxX && cellY >= minY && cellY <= maxY) {
-            addElementsForCell(getCellId(row, col));
-          }
-        }
-      }
-
-      return ids;
-    },
-    [collectElementsAtCell, grid.cellSize, grid.cols, grid.outerPadding, grid.rows, useTopology, topology]
-  );
-
-  /**
-   * Handle select tool - click to select, drag to marquee select
-   */
-  const handleSelectTool = useCallback(
-    (point: Point, isShiftKey: boolean) => {
-      // Start selection
-      selectionStartRef.current = point;
-      setIsSelecting(true);
-      setSelectionRect({
-        startX: point.x,
-        startY: point.y,
-        endX: point.x,
-        endY: point.y,
-      });
-
-      // If not shift-clicking, check for click on element
-      if (!isShiftKey) {
-        const elementId = findElementAtPoint(point);
-        if (elementId) {
-          // Click on element - select it
-          setSelection([elementId]);
-        } else {
-          // Click on empty space - clear selection
-          clearSelection();
-        }
-      }
-    },
-    [findElementAtPoint, setSelection, clearSelection]
-  );
-
-  /**
-   * Handle select tool mouse move (update selection rect during drag)
-   */
-  const handleSelectMove = useCallback(
-    (point: Point) => {
-      if (!isSelecting || !selectionStartRef.current) return;
-
-      setSelectionRect({
-        startX: selectionStartRef.current.x,
-        startY: selectionStartRef.current.y,
-        endX: point.x,
-        endY: point.y,
-      });
-    },
-    [isSelecting]
-  );
-
-  /**
-   * Handle select tool mouse up (finalize selection)
-   */
-  const handleSelectEnd = useCallback(
-    (point: Point, isShiftKey: boolean) => {
-      if (!isSelecting || !selectionStartRef.current) {
-        setIsSelecting(false);
-        setSelectionRect(null);
-        return;
-      }
-
-      const startPoint = selectionStartRef.current;
-      const dx = Math.abs(point.x - startPoint.x);
-      const dy = Math.abs(point.y - startPoint.y);
-
-      // If dragged more than a threshold, do marquee selection
-      if (dx > 5 || dy > 5) {
-        const rect: SelectionRect = {
-          startX: startPoint.x,
-          startY: startPoint.y,
-          endX: point.x,
-          endY: point.y,
-        };
-        const elements = findElementsInRect(rect);
-
-        if (isShiftKey) {
-          // Add to existing selection
-          const newSelection = [...selectedElements];
-          for (const id of elements) {
-            if (!newSelection.includes(id)) {
-              newSelection.push(id);
-            }
-          }
-          setSelection(newSelection);
-        } else {
-          setSelection(elements);
-        }
-      }
-
-      setIsSelecting(false);
-      setSelectionRect(null);
-      selectionStartRef.current = null;
-    },
-    [isSelecting, findElementsInRect, selectedElements, setSelection]
-  );
-
-  // Update handleMouseMove to include selection handling
   useEffect(() => {
-    if (toolSettings.currentTool === 'select' && isSelecting) {
-      const handleGlobalMouseMove = (e: MouseEvent) => {
-        const point = getMousePosition(e);
-        handleSelectMove(point);
-      };
+    cancelSelection();
+    const current = store.getState();
+    if (current.annotationSelection && !sameAnnotationScope(current.annotationSelection, annotationScope(current))) current.clearAnnotationSelection();
+    for (const id of pointers.current) if (captured.current?.hasPointerCapture(id)) captured.current.releasePointerCapture(id);
+    pointers.current.clear(); cancelled.current = false;
+    return cancelSelection;
+  }, [state.grid, state.topology, state.useTopology, state.activeLayer, state.isPlayerMode,
+    state.showProblemLayer, state.showAnswerLayer, state.toolSettings.currentTool, state.canvas.panMode, store, cancelSelection]);
 
-      const handleGlobalMouseUp = (e: MouseEvent) => {
-        const point = getMousePosition(e);
-        handleSelectEnd(point, e.shiftKey);
-      };
-
-      window.addEventListener('mousemove', handleGlobalMouseMove);
-      window.addEventListener('mouseup', handleGlobalMouseUp);
-
-      return () => {
-        window.removeEventListener('mousemove', handleGlobalMouseMove);
-        window.removeEventListener('mouseup', handleGlobalMouseUp);
-      };
+  const handleSelectTool = useCallback((point: Point, add: boolean) => {
+    const current = store.getState(), scope = annotationScope(current);
+    if (!scope) return;
+    pending.current = { start: point, scope, previous: selectedAnnotations(current), add };
+    setSelectionRect({ startX: point.x, startY: point.y, endX: point.x, endY: point.y });
+  }, [store]);
+  const handleSelectMove = useCallback((point: Point) => {
+    const gesture = pending.current;
+    if (!gesture) return;
+    if (!sameAnnotationScope(gesture.scope, annotationScope(store.getState()))) { cancelSelection(); return; }
+    setSelectionRect({ startX: gesture.start.x, startY: gesture.start.y, endX: point.x, endY: point.y });
+  }, [store, cancelSelection]);
+  const handleSelectEnd = useCallback((point: Point) => {
+    const gesture = pending.current, current = store.getState();
+    cancelSelection();
+    if (!gesture || !sameAnnotationScope(gesture.scope, annotationScope(current))) return;
+    const candidates = selectableAnnotations(current);
+    let hits: AnnotationRef[] = [];
+    if (Math.hypot(point.x - gesture.start.x, point.y - gesture.start.y) * current.canvas.zoom > 5) {
+      const minX = Math.min(point.x, gesture.start.x), maxX = Math.max(point.x, gesture.start.x);
+      const minY = Math.min(point.y, gesture.start.y), maxY = Math.max(point.y, gesture.start.y);
+      hits = candidates.filter(a => a.position.x >= minX && a.position.x <= maxX && a.position.y >= minY && a.position.y <= maxY);
+    } else {
+      const distances = candidates.map(a => ({ ...a, distance: Math.hypot(a.position.x - point.x, a.position.y - point.y) }));
+      const distance = Math.min(...distances.map(a => a.distance));
+      if (distance <= current.grid.cellSize * 0.55) {
+        const closest = distances.filter(a => Math.abs(a.distance - distance) < 1e-7);
+        const position = closest[0]?.position;
+        // Different equidistant targets are ambiguous; same-position notes can be selected together.
+        if (position && closest.every(a => Math.hypot(a.position.x - position.x, a.position.y - position.y) < 1e-7)) hits = closest;
+      }
     }
-  }, [toolSettings.currentTool, isSelecting, getMousePosition, handleSelectMove, handleSelectEnd]);
+    current.setAnnotationSelection(gesture.add ? [...gesture.previous, ...hits.filter(a => !gesture.previous.some(b => sameAnnotation(a, b)))] : hits);
+  }, [store, cancelSelection]);
 
-  return {
-    isSelecting,
-    selectionRect,
-    handleSelectTool,
-    handleSelectMove,
-    handleSelectEnd,
-    findElementAtPoint,
-    findElementsInRect,
-  };
+  const handleSelectionPointerDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    pointers.current.add(e.pointerId);
+    captured.current = e.currentTarget;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    if (pointers.current.size > 1) { cancelled.current = true; cancelSelection(); return; }
+    cancelled.current = false;
+    if (e.button === 0) handleSelectTool(getMousePosition(e as unknown as MouseEvent), e.shiftKey || e.ctrlKey || e.metaKey);
+  }, [getMousePosition, handleSelectTool, cancelSelection]);
+  const handleSelectionPointerMove = useCallback((e: React.PointerEvent) => {
+    if (pointers.current.has(e.pointerId) && !cancelled.current) handleSelectMove(getMousePosition(e as unknown as MouseEvent));
+  }, [handleSelectMove, getMousePosition]);
+  const handleSelectionPointerUp = useCallback((e: React.PointerEvent) => {
+    if (!pointers.current.has(e.pointerId)) return;
+    if (e.type === 'pointercancel') { cancelled.current = true; cancelSelection(); }
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+    pointers.current.delete(e.pointerId);
+    if (!pointers.current.size) {
+      if (!cancelled.current) handleSelectEnd(getMousePosition(e as unknown as MouseEvent));
+      cancelled.current = false;
+    }
+  }, [cancelSelection, handleSelectEnd, getMousePosition]);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && store.getState().toolSettings.currentTool === 'select') {
+        cancelSelection(); store.getState().clearAnnotationSelection();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [store, cancelSelection]);
+
+  return { isSelecting: selectionRect !== null, selectionRect, handleSelectTool,
+    handleSelectionPointerDown, handleSelectionPointerMove, handleSelectionPointerUp };
 }

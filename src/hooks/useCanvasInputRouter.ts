@@ -120,6 +120,7 @@ export function useCanvasInputRouter({
     handleSymbolTool,
     resetFillModes,
     handleSelectTool,
+    handleSelectionPointerDown, handleSelectionPointerMove, handleSelectionPointerUp,
     isSelecting,
     selectionRect,
     specialPath,
@@ -640,28 +641,31 @@ export function useCanvasInputRouter({
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
+      if (toolSettings.currentTool === 'select' && !canvas.panMode) { handleSelectionPointerDown(e); return; }
       if (e.pointerType === 'mouse') {
         handleMouseDown(e as unknown as React.MouseEvent);
         return;
       }
       baseHandlePointerDown(e);
     },
-    [baseHandlePointerDown, handleMouseDown]
+    [baseHandlePointerDown, handleMouseDown, toolSettings.currentTool, canvas.panMode, handleSelectionPointerDown]
   );
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
+      if (toolSettings.currentTool === 'select' && !canvas.panMode) { handleSelectionPointerMove(e); return; }
       if (e.pointerType === 'mouse') {
         handleMouseMove(e as unknown as React.MouseEvent);
         return;
       }
       baseHandlePointerMove(e);
     },
-    [baseHandlePointerMove, handleMouseMove]
+    [baseHandlePointerMove, handleMouseMove, toolSettings.currentTool, canvas.panMode, handleSelectionPointerMove]
   );
 
   const handlePointerUp = useCallback(
     (e: React.PointerEvent) => {
+      if (toolSettings.currentTool === 'select' && !canvas.panMode) { handleSelectionPointerUp(e); return; }
       if (e.pointerType === 'mouse') {
         if (e.type === 'pointercancel') { handleMouseLeave(e as unknown as React.MouseEvent); return; }
         handleMouseUp(e as unknown as React.MouseEvent);
@@ -669,7 +673,7 @@ export function useCanvasInputRouter({
       }
       baseHandlePointerUp(e);
     },
-    [baseHandlePointerUp, handleMouseUp, handleMouseLeave]
+    [baseHandlePointerUp, handleMouseUp, handleMouseLeave, toolSettings.currentTool, canvas.panMode, handleSelectionPointerUp]
   );
 
   const handlePointerLeave = useCallback(

@@ -50,6 +50,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutOptions = {}) {
     highlightedLineIds,
     setHighlightedLineIds,
     removeLine,
+    removeSelectedAnnotations,
   } = usePuzzleStore();
 
   const allowLayerToggle = options.allowLayerToggle !== false;
@@ -242,9 +243,11 @@ export function useKeyboardShortcuts(options: KeyboardShortcutOptions = {}) {
         {
           keys: ['delete', 'backspace'],
           preventDefault: true,
-          when: () => highlightedLineIds.length > 0 || Boolean(cursorCell),
+          when: () => toolSettings.currentTool === 'select' || highlightedLineIds.length > 0 || Boolean(cursorCell),
           run: () => {
-            if (highlightedLineIds.length > 0) {
+            if (toolSettings.currentTool === 'select') {
+              removeSelectedAnnotations();
+            } else if (highlightedLineIds.length > 0) {
               deleteHighlightedLines();
             } else {
               deleteSymbolAtCursor();
@@ -312,6 +315,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutOptions = {}) {
       toolSettings.currentTool,
       toolSettings.symbolSubMode,
       undo,
+      removeSelectedAnnotations,
     ]
   );
 
