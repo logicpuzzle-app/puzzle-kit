@@ -49,7 +49,11 @@ it('rejects an unrecognized legacy sculpt snapshot without replacing the current
   expect(store.getState().importPuzzle(JSON.stringify(invalid))).toBe(false);
   expect(store.getState().puzzle).toBe(before.puzzle);
   expect(store.getState().topology).toBe(before.topology);
-  expect(store.getState().importPuzzle(JSON.stringify(rotate))).toBe(true);
+  const rounded = structuredClone(rotate) as unknown as PuzzleExport;
+  const savedVertex = rounded.topologySettings!.topology!.vertices[0][1];
+  savedVertex.position.y += 1e-10;
+  expect(store.getState().importPuzzle(JSON.stringify(rounded))).toBe(true);
+  expect(store.getState().topology!.vertices.get(savedVertex.id)!.position).toEqual(savedVertex.position);
   const migrated = store.getState();
   const conflicting = JSON.parse(migrated.exportPuzzle());
   conflicting.grid.sculptOperations = [];
