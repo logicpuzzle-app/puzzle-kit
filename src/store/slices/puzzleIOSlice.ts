@@ -17,6 +17,7 @@ import { migrationRegistry } from '../../migrations';
 import { mergeDirectionalCluesIntoNumbers } from '../../utils/legacyDirectionalClues';
 import { syncCountersFromPuzzleState } from '../../utils/idGenerator';
 import { freshPuzzleSession } from '../puzzleSession';
+import { captureTopologySettings, restoreTopology } from '../../utils/topologyPersistence';
 
 export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
   newPuzzle: (options = {}) => {
@@ -88,17 +89,12 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
 
   exportPuzzle: () => {
     const state = get();
-    // Topology is regenerated from grid config on load, not stored
     // Strip 'layer' field from elements - it's implicit from problem/answer structure
     const exportData: Record<string, unknown> = {
       version: PUZZLE_EXPORT_VERSION,
       grid: state.grid,
       state: optimizePuzzleStateForExport(state.puzzle),
-      topologySettings: {
-        useTopology: state.useTopology,
-        topologyPreset: state.topologyPreset,
-        topologyIntensity: state.topologyIntensity,
-      },
+      topologySettings: captureTopologySettings(state),
       constraintSettings: {
         currentSchemaId: state.currentSchemaId,
         currentInputMode: state.currentInputMode,
@@ -141,15 +137,15 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
         const validationOverrides = data.constraintSettings?.validationOverrides ?? {};
         const highlightOverrides = data.constraintSettings?.highlightOverrides ?? {};
 
-        // Regenerate topology from grid config
-        const base = gridConfigToTopology(data.grid);
-        const topology = useTopology
-          ? applyTopologyPreset(base, { preset: topologyPreset, intensity: topologyIntensity })
-          : base;
+        const topology = restoreTopology(data.grid, {
+          useTopology, topologyPreset, topologyIntensity,
+          ...data.topologySettings,
+        });
+        const hasSnapshot = data.topologySettings?.topology !== undefined;
 
         // Restore layer field to elements (v1.1.0+ strips layer, older versions include it)
         const puzzleState = restorePuzzleStateFromExport(data.state);
-        const remappedState = useTopology
+        const remappedState = useTopology && !hasSnapshot
           ? {
               ...puzzleState,
               problem: {
@@ -163,7 +159,7 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
             }
           : puzzleState;
         const normalizedState = mergeDirectionalCluesIntoNumbers(remappedState);
-        for (const layer of ['problem', 'answer'] as const) {
+        for (const layer of hasSnapshot ? [] : ['problem', 'answer'] as const) {
           normalizedState[layer] = { ...normalizedState[layer], lines: normalizeLineOverlaps(
             normalizedState[layer].lines, data.grid, topology, normalizedState[layer].lineGroups,
           ) };

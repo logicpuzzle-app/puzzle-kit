@@ -77,6 +77,15 @@ describe('serialization', () => {
 
   describe('deserializePuzzle', () => {
 
+    it('reads a pre-1.2 share URL with legacy key substitution', () => {
+      // Fixed old wire payload: a black problem surface on cell-0-0.
+      const data = deserializePuzzle('eNolTUkOwyAM_Mv0SiKoevKtT6j6AkpRhOSECGgrJeLvsVMfZtHY4x3fWGrKCwhutKOFwVTSG7Sj_EDOIPCfKuhmDfIKugrXCdTKJ8q-JFhymT2jS9B8i3q_PU58KlanqL0qpS2JCpF5sIP-DFn8xZ4jlr3YteQXxxm9S-t2lwJRB1pvMlA');
+      expect(data?.grid).toMatchObject({ rows: 1, cols: 1 });
+      expect(data?.state.problem.surfaces.s1).toEqual({
+        id: 's1', cellId: 'cell-0-0', color: '#000000', layer: 'problem',
+      });
+    });
+
     it('returns null for invalid input', () => {
       expect(deserializePuzzle('')).toBeNull();
       expect(deserializePuzzle('invalid-base64')).toBeNull();

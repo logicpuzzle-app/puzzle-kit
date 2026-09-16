@@ -264,13 +264,15 @@ export function downloadDataUrl(dataUrl: string, filename: string): void {
 export function exportToJson(
   state: PuzzleState,
   grid: GridConfig,
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
+  topologySettings?: import('../types').PuzzleExport['topologySettings']
 ): string {
   const exportData = {
     version: PUZZLE_EXPORT_VERSION,
     format: 'puzzle-kit',
     grid,
     state,
+    ...(topologySettings ? { topologySettings } : {}),
     metadata: {
       exportedAt: new Date().toISOString(),
       ...metadata,

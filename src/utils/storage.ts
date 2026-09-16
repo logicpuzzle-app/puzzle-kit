@@ -326,9 +326,17 @@ export function saveTopologyState(
 
 export function loadTopologyState(): PersistedTopologyState & { deserializedTopology: GridTopology | null } {
   const state = getItem(STORAGE_KEYS.TOPOLOGY, DEFAULT_TOPOLOGY_STATE);
+  let deserializedTopology: GridTopology | null = null;
+  try {
+    deserializedTopology = state.topology ? deserializeTopology(state.topology) : null;
+  } catch {
+    // These are board preferences, not a native document. A corrupt preference
+    // snapshot must not prevent the independently saved puzzle from opening.
+    console.warn('Invalid topology preferences; native document is unchanged');
+  }
   return {
     ...state,
-    deserializedTopology: state.topology ? deserializeTopology(state.topology) : null,
+    deserializedTopology,
   };
 }
 
