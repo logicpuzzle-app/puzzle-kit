@@ -5,6 +5,7 @@
 import { resolveSurfaceVertex } from '../../utils/vertexSurfaces';
 import { migrateReferenceMode } from '../../utils/referenceModeMigration';
 import type { VertexSurfaceElement } from '../../types';
+import { normalizeBoardRotation } from '../../utils/boardLayout';
 import type { GridConfig } from '../../types';
 import type { GridSlice, SliceCreator, PuzzleStore } from './types';
 import type { TopologyPreset, GridTopology } from '../../utils/gridTopology';
@@ -220,6 +221,15 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       return hasLayoutChange || (hasExclusionChange && !hasTopologyChange)
         ? recordGeometryEdit(state, result, hasLayoutChange ? 'Change board layout' : 'Change cell exclusions') : result;
     }),
+
+  setBoardRotation: (angle) => set((state) => {
+    if (!Number.isFinite(angle)) return {};
+    const before = normalizeBoardRotation(state.grid.boardRotation);
+    const after = normalizeBoardRotation(angle);
+    if (before === after) return {};
+    state.historyManager.addAction({ type: 'SET_BOARD_ROTATION', before, after });
+    return { grid: { ...state.grid, boardRotation: after } };
+  }),
 
   // Topology mode
   useTopology: true,

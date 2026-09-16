@@ -21,7 +21,7 @@ import {
   copyToClipboard,
   copyImageToClipboard,
 } from '../../utils/export';
-import { getGridDimensions } from '../../utils/gridUtils';
+import { getBoardLayout } from '../../utils/boardLayout';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import type { PuzzleState, GridConfig } from '../../types';
 import type { GridTopology } from '../../utils/gridTopology';
@@ -50,18 +50,7 @@ function getExportDimensions(
   useTopology: boolean,
   topology: GridTopology | null
 ): { width: number; height: number } {
-  // Use topology bounds for non-square grids (iso, merged cells, etc.)
-  if (useTopology && topology) {
-    const exportPaddingLeft = gridConfig.exportPaddingLeft ?? 0;
-    const exportPaddingRight = gridConfig.exportPaddingRight ?? 0;
-    const exportPaddingTop = gridConfig.exportPaddingTop ?? 0;
-    const exportPaddingBottom = gridConfig.exportPaddingBottom ?? 0;
-    return {
-      width: topology.bounds.width + exportPaddingLeft + exportPaddingRight,
-      height: topology.bounds.height + exportPaddingTop + exportPaddingBottom,
-    };
-  }
-  return getGridDimensions(gridConfig);
+  return getBoardLayout(gridConfig, topology, useTopology);
 }
 
 export const ImportExportDialog: React.FC<ImportExportDialogProps> = ({

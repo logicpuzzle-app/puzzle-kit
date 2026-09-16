@@ -323,6 +323,8 @@ export const applyActionToState = (
         ...(action.after.topologyPreset !== undefined && { topologyPreset: action.after.topologyPreset }),
         ...(action.after.topologyIntensity !== undefined && { topologyIntensity: action.after.topologyIntensity }),
         ...action.after.editingState };
+    case 'SET_BOARD_ROTATION':
+      return { grid: { ...state.grid, boardRotation: action.after } };
     case 'SET_GRID':
       return {
         grid: { ...state.grid, ...action.grid },

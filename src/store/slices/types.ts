@@ -97,6 +97,7 @@ export const DEFAULT_TOOL_SETTINGS: ToolSettings = {
 export interface GridSlice {
   grid: GridConfig;
   setGrid: (grid: Partial<GridConfig>) => void;
+  setBoardRotation: (angle: number) => void;
 
   // Topology mode
   useTopology: boolean;

@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import type { GridConfig } from '../../types';
+import { getBoardViewMatrix } from '../../utils/boardViewMatrix';
+import { getBoardLayout, normalizeBoardRotation } from '../../utils/boardLayout';
+import { gridConfigToTopology, applyTopologyPreset } from '../../utils/gridTopology';
 import { getHexSize } from '../../utils/hexGridUtils';
 import type { PaintAdjustMode, BoardResizeHandleType, ResizeHandleType } from '../../components/paint/types';
 import { usePuzzleStoreApi } from '../../store/puzzleStoreContext';
@@ -32,7 +35,6 @@ export const usePaintAdjustments = ({
   canvas,
   store,
   canvasWrapperRef,
-  getBoardDimensions,
   centerBoard,
 }: UsePaintAdjustmentsArgs) => {
   const imageDragRef = useRef<{
@@ -158,31 +160,58 @@ export const usePaintAdjustments = ({
   const activePaintMode: PaintAdjustMode = imageAdjustMode ? 'image' : boardAdjustMode ? 'board' : 'answer';
   const isAnswerMode = activePaintMode === 'answer';
 
+  const viewMatrix = useCallback((config: GridConfig, view = store.getState().canvas) => {
+    const state = store.getState();
+    const topology = config === state.grid ? state.topology : applyTopologyPreset(
+      gridConfigToTopology(config), { preset: state.topologyPreset, intensity: state.topologyIntensity }
+    );
+    return getBoardViewMatrix(config, topology, state.useTopology, view);
+  }, [store]);
+
+  const screenDelta = useCallback((dx: number, dy: number) => {
+    const state = store.getState();
+    return new DOMPoint(dx / state.canvas.zoom, dy / state.canvas.zoom)
+      .matrixTransform(new DOMMatrix().rotate(-normalizeBoardRotation(state.grid.boardRotation)));
+  }, [store]);
+
   const lockImageBounds = useCallback(() => {
     if (!hasImage) return;
+    const point = new DOMPoint(imageBounds.x, imageBounds.y).matrixTransform(viewMatrix(grid));
     boardImageLockRef.current = {
-      screenX: imageBounds.x,
-      screenY: imageBounds.y,
-      drawWidth: imageBounds.width / (canvas.zoom || 1),
-      drawHeight: imageBounds.height / (canvas.zoom || 1),
+      screenX: point.x,
+      screenY: point.y,
+      drawWidth: imageBounds.width,
+      drawHeight: imageBounds.height,
     };
-  }, [hasImage, imageBounds.x, imageBounds.y, imageBounds.height, imageBounds.width, canvas.zoom]);
+  }, [hasImage, imageBounds.x, imageBounds.y, imageBounds.height, imageBounds.width, canvas.zoom, grid, viewMatrix]);
 
   const getImageLockAdjustments = useCallback(
     (nextGrid: GridConfig) => {
       const lock = boardImageLockRef.current;
       if (!lock || !nextGrid.backgroundImage) return {};
-      const { panX, panY, zoom } = store.getState().canvas;
+      const state = store.getState();
+      // The centering hook fits after every board geometry change. Lock the image
+      // against that resulting view, rather than the previous pan/zoom.
+      const rect = canvasWrapperRef.current?.getBoundingClientRect();
+      const nextTopology = applyTopologyPreset(gridConfigToTopology(nextGrid), {
+        preset: state.topologyPreset, intensity: state.topologyIntensity,
+      });
+      const { width, height } = getBoardLayout(nextGrid, nextTopology, state.useTopology);
+      const zoom = rect && width > 0 && height > 0
+        ? Math.max(0.1, Math.min(1, rect.width / width, rect.height / height)) : state.canvas.zoom;
+      const panX = rect ? (rect.width - width * zoom) / 2 : state.canvas.panX;
+      const panY = rect ? (rect.height - height * zoom) / 2 : state.canvas.panY;
       const exportPaddingLeft = nextGrid.exportPaddingLeft ?? 0;
       const exportPaddingTop = nextGrid.exportPaddingTop ?? 0;
-      const targetImageXOuter = (lock.screenX - panX) / zoom;
-      const targetImageYOuter = (lock.screenY - panY) / zoom;
+      const point = new DOMPoint(lock.screenX, lock.screenY).matrixTransform(viewMatrix(nextGrid, { ...state.canvas, panX, panY, zoom }).inverse());
+      const targetImageXOuter = (point.x - panX) / zoom;
+      const targetImageYOuter = (point.y - panY) / zoom;
       const targetImageX = targetImageXOuter - exportPaddingLeft;
       const targetImageY = targetImageYOuter - exportPaddingTop;
       const area = getGridAreaForConfig(nextGrid);
       if (area.width === 0 || area.height === 0) return {};
-      const scaleX = lock.drawWidth / area.width;
-      const scaleY = lock.drawHeight / area.height;
+      const scaleX = lock.drawWidth / zoom / area.width;
+      const scaleY = lock.drawHeight / zoom / area.height;
       const nextScale = Number.isFinite(scaleX) && Number.isFinite(scaleY) ? (scaleX + scaleY) / 2 : (scaleX || scaleY || 1);
       const imageX = targetImageX;
       const imageY = targetImageY;
@@ -194,7 +223,7 @@ export const usePaintAdjustments = ({
         backgroundOffsetY: nextOffsetY,
       };
     },
-    [getGridAreaForConfig, store]
+    [getGridAreaForConfig, store, viewMatrix, canvasWrapperRef]
   );
 
   const applyBoardChange = useCallback(
@@ -212,12 +241,11 @@ export const usePaintAdjustments = ({
       if (!wrapper) return null;
       const rect = wrapper.getBoundingClientRect();
       const { panX, panY, zoom } = store.getState().canvas;
-      return {
-        x: (event.clientX - rect.left - panX) / zoom,
-        y: (event.clientY - rect.top - panY) / zoom,
-      };
+      const point = new DOMPoint(event.clientX - rect.left, event.clientY - rect.top)
+        .matrixTransform(viewMatrix(store.getState().grid).inverse());
+      return { x: (point.x - panX) / zoom, y: (point.y - panY) / zoom };
     },
-    [canvasWrapperRef, store]
+    [canvasWrapperRef, store, viewMatrix]
   );
 
   const handleSetAdjustMode = useCallback((mode: PaintAdjustMode) => {
@@ -282,7 +310,8 @@ export const usePaintAdjustments = ({
 
   const handleAutoPadding = useCallback(() => {
     if (!hasImage) return;
-    const { width, height } = getBoardDimensions();
+    const state = store.getState();
+    const { baseWidth: width, baseHeight: height } = getBoardLayout(grid, state.topology, state.useTopology);
     if (width === 0 || height === 0) return;
     const imageX = (imageBounds.x - canvas.panX) / canvas.zoom;
     const imageY = (imageBounds.y - canvas.panY) / canvas.zoom;
@@ -306,7 +335,8 @@ export const usePaintAdjustments = ({
     canvas.panX,
     canvas.panY,
     canvas.zoom,
-    getBoardDimensions,
+    grid,
+    store,
     grid.exportPaddingBottom,
     grid.exportPaddingLeft,
     grid.exportPaddingRight,
@@ -342,15 +372,13 @@ export const usePaintAdjustments = ({
       const dragState = imageDragRef.current;
       if (!dragState) return;
       event.preventDefault();
-      const zoom = store.getState().canvas.zoom;
-      const dx = (event.clientX - dragState.startX) / zoom;
-      const dy = (event.clientY - dragState.startY) / zoom;
+      const { x: dx, y: dy } = screenDelta(event.clientX - dragState.startX, event.clientY - dragState.startY);
       setGrid({
         backgroundOffsetX: dragState.originOffsetX + dx,
         backgroundOffsetY: dragState.originOffsetY + dy,
       });
     },
-    [setGrid, store]
+    [setGrid, screenDelta]
   );
 
   const handleImagePointerUp = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
@@ -456,15 +484,13 @@ export const usePaintAdjustments = ({
       const dragState = boardDragRef.current;
       if (!dragState) return;
       event.preventDefault();
-      const zoom = store.getState().canvas.zoom;
-      const dx = (event.clientX - dragState.startX) / zoom;
-      const dy = (event.clientY - dragState.startY) / zoom;
+      const { x: dx, y: dy } = screenDelta(event.clientX - dragState.startX, event.clientY - dragState.startY);
       applyBoardChange({
         exportPaddingLeft: dragState.startExportPaddingLeft + dx,
         exportPaddingTop: dragState.startExportPaddingTop + dy,
       });
     },
-    [applyBoardChange, store]
+    [applyBoardChange, screenDelta]
   );
 
   const handleBoardPointerUp = useCallback((event: React.PointerEvent<HTMLDivElement>) => {

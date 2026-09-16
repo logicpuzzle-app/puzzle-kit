@@ -142,6 +142,12 @@ export interface GridGeometrySnapshot {
     'puzzle' | 'trialStack' | 'trialStage' | 'selectedElements' | 'hoverCell' | 'cursorCell' | 'numberSelection'>;
 }
 
+export interface SetBoardRotationAction {
+  type: 'SET_BOARD_ROTATION';
+  before: number;
+  after: number;
+}
+
 export interface SetGridAction {
   type: 'SET_GRID';
   grid: Partial<GridConfig>;
@@ -205,6 +211,7 @@ export type PuzzleAction =
   | SetActiveLayerAction
   | ClearLayerAction
   // Grid operations
+  | SetBoardRotationAction
   | SetGridAction
   | EditGridGeometryAction
   // Batch operations
@@ -353,6 +360,8 @@ export function reverseAction(action: PuzzleAction): PuzzleAction {
       };
     case 'CLEAR_LAYER':
       return { ...action, restore: !action.restore };
+    case 'SET_BOARD_ROTATION':
+      return { ...action, before: action.after, after: action.before };
     case 'EDIT_GRID_GEOMETRY':
       return { ...action, before: action.after, after: action.before };
     case 'SET_GRID':
@@ -419,6 +428,8 @@ export function getActionDescription(action: PuzzleAction): string {
       return `Switch to ${action.layer} layer`;
     case 'CLEAR_LAYER':
       return `Clear ${action.layer} layer`;
+    case 'SET_BOARD_ROTATION':
+      return 'Rotate board';
     case 'SET_GRID':
       return 'Update grid settings';
     case 'EDIT_GRID_GEOMETRY':

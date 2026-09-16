@@ -113,6 +113,7 @@ export function loadToolSettings(): PersistedToolSettings {
 
 type PersistedGridConfig = Pick<
   GridConfig,
+  | 'boardRotation'
   | 'rows'
   | 'cols'
   | 'cellSize'
@@ -136,6 +137,7 @@ const DEFAULT_PERSISTED_GRID_CONFIG: PersistedGridConfig = {
 
 export function saveGridConfig(config: GridConfig): boolean {
   const {
+    boardRotation,
     rows,
     cols,
     cellSize,
@@ -146,6 +148,7 @@ export function saveGridConfig(config: GridConfig): boolean {
     frameStyle,
   } = config;
   return setItem(STORAGE_KEYS.GRID_CONFIG, {
+    boardRotation,
     rows,
     cols,
     cellSize,
