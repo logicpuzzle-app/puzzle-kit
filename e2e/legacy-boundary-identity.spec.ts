@@ -2,7 +2,7 @@ import { test, expect } from './fixtures';
 import { readFileSync } from 'node:fs';
 import { openPuzzleFile, savePuzzleFile } from './puzzle-file';
 
-for (const [name, file] of [['disconnected and holed', 'legacy-multiple-boundaries-board.json'], ['corner contacts and holed', 'legacy-corner-contact-board.json'], ['repeated walks and pinched', 'legacy-walk-board.json']]) {
+for (const [name, file] of [['disconnected and holed', 'legacy-multiple-boundaries-board.json'], ['corner contacts and holed', 'legacy-corner-contact-board.json'], ['repeated walks and pinched', 'legacy-walk-board.json'], ['archived exclusions', 'legacy-incomplete-archive-board.json']]) {
 const fixture = JSON.parse(readFileSync(new URL(`./fixtures/${file}`, import.meta.url), 'utf8'));
 
 test(`legacy ${name} merges preserve saved boundaries and restore all members @production`, async ({ page, isMobile }, info) => {
@@ -43,10 +43,11 @@ test(`legacy ${name} merges preserve saved boundaries and restore all members @p
   if (await close.isVisible()) await close.click();
   const restored = await savePuzzleFile(page);
   const cells = new Map(restored.topologySettings!.topology!.cells);
-  expect(cells.size).toBe(21);
+  expect(cells.size).toBe(fixture.grid.rows * fixture.grid.cols - new Set([...(fixture.grid.voidCells ?? []), ...(fixture.grid.disabledCells ?? [])]).size);
   for (const id of fixture.grid.mergedCells.flat()) expect(cells.has(id)).toBe(true);
   expect(Object.values(restored.state.problem.numbers).map(n => n.value)).toEqual(['17']);
   expect(restored.state.problem.vertexSurfaces).toEqual(original.state.problem.vertexSurfaces);
+  expect(restored.state.answer.vertexSurfaces).toEqual(original.state.answer.vertexSurfaces);
   await page.screenshot({ path: info.outputPath('legacy-boundary-restored.png') });
   await page.getByTitle(/Undo \(Ctrl\+Z\)/).first().click();
   expect((await savePuzzleFile(page)).topologySettings!.topology).toEqual(partial.topologySettings!.topology);

@@ -1,3 +1,4 @@
+import { prepareLegacyArchivedEdits } from './topology/legacyArchivedEdits';
 import { prepareLegacySplits } from './topology/legacySplits';
 import { editedGrid } from './topology/retainedEdits';
 import type { GridConfig, PuzzleExport } from '../types';
@@ -60,7 +61,7 @@ export function restoreBoard(grid: GridConfig, settings: Settings): { topology: 
   if (topology.editBase) topology.editBase.appliedPreset = topology.appliedPreset;
   if (topology.exclusionBase?.editBase) topology.exclusionBase.editBase.appliedPreset = topology.appliedPreset;
   if (settings.useTopology && !topology.editBase) {
-    const migrated = prepareLegacyEditedExclusions(topology, grid);
+    const migrated = prepareLegacyArchivedEdits(topology, grid) ?? prepareLegacyEditedExclusions(topology, grid);
     if (migrated) ({ topology, grid } = migrated);
     topology = prepareLegacySplits(topology, grid);
     if (!topology.editBase) topology = prepareLegacyMerges(topology, grid);
