@@ -1,12 +1,13 @@
+import { projectSculpt, type SculptEdit } from './retainedSculpt';
 import { projectCells } from './projectCells';
 import type { GridConfig } from '../../types';
 import type { GridTopology, TopologyCell, TopologyEdge } from './types';
 import { projectMerges, type MergeGroup } from './retainedMerge';
 import { projectSplit, type SplitEdit } from './retainedSplit';
 
-export type TopologyEdit = ({ kind: 'merge' } & MergeGroup) | SplitEdit;
+export type TopologyEdit = ({ kind: 'merge' } & MergeGroup) | SplitEdit | SculptEdit;
 
-/** One flat source graph plus an ordered sequence; alternating merge/split
+/** One flat source graph plus an ordered sequence; mixed merge/split/sculpt
  * operations never nest a full snapshot inside every preceding snapshot. */
 export function retainedEdits(topology: GridTopology): { base: GridTopology; operations: TopologyEdit[] } {
   const full = topology.exclusionBase ?? topology;
@@ -40,6 +41,12 @@ export function projectEdits(base: GridTopology, operations: TopologyEdit[], ret
       }
       next = projectMerges(current, [operation], retainedCells);
       if (next) { const { mergeBase: _base, mergeGroups: _groups, ...flat } = next; next = flat; }
+    } else if (operation.kind === 'sculpt') {
+      for (const edge of operation.edges) {
+        if (edgeIds.has(edge.id)) return null;
+        edgeIds.add(edge.id);
+      }
+      next = projectSculpt(current, operation);
     } else {
       if (operation.boundary) {
         const vertices = new Map(current.vertices), edges = new Map(current.edges);
@@ -70,7 +77,7 @@ export function removeEdits(topology: GridTopology, remove: (operation: Topology
   let current = base;
   for (const operation of operations) {
     if (remove(operation)) continue;
-    const inputs = operation.kind === 'merge' ? operation.cellIds : [operation.cellId];
+    const inputs = operation.kind === 'merge' ? operation.cellIds : operation.kind === 'sculpt' ? operation.inputCells : [operation.cellId];
     if (inputs.some(id => !current.cells.has(id))) continue;
     kept.push(operation);
     const next = projectEdits(base, kept, (topology.exclusionBase ?? topology).cells, (topology.exclusionBase ?? topology).edges);
@@ -91,5 +98,6 @@ export function editedGrid(topology: GridTopology, grid: GridConfig): GridConfig
   const splits = (topology.editOperations ?? []).filter((op): op is SplitEdit => op.kind === 'split').map(op => ({
     cellId: op.cellId, startPoint: { type: 'vertex' as const, vertexId: op.startVertex }, endPoint: { type: 'vertex' as const, vertexId: op.endVertex },
   }));
-  return { ...grid, mergedCells: groups.length ? groups.map(g => g.cellIds) : undefined, splitLines: splits.length ? splits : undefined };
+  const sculptOperations = [...((topology.editBase ?? topology).sourceConfig?.sculptOperations ?? []), ...(topology.editOperations ?? []).filter((op): op is SculptEdit => op.kind === 'sculpt').map(op => ({ type: op.mode, vertexId: op.vertexId }))];
+  return { ...grid, sculptOperations: sculptOperations.length ? sculptOperations : undefined, mergedCells: groups.length ? groups.map(g => g.cellIds) : undefined, splitLines: splits.length ? splits : undefined };
 }

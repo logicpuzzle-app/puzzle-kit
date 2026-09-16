@@ -10,6 +10,7 @@
  * - 1.5.0: Flat retained source and explicit mixed merge/split operations
  * - 1.6.0: Verified legacy split boundary refinements and diagonal orientation
  * - 1.7.0: Explicit verified legacy merge perimeter walks with repeated vertices
+ * - 1.8.0: Retained sculpt operations with explicit allocated cell/edge identities
  *
  * Versioning policy:
  * - Major version: Breaking changes, no backward compatibility
@@ -17,4 +18,4 @@
  * - Patch version: Bug fixes
  */
 
-export const PUZZLE_EXPORT_VERSION = '1.7.0';
+export const PUZZLE_EXPORT_VERSION = '1.8.0';

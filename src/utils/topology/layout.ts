@@ -20,7 +20,7 @@ export function scaleTopologyLayout(topology: GridTopology, before: GridConfig, 
     bounds: bounds(graph.bounds),
     ...(graph.deformationBounds && { deformationBounds: bounds(graph.deformationBounds) }),
     sourceConfig,
-    ...(graph.editBase && { editBase: transform(graph.editBase, { ...sourceConfig, mergedCells: undefined, splitLines: undefined, voidCells: undefined, disabledCells: undefined, outboardCells: undefined }) }),
+    ...(graph.editBase && { editBase: transform(graph.editBase, { ...sourceConfig, mergedCells: undefined, splitLines: undefined, sculptOperations: graph.editBase.sourceConfig?.sculptOperations, voidCells: undefined, disabledCells: undefined, outboardCells: undefined }) }),
     ...(graph.mergeBase && { mergeBase: transform(graph.mergeBase, { ...sourceConfig, mergedCells: undefined, voidCells: undefined, disabledCells: undefined, outboardCells: undefined }) }),
   });
   const result = transform(topology, after);

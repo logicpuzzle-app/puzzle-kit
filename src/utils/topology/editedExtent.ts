@@ -10,7 +10,7 @@ import { applyCellExclusions } from './exclusions';
  * survive. A cut requiring a new boundary intersection is not guessed. */
 export function resizeEditedExtent(topology: GridTopology, before: GridConfig, after: GridConfig): GridTopology | null {
   const full = topology.exclusionBase ?? topology, source = full.editBase;
-  if (!source || !full.editOperations) return null;
+  if (!source || !full.editOperations || full.editOperations.some(op => op.kind === 'sculpt')) return null;
   const clean = (grid: GridConfig): GridConfig => ({ ...grid, mergedCells: undefined, splitLines: undefined, voidCells: undefined, disabledCells: undefined, outboardCells: undefined });
   const usedEdges = new Set([...source.cells.values()].flatMap(cell => cell.boundaryEdges));
   const usedVertices = new Set([...source.cells.values()].flatMap(cell => cell.boundaryVertices));
@@ -48,7 +48,7 @@ export function resizeEditedExtent(topology: GridTopology, before: GridConfig, a
         if (!unchanged) { retained.delete(id); changed.add(id); }
       }
       replacements.set(op.id, ids);
-    } else {
+    } else if (op.kind === 'split') {
       if (!current.cells.has(op.cellId)) continue;
       if (changed.has(op.cellId)) for (const id of op.cellIds) { retained.delete(id); changed.add(id); }
       operations.push(op);

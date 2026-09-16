@@ -1,7 +1,7 @@
 /**
  * Grid module exports
  */
-export { sculptRotateCluster, sculptCutCluster } from './sculptOperations';
+export { sculptRotateCluster, sculptCutCluster, clearSculptOperations } from './sculptOperations';
 export {
   toggleCellDisabled,
   setCellDisabled,

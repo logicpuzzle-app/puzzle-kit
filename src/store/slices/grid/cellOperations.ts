@@ -127,7 +127,7 @@ export const setCellDisabled = (
   return { grid: newGrid };
 };
 
-function finishTopologyEdit(state: PuzzleStore, edited: GridTopology, grid: GridConfig): Partial<PuzzleStore> {
+export function finishTopologyEdit(state: PuzzleStore, edited: GridTopology, grid: GridConfig): Partial<PuzzleStore> {
   const full = state.topology!.exclusionBase ?? state.topology!;
   for (const key of ['voidCells', 'disabledCells', 'outboardCells'] as const) if (grid[key]) grid[key] = grid[key]!.filter(id => edited.cells.has(id));
   const topology = applyCellExclusions({ ...edited, sourceConfig: grid }, grid);

@@ -24,6 +24,7 @@ import { retainTopologyElements, retainTopologyPuzzle } from '../../utils/topolo
 import {
   sculptRotateCluster,
   sculptCutCluster,
+  clearSculptOperations,
   toggleCellDisabled,
   setCellDisabled,
   mergeCells,
@@ -155,6 +156,9 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
 
   setGrid: (gridUpdate) =>
     set((state) => {
+      if (Object.keys(gridUpdate).length === 1 && Object.prototype.hasOwnProperty.call(gridUpdate, 'sculptOperations') && !gridUpdate.sculptOperations?.length) {
+        return recordGeometryEdit(state, clearSculptOperations(state), 'Clear sculpt operations');
+      }
       const newGrid = { ...state.grid, ...gridUpdate };
       if (Object.keys(gridUpdate).length === 1 && Object.prototype.hasOwnProperty.call(gridUpdate, 'mergedCells')) {
         return recordGeometryEdit(state, setMergedCellGroups(state, gridUpdate.mergedCells), 'Edit cell merges');

@@ -594,7 +594,13 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
       || !Array.isArray(serialized.editOperations) || !serialized.editOperations.length) throw new Error('Invalid edit source graph');
     editBase = deserializeTopology(serialized.editBase);
     for (const op of serialized.editOperations) {
-      if (!record(op) || (op.kind !== 'merge' && op.kind !== 'split') || !Array.isArray(op.cellIds) || op.cellIds.some(id => typeof id !== 'string')) throw new Error('Invalid topology operation');
+      if (!record(op) || (op.kind !== 'merge' && op.kind !== 'split' && op.kind !== 'sculpt') || !Array.isArray(op.cellIds) || op.cellIds.some(id => typeof id !== 'string')) throw new Error('Invalid topology operation');
+      if (op.kind === 'sculpt') {
+        if ((op.mode !== 'rotate' && op.mode !== 'cut') || typeof op.vertexId !== 'string' || !Array.isArray(op.inputCells)
+          || op.inputCells.some(id => typeof id !== 'string') || !Array.isArray(op.edges)
+          || op.edges.some(e => !record(e) || [e.id, e.startVertex, e.endVertex].some(id => typeof id !== 'string'))) throw new Error('Invalid sculpt metadata');
+        continue;
+      }
       if (op.kind === 'split' && ((op.reverseEdge !== undefined && typeof op.reverseEdge !== 'boolean') ||
           (op.originalCells !== undefined && (!Array.isArray(op.originalCells) || op.originalCells.some(id => typeof id !== 'string'))))) throw new Error('Invalid split metadata');
       if (op.boundary !== undefined && (!record(op.boundary) || !Array.isArray(op.boundary.vertices) || !Array.isArray(op.boundary.edges) ||
@@ -603,7 +609,10 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
         : op.cellIds.length !== 2 || [op.cellId, op.startVertex, op.endVertex, op.edgeId].some(id => typeof id !== 'string')) throw new Error('Invalid topology operation identities');
     }
     const expected = projectEdits(editBase, serialized.editOperations);
-    const declaredRoles = serialized.editOperations.some(op => op.boundary?.outboard !== undefined);
+    const declaredRoles = serialized.editOperations.some(op => op.kind !== 'sculpt' && op.boundary?.outboard !== undefined);
+    const sculpted = serialized.editOperations.some(op => op.kind === 'sculpt');
+    const samePosition = (a: { x: number; y: number } | undefined, b: { x: number; y: number } | undefined) =>
+      !!a && !!b && Math.abs(a.x - b.x) < 1e-8 && Math.abs(a.y - b.y) < 1e-8;
     const full = exclusionBase ?? { cells, vertices, edges };
     if (!expected || full.cells.size !== expected.cells.size || full.vertices.size !== expected.vertices.size || full.edges.size !== expected.edges.size) throw new Error('Edited graph does not match its source');
     for (const [id, cell] of full.cells) {
@@ -611,16 +620,20 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
       if (!target || JSON.stringify(target.boundaryVertices) !== JSON.stringify(cell.boundaryVertices) || JSON.stringify(target.boundaryEdges) !== JSON.stringify(cell.boundaryEdges)) throw new Error('Edit source reassigns a cell');
       if (declaredRoles && !!target.outboard !== !!cell.outboard) throw new Error('Edit source changes a declared cell role');
       if (JSON.stringify(target.originalCells) !== JSON.stringify(cell.originalCells)) throw new Error('Edit source changes cell provenance');
-      if (source && (JSON.stringify(source.center) !== JSON.stringify(cell.center) || JSON.stringify(source.baseCenter) !== JSON.stringify(cell.baseCenter))) throw new Error('Edit source moves a surviving cell');
+      if (source && (sculpted ? !samePosition(target.baseCenter ?? target.center, cell.baseCenter ?? cell.center)
+        : JSON.stringify(source.center) !== JSON.stringify(cell.center) || JSON.stringify(source.baseCenter) !== JSON.stringify(cell.baseCenter))) throw new Error('Edit source moves a surviving cell');
     }
     for (const [id, vertex] of full.vertices) {
       const source = editBase.vertices.get(id);
-      if (!source || JSON.stringify(source.position) !== JSON.stringify(vertex.position) || JSON.stringify(source.basePosition) !== JSON.stringify(vertex.basePosition)) throw new Error('Edit source reassigns a vertex');
+      const target = expected.vertices.get(id);
+      if (!source || (sculpted ? !samePosition(target?.basePosition ?? target?.position, vertex.basePosition ?? vertex.position)
+        : JSON.stringify(source.position) !== JSON.stringify(vertex.position) || JSON.stringify(source.basePosition) !== JSON.stringify(vertex.basePosition))) throw new Error('Edit source reassigns a vertex');
     }
     for (const [id, edge] of full.edges) {
       const target = expected.edges.get(id), source = editBase.edges.get(id);
       if (!target || target.startVertex !== edge.startVertex || target.endVertex !== edge.endVertex) throw new Error('Edit source reassigns an edge');
-      if (source && (JSON.stringify(source.midpoint) !== JSON.stringify(edge.midpoint) || JSON.stringify(source.baseMidpoint) !== JSON.stringify(edge.baseMidpoint))) throw new Error('Edit source moves a surviving edge');
+      if (source && (sculpted ? !samePosition(target.baseMidpoint ?? target.midpoint, edge.baseMidpoint ?? edge.midpoint)
+        : JSON.stringify(source.midpoint) !== JSON.stringify(edge.midpoint) || JSON.stringify(source.baseMidpoint) !== JSON.stringify(edge.baseMidpoint))) throw new Error('Edit source moves a surviving edge');
     }
     if (exclusionBase && (JSON.stringify(serialized.editOperations) !== JSON.stringify(serialized.exclusionBase!.editOperations) || JSON.stringify(serialized.editBase) !== JSON.stringify(serialized.exclusionBase!.editBase))) throw new Error('Inconsistent hidden edit source');
   } else if (serialized.editOperations !== undefined || exclusionBase?.editBase) throw new Error('Missing edit source graph');
