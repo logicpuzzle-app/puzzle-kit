@@ -8,6 +8,7 @@ import { useCellFinder } from './useCellFinder';
 import { useCanvasPoint } from './useCanvasPoint';
 import { shouldAllowOutboardForTool } from '../utils/outboardPolicy';
 import { createToolDispatchers, type ToolDispatchHandlers } from './toolDispatchers';
+import type { DirectionalNumberGesture } from './useDirectionalNumberGesture';
 import type { Point } from '../types';
 import type { TextClickInfo } from '../types/canvasInput';
 
@@ -22,6 +23,7 @@ interface TouchState {
   initialTouchCount: number;
   /** Whether a drag occurred during this touch sequence */
   isDragging: boolean;
+  directional: boolean;
 }
 
 type PointerInfo = { clientX: number; clientY: number; startX: number; startY: number };
@@ -42,6 +44,7 @@ interface UseTouchHandlersOptions {
     handleNumberTool?: (point: Point, isRightClick: boolean, options?: { cellId?: string }) => void;
     handleTextTool?: (point: Point, isRightClick: boolean) => TextClickInfo | null;
   };
+  directionalGesture?: DirectionalNumberGesture;
   drawStartPoint: string | null;
   setDrawStartPoint: (point: string | null) => void;
   setDrawStartPosition: (point: Point | null) => void;
@@ -73,6 +76,7 @@ export function useTouchHandlers({
   onTextClick,
   gridHandlers,
   toolHandlers,
+  directionalGesture,
   drawStartPoint,
   setDrawStartPoint,
   setDrawStartPosition,
@@ -103,6 +107,7 @@ export function useTouchHandlers({
     tapPoint: null,
     initialTouchCount: 0,
     isDragging: false,
+    directional: false,
   });
   const activePointersRef = useRef<Map<number, PointerInfo>>(new Map());
 
@@ -180,6 +185,7 @@ export function useTouchHandlers({
         // Switching to a multi-finger gesture abandons pending shape previews,
         // while incremental edits remain in the current undo group.
         gridHandlers?.cancel();
+        directionalGesture?.cancel();
         setSpecialPath([]);
         setDrawStartPoint(null);
         setDrawStartPosition(null);
@@ -215,6 +221,8 @@ export function useTouchHandlers({
         startHistoryGroup();
         setCanvasState({ isDrawing: true });
 
+        touchState.directional = directionalGesture?.begin(point, false, false) ?? false;
+        if (touchState.directional) return;
         if (activeLayer === 'grid') {
           gridHandlers?.down(point);
         } else {
@@ -232,6 +240,7 @@ export function useTouchHandlers({
       canvas.panMode,
       activeLayer,
       gridHandlers,
+      directionalGesture,
       getCanvasPoint,
       toolSettings.currentTool,
       setCanvasState,
@@ -338,7 +347,9 @@ export function useTouchHandlers({
           const isRightClick = false;
           const isShiftKey = false;
 
-          if (activeLayer === 'grid') {
+          if (touchState.directional) {
+            directionalGesture?.move(point);
+          } else if (activeLayer === 'grid') {
             gridHandlers?.move(point);
           } else {
             toolDispatchers.dispatchMove(tool, point, isRightClick, isShiftKey);
@@ -354,6 +365,7 @@ export function useTouchHandlers({
       setCanvasState,
       activeLayer,
       gridHandlers,
+      directionalGesture,
       setPan,
       getCanvasPoint,
       allowMultiTouchPanZoom,
@@ -391,7 +403,10 @@ export function useTouchHandlers({
 
       // Cancellation is cleanup, never a tap or a free-segment commit. Exclusions
       // already applied during a drag still need their topology refreshed.
-      if (activeLayer === 'grid' && !touchState.isPanning) {
+      if (touchState.directional) {
+        if (cancelled || initialTouches !== 1 || touchState.isPanning) directionalGesture?.cancel();
+        else directionalGesture?.finish(getCanvasPoint(e.clientX, e.clientY), touchDuration < 300 && !touchState.isDragging);
+      } else if (activeLayer === 'grid' && !touchState.isPanning) {
         if (cancelled || initialTouches >= 2) gridHandlers?.cancel();
         else gridHandlers?.up(point);
       } else if (!cancelled && !touchState.isPanning) {
@@ -439,6 +454,7 @@ export function useTouchHandlers({
       }
       resetFillModes();
 
+      touchState.directional = false;
       touchState.isPinching = false;
       touchState.lastTouchPoint = null;
       touchState.initialTouchCount = 0;
@@ -462,6 +478,7 @@ export function useTouchHandlers({
       allowMultiTouchPanZoom,
       activeLayer,
       gridHandlers,
+      directionalGesture,
       getCanvasPoint,
       toolSettings.currentTool,
       toolSettings.lineDirections,

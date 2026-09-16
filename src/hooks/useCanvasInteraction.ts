@@ -30,6 +30,7 @@ import { useGridPointUtils } from './useGridPointUtils';
 import { useGridEditMode } from './useGridEditMode';
 import { useSculptMode } from './useSculptMode';
 import { useZoomPan } from './useZoomPan';
+import { useDirectionalNumberGesture } from './useDirectionalNumberGesture';
 import { useTouchHandlers } from './useTouchHandlers';
 import { createToolDispatchers } from './toolDispatchers';
 import {
@@ -129,6 +130,8 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom, onTextCli
     resetFillModes,
     finalizeLineSelection,
   } = toolHandlers;
+
+  const directionalGesture = useDirectionalNumberGesture(handleNumberTool);
 
   const { findNearestGridPoint } = useGridPointUtils(grid);
 
@@ -380,6 +383,7 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom, onTextCli
       },
     } : undefined,
     toolHandlers,
+    directionalGesture,
     drawStartPoint,
     setDrawStartPoint,
     setDrawStartPosition,
@@ -517,6 +521,7 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom, onTextCli
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
+    directionalGesture,
     // Selection handlers
     handleSelectTool,
     isSelecting,

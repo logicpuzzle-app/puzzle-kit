@@ -5,10 +5,9 @@
  * Each strategy handles a specific tool/mode combination.
  */
 
-import type { Point, SurfaceDisplayMode, PenpaDirectionalClue } from '../../types';
+import type { Point, SurfaceDisplayMode } from '../../types';
 import type { AutoModeConfig } from '../../constraints/inputModeMapping';
 import type { FlickState } from '../inputStrategies';
-import { INITIAL_FLICK_STATE } from '../inputStrategies';
 import { toDataLayer, type DataLayerType } from '../../types';
 
 // ============================================================================
@@ -71,9 +70,6 @@ export type MouseDownAction =
   | { type: 'handleTextTool'; point: Point; isRightButton: boolean }
   | { type: 'handleSymbolTool'; point: Point; options: SymbolToolOptions }
   | { type: 'addSurface'; cellId: string; color: string; layer: DataLayerType; displayMode: SurfaceDisplayMode }
-  | { type: 'removeDirectionalClue'; id: string }
-  | { type: 'incrementDirectionalClue'; clue: Omit<PenpaDirectionalClue, 'id'> }
-  | { type: 'convertNumberToDirectionalClue'; clue: Omit<PenpaDirectionalClue, 'id'>; removeNumberId: string }
   | { type: 'setCursorCell'; cellId: string }
   | { type: 'resetFillModes' }
   | { type: 'baseMouseDown' };
@@ -83,41 +79,6 @@ export interface SymbolToolOptions {
   inputMode?: 'add' | 'remove' | 'toggle';
   colorOverride?: string;
   symbolGridPointsOverride?: ('cell' | 'vertex' | 'edge')[];
-}
-
-// ============================================================================
-// Strategy: Direc Input Mode (Flick gesture for arrow direction)
-// ============================================================================
-
-/**
- * Handle direc input mode or auto mode with direc type
- * pzprjs style: mousedown starts flick, mouseup does number input if no flick occurred
- */
-export function handleDirecMouseDown(
-  ctx: MouseDownContext,
-  cellInfo: CellInfo | null
-): MouseDownResult {
-  if (!cellInfo || cellInfo.row === undefined || cellInfo.col === undefined) {
-    return { handled: false };
-  }
-
-  const flickState: FlickState = {
-    startCell: { row: cellInfo.row, col: cellInfo.col },
-    startCellId: cellInfo.cellId,
-    startCellIndex: cellInfo.row * ctx.grid.cols + cellInfo.col,
-    startCellCenter: cellInfo.center ?? null,
-    startPoint: ctx.point,
-    inputted: false,
-    rightButton: ctx.isRightButton,
-    lineDrawn: false,
-    pekeInputMode: null,
-  };
-
-  return {
-    handled: true,
-    flickState,
-    action: { type: 'setNumberSelection', cellId: cellInfo.cellId },
-  };
 }
 
 // ============================================================================
@@ -131,7 +92,7 @@ export function handleNumberInputMouseDown(
   ctx: MouseDownContext,
   cellInfo: CellInfo | null
 ): MouseDownResult {
-  if (!cellInfo || cellInfo.row === undefined || cellInfo.col === undefined) {
+  if (!cellInfo) {
     return { handled: false };
   }
 
@@ -161,10 +122,7 @@ export function handleLineCellMouseDown(
   cellInfo: CellInfo | null
 ): MouseDownResult {
   const flickState: FlickState = {
-    startCell: cellInfo ? { row: cellInfo.row!, col: cellInfo.col! } : null,
     startCellId: cellInfo?.cellId ?? null,
-    startCellIndex: cellInfo ? cellInfo.row! * ctx.grid.cols + cellInfo.col! : null,
-    startCellCenter: cellInfo?.center ?? null,
     startPoint: ctx.point,
     inputted: false,
     rightButton: ctx.isRightButton,
@@ -218,10 +176,7 @@ export function handleLineMouseDown(
   pekeExists: boolean
 ): MouseDownResult {
   const flickState: FlickState = {
-    startCell: null,
     startCellId: null,
-    startCellIndex: null,
-    startCellCenter: null,
     startPoint: ctx.point,
     inputted: false,
     rightButton: ctx.isRightButton,
@@ -281,49 +236,17 @@ export function handleSelectMouseDown(
 // ============================================================================
 
 /**
- * Handle number tools (including directional)
+ * Handle number tools after directional gestures have been routed
  */
 export function handleNumberToolMouseDown(
   ctx: MouseDownContext,
-  cellInfo: CellInfo | null,
-  existingDirectionalClueId: string | null
+  cellInfo: CellInfo | null
 ): MouseDownResult {
   if (!cellInfo) {
     return { handled: false };
   }
 
-  // For directional number tool: use flick input
-  if (ctx.currentTool === 'number-directional') {
-    if (cellInfo.row === undefined || cellInfo.col === undefined) return { handled: true };
-    const flickState: FlickState = {
-      startCell: { row: cellInfo.row, col: cellInfo.col },
-      startCellId: cellInfo.cellId,
-      startCellIndex: cellInfo.row * ctx.grid.cols + cellInfo.col,
-      startCellCenter: cellInfo.center ?? null,
-      startPoint: ctx.point,
-      inputted: false,
-      rightButton: ctx.isRightButton,
-      lineDrawn: false,
-      pekeInputMode: null,
-    };
-
-    // Handle right-click delete
-    if (ctx.isRightButton && existingDirectionalClueId) {
-      return {
-        handled: true,
-        flickState,
-        action: { type: 'removeDirectionalClue', id: existingDirectionalClueId },
-      };
-    }
-
-    return {
-      handled: true,
-      flickState,
-      action: { type: 'setNumberSelection', cellId: cellInfo.cellId },
-    };
-  }
-
-  // For other number tools: call handleNumberTool
+  // Directional gestures are handled by useDirectionalNumberGesture.
   return {
     handled: true,
     action: {
@@ -374,30 +297,4 @@ export function isNumberInputMode(
     currentInputMode === 'number-' ||
     (currentInputMode === 'auto' && autoConfig?.type === 'number') ||
     (currentInputMode === 'auto' && autoConfig?.type === 'border-number');
-}
-
-/**
- * Create initial flick state for a cell
- */
-export function createFlickState(
-  cellInfo: CellInfo | null,
-  point: Point,
-  gridCols: number,
-  isRightButton: boolean
-): FlickState {
-  if (!cellInfo || cellInfo.row === undefined || cellInfo.col === undefined) {
-    return { ...INITIAL_FLICK_STATE };
-  }
-
-  return {
-    startCell: { row: cellInfo.row, col: cellInfo.col },
-    startCellId: cellInfo.cellId,
-    startCellIndex: cellInfo.row * gridCols + cellInfo.col,
-    startCellCenter: cellInfo.center ?? null,
-    startPoint: point,
-    inputted: false,
-    rightButton: isRightButton,
-    lineDrawn: false,
-    pekeInputMode: null,
-  };
 }
