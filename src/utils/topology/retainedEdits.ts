@@ -75,10 +75,17 @@ export function projectEdits(base: GridTopology, operations: TopologyEdit[], ret
 export function removeEdits(topology: GridTopology, remove: (operation: TopologyEdit) => boolean): TopologyEdit[] | null {
   const { base, operations } = retainedEdits(topology), kept: TopologyEdit[] = [];
   let current = base;
+  const changedCells = new Set<string>();
+  const retire = (operation: TopologyEdit) => {
+    const ids = operation.kind === 'merge' ? [operation.id] : operation.kind === 'sculpt' ? [...operation.inputCells, ...operation.cellIds] : operation.cellIds;
+    ids.forEach(id => changedCells.add(id));
+  };
   for (const operation of operations) {
-    if (remove(operation)) continue;
+    if (remove(operation)) { retire(operation); continue; }
     const inputs = operation.kind === 'merge' ? operation.cellIds : operation.kind === 'sculpt' ? operation.inputCells : [operation.cellId];
-    if (inputs.some(id => !current.cells.has(id))) continue;
+    // Rotation preserves cell IDs but changes their boundaries. A later split
+    // of such a cell depends on that operation even though its ID still exists.
+    if (inputs.some(id => !current.cells.has(id) || changedCells.has(id))) { retire(operation); continue; }
     kept.push(operation);
     const next = projectEdits(base, kept, (topology.exclusionBase ?? topology).cells, (topology.exclusionBase ?? topology).edges);
     if (!next) return null;

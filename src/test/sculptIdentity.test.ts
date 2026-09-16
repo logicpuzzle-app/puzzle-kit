@@ -135,3 +135,21 @@ it('rejects a sculpt snapshot that reuses an edge identity or changes its record
   expect(() => deserializeTopology(invalidPosition)).toThrow();
   coherent(store.getState().topology!);
 });
+
+it('clearing a rotation also retires a later split of its reshaped cell', () => {
+  const { store, topology, pivot } = setup();
+  store.getState().sculptRotateCluster(pivot.id);
+  const cell = store.getState().topology!.cells.get(pivot.adjacentCells[0])!;
+  store.getState().addSplitLine(cell.id, cell.boundaryVertices[0], cell.boundaryVertices[2]);
+  expect(store.getState().topology!.cells.has(cell.id)).toBe(false);
+  const independent = [...topology.cells.values()].find(c => !pivot.adjacentCells.includes(c.id))!;
+  store.getState().addSplitLine(independent.id, independent.boundaryVertices[0], independent.boundaryVertices[2]);
+  expect(store.getState().topology!.cells.has(independent.id)).toBe(false);
+  store.getState().setGrid({ sculptOperations: undefined });
+  expect(store.getState().grid.sculptOperations).toBeUndefined();
+  expect(store.getState().topology!.editOperations?.map(op => op.kind)).toEqual(['split']);
+  expect(store.getState().topology!.cells.has(independent.id)).toBe(false);
+  store.getState().clearSplitLines();
+  expect(new Set(store.getState().topology!.cells.keys())).toEqual(new Set(topology.cells.keys()));
+  coherent(store.getState().topology!);
+});
