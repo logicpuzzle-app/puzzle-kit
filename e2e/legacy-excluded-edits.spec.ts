@@ -32,7 +32,15 @@ test('legacy excluded merge/split board restores its cut with stable notes throu
   expect(cells.has('cell-0-2')).toBe(true);
   expect(cells.has('cell-0-0')).toBe(false);
   expect(cells.has('cell-1-0')).toBe(false);
-  expect(cells.get('merged-0')).toEqual(new Map(initial.topologySettings!.topology!.cells).get('merged-0'));
+  const originalMerge = new Map(initial.topologySettings!.topology!.cells).get('merged-0')!;
+  // The neighbor changes from a child to its restored parent. Preserve identity
+  // and geometry, not stale adjacency or the legacy representative row/column.
+  expect(cells.get('merged-0')).toMatchObject({ id: originalMerge.id, center: originalMerge.center,
+    boundaryVertices: originalMerge.boundaryVertices, boundaryEdges: originalMerge.boundaryEdges,
+    originalCells: originalMerge.originalCells });
+  expect(cells.get('merged-0')!.adjacentCells).toContain('cell-0-2');
+  expect(cells.get('merged-0')!.adjacentCells).not.toContain('cell-0-2-b');
+  expect(restored.state.problem.vertexSurfaces).toEqual(initial.state.problem.vertexSurfaces);
   const beforeVertices = new Map(initial.topologySettings!.topology!.vertices);
   for (const [id, vertex] of graph.vertices) if (beforeVertices.has(id)) expect(vertex.position).toEqual(beforeVertices.get(id)!.position);
   await page.getByTitle(/Undo \(Ctrl\+Z\)/).first().click();
