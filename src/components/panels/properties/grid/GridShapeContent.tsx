@@ -83,7 +83,6 @@ export const GridShapeContent: React.FC = () => {
     topologyIntensity,
     setTopologyPreset,
     setTopologyIntensity,
-    applyTopologyPreset,
     setPreviewGrid,
   } = usePuzzleStore();
 
@@ -147,9 +146,7 @@ export const GridShapeContent: React.FC = () => {
         rows: pendingRows,
         cols: effectiveCols,
         cellSize: pendingCellSize,
-        level: pendingLevel,
-        isometricFaces: isIso ? pendingIsoFaces : undefined,
-        isometricView: isIso ? pendingIsoView : undefined,
+        ...(isIso ? { level: pendingLevel, isometricFaces: pendingIsoFaces, isometricView: pendingIsoView } : {}),
       });
     } else {
       setPreviewGrid(null);
@@ -181,15 +178,10 @@ export const GridShapeContent: React.FC = () => {
       gridType: pendingGridType,
       rows: pendingRows,
       cols: effectiveCols,
-      level: pendingLevel,
       cellSize: pendingCellSize,
-      isometricFaces: isIso ? pendingIsoFaces : undefined,
-      isometricView: isIso ? pendingIsoView : undefined,
+      ...(isIso ? { level: pendingLevel, isometricFaces: pendingIsoFaces, isometricView: pendingIsoView } : {}),
     });
-    if (useTopology) {
-      setTimeout(() => applyTopologyPreset(), 0);
-    }
-  }, [pendingGridType, pendingRows, effectiveCols, pendingLevel, pendingCellSize, pendingIsoFaces, pendingIsoView, isIso, setGrid, setPreviewGrid, useTopology, applyTopologyPreset]);
+  }, [pendingGridType, pendingRows, effectiveCols, pendingLevel, pendingCellSize, pendingIsoFaces, pendingIsoView, isIso, setGrid, setPreviewGrid]);
 
   return (
     <div className="space-y-2">
@@ -385,6 +377,7 @@ export const GridShapeContent: React.FC = () => {
           </button>
           <input
             type="number"
+            aria-label={t('grid.cellSize')}
             value={pendingCellSize}
             onChange={(e) => {
               const val = parseInt(e.target.value) || 10;
