@@ -456,6 +456,7 @@ export function downloadAsPng(blob: Blob, filename = 'puzzle.png'): void {
  * Serializable topology format (uses arrays instead of Maps)
  */
 export interface SerializedTopology {
+  exclusionBase?: SerializedTopology;
   cells: [string, TopologyCell][];
   vertices: [string, TopologyVertex][];
   edges: [string, TopologyEdge][];
@@ -468,6 +469,7 @@ export interface SerializedTopology {
  */
 export function serializeTopology(topology: GridTopology): SerializedTopology {
   return {
+    ...(topology.exclusionBase ? { exclusionBase: serializeTopology(topology.exclusionBase) } : {}),
     cells: Array.from(topology.cells.entries()),
     vertices: Array.from(topology.vertices.entries()),
     edges: Array.from(topology.edges.entries()),
@@ -503,6 +505,33 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
   const cells = readNodes<TopologyCell>(serialized.cells);
   const vertices = readNodes<TopologyVertex>(serialized.vertices);
   const edges = readNodes<TopologyEdge>(serialized.edges);
+  let exclusionBase: GridTopology | undefined;
+  if (serialized.exclusionBase !== undefined) {
+    if (!record(serialized.exclusionBase) || serialized.exclusionBase.exclusionBase !== undefined) {
+      throw new Error('Nested exclusion base is not supported');
+    }
+    exclusionBase = deserializeTopology(serialized.exclusionBase);
+    for (const [id, vertex] of vertices) {
+      const original = exclusionBase.vertices.get(id);
+      if (!original || original.position.x !== vertex.position.x || original.position.y !== vertex.position.y) {
+        throw new Error('Exclusion base reassigns a vertex ID');
+      }
+    }
+    for (const [id, edge] of edges) {
+      const original = exclusionBase.edges.get(id);
+      if (!original || original.startVertex !== edge.startVertex || original.endVertex !== edge.endVertex) {
+        throw new Error('Exclusion base reassigns an edge ID');
+      }
+    }
+    for (const [id, cell] of cells) {
+      const original = exclusionBase.cells.get(id);
+      if (!original || original.center.x !== cell.center.x || original.center.y !== cell.center.y ||
+          JSON.stringify(original.boundaryVertices) !== JSON.stringify(cell.boundaryVertices) ||
+          JSON.stringify(original.boundaryEdges) !== JSON.stringify(cell.boundaryEdges)) {
+        throw new Error('Exclusion base reassigns a cell ID');
+      }
+    }
+  }
   const refs = (value: unknown, target: Map<string, unknown>): boolean =>
     Array.isArray(value) && value.every(id => typeof id === 'string' && target.has(id));
   if (!record(serialized.bounds) ||
@@ -532,6 +561,7 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
     cells,
     vertices,
     edges,
+    ...(exclusionBase ? { exclusionBase } : {}),
     bounds: serialized.bounds,
     sourceConfig: serialized.sourceConfig,
   };

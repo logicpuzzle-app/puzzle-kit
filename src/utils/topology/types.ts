@@ -136,6 +136,8 @@ export interface TopologyEdge {
  * Complete grid topology
  */
 export interface GridTopology {
+  /** Same board before temporary exclusions. One level only; IDs are preserved. */
+  exclusionBase?: GridTopology;
   /** All cells indexed by ID */
   cells: Map<string, TopologyCell>;
   /** All vertices indexed by ID */

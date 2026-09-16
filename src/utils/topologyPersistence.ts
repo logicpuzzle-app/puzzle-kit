@@ -2,6 +2,7 @@ import type { GridConfig, PuzzleExport } from '../types';
 import type { GridTopology, TopologyPreset } from './gridTopology';
 import { applyTopologyPreset, gridConfigToTopology } from './gridTopology';
 import { deserializeTopology, serializeTopology } from './serialization';
+import { prepareExclusionBase } from './topology/legacyExclusions';
 
 type Settings = NonNullable<PuzzleExport['topologySettings']>;
 
@@ -23,12 +24,14 @@ export function captureTopologySettings(state: {
 
 /** A present but invalid snapshot must fail, not fall back to a different board. */
 export function restoreTopology(grid: GridConfig, settings: Settings): GridTopology {
-  if (settings.topology !== undefined) return deserializeTopology(settings.topology);
-  const base = gridConfigToTopology(grid);
-  return settings.useTopology
-    ? applyTopologyPreset(base, {
+  const topology = settings.topology !== undefined
+    ? deserializeTopology(settings.topology)
+    : settings.useTopology ? applyTopologyPreset(gridConfigToTopology(grid), {
         preset: settings.topologyPreset as TopologyPreset,
         intensity: settings.topologyIntensity,
       })
-    : base;
+    : gridConfigToTopology(grid);
+  return settings.useTopology
+    ? prepareExclusionBase(topology, grid, settings.topologyPreset as TopologyPreset, settings.topologyIntensity)
+    : topology;
 }

@@ -4,6 +4,8 @@
  */
 import type { GridConfig } from '../../../types';
 import type { PuzzleStore } from '../types';
+import { applyCellExclusions } from '../../../utils/topology/exclusions';
+import { prepareExclusionBase } from '../../../utils/topology/legacyExclusions';
 import {
   gridConfigToTopology,
   applyTopologyPreset,
@@ -52,13 +54,9 @@ export const toggleCellDisabled = (
     disabledCells: newLegacyCells.length > 0 ? newLegacyCells : undefined,
   };
 
-  // Regenerate topology if in topology mode
-  if (state.useTopology) {
-    const baseTopology = gridConfigToTopology(newGrid);
-    const newTopology = applyTopologyPreset(baseTopology, {
-      preset: state.topologyPreset,
-      intensity: state.topologyIntensity,
-    });
+  if (state.useTopology && state.topology) {
+    const base = prepareExclusionBase(state.topology, state.grid, state.topologyPreset, state.topologyIntensity);
+    const newTopology = applyCellExclusions(base, newGrid);
     return { grid: newGrid, topology: newTopology };
   }
 
@@ -113,13 +111,11 @@ export const setCellDisabled = (
     disabledCells: newLegacyCells.length > 0 ? newLegacyCells : undefined,
   };
 
-  // Regenerate topology if in topology mode (unless skipped for batch operations)
-  if (state.useTopology && !skipTopologyRegeneration) {
-    const baseTopology = gridConfigToTopology(newGrid);
-    const newTopology = applyTopologyPreset(baseTopology, {
-      preset: state.topologyPreset,
-      intensity: state.topologyIntensity,
-    });
+  // Visibility projection also works during a drag; no topology regeneration is
+  // required. Keep the legacy batching argument for callers of this API.
+  if (state.useTopology && state.topology) {
+    const base = prepareExclusionBase(state.topology, state.grid, state.topologyPreset, state.topologyIntensity);
+    const newTopology = applyCellExclusions(base, newGrid);
     return { grid: newGrid, topology: newTopology };
   }
 
