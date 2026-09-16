@@ -300,7 +300,7 @@ export const applyActionToState = (
       return {
         puzzle: {
           ...state.puzzle,
-          [action.layer]: createEmptyElements(),
+          [action.layer]: action.restore ? action.previousState : createEmptyElements(),
         },
       };
     case 'EDIT_GRID_GEOMETRY':

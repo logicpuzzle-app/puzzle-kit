@@ -442,7 +442,7 @@ export class ActionExecutor {
         set((state) => ({
           puzzle: {
             ...state.puzzle,
-            [action.layer]: {
+            [action.layer]: action.restore ? action.previousState : {
               surfaces: {},
               lines: {},
               edges: {},
@@ -451,6 +451,7 @@ export class ActionExecutor {
               symbols: {},
               cages: {},
               specials: {},
+              boxLines: {},
             },
           },
         }));

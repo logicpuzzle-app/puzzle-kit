@@ -113,6 +113,7 @@ export interface ClearLayerAction {
   type: 'CLEAR_LAYER';
   layer: 'problem' | 'answer';
   previousState: PuzzleState['problem'] | PuzzleState['answer'];
+  restore?: boolean;
 }
 
 // ========================================
@@ -319,8 +320,7 @@ export function reverseAction(action: PuzzleAction): PuzzleAction {
         previousLayer: action.layer,
       };
     case 'CLEAR_LAYER':
-      // Clear layer cannot be easily reversed without snapshot
-      return action;
+      return { ...action, restore: !action.restore };
     case 'EDIT_GRID_GEOMETRY':
       return { ...action, before: action.after, after: action.before };
     case 'SET_GRID':

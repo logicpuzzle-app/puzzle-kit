@@ -1046,12 +1046,14 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
     if (!canEditLayer(layer)) {
       return;
     }
+    const previousState = get().puzzle[layer];
     set((state) => ({
       puzzle: {
         ...state.puzzle,
         [layer]: createEmptyElements(),
       },
     }));
+    get().historyManager.addAction({ type: 'CLEAR_LAYER', layer, previousState });
   },
 
     clearAll: () => {
