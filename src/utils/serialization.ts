@@ -579,6 +579,9 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
   }
   const origin = (value: unknown) => serialized.deformationBounds !== undefined ? point(value) : value === undefined;
   for (const cell of cells.values()) {
+    if (cell.isometricFace !== undefined && !['top', 'bottom', 'left', 'right'].includes(cell.isometricFace)) {
+      throw new Error('Invalid isometric face');
+    }
     if (!point(cell.center) || !origin(cell.baseCenter) || !refs(cell.boundaryVertices, vertices) ||
         !refs(cell.boundaryEdges, edges) || !refs(cell.adjacentCells, cells)) {
       throw new Error('Invalid cell geometry or reference');

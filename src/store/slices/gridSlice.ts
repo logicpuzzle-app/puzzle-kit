@@ -87,7 +87,13 @@ const createDefaultTopology = (): GridTopology => {
   return applyTopologyPreset(baseTopology, { preset: 'square', intensity: 0.5 });
 };
 
-const EXTENT_KEYS = new Set(['rows', 'cols', 'marginTop', 'marginBottom', 'marginLeft', 'marginRight', 'triangleColumnUnit']);
+const EXTENT_KEYS = new Set(['rows', 'cols', 'level', 'marginTop', 'marginBottom', 'marginLeft', 'marginRight', 'triangleColumnUnit']);
+
+// A failed retained edit must not silently replace an isometric board's IDs.
+function isIsometricExtentChange(before: GridConfig, after: GridConfig): boolean {
+  return before.gridType === 'iso' && after.gridType === 'iso'
+    && [...EXTENT_KEYS].some(key => JSON.stringify(before[key as keyof GridConfig]) !== JSON.stringify(after[key as keyof GridConfig]));
+}
 
 function editGridExtent(state: PuzzleStore, newGrid: GridConfig): Partial<PuzzleStore> | null {
   if (!state.topology) return null;
@@ -170,6 +176,7 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       }
       const extentEdit = editGridExtent(state, newGrid);
       if (extentEdit) return recordGeometryEdit(state, extentEdit, 'Resize board');
+      if (state.topology && isIsometricExtentChange(state.grid, newGrid)) return {};
       const forceTopology = newGrid.gridType === 'penrose_P3';
       const nextUseTopology = forceTopology ? true : state.useTopology;
       const changedTopologyKeys = Object.keys(gridUpdate).filter(key => TOPOLOGY_KEYS.has(key)
@@ -304,7 +311,7 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       const layout = layoutOnly && state.topology ? scaleTopologyLayout(state.topology, state.grid, previewGridConfig) : null;
       const previewTopo = extentPreview ?? (layout
         ? (presetChanged ? applyTopologyPreset(layout, { preset: state.topologyPreset, intensity: state.topologyIntensity }) : layout)
-        : state.topology?.editBase ? null : applyTopologyPreset(gridConfigToTopology(previewGridConfig), {
+        : state.topology?.editBase || (state.topology && isIsometricExtentChange(state.grid, previewGridConfig)) ? null : applyTopologyPreset(gridConfigToTopology(previewGridConfig), {
             preset: state.topologyPreset,
             intensity: state.topologyIntensity,
           }));
@@ -393,7 +400,7 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       return;
     }
 
-    if (state.topology?.editBase) return;
+    if (state.topology?.editBase || (state.topology && isIsometricExtentChange(oldConfig, newConfig))) return;
     if (state.useTopology && state.topology) {
       const resizeResult = resizeTopology(state.topology, oldConfig, newConfig);
       const removedCellSet = new Set(resizeResult.removedCells);

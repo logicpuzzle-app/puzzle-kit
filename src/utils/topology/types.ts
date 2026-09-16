@@ -43,6 +43,8 @@ export type Index = [number | null, number | null] | null;
 export interface TopologyCell {
   /** Opaque cell key; its spelling does not encode coordinates or shape. */
   id: string;
+  /** Explicit isometric face. Combined with index only for validated surface edits. */
+  isometricFace?: 'top' | 'bottom' | 'left' | 'right';
   /** Center position */
   center: Point;
   /** Position before the current visual deformation; retained across native save/load. */

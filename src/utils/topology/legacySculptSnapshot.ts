@@ -37,6 +37,13 @@ export function restoreLegacySculptSnapshot(saved: SerializedTopology, grid: Gri
   const clean = { ...grid, sculptOperations: undefined };
   const preset = { preset: settings.topologyPreset as TopologyPreset, intensity: settings.topologyIntensity };
   const base = applyTopologyPreset(gridConfigToTopology(clean), preset);
+  // The historical writer predates explicit face metadata. Reproduce its exact
+  // record shape without weakening comparison of arbitrary saved properties.
+  for (const [id, cell] of base.cells) {
+    const legacyCell = { ...cell };
+    delete legacyCell.isometricFace;
+    base.cells.set(id, legacyCell);
+  }
   const result = replayLegacySculpt(base, grid);
   if (!result) return null;
   const expected = serializeTopology(result.legacy);
