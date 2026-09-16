@@ -5,6 +5,7 @@ import type { GridTopology, TopologyCell, TopologyEdge, TopologyVertex } from '.
 
 export interface MergeGroup {
   id: string;
+  /** A clipped surviving group may retain only one archived source cell. */
   cellIds: string[];
   /** A verified legacy merge may have simplified its outer boundary. These
    * actual references preserve that cell until it is explicitly replaced. */
@@ -54,7 +55,7 @@ export function projectMerges(base: GridTopology, groups: MergeGroup[], retained
   const usedCells = new Set<string>(), ids = new Set<string>();
   const replacements: TopologyCell[] = [];
   for (const group of groups) {
-    if (!group.id || ids.has(group.id) || base.cells.has(group.id) || group.cellIds.length < 2) return null;
+    if (!group.id || ids.has(group.id) || base.cells.has(group.id) || group.cellIds.length < 1) return null;
     ids.add(group.id);
     const members: TopologyCell[] = [];
     for (const id of group.cellIds) {

@@ -94,7 +94,9 @@ function editGridExtent(state: PuzzleStore, newGrid: GridConfig): Partial<Puzzle
   const resized = resizeRetainedExtent(before, state.grid, newGrid);
   if (!resized) return null;
   const full = resized.exclusionBase ?? resized;
-  const grid = { ...newGrid, ...(resized.sourceConfig?.hexRowOffset !== undefined && { hexRowOffset: resized.sourceConfig.hexRowOffset }) };
+  const grid = { ...newGrid,
+    ...(resized.sourceConfig && { mergedCells: resized.sourceConfig.mergedCells, voidCells: resized.sourceConfig.voidCells, disabledCells: resized.sourceConfig.disabledCells, outboardCells: resized.sourceConfig.outboardCells }),
+    ...(resized.sourceConfig?.hexRowOffset !== undefined && { hexRowOffset: resized.sourceConfig.hexRowOffset }) };
   for (const key of ['voidCells', 'disabledCells', 'outboardCells'] as const) {
     if (grid[key]) grid[key] = grid[key]!.filter(id => state.useTopology ? full.cells.has(id) : getCellIndexById(id, grid) !== null);
   }
