@@ -48,8 +48,9 @@ export function resizeTopology(
 ): ResizeResult {
   // The public API follows the same identity-preserving regular lattice edit as the UI.
   // Other tilings still use the legacy generator until their edit semantics migrate.
-  const newTopology = resizeRetainedExtent(oldTopology, oldConfig, newConfig)
-    ?? gridConfigToTopology(newConfig);
+  const retained = resizeRetainedExtent(oldTopology, oldConfig, newConfig);
+  if (!retained && oldTopology.editBase) throw new Error('Cannot resize this edited source without changing cut references');
+  const newTopology = retained ?? gridConfigToTopology(newConfig);
 
   const addedCells: string[] = [];
   const removedCells: string[] = [];

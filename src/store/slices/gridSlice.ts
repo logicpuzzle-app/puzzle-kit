@@ -95,7 +95,7 @@ function editGridExtent(state: PuzzleStore, newGrid: GridConfig): Partial<Puzzle
   if (!resized) return null;
   const full = resized.exclusionBase ?? resized;
   const grid = { ...newGrid,
-    ...(resized.sourceConfig && { mergedCells: resized.sourceConfig.mergedCells, voidCells: resized.sourceConfig.voidCells, disabledCells: resized.sourceConfig.disabledCells, outboardCells: resized.sourceConfig.outboardCells }),
+    ...(resized.sourceConfig && { mergedCells: resized.sourceConfig.mergedCells, splitLines: resized.sourceConfig.splitLines, voidCells: resized.sourceConfig.voidCells, disabledCells: resized.sourceConfig.disabledCells, outboardCells: resized.sourceConfig.outboardCells }),
     ...(resized.sourceConfig?.hexRowOffset !== undefined && { hexRowOffset: resized.sourceConfig.hexRowOffset }) };
   for (const key of ['voidCells', 'disabledCells', 'outboardCells'] as const) {
     if (grid[key]) grid[key] = grid[key]!.filter(id => state.useTopology ? full.cells.has(id) : getCellIndexById(id, grid) !== null);
@@ -178,6 +178,7 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
         if (hasExclusionChange || !nextUseTopology) newTopology = nextUseTopology
           ? applyCellExclusions(newTopology, newGrid) : applyGridCellExclusions(newTopology, newGrid);
       } else if (hasTopologyChange) {
+        if (state.topology?.editBase) return {};
         const base = nextUseTopology ? gridConfigToTopology(newGrid) : createGridReferenceTopology(newGrid);
         newTopology = nextUseTopology ? applyTopologyPreset(base, {
           preset: state.topologyPreset,
@@ -276,7 +277,7 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       const layout = layoutOnly && state.topology ? scaleTopologyLayout(state.topology, state.grid, previewGridConfig) : null;
       const previewTopo = extentPreview ?? (layout
         ? (presetChanged ? applyTopologyPreset(layout, { preset: state.topologyPreset, intensity: state.topologyIntensity }) : layout)
-        : applyTopologyPreset(gridConfigToTopology(previewGridConfig), {
+        : state.topology?.editBase ? null : applyTopologyPreset(gridConfigToTopology(previewGridConfig), {
             preset: state.topologyPreset,
             intensity: state.topologyIntensity,
           }));
@@ -365,6 +366,7 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       return;
     }
 
+    if (state.topology?.editBase) return;
     if (state.useTopology && state.topology) {
       const resizeResult = resizeTopology(state.topology, oldConfig, newConfig);
       const removedCellSet = new Set(resizeResult.removedCells);

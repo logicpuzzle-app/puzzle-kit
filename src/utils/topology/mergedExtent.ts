@@ -7,7 +7,7 @@ import { applyCellExclusions } from './exclusions';
 
 /** Edge-connected fragments with the same inboard/outboard role. Corner contact
  * cannot keep a clipped group connected. Use actual incidences, never ID text. */
-function fragments(base: GridTopology, members: string[]): string[][] {
+export function fragments(base: GridTopology, members: string[]): string[][] {
   const remaining = new Set(members), result: string[][] = [];
   for (const first of members) {
     if (!remaining.delete(first)) continue;

@@ -264,6 +264,7 @@ export function applyTopologyPreset(
     bounds: nextBounds, sourceConfig: baseTopology.sourceConfig,
     ...(!identity && { deformationBounds: bounds }),
     ...(exclusionBase && { exclusionBase }),
+    ...(baseTopology.editBase && { editBase: applyTopologyPreset(baseTopology.editBase, params), editOperations: baseTopology.editOperations }),
     ...(baseTopology.mergeBase && { mergeBase: applyTopologyPreset(baseTopology.mergeBase, params), mergeGroups: baseTopology.mergeGroups }),
   };
 }

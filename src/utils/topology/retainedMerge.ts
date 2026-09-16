@@ -1,7 +1,8 @@
 import { v4 as uuid } from 'uuid';
 import type { Point } from '../../types';
 import { isPointInPolygon } from './helpers';
-import type { GridTopology, TopologyCell, TopologyEdge, TopologyVertex } from './types';
+import { projectCells } from './projectCells';
+import type { GridTopology, TopologyCell } from './types';
 
 export interface MergeGroup {
   id: string;
@@ -111,32 +112,8 @@ export function projectMerges(base: GridTopology, groups: MergeGroup[], retained
       ...(baseCenter && { baseCenter }),
       boundaryVertices, boundaryEdges, adjacentCells: [], originalCells: [...group.cellIds], outboard: members[0].outboard });
   }
-  const cells = new Map<string, TopologyCell>();
-  for (const cell of [...base.cells.values(), ...replacements]) if (!usedCells.has(cell.id)) cells.set(cell.id, { ...cell, adjacentCells: [] });
-  const edges = new Map<string, TopologyEdge>(), vertices = new Map<string, TopologyVertex>();
-  for (const cell of cells.values()) {
-    for (const id of cell.boundaryVertices) {
-      const vertex = base.vertices.get(id);
-      if (!vertex) return null;
-      if (!vertices.has(id)) vertices.set(id, { ...vertex, adjacentCells: [], adjacentEdges: [], adjacentVertices: [] });
-      vertices.get(id)!.adjacentCells.push(cell.id);
-    }
-    for (const id of cell.boundaryEdges) {
-      const edge = base.edges.get(id);
-      if (!edge) return null;
-      if (!edges.has(id)) edges.set(id, { ...edge, adjacentCells: [], isBoundary: true });
-      edges.get(id)!.adjacentCells.push(cell.id);
-    }
-  }
-  for (const edge of edges.values()) {
-    edge.isBoundary = edge.adjacentCells.length === 1;
-    const a = vertices.get(edge.startVertex), b = vertices.get(edge.endVertex);
-    if (!a || !b) return null;
-    a.adjacentEdges.push(edge.id); b.adjacentEdges.push(edge.id);
-    a.adjacentVertices.push(b.id); b.adjacentVertices.push(a.id);
-  }
-  for (const cell of cells.values()) if (!cell.outboard) cell.adjacentCells = [...new Set(cell.boundaryEdges.flatMap(id => edges.get(id)!.adjacentCells.filter(other => other !== cell.id && !cells.get(other)!.outboard)))];
-  return { ...base, cells, vertices, edges, ...(groups.length && { mergeBase: base, mergeGroups: groups }) };
+  const projected = projectCells(base, [...base.cells.values(), ...replacements].filter(cell => !usedCells.has(cell.id)));
+  return projected ? { ...projected, ...(groups.length && { mergeBase: base, mergeGroups: groups }) } : null;
 }
 
 /** Return new explicit groups. A new merged entity always gets a fresh ID. */

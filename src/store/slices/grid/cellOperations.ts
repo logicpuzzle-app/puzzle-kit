@@ -3,6 +3,8 @@
  * Handles cell enabled/disabled, merge/unmerge, and split lines
  */
 import { v4 as uuid } from 'uuid';
+import { currentMergeGroups, editedGrid, projectEdits, removeEdits, retainedEdits, type TopologyEdit } from '../../../utils/topology/retainedEdits';
+import type { GridTopology } from '../../../utils/topology/types';
 import { addMergeGroup, projectMerges, type MergeGroup } from '../../../utils/topology/retainedMerge';
 import { retainTopologyElements, retainTopologyPuzzle } from '../../../utils/topology/retainedElements';
 import type { GridConfig } from '../../../types';
@@ -10,10 +12,7 @@ import type { PuzzleStore } from '../types';
 import { applyGridCellExclusions } from '../../../utils/topology/gridExclusions';
 import { applyCellExclusions } from '../../../utils/topology/exclusions';
 import { prepareExclusionBase } from '../../../utils/topology/legacyExclusions';
-import {
-  gridConfigToTopology,
-  applyTopologyPreset,
-} from '../../../utils/gridTopology';
+
 
 /**
  * Toggle cell disabled state based on current excludeMode
@@ -128,16 +127,10 @@ export const setCellDisabled = (
   return { grid: newGrid };
 };
 
-/** Apply explicit groups to the current graph, preserving every surviving node. */
-function editMerges(state: PuzzleStore, groups: MergeGroup[]): Partial<PuzzleStore> {
-  if (!state.topology || !state.useTopology) return {};
-  const full = state.topology.exclusionBase ?? state.topology;
-  const original = full.mergeBase ?? full;
-  const merged = projectMerges(original, groups, full.cells);
-  if (!merged) return {};
-  const grid = { ...state.grid, mergedCells: groups.length ? groups.map(group => group.cellIds) : undefined };
-  for (const key of ['voidCells', 'disabledCells', 'outboardCells'] as const) if (grid[key]) grid[key] = grid[key]!.filter(id => merged.cells.has(id));
-  const topology = applyCellExclusions({ ...merged, sourceConfig: grid }, grid);
+function finishTopologyEdit(state: PuzzleStore, edited: GridTopology, grid: GridConfig): Partial<PuzzleStore> {
+  const full = state.topology!.exclusionBase ?? state.topology!;
+  for (const key of ['voidCells', 'disabledCells', 'outboardCells'] as const) if (grid[key]) grid[key] = grid[key]!.filter(id => edited.cells.has(id));
+  const topology = applyCellExclusions({ ...edited, sourceConfig: grid }, grid);
   const puzzle = retainTopologyPuzzle(state.puzzle, full, topology);
   const live = new Set([puzzle.problem, puzzle.answer].flatMap(layer => Object.values(layer).flatMap(collection => collection && typeof collection === 'object' ? Object.keys(collection) : [])));
   return { grid, topology, puzzle,
@@ -149,11 +142,33 @@ function editMerges(state: PuzzleStore, groups: MergeGroup[]): Partial<PuzzleSto
   };
 }
 
+function editRecordedOperations(state: PuzzleStore, operations: TopologyEdit[]): Partial<PuzzleStore> {
+  const full = state.topology!.exclusionBase ?? state.topology!;
+  const next = projectEdits(retainedEdits(full).base, operations, full.cells);
+  return next ? finishTopologyEdit(state, next, editedGrid(next, state.grid)) : {};
+}
+
+/** Apply explicit groups to the current graph, preserving every surviving node. */
+function editMerges(state: PuzzleStore, groups: MergeGroup[]): Partial<PuzzleStore> {
+  if (!state.topology || !state.useTopology) return {};
+  const full = state.topology.exclusionBase ?? state.topology;
+  const original = full.mergeBase ?? full;
+  const merged = projectMerges(original, groups, full.cells);
+  if (!merged) return {};
+  const grid = { ...state.grid, mergedCells: groups.length ? groups.map(group => group.cellIds) : undefined };
+  return finishTopologyEdit(state, merged, grid);
+}
+
 export const mergeCells = (state: PuzzleStore, cellIds: string[]): Partial<PuzzleStore> => {
   if (!state.topology || !state.useTopology) return {};
   // A saved legacy merge without its source graph needs an explicit migration;
   // do not regenerate an arbitrary native graph from its Grid settings.
   const full = state.topology.exclusionBase ?? state.topology;
+  if (full.editBase) {
+    const selected = [...new Set(cellIds)];
+    if (selected.length < 2 || selected.some(id => !state.topology!.cells.has(id))) return {};
+    return editRecordedOperations(state, [...full.editOperations!, { kind: 'merge', id: uuid(), cellIds: selected }]);
+  }
   if (state.grid.mergedCells?.length && !full.mergeBase) return {};
   const groups = addMergeGroup(state.topology, cellIds);
   return groups ? editMerges(state, groups) : {};
@@ -161,6 +176,10 @@ export const mergeCells = (state: PuzzleStore, cellIds: string[]): Partial<Puzzl
 
 export const unmergeCells = (state: PuzzleStore, cellIds: string[]): Partial<PuzzleStore> => {
   const full = state.topology?.exclusionBase ?? state.topology;
+  if (full?.editBase) {
+    const operations = removeEdits(full, op => op.kind === 'merge' && cellIds.includes(op.id));
+    return operations && operations.length !== full.editOperations!.length ? editRecordedOperations(state, operations) : {};
+  }
   if (!full?.mergeBase || !full.mergeGroups) return {};
   const selected = new Set(cellIds);
   const groups = full.mergeGroups.filter(group => !selected.has(group.id));
@@ -170,7 +189,17 @@ export const unmergeCells = (state: PuzzleStore, cellIds: string[]): Partial<Puz
 /** Grid-config API accepts explicit source-cell groups, not merged-ID indexes. */
 export const setMergedCellGroups = (state: PuzzleStore, members: string[][] | undefined): Partial<PuzzleStore> => {
   const full = state.topology?.exclusionBase ?? state.topology;
-  if (!full || !state.useTopology || (state.grid.mergedCells?.length && !full.mergeBase)) return {};
+  if (!full || !state.useTopology) return {};
+  if (full.editBase) {
+    const active = currentMergeGroups(full);
+    // Configuration-based removal uses actual recorded groups. New mixed edits
+    // must name their current cells through mergeCells, not legacy source config.
+    if (members?.some(ids => !active.some(g => g.cellIds.length === ids.length && ids.every(id => g.cellIds.includes(id))))) return {};
+    const keep = new Set(active.filter(g => members?.some(ids => ids.length === g.cellIds.length && ids.every(id => g.cellIds.includes(id)))).map(g => g.id));
+    const operations = removeEdits(full, op => op.kind === 'merge' && !keep.has(op.id));
+    return operations ? editRecordedOperations(state, operations) : {};
+  }
+  if (state.grid.mergedCells?.length && !full.mergeBase) return {};
   const groups = (members ?? []).map(cellIds => {
     const prior = full.mergeGroups?.find(group => group.cellIds.length === cellIds.length && group.cellIds.every(id => cellIds.includes(id)));
     return prior ?? { id: uuid(), cellIds };
@@ -178,89 +207,27 @@ export const setMergedCellGroups = (state: PuzzleStore, members: string[][] | un
   return editMerges(state, groups);
 };
 
-/**
- * Add split line to a cell
- */
-export const addSplitLine = (
-  state: PuzzleStore,
-  cellId: string,
-  startVertexId: string,
-  endVertexId: string
-): Partial<PuzzleStore> | typeof state => {
-  const currentSplits = state.grid.splitLines || [];
-
-  const exists = currentSplits.some(
-    (s) =>
-      s.cellId === cellId &&
-      ((s.startPoint.type === 'vertex' &&
-        s.startPoint.vertexId === startVertexId &&
-        s.endPoint.type === 'vertex' &&
-        s.endPoint.vertexId === endVertexId) ||
-        (s.startPoint.type === 'vertex' &&
-          s.startPoint.vertexId === endVertexId &&
-          s.endPoint.type === 'vertex' &&
-          s.endPoint.vertexId === startVertexId))
-  );
-  if (exists) return state;
-
-  const newSplit = {
-    cellId,
-    startPoint: { type: 'vertex' as const, vertexId: startVertexId },
-    endPoint: { type: 'vertex' as const, vertexId: endVertexId },
-  };
-
-  const grid = { ...state.grid, splitLines: [...currentSplits, newSplit] };
-  let topology = state.topology;
-  if (state.useTopology) {
-    const base = gridConfigToTopology(grid);
-    topology = applyTopologyPreset(base, {
-      preset: state.topologyPreset,
-      intensity: state.topologyIntensity,
-    });
-  }
-  return { grid, topology };
+/** Add a vertex-to-vertex cut to the actual current graph. */
+export const addSplitLine = (state: PuzzleStore, cellId: string, startVertexId: string, endVertexId: string): Partial<PuzzleStore> | typeof state => {
+  if (!state.useTopology || !state.topology?.cells.has(cellId)) return state;
+  const full = state.topology.exclusionBase ?? state.topology;
+  // Unknown legacy edit provenance must not be guessed from generated IDs.
+  if (!full.editBase && (state.grid.splitLines?.length || (state.grid.mergedCells?.length && !full.mergeBase))) return state;
+  const { operations } = retainedEdits(full);
+  return editRecordedOperations(state, [...operations, { kind: 'split', cellId,
+    startVertex: startVertexId, endVertex: endVertexId, edgeId: uuid(), cellIds: [uuid(), uuid()],
+  }]);
 };
 
-/**
- * Remove split line from a cell
- */
-export const removeSplitLine = (
-  state: PuzzleStore,
-  cellId: string
-): Partial<PuzzleStore> | typeof state => {
-  const currentSplits = state.grid.splitLines || [];
-  const newSplits = currentSplits.filter((s) => s.cellId !== cellId);
-
-  if (newSplits.length === currentSplits.length) return state;
-
-  const grid = { ...state.grid, splitLines: newSplits.length > 0 ? newSplits : undefined };
-  let topology = state.topology;
-  if (state.useTopology) {
-    const base = gridConfigToTopology(grid);
-    topology = applyTopologyPreset(base, {
-      preset: state.topologyPreset,
-      intensity: state.topologyIntensity,
-    });
-  }
-  return { grid, topology };
+/** Removing a cut restores its source and retires dependent later edits. */
+export const removeSplitLine = (state: PuzzleStore, cellId: string): Partial<PuzzleStore> | typeof state => {
+  if (!state.topology?.editBase) return state;
+  const operations = removeEdits(state.topology, op => op.kind === 'split' && (op.cellId === cellId || op.cellIds.includes(cellId)));
+  return operations && operations.length !== state.topology.editOperations!.length ? editRecordedOperations(state, operations) : state;
 };
 
-/**
- * Clear all split lines
- */
-export const clearSplitLines = (
-  state: PuzzleStore
-): Partial<PuzzleStore> | typeof state => {
-  if (!state.grid.splitLines || state.grid.splitLines.length === 0) return state;
-
-  const grid = { ...state.grid, splitLines: undefined };
-  let topology = state.topology;
-  if (state.useTopology) {
-    const base = gridConfigToTopology(grid);
-    topology = applyTopologyPreset(base, {
-      preset: state.topologyPreset,
-      intensity: state.topologyIntensity,
-    });
-  }
-  return { grid, topology };
+export const clearSplitLines = (state: PuzzleStore): Partial<PuzzleStore> | typeof state => {
+  if (!state.topology?.editBase) return state;
+  const operations = removeEdits(state.topology, op => op.kind === 'split');
+  return operations && operations.length !== state.topology.editOperations!.length ? editRecordedOperations(state, operations) : state;
 };

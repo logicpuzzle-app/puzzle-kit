@@ -142,6 +142,9 @@ export interface TopologyEdge {
  * Complete grid topology
  */
 export interface GridTopology {
+  /** Flat source graph and explicit operation identities for mixed merge/split edits. */
+  editBase?: GridTopology;
+  editOperations?: import('./retainedEdits').TopologyEdit[];
   /** Actual graph before reversible cell merges; no nested merge/exclusion base. */
   mergeBase?: GridTopology;
   /** Explicit merged-cell identity and its source cells, never an ID suffix. */
