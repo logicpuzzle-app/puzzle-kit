@@ -3,7 +3,8 @@ import { getCellIndexById, getEdgeIndexById, getVertexIndexById } from '../utils
 import type { Point, LineGridPoint, LineDirection, GridConfig } from '../types';
 import { usePuzzleStore } from '../store/puzzleStoreContext';
 import { resolveGridPoint, type ResolveOptions } from '../utils/pointResolver';
-import { resolveTopologyPath } from '../utils/topologyPath';
+import { resolveTopologyPointPath } from '../utils/topologyPath';
+import { resolveBoardPoint, type BoardPointRef, type ResolvedBoardPoint } from '../utils/lineReferences';
 
 /**
  * Hook providing grid point utilities for line/edge tools
@@ -12,7 +13,7 @@ export function useGridPointUtils(grid: GridConfig) {
   const { useTopology, topology } = usePuzzleStore();
   /**
    * Find the nearest grid point based on allowed grid point types
-   * Returns { id: string, position: Point } or null
+   * Returns the resolved ID, kind and position, or null
    */
   const findNearestGridPoint = useCallback(
     (
@@ -20,7 +21,7 @@ export function useGridPointUtils(grid: GridConfig) {
       allowedTypes: LineGridPoint[],
       halfMode: boolean = false,
       options: ResolveOptions = {}
-    ): { id: string; position: Point } | null => {
+    ): ResolvedBoardPoint | null => {
       return resolveGridPoint(
         point,
         { grid, useTopology, topology },
@@ -32,9 +33,9 @@ export function useGridPointUtils(grid: GridConfig) {
     [grid, useTopology, topology]
   );
 
-  // Parse ID to get row/col coordinates
-  // For topology mode, returns null (topology IDs don't have row/col)
+  // Compatibility lookup used only in explicit Grid mode.
   const parsePointId = useCallback((id: string): { row: number; col: number; type: string } | null => {
+    if (useTopology) return null;
     if (id.startsWith('cell-')) {
       const index = getCellIndexById(id, grid);
       return index ? { row: index.row, col: index.col, type: 'cell' } : null;
@@ -47,9 +48,8 @@ export function useGridPointUtils(grid: GridConfig) {
       const edge = getEdgeIndexById(id, grid);
       return edge ? { row: edge.row, col: edge.col, type: edge.type === 'h' ? 'edge-h' : 'edge-v' } : null;
     }
-    // Topology IDs (e.g., cell-*-*-suffix, vertex-N, edge-N) don't have standard row/col.
     return null;
-  }, [grid]);
+  }, [grid, useTopology]);
 
   // Build ID from row/col and type
   const buildPointId = useCallback((row: number, col: number, type: string): string => {
@@ -69,7 +69,13 @@ export function useGridPointUtils(grid: GridConfig) {
     (fromId: string, toId: string, allowedDirections: LineDirection[]): boolean => {
       const from = parsePointId(fromId);
       const to = parsePointId(toId);
-      if (!from || !to) return true; // Can't determine, allow
+      if (useTopology) {
+        if (!topology) return false;
+        const ctx = { grid, topology, useTopology };
+        const a = resolveBoardPoint(fromId, undefined, ctx), b = resolveBoardPoint(toId, undefined, ctx);
+        return !!a && !!b && resolveTopologyPointPath(topology, a, b, allowedDirections, false) !== null;
+      }
+      if (!from || !to) return false;
 
       const dRow = Math.abs(to.row - from.row);
       const dCol = Math.abs(to.col - from.col);
@@ -90,7 +96,7 @@ export function useGridPointUtils(grid: GridConfig) {
 
       return false;
     },
-    [parsePointId]
+    [parsePointId, grid, topology, useTopology]
   );
 
   /**
@@ -106,18 +112,14 @@ export function useGridPointUtils(grid: GridConfig) {
    */
   const getInterpolatedPath = useCallback(
     (fromId: string, toId: string, allowedDirections: LineDirection[], halfMode: boolean = false): string[] | null => {
-      const from = parsePointId(fromId);
-      const to = parsePointId(toId);
-
-      // For topology mode with non-standard IDs, use adjacency-based direction checking
-      // - Orthogonal: Edge adjacency (cells sharing an edge / vertices connected by edge)
-      // - Diagonal: Vertex/Cell adjacency (cells sharing a vertex / vertices sharing a cell)
-      if (!from || !to) {
-        if (useTopology && topology) {
-          return resolveTopologyPath(topology, fromId, toId, allowedDirections, halfMode);
-        }
-        return null;
+      if (useTopology) {
+        if (!topology) return null;
+        const ctx = { grid, topology, useTopology };
+        const a = resolveBoardPoint(fromId, undefined, ctx), b = resolveBoardPoint(toId, undefined, ctx);
+        return a && b ? resolveTopologyPointPath(topology, a, b, allowedDirections, halfMode)?.map(p => p.id) ?? null : null;
       }
+      const from = parsePointId(fromId), to = parsePointId(toId);
+      if (!from || !to) return null;
 
       const fromIsCell = from.type === 'cell';
       const toIsCell = to.type === 'cell';
@@ -288,8 +290,18 @@ export function useGridPointUtils(grid: GridConfig) {
       // Not a valid path
       return null;
     },
-    [parsePointId, buildPointId, useTopology, topology]
+    [parsePointId, buildPointId, useTopology, topology, grid]
   );
+
+  const getInterpolatedPointPath = useCallback((from: BoardPointRef, to: BoardPointRef, directions: LineDirection[], halfMode = false): BoardPointRef[] | null => {
+    if (useTopology) return topology ? resolveTopologyPointPath(topology, from, to, directions, halfMode) : null;
+    const ctx = { grid, topology, useTopology };
+    if (!resolveBoardPoint(from.id, from.type, ctx) || !resolveBoardPoint(to.id, to.type, ctx)) return null;
+    const ids = getInterpolatedPath(from.id, to.id, directions, halfMode);
+    if (!ids) return null;
+    const points = ids.map(id => resolveBoardPoint(id, undefined, ctx));
+    return points.every((p): p is ResolvedBoardPoint => p !== null) ? points : null;
+  }, [grid, topology, useTopology, getInterpolatedPath]);
 
   return {
     findNearestGridPoint,
@@ -297,5 +309,6 @@ export function useGridPointUtils(grid: GridConfig) {
     buildPointId,
     isLineDirectionAllowed,
     getInterpolatedPath,
+    getInterpolatedPointPath,
   };
 }

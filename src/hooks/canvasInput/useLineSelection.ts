@@ -1,11 +1,10 @@
+import { resolveLinePoints } from '../../utils/lineReferences';
 import { useCallback, useRef } from 'react';
 import type { GridConfig, PuzzleState } from '../../types';
 import type { GridTopology } from '../../utils/gridTopology';
 import type { Point } from '../../types';
-import { resolveGridIdToPosition } from '../../utils/gridIds';
 import { pointToLineSegmentDistance } from '../../utils/lineUtils';
 import { toDataLayer } from '../../types';
-import { getEdgeLineDrawInfo } from '../../utils/gridTopology';
 
 interface LineSelectionOptions {
   grid: GridConfig;
@@ -40,7 +39,6 @@ export function useLineSelection({
     const dataLayer = toDataLayer(activeLayer);
     const layerData = puzzle[dataLayer];
     const lines = Object.values(layerData.lines);
-    const activeTopology = useTopology ? topology : null;
 
     let nearestId: string | null = null;
     let nearestDistance = threshold;
@@ -62,29 +60,9 @@ export function useLineSelection({
         continue;
       }
 
-      let fromPos: Point | null = null;
-      let toPos: Point | null = null;
-
-      if (line.edgeId && activeTopology) {
-        const drawInfo = getEdgeLineDrawInfo(activeTopology, line.edgeId);
-        if (drawInfo) {
-          const lineTarget = line.lineTarget || 'cell';
-          if (lineTarget === 'edge' || lineTarget === 'wall') {
-            fromPos = drawInfo.startVertex;
-            toPos = drawInfo.endVertex;
-          } else if (drawInfo.adjacentCellCenters.length >= 2) {
-            fromPos = drawInfo.adjacentCellCenters[0];
-            toPos = drawInfo.adjacentCellCenters[1];
-          }
-        }
-      }
-
-      if (!fromPos || !toPos) {
-        if (!fromPos && line.from) fromPos = resolveGridIdToPosition(line.from, grid, activeTopology);
-        if (!toPos && line.to) toPos = resolveGridIdToPosition(line.to, grid, activeTopology);
-      }
-
-      if (!fromPos || !toPos) continue;
+      const resolved = resolveLinePoints(line, { grid, topology, useTopology });
+      if (!resolved) continue;
+      const fromPos = resolved[0].position, toPos = resolved[1].position;
 
       const dist = pointToLineSegmentDistance(point, fromPos, toPos);
       if (dist < nearestDistance) {

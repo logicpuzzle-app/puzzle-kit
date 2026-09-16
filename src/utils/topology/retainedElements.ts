@@ -15,6 +15,11 @@ export function retainTopologyElements(elements: PuzzleElements, before: GridTop
     const item = entry as Record<string, unknown>;
     if (collection === 'lines' || collection === 'edges' || collection === 'walls') {
       if (item.isFree) return true;
+      if (item.fromType !== undefined || item.toType !== undefined) {
+        const scopedRemoved = (id: unknown, kind: unknown) => kind === 'cell' ? removed('cells', id)
+          : kind === 'vertex' ? removed('vertices', id) : kind === 'edge' ? removed('edges', id) : false;
+        return !scopedRemoved(item.from, item.fromType) && !scopedRemoved(item.to, item.toType) && !removed('edges', item.edgeId);
+      }
       if (typeof item.edgeId === 'string') return !removed('edges', item.edgeId);
       const endpointRemoved = item.lineTarget === 'cell' ? (id: unknown) => removed('cells', id)
         : item.lineTarget === 'edge' || item.lineTarget === 'wall' ? (id: unknown) => removed('vertices', id) : removedPoint;

@@ -1,10 +1,10 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import {
   getEdgeBetweenVertices,
   getEdgeBetweenCells,
 } from '../../utils/gridTopology';
-import { generateLineId } from '../../utils/lineNormalization';
+import { findLineByReferences, sameBoardPoint, resolveBoardPoint, type BoardPointRef } from '../../utils/lineReferences';
 import {
   determineFillMode,
   determineSegmentAction,
@@ -12,15 +12,12 @@ import {
   getClickColor,
   pointDistance,
   executeLineAction,
-  calculateArrowDirection,
   FREEHAND_MIN_DISTANCE,
 } from '../../utils/lineUtils';
-import { normalizeSegmentEndpoints } from '../../utils/lineNormalization';
 import { useGridPointUtils } from '../useGridPointUtils';
 import type { Point, LineTargetType, LineElement, LineDirection } from '../../types';
 import { resolveEdge } from '../../utils/pointResolver';
 import { getVertexId, getVertexIndexById } from '../../utils/gridUtils';
-import { resolveGridIdToPosition } from '../../utils/gridIds';
 import { getEditableDataLayer } from '../../utils/editPolicy';
 
 interface UseLineToolHandlerOptions {
@@ -59,32 +56,24 @@ export function useLineToolHandler({
     addLinesToGroup,
   } = usePuzzleStore();
 
-  const { findNearestGridPoint, getInterpolatedPath } = useGridPointUtils(grid);
+  const { findNearestGridPoint, getInterpolatedPointPath } = useGridPointUtils(grid);
   const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
 
-  const findExistingLine = useCallback(
-    (
-      layerLines: Record<string, LineElement>,
-      options: { lineTarget: LineTargetType; edgeId?: string; from?: string; to?: string }
-    ): LineElement | undefined => {
-      const { lineTarget, edgeId, from, to } = options;
-      if (edgeId) {
-        const edgeLineId = `${lineTarget}-${edgeId}`;
-        const byId = layerLines[edgeLineId];
-        if (byId) return byId;
-        const byEdge = Object.values(layerLines).find(
-          (line) => line.lineTarget === lineTarget && line.edgeId === edgeId
-        );
-        if (byEdge) return byEdge;
-      }
-      if (from && to) {
-        const byId = layerLines[generateLineId(from, to)];
-        if (byId) return byId;
-      }
-      return undefined;
-    },
-    []
-  );
+  const referenceContext = { grid, useTopology, topology };
+  const startReference = useRef<{ point: BoardPointRef; grid: typeof grid; topology: typeof topology; useTopology: boolean; layer: typeof editableLayer } | null>(null);
+  useEffect(() => { startReference.current = null; }, [grid, topology, useTopology, editableLayer]);
+  useEffect(() => { if (drawStartPoint === null) startReference.current = null; }, [drawStartPoint]);
+  const rememberPoint = useCallback((point: BoardPointRef) => {
+    startReference.current = { point, grid, topology, useTopology, layer: editableLayer };
+    setDrawStartPoint(point.id);
+  }, [grid, topology, useTopology, editableLayer, setDrawStartPoint]);
+  const startPoint = startReference.current;
+  const resolvedStart = drawStartPoint !== null && startPoint && startPoint.point.id === drawStartPoint &&
+    startPoint.grid === grid && startPoint.topology === topology && startPoint.useTopology === useTopology && startPoint.layer === editableLayer
+    ? resolveBoardPoint(startPoint.point.id, startPoint.point.type, referenceContext) : null;
+
+  const findExistingLine = useCallback((lines: Record<string, LineElement>, candidate: Pick<LineElement, 'lineTarget' | 'edgeId' | 'from' | 'to' | 'fromType' | 'toType'>) =>
+    findLineByReferences(lines, candidate, { grid, useTopology, topology }), [grid, useTopology, topology]);
 
   // Helper to find vertex ID considering topology mode
   const findVertexId = useCallback((point: Point): string | null => {
@@ -267,6 +256,35 @@ export function useLineToolHandler({
     setDrawingLineIds([]);
   }, [setHighlightedLineIds, setDrawingLineIds, puzzle, editableLayer, addLineGroup, addLinesToGroup]);
 
+  const drawPath = useCallback((from: BoardPointRef, path: BoardPointRef[], target: LineTargetType, color: string, shift: boolean, straight = false) => {
+    if (!editableLayer) return;
+    const lines = puzzle[editableLayer].lines;
+    const segment = (a: BoardPointRef, b: BoardPointRef) => ({
+      from: a.id, to: b.id, fromType: a.type, toType: b.type, lineTarget: target,
+      edgeId: useTopology && topology
+        ? a.type === 'cell' && b.type === 'cell' ? getEdgeBetweenCells(topology, a.id, b.id) ?? undefined
+        : target === 'edge' && a.type === 'vertex' && b.type === 'vertex' ? getEdgeBetweenVertices(topology, a.id, b.id) ?? undefined : undefined
+        : undefined,
+    });
+    let previous = from;
+    const segments = path.map(next => { const result = segment(previous, next); previous = next; return result; });
+    if (!straight && lineFillModeRef.current === null) {
+      const allExisting = segments.every(data => findExistingLine(lines, data)?.color === color);
+      lineFillModeRef.current = allExisting ? 'erase' : determineFillMode(shift, findExistingLine(lines, segments[0])?.color ?? null, color);
+    }
+    for (const data of segments) {
+      const existing = findExistingLine(lines, data);
+      const action = straight ? determineLineAction(shift, existing?.color ?? null, color)
+        : determineSegmentAction(lineFillModeRef.current!, shift, existing?.color ?? null, color);
+      const id = executeLineAction(action, addLine, removeLine, existing?.id, {
+        ...data, style: toolSettings.lineStyle, thickness: toolSettings.lineThickness,
+        color, layer: editableLayer, directed: toolSettings.lineDirected,
+        arrowDirection: toolSettings.lineDirected ? toolSettings.lineArrowDirection || 'forward' : undefined,
+      });
+      if (id) addDrawingLineId(id);
+    }
+  }, [editableLayer, puzzle, useTopology, topology, findExistingLine, addLine, removeLine, toolSettings, addDrawingLineId]);
+
   const handleLineTool = useCallback(
     (point: Point, isStart: boolean, isRightClick: boolean = false, isShiftKey: boolean = false) => {
       if (!editableLayer) return;
@@ -275,7 +293,6 @@ export function useLineToolHandler({
       const halfMode = toolSettings.lineHalfMode || false;
       const isFreehandMode = allowedDirections.includes('freehand');
       const isStraightMode = allowedDirections.includes('straight');
-      const useSegmentToggle = false;
       const colorToUse = isRightClick ? toolSettings.secondaryColor : toolSettings.color;
 
       // Freehand mode - use raw SVG coordinates without grid snap
@@ -321,11 +338,9 @@ export function useLineToolHandler({
         const gridPoint = findNearestGridPoint(point, allowedGridPoints, halfMode);
         if (!gridPoint) return;
 
-        const pointId = gridPoint.id;
-
         if (isStart) {
           // Store starting point
-          setDrawStartPoint(pointId);
+          rememberPoint(gridPoint);
           setDrawStartPosition(gridPoint.position);
         }
         return;
@@ -335,117 +350,14 @@ export function useLineToolHandler({
       const gridPoint = findNearestGridPoint(point, allowedGridPoints, halfMode);
       if (!gridPoint) return;
 
-      const pointId = gridPoint.id;
-
       if (isStart) {
-        setDrawStartPoint(pointId);
+        rememberPoint(gridPoint);
         setDrawStartPosition(gridPoint.position);
-      } else if (drawStartPoint && drawStartPoint !== pointId) {
-        // Get interpolated path between start and end points
-        const interpolatedPath = getInterpolatedPath(drawStartPoint, pointId, allowedDirections, halfMode);
-
-        if (!interpolatedPath) {
-          // Path not possible with allowed directions - skip (don't update start point)
-          return;
-        }
-
-        // Draw lines for each segment in the path
-        const dataLayer = editableLayer;
-        const layerData = puzzle[dataLayer];
-        let shouldEraseAll = false;
-        if (!useSegmentToggle && lineFillModeRef.current === null && interpolatedPath.length > 0) {
-          let scanFrom = drawStartPoint;
-          shouldEraseAll = interpolatedPath.every((scanTo) => {
-            const scanLine = findExistingLine(layerData.lines, {
-              lineTarget: 'cell',
-              edgeId: topology && scanFrom.startsWith('cell-') && scanTo.startsWith('cell-')
-                ? getEdgeBetweenCells(topology, scanFrom, scanTo) ?? undefined
-                : undefined,
-              from: scanFrom,
-              to: scanTo,
-            });
-            scanFrom = scanTo;
-            return scanLine?.color === colorToUse;
-          });
-        }
-        let currentFrom = drawStartPoint;
-
-        for (const toPoint of interpolatedPath) {
-          // Check if line already exists using normalized ID
-          const existingLine = findExistingLine(layerData.lines, {
-            lineTarget: 'cell',
-            edgeId: topology && currentFrom.startsWith('cell-') && toPoint.startsWith('cell-')
-              ? getEdgeBetweenCells(topology, currentFrom, toPoint) ?? undefined
-              : undefined,
-            from: currentFrom,
-            to: toPoint,
-          });
-          const existingColor = existingLine?.color ?? null;
-
-          // Determine fill mode on first line segment of drag
-          let action = determineLineAction(isShiftKey, existingColor, colorToUse);
-          if (!useSegmentToggle) {
-            if (lineFillModeRef.current === null) {
-              lineFillModeRef.current = shouldEraseAll
-                ? 'erase'
-                : determineFillMode(isShiftKey, existingColor, colorToUse);
-            }
-
-            // Determine and apply action based on fill mode
-            action = determineSegmentAction(
-              lineFillModeRef.current,
-              isShiftKey,
-              existingColor,
-              colorToUse
-            );
-          }
-
-          // Get edgeId from topology if available (for cell-to-cell lines)
-          let edgeId: string | undefined;
-          const lineTarget: LineTargetType = 'cell';
-          if (topology && currentFrom.startsWith('cell-') && toPoint.startsWith('cell-')) {
-            edgeId = getEdgeBetweenCells(topology, currentFrom, toPoint) ?? undefined;
-          }
-
-          // Calculate effective arrow direction based on draw order
-          const [normalizedFrom, normalizedTo] = normalizeSegmentEndpoints(currentFrom, toPoint);
-          const effectiveArrowDirection = toolSettings.lineDirected
-            ? calculateArrowDirection(
-                currentFrom,
-                toPoint,
-                normalizedFrom,
-                normalizedTo,
-                toolSettings.lineArrowDirection || 'forward'
-              )
-            : undefined;
-
-          const addedId = executeLineAction(
-            action,
-            addLine,
-            removeLine,
-            existingLine?.id,
-            {
-              from: currentFrom,
-              to: toPoint,
-              edgeId,
-              lineTarget,
-              style: toolSettings.lineStyle,
-              thickness: toolSettings.lineThickness,
-              color: colorToUse,
-              layer: editableLayer,
-              directed: toolSettings.lineDirected,
-              arrowDirection: effectiveArrowDirection,
-            }
-          );
-
-          if (addedId) {
-            addDrawingLineId(addedId);
-          }
-
-          currentFrom = toPoint;
-        }
-
-        setDrawStartPoint(pointId);
+      } else if (resolvedStart && !sameBoardPoint(resolvedStart, gridPoint)) {
+        const path = getInterpolatedPointPath(resolvedStart, gridPoint, allowedDirections, halfMode);
+        if (!path?.length) return;
+        drawPath(resolvedStart, path, 'cell', colorToUse, isShiftKey);
+        rememberPoint(gridPoint);
         setDrawStartPosition(gridPoint.position);
       }
     },
@@ -461,7 +373,8 @@ export function useLineToolHandler({
       addLine,
       removeLine,
       findNearestGridPoint,
-      getInterpolatedPath,
+      getInterpolatedPointPath,
+      rememberPoint, resolvedStart, drawPath,
       setDrawStartPoint,
       setDrawStartPosition,
       setCurrentStrokeId,
@@ -481,107 +394,27 @@ export function useLineToolHandler({
       );
       const effectiveDirections: LineDirection[] = allowedDirections.length > 0 ? allowedDirections : ['orthogonal'];
 
+      const vertex = { id: vertexId, type: 'vertex' as const };
       if (isStart) {
-        setDrawStartPoint(vertexId);
-      } else if (drawStartPoint && drawStartPoint !== vertexId) {
-        let targetVertexId = vertexId;
-        let interpolatedPath = getInterpolatedPath(drawStartPoint, targetVertexId, effectiveDirections, false);
-
-        if (!interpolatedPath && effectiveDirections.includes('orthogonal')) {
-          const startIndex = getVertexIndexById(drawStartPoint, grid);
-          const endIndex = getVertexIndexById(targetVertexId, grid);
+        rememberPoint(vertex);
+      } else if (resolvedStart && !sameBoardPoint(resolvedStart, vertex)) {
+        let target = vertex;
+        let path = getInterpolatedPointPath(resolvedStart, target, effectiveDirections, false);
+        // Grid compatibility snapping is never used for a topology reference.
+        if (!path && !useTopology && effectiveDirections.includes('orthogonal')) {
+          const startIndex = getVertexIndexById(resolvedStart.id, grid);
+          const endIndex = getVertexIndexById(target.id, grid);
           if (startIndex && endIndex && startIndex.row !== endIndex.row && startIndex.col !== endIndex.col) {
-            const startPos = resolveGridIdToPosition(drawStartPoint, grid, topology);
-            if (startPos) {
-              const dx = point.x - startPos.x;
-              const dy = point.y - startPos.y;
-              const snapHorizontal = Math.abs(dx) >= Math.abs(dy);
-              const snappedRow = snapHorizontal ? startIndex.row : endIndex.row;
-              const snappedCol = snapHorizontal ? endIndex.col : startIndex.col;
-              const snappedId = getVertexId(snappedRow, snappedCol);
-              const snappedPath = getInterpolatedPath(drawStartPoint, snappedId, ['orthogonal'], false);
-              if (snappedPath) {
-                targetVertexId = snappedId;
-                interpolatedPath = snappedPath;
-              }
-            }
+            const dx = point.x - resolvedStart.position.x, dy = point.y - resolvedStart.position.y;
+            const horizontal = Math.abs(dx) >= Math.abs(dy);
+            const snapped = { id: getVertexId(horizontal ? startIndex.row : endIndex.row, horizontal ? endIndex.col : startIndex.col), type: 'vertex' as const };
+            const snappedPath = getInterpolatedPointPath(resolvedStart, snapped, ['orthogonal'], false);
+            if (snappedPath) { target = snapped; path = snappedPath; }
           }
         }
-
-        if (!interpolatedPath && !useTopology) {
-          interpolatedPath = getVertexPath(drawStartPoint, targetVertexId, effectiveDirections);
-        }
-
-        if (!interpolatedPath) {
-          setDrawStartPoint(targetVertexId);
-          return;
-        }
-
-        const dataLayer = editableLayer;
-        const layerData = puzzle[dataLayer];
-        let currentFrom = drawStartPoint;
-
-        for (const toPoint of interpolatedPath) {
-          const edgeId = topology
-            ? getEdgeBetweenVertices(topology, currentFrom, toPoint) ?? undefined
-            : undefined;
-
-          const existing = findExistingLine(layerData.lines, {
-            lineTarget: 'edge',
-            edgeId,
-            from: currentFrom,
-            to: toPoint,
-          });
-
-          const existingColor = existing?.color ?? null;
-          if (lineFillModeRef.current === null) {
-            lineFillModeRef.current = determineFillMode(isShiftKey, existingColor, colorToUse);
-          }
-          const action = determineSegmentAction(
-            lineFillModeRef.current,
-            isShiftKey,
-            existingColor,
-            colorToUse
-          );
-
-          const [normalizedFrom, normalizedTo] = normalizeSegmentEndpoints(currentFrom, toPoint);
-          const effectiveArrowDirection = toolSettings.lineDirected
-            ? calculateArrowDirection(
-                currentFrom,
-                toPoint,
-                normalizedFrom,
-                normalizedTo,
-                toolSettings.lineArrowDirection || 'forward'
-              )
-            : undefined;
-
-          const addedId = executeLineAction(
-            action,
-            addLine,
-            removeLine,
-            existing?.id,
-            {
-              from: currentFrom,
-              to: toPoint,
-              edgeId,
-              lineTarget: 'edge' as LineTargetType,
-              style: toolSettings.lineStyle,
-              thickness: toolSettings.lineThickness,
-              color: colorToUse,
-              layer: editableLayer,
-              directed: toolSettings.lineDirected,
-              arrowDirection: effectiveArrowDirection,
-            }
-          );
-
-          if (addedId) {
-            addDrawingLineId(addedId);
-          }
-
-          currentFrom = toPoint;
-        }
-
-        setDrawStartPoint(targetVertexId);
+        if (!path && !useTopology) path = getVertexPath(resolvedStart.id, target.id, effectiveDirections)?.map(id => ({ id, type: 'vertex' as const })) ?? null;
+        if (path?.length) drawPath(resolvedStart, path, 'edge', colorToUse, isShiftKey);
+        rememberPoint(target);
       }
     },
     [
@@ -591,7 +424,8 @@ export function useLineToolHandler({
       activeLayer,
       editableLayer,
       useTopology,
-      getInterpolatedPath,
+      getInterpolatedPointPath,
+      rememberPoint, resolvedStart, drawPath,
       getVertexPath,
       toolSettings,
       addLine,
@@ -653,7 +487,7 @@ export function useLineToolHandler({
         addDrawingLineId(addedId);
       }
     },
-    [grid, puzzle, activeLayer, editableLayer, toolSettings, addLine, addDrawingLineId, removeLine, findEdgeId]
+    [grid, puzzle, activeLayer, editableLayer, toolSettings, addLine, addDrawingLineId, removeLine, findEdgeId, findExistingLine]
   );
 
   // Handle straight line completion on mouse up
@@ -665,67 +499,11 @@ export function useLineToolHandler({
       const colorToUse = isRightClick ? toolSettings.secondaryColor : toolSettings.color;
 
       const gridPoint = findNearestGridPoint(point, allowedGridPoints, halfMode);
-      if (!gridPoint || !drawStartPoint) return;
-
-      const pointId = gridPoint.id;
-
-      // Skip if same point as start
-      if (drawStartPoint === pointId) return;
-
-      const dataLayer = editableLayer;
-      const layerData = puzzle[dataLayer];
-
-      const edgeId = topology && drawStartPoint.startsWith('cell-') && pointId.startsWith('cell-')
-        ? getEdgeBetweenCells(topology, drawStartPoint, pointId) ?? undefined
-        : undefined;
-      const existingLine = findExistingLine(layerData.lines, {
-        lineTarget: 'cell',
-        edgeId,
-        from: drawStartPoint,
-        to: pointId,
-      });
-
-      const existingColor = existingLine?.color ?? null;
-      const action = determineLineAction(isShiftKey, existingColor, colorToUse);
-
-      // Calculate effective arrow direction based on draw order
-      const [normalizedFrom, normalizedTo] = normalizeSegmentEndpoints(drawStartPoint, pointId);
-      const effectiveArrowDirection = toolSettings.lineDirected
-        ? calculateArrowDirection(
-            drawStartPoint,
-            pointId,
-            normalizedFrom,
-            normalizedTo,
-            toolSettings.lineArrowDirection || 'forward'
-          )
-        : undefined;
-
-      const addedId = executeLineAction(
-        action,
-        addLine,
-        removeLine,
-        existingLine?.id,
-        {
-          from: drawStartPoint,
-          to: pointId,
-          edgeId,
-          lineTarget: 'cell',
-          style: toolSettings.lineStyle,
-          thickness: toolSettings.lineThickness,
-          color: colorToUse,
-          layer: editableLayer,
-          directed: toolSettings.lineDirected,
-          arrowDirection: effectiveArrowDirection,
-        }
-      );
-
-      // Accumulate added line ID and finalize selection (straight line completes on mouse up)
-      if (addedId) {
-        addDrawingLineId(addedId);
-      }
+      if (!gridPoint || !resolvedStart || sameBoardPoint(resolvedStart, gridPoint)) return;
+      drawPath(resolvedStart, [gridPoint], 'cell', colorToUse, isShiftKey, true);
       finalizeLineSelection();
     },
-    [drawStartPoint, puzzle, activeLayer, editableLayer, toolSettings, addLine, addDrawingLineId, removeLine, findNearestGridPoint, finalizeLineSelection]
+    [drawStartPoint, puzzle, activeLayer, editableLayer, toolSettings, addLine, addDrawingLineId, removeLine, findNearestGridPoint, finalizeLineSelection, resolvedStart, drawPath]
   );
 
   return {

@@ -1,3 +1,4 @@
+import { findLineByReferences, resolveLinePoints } from '../../utils/lineReferences';
 /**
  * Elements Slice - Puzzle element CRUD operations
  */
@@ -177,6 +178,14 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
       // Freehand lines: use compact ID
       id = generateLineIdCompact();
       normalizedElement = { ...element, id };
+    } else if (element.fromType !== undefined || element.toType !== undefined) {
+      const state = get();
+      const context = { grid: state.grid, topology: state.topology, useTopology: state.useTopology };
+      if (!resolveLinePoints({ ...element, id: '' }, context)) return '';
+      const existing = findLineByReferences(state.puzzle[element.layer].lines, element, context);
+      if (existing) return existing.id;
+      do { id = generateLineIdCompact(); } while (state.puzzle[element.layer].lines[id]);
+      normalizedElement = { ...element, id };
     } else if (element.edgeId && element.lineTarget) {
       // Edge-based lines (unified representation): use edgeId + lineTarget for ID
       id = `${element.lineTarget}-${element.edgeId}`;
@@ -205,7 +214,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
     }
 
     const state = get();
-    const merged = mergeLineOverlaps(normalizedElement, state.puzzle[element.layer].lines, state.grid, state.topology, state.puzzle[element.layer].lineGroups);
+    const merged = mergeLineOverlaps(normalizedElement, state.puzzle[element.layer].lines, state.grid, state.topology, state.puzzle[element.layer].lineGroups, state.useTopology);
     if (merged.removed.length === 1 && merged.line === merged.removed[0]) return merged.line.id;
     normalizedElement = merged.line;
     id = normalizedElement.id;
@@ -692,7 +701,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
       return '';
     }
     const lines = state.puzzle[layer].lines || {};
-    const context: GeometryContext = { grid: state.grid, topology: state.topology };
+    const context: GeometryContext = { grid: state.grid, topology: state.topology, useTopology: state.useTopology };
 
     // Build LineWithPosition array using helper
     const groupLines = buildLinesWithPosition(lineIds, lines, context);
@@ -733,7 +742,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
     if (!group) return;
 
     const lines = state.puzzle[layer].lines || {};
-    const context: GeometryContext = { grid: state.grid, topology: state.topology };
+    const context: GeometryContext = { grid: state.grid, topology: state.topology, useTopology: state.useTopology };
 
     // Build LineWithPosition array and normalize to get correct arrow directions
     const groupLines = buildLinesWithPosition(group.lineIds, lines, context);
@@ -852,7 +861,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
     }
 
     const lines = state.puzzle[layer].lines || {};
-    const context: GeometryContext = { grid: state.grid, topology: state.topology };
+    const context: GeometryContext = { grid: state.grid, topology: state.topology, useTopology: state.useTopology };
 
     // Build LineWithPosition array using helper
     const groupLines = buildLinesWithPosition(group.lineIds, lines, context);
@@ -925,7 +934,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
     if (!group) return;
 
     const lines = state.puzzle[layer].lines || {};
-    const context: GeometryContext = { grid: state.grid, topology: state.topology };
+    const context: GeometryContext = { grid: state.grid, topology: state.topology, useTopology: state.useTopology };
 
     // Build LineWithPosition array and normalize using helpers
     const groupLines = buildLinesWithPosition(group.lineIds, lines, context);
@@ -962,7 +971,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
       return [];
     }
     const lines = state.puzzle[layer].lines || {};
-    const context: GeometryContext = { grid: state.grid, topology: state.topology };
+    const context: GeometryContext = { grid: state.grid, topology: state.topology, useTopology: state.useTopology };
 
     // Build LineWithPosition array using helper
     const selectedLines = buildLinesWithPosition(lineIds, lines, context);
@@ -1006,7 +1015,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
       return [];
     }
     const lines = state.puzzle[layer].lines || {};
-    const context: GeometryContext = { grid: state.grid, topology: state.topology };
+    const context: GeometryContext = { grid: state.grid, topology: state.topology, useTopology: state.useTopology };
 
     // Build LineWithPosition array using helper
     const selectedLines = buildLinesWithPosition(lineIds, lines, context);

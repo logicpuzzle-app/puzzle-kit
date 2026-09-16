@@ -1,3 +1,4 @@
+import type { ResolvedBoardPoint } from './lineReferences';
 import type { Point, GridConfig, LineGridPoint } from '../types';
 import type { GridTopology, TopologyCell } from './gridTopology';
 import {
@@ -69,6 +70,7 @@ function getTopologyRowCol(cell: TopologyCell): { row?: number; col?: number } {
 
 export function isPointInBounds(point: Point, ctx: ResolveContext): boolean {
   const { grid, useTopology, topology } = ctx;
+  if (useTopology && !topology) return false;
   if (useTopology && topology) {
     const { bounds } = topology;
     return (
@@ -223,7 +225,7 @@ export function resolveGridPoint(
   allowedTypes: LineGridPoint[],
   halfMode: boolean = false,
   options: ResolveOptions = {}
-): { id: string; position: Point } | null {
+): ResolvedBoardPoint | null {
   const { grid, useTopology, topology } = ctx;
   const allowOutboard = options.allowOutboard ?? false;
 
@@ -246,6 +248,7 @@ export function resolveGridPoint(
   }
 
   let bestId: string | null = null;
+  let bestType: LineGridPoint | null = null;
   let bestPosition: Point | null = null;
   let bestDistance = Infinity;
 
@@ -256,6 +259,7 @@ export function resolveGridPoint(
         const dist = distance(point, cell.center);
         if (dist < threshold && dist < bestDistance) {
           bestId = cell.id;
+          bestType = 'cell';
           bestPosition = cell.center;
           bestDistance = dist;
         }
@@ -268,6 +272,7 @@ export function resolveGridPoint(
         const dist = distance(point, vertex.position);
         if (dist < threshold && dist < bestDistance) {
           bestId = vertex.id;
+          bestType = 'vertex';
           bestPosition = vertex.position;
           bestDistance = dist;
         }
@@ -280,13 +285,14 @@ export function resolveGridPoint(
         const dist = distance(point, edge.midpoint);
         if (dist < threshold && dist < bestDistance) {
           bestId = edge.id;
+          bestType = 'edge';
           bestPosition = edge.midpoint;
           bestDistance = dist;
         }
       }
     }
 
-    return bestId && bestPosition ? { id: bestId, position: bestPosition } : null;
+    return bestId !== null && bestPosition && bestType ? { id: bestId, type: bestType, position: bestPosition } : null;
   }
 
   if (allowedTypes.includes('cell')) {
@@ -296,6 +302,7 @@ export function resolveGridPoint(
       const dist = distance(point, center);
       if (dist < threshold && dist < bestDistance) {
         bestId = getCellId(cell.row, cell.col, grid.gridType);
+        bestType = 'cell';
         bestPosition = center;
         bestDistance = dist;
       }
@@ -309,6 +316,7 @@ export function resolveGridPoint(
       const dist = distance(point, pos);
       if (dist < threshold && dist < bestDistance) {
         bestId = getVertexId(vertex.row, vertex.col);
+        bestType = 'vertex';
         bestPosition = pos;
         bestDistance = dist;
       }
@@ -322,11 +330,12 @@ export function resolveGridPoint(
       const dist = distance(point, pos);
       if (dist < threshold && dist < bestDistance) {
         bestId = edge.type === 'h' ? getEdgeHId(edge.row, edge.col) : getEdgeVId(edge.row, edge.col);
+        bestType = 'edge';
         bestPosition = pos;
         bestDistance = dist;
       }
     }
   }
 
-  return bestId && bestPosition ? { id: bestId, position: bestPosition } : null;
+  return bestId !== null && bestPosition && bestType ? { id: bestId, type: bestType, position: bestPosition } : null;
 }

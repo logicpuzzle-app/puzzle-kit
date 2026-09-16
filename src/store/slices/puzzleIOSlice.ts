@@ -150,7 +150,7 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
         const normalizedState = mergeDirectionalCluesIntoNumbers(remappedState);
         for (const layer of hasSnapshot ? [] : ['problem', 'answer'] as const) {
           normalizedState[layer] = { ...normalizedState[layer], lines: normalizeLineOverlaps(
-            normalizedState[layer].lines, data.grid, topology, normalizedState[layer].lineGroups,
+            normalizedState[layer].lines, data.grid, topology, normalizedState[layer].lineGroups, useTopology,
           ) };
         }
 

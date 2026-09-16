@@ -313,10 +313,11 @@ export interface LineElement {
   edgeId?: string;             // Edge ID that this line passes through
   lineTarget?: LineTargetType; // How to draw the line
 
-  // Legacy coordinate-based representation (for backward compatibility)
-  // These are derived from edgeId when possible, or used directly for freehand
-  from?: string;  // point ID (vertex or cell) - deprecated for grid-snapped
-  to?: string;    // point ID (vertex or cell) - deprecated for grid-snapped
+  // Scoped endpoints, in drawing order. Older records may omit the kinds.
+  from?: string;
+  to?: string;
+  fromType?: LineGridPoint;
+  toType?: LineGridPoint;
 
   style: LineStyle;
   thickness: LineThickness;
