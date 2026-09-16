@@ -835,6 +835,8 @@ export const en = {
   'gridEdit.restoreSplit': 'Restore cell',
   'gridEdit.restoreAllSplits': 'Restore all split cells',
   'gridEdit.unsupportedSplitResize': 'This change cannot preserve the existing cuts. Cancel to keep the board, or restore the affected split cells before resizing.',
+  'gridEdit.unsupportedResize': 'This board cannot be resized while preserving its contents. Cancel to keep the current board.',
+  'gridEdit.isometricResizeNotes': 'Marks on removed cells or corners that split or join at face seams will be removed. Undo restores them.',
   'gridEdit.splitHelp': 'Drag between two boundary vertices to split a cell. Right-click a resulting cell to restore its source.',
   'gridEdit.excludeHelp': 'Click cells to exclude them, click again to restore.',
   'gridEdit.mergedGroups': 'Merged groups',

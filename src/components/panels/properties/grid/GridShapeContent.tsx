@@ -143,7 +143,9 @@ export const GridShapeContent: React.FC = () => {
     (isIso && facesChanged()) ||
     (isIso && pendingIsoView !== (grid.isometricView ?? 'exterior'));
 
-  const unsupportedEdit = !!topology?.editBase && hasChanges && previewGrid !== null && previewTopology === null;
+  const unsupportedEdit = !!topology && hasChanges && previewGrid !== null && previewTopology === null;
+  const isometricExtentEdit = grid.gridType === 'iso' && isIso &&
+    (pendingRows !== grid.rows || effectiveCols !== grid.cols || pendingLevel !== (grid.level ?? 1));
 
   // Auto-preview when values change
   useEffect(() => {
@@ -196,7 +198,8 @@ export const GridShapeContent: React.FC = () => {
 
   return (
     <div className="space-y-2">
-      {unsupportedEdit && <p role="status" className="text-xs text-office-text-secondary">{t('gridEdit.unsupportedSplitResize')}</p>}
+      {unsupportedEdit && <p role="status" className="text-xs text-office-text-secondary">{t(topology?.editBase ? 'gridEdit.unsupportedSplitResize' : 'gridEdit.unsupportedResize')}</p>}
+      {!unsupportedEdit && isometricExtentEdit && <p role="status" className="text-xs text-office-text-secondary">{t('gridEdit.isometricResizeNotes')}</p>}
       {/* Grid Type and Size */}
       <div>
         <label className="block text-xs text-office-text-secondary mb-1">

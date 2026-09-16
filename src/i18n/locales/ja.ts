@@ -835,6 +835,8 @@ export const ja = {
   'gridEdit.restoreSplit': 'セルを復元',
   'gridEdit.restoreAllSplits': 'すべての分割を解除',
   'gridEdit.unsupportedSplitResize': 'この変更では現在の分割を保持できません。キャンセルするか、対象セルの分割を解除してから盤面を変更してください。',
+  'gridEdit.unsupportedResize': 'この盤面は現在の内容を保持したままサイズ変更できません。キャンセルすると元の盤面を保持します。',
+  'gridEdit.isometricResizeNotes': '削除されるセルや、面の接合部で分離・統合される頂点の注記は消去されます。元に戻す操作で復元できます。',
   'gridEdit.splitHelp': '境界の頂点から別の頂点へドラッグしてセルを分割します。分割後のセルを右クリックすると解除します。',
   'gridEdit.excludeHelp': 'セルをクリックすると除外、もう一度クリックすると復元します。',
   'gridEdit.mergedGroups': '結合グループ数',
