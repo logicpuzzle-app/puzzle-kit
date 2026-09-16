@@ -558,6 +558,7 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
     for (const [id, cell] of cells) {
       const original = exclusionBase.cells.get(id);
       if (!original || original.center.x !== cell.center.x || original.center.y !== cell.center.y
+          || (cell.isometricFace !== undefined && cell.isometricFace !== original.isometricFace)
           || JSON.stringify(original.baseCenter) !== JSON.stringify(cell.baseCenter) ||
           JSON.stringify(original.boundaryVertices) !== JSON.stringify(cell.boundaryVertices) ||
           JSON.stringify(original.boundaryEdges) !== JSON.stringify(cell.boundaryEdges)) {

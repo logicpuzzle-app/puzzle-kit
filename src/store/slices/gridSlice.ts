@@ -87,7 +87,7 @@ const createDefaultTopology = (): GridTopology => {
   return applyTopologyPreset(baseTopology, { preset: 'square', intensity: 0.5 });
 };
 
-const EXTENT_KEYS = new Set(['rows', 'cols', 'level', 'marginTop', 'marginBottom', 'marginLeft', 'marginRight', 'triangleColumnUnit']);
+const EXTENT_KEYS = new Set(['rows', 'cols', 'level', 'isometricFaces', 'isometricView', 'marginTop', 'marginBottom', 'marginLeft', 'marginRight', 'triangleColumnUnit']);
 
 // A failed retained edit must not silently replace an isometric board's IDs.
 function isIsometricExtentChange(before: GridConfig, after: GridConfig): boolean {

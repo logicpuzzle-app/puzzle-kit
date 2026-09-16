@@ -27,6 +27,7 @@ export function scaleTopologyLayout(topology: GridTopology, before: GridConfig, 
   if (topology.exclusionBase) {
     result.exclusionBase = transform(topology.exclusionBase, {
       ...after, voidCells: undefined, disabledCells: undefined, outboardCells: undefined,
+      ...(after.gridType === 'iso' && { isometricFaces: topology.exclusionBase.sourceConfig?.isometricFaces }),
     });
   }
   return result;

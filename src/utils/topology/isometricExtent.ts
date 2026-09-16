@@ -3,11 +3,10 @@ import type { GridConfig, Point } from '../../types';
 import type { GridTopology, TopologyCell, TopologyVertex, TopologyEdge } from './types';
 import { isometricGridToTopology } from './special/isometric';
 import { applyCellExclusions } from './exclusions';
+import { visibleIsometricFaces } from './isometricFaces';
 
 const setKey = (ids: string[]) => JSON.stringify([...ids].sort());
 const pointKey = (p: Point) => JSON.stringify([Math.round(p.x * 1e6), Math.round(p.y * 1e6)]);
-const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
-const cellSlot = (cell: TopologyCell) => JSON.stringify([cell.isometricFace, cell.index]);
 const clean = (grid: GridConfig): GridConfig => ({ ...grid, voidCells: undefined, disabledCells: undefined, outboardCells: undefined });
 
 /** Recognize a complete regular embedding, independent of every ID spelling.
@@ -65,14 +64,26 @@ function bindRegularGraph(actual: GridTopology, expected: GridTopology) {
  */
 export function resizeIsometricExtent(topology: GridTopology, before: GridConfig, after: GridConfig): GridTopology | null {
   if (before.gridType !== 'iso' || after.gridType !== 'iso'
-    || !same(before.isometricFaces ?? ['top', 'left', 'right'], after.isometricFaces ?? ['top', 'left', 'right'])
-    || (before.isometricView ?? 'exterior') !== (after.isometricView ?? 'exterior')
     || [before, after].some(g => g.mergedCells?.length || g.splitLines?.length || g.sculptOperations?.length
       || ![g.rows, g.cols, g.level ?? 1].every(n => Number.isInteger(n) && n > 0)
+      || !['exterior', 'interior'].includes(g.isometricView ?? 'exterior')
+      || g.isometricFaces?.some(face => !['top', 'bottom', 'left', 'right'].includes(face))
       || !Number.isFinite(g.cellSize) || g.cellSize <= 0 || !Number.isFinite(g.outerPadding))) return null;
   const full = topology.exclusionBase ?? topology;
   if (full.editBase || full.mergeBase) return null;
-  const oldTemplate = isometricGridToTopology(clean(before)), next = isometricGridToTopology(clean(after));
+  const oldConfig = clean({ ...before, isometricFaces: full.sourceConfig?.isometricFaces ?? before.isometricFaces });
+  const oldFaces = visibleIsometricFaces(oldConfig), visibleFaces = visibleIsometricFaces(after);
+  const viewChanged = (before.isometricView ?? 'exterior') !== (after.isometricView ?? 'exterior');
+  // The UI has one horizontal face. A custom two-horizontal-face board cannot
+  // map both identities to the single floor of an interior view.
+  if (viewChanged && ((oldFaces.has('top') && oldFaces.has('bottom')) || (visibleFaces.has('top') && visibleFaces.has('bottom')))) return null;
+  const archivedFaces = [...oldFaces].map(face => viewChanged && (face === 'top' || face === 'bottom')
+    ? (after.isometricView === 'interior' ? 'bottom' as const : 'top' as const) : face);
+  const nextConfig = clean({ ...after, isometricFaces: [...new Set([...archivedFaces, ...visibleFaces])] });
+  const cellSlot = (cell: TopologyCell) => JSON.stringify([
+    viewChanged && (cell.isometricFace === 'top' || cell.isometricFace === 'bottom') ? 'horizontal' : cell.isometricFace, cell.index,
+  ]);
+  const oldTemplate = isometricGridToTopology(oldConfig), next = isometricGridToTopology(nextConfig);
   if (!oldTemplate.cells.size || !next.cells.size) return null;
   const bound = bindRegularGraph(full, oldTemplate); if (!bound) return null;
   const reserved = new Set([...full.cells.keys(), ...full.vertices.keys(), ...full.edges.keys()]);

@@ -1,10 +1,17 @@
 import type { GridConfig } from '../../types';
 import type { GridTopology, TopologyCell, TopologyEdge, TopologyVertex } from './types';
+import { visibleIsometricFaces } from './isometricFaces';
 
 /** Project visibility from an existing graph. Never generate, parse, or remap IDs. */
 export function applyCellExclusions(topology: GridTopology, grid: GridConfig): GridTopology {
   const base = topology.exclusionBase ?? topology;
   const hidden = new Set([...(grid.voidCells ?? []), ...(grid.disabledCells ?? [])]);
+  // Visibility projects the retained graph. Legacy face membership is supplied
+  // by the validated isometric editor, never inferred from ID spellings.
+  if (grid.gridType === 'iso') {
+    const faces = visibleIsometricFaces(grid);
+    for (const cell of base.cells.values()) if (cell.isometricFace && !faces.has(cell.isometricFace)) hidden.add(cell.id);
+  }
   const outboard = new Set(grid.outboardCells ?? []);
   if (!hidden.size && !outboard.size) return { ...base, sourceConfig: grid };
 
