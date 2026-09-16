@@ -2,6 +2,8 @@
  * English translations for PuzzleKit
  */
 export const en = {
+  'file.autoSaveFailed': 'Automatic saving failed. Keep this page open and use File → Save to keep your changes.',
+  'file.retryAutoSave': 'Retry',
   'surface.target': 'Shading target',
   'surface.target.cell': 'Cell',
   'surface.target.vertex': 'Vertex',

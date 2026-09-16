@@ -2,6 +2,8 @@
  * Japanese translations for PuzzleKit
  */
 export const ja = {
+  'file.autoSaveFailed': '自動保存できませんでした。このページを開いたまま、ファイル → 保存で変更を保存してください。',
+  'file.retryAutoSave': '再試行',
   'surface.target': '塗りの対象',
   'surface.target.cell': 'マス',
   'surface.target.vertex': '頂点',

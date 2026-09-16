@@ -3,7 +3,25 @@ import fixture from '../../e2e/fixtures/opaque-board-ids.json';
 import type { PuzzleExport } from '../types';
 import { createPuzzleStore } from '../store/puzzleStore';
 import { loadPuzzleData } from '../components/toolbar/menu/importHandlers';
-import { serializePuzzle, deserializePuzzle } from '../utils/serialization';
+import { serializePuzzle, deserializePuzzle, autoSave, loadAutoSave } from '../utils/serialization';
+
+it('reads legacy autosaves and keeps opaque dictionary keys through large autosaves', () => {
+  localStorage.clear();
+  const data = structuredClone(fixture) as PuzzleExport;
+  localStorage.setItem('puzzlekit_autosave', JSON.stringify(data));
+  const store = createPuzzleStore().useStore;
+  loadPuzzleData(store, loadAutoSave()!);
+  expect(store.getState().puzzle.problem).toEqual(data.state.problem);
+  const title = '保存された盤面 / β '.repeat(30_000);
+  autoSave(data.grid, data.state, { title }, data.topologySettings);
+  const restored = loadAutoSave()!;
+  expect(restored.metadata?.title).toBe(title);
+  expect(restored.state).toEqual(data.state);
+  expect(restored.topologySettings).toEqual(data.topologySettings);
+  loadPuzzleData(store, restored);
+  expect(store.getState().puzzle.problem).toEqual(data.state.problem);
+  localStorage.clear();
+});
 
 it('native save and shared data preserve an edited graph, opaque IDs and their references', () => {
   const store = createPuzzleStore().useStore;

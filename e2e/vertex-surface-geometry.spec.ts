@@ -127,6 +127,15 @@ test('a fully annotated 50 by 50 board remains editable and preserves vertex ref
   expect(reloaded.state).toEqual(saved.state);
   expect(reloaded.topologySettings!.topology).toEqual(saved.topologySettings!.topology);
   await page.screenshot({ path: info.outputPath('large-board-reloaded.png') });
+  // Native File Save is immediate; autosave has a separate debounce and quota.
+  // Wait for that real write, then reload the page to verify the recovery path.
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('puzzlekit_autosave')), { timeout: 10_000 }).not.toBeNull();
+  await page.reload();
+  await expect(page.locator('[data-vertex-surface]')).toHaveCount(count);
+  const recovered = await savePuzzleFile(page);
+  expect(recovered.state).toEqual(saved.state);
+  expect(recovered.topologySettings!.topology).toEqual(saved.topologySettings!.topology);
+  await page.screenshot({ path: info.outputPath('large-board-autosave-restored.png') });
   // Automation wall time includes driver waits; this is evidence, not a device benchmark.
   await info.attach('large-board-timings', { body: JSON.stringify({ loadedMs, editMs, cells: topology.cells.size, notes: count }), contentType: 'application/json' });
 });

@@ -24,6 +24,7 @@ export const MenuBar: React.FC = () => {
   const [isPerformanceTestOpen, setIsPerformanceTestOpen] = useState(false);
   const [shareUrlDialogOpen, setShareUrlDialogOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
+  const [autoSaveFailed, setAutoSaveFailed] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -61,16 +62,23 @@ export const MenuBar: React.FC = () => {
 
   const { showShortcuts } = useModalStore();
 
+  const saveCurrent = React.useCallback(() => {
+    try {
+      const state = store.getState();
+      autoSave(state.grid, state.puzzle, undefined, captureTopologySettings(state), captureConstraintSettings(state));
+      setAutoSaveFailed(false);
+    } catch {
+      // Quota and unavailable storage must not escape the background timer.
+      // Keep the editor usable and let the user export or retry the latest state.
+      setAutoSaveFailed(true);
+    }
+  }, [store]);
+
   // Auto-save on changes
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const topologySettings = captureTopologySettings({
-        topology, useTopology, topologyPreset, topologyIntensity,
-      });
-      autoSave(grid, puzzle, undefined, topologySettings, captureConstraintSettings(store.getState()));
-    }, 2000);
+    const timer = setTimeout(saveCurrent, 2000);
     return () => clearTimeout(timer);
-  }, [grid, puzzle, topology, useTopology, topologyPreset, topologyIntensity, currentSchemaId, currentInputMode, validationOverrides, highlightOverrides, showConstraintLayer, savedInputModes, store]);
+  }, [grid, puzzle, topology, useTopology, topologyPreset, topologyIntensity, currentSchemaId, currentInputMode, validationOverrides, highlightOverrides, showConstraintLayer, savedInputModes, saveCurrent]);
 
   // Load from URL or auto-save on mount
   useInitialPuzzleLoad(store);
@@ -184,6 +192,11 @@ export const MenuBar: React.FC = () => {
   }, [undo, redo, grid, puzzle, exportHandlers, importHandlers]);
 
   return (
+    <>
+    {autoSaveFailed && <div role="alert" className="flex flex-wrap items-center gap-2 border-b border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-950 shrink-0">
+      <span>{t('file.autoSaveFailed')}</span>
+      <button className="rounded border border-amber-500 px-2 py-1 font-medium" onClick={saveCurrent}>{t('file.retryAutoSave')}</button>
+    </div>}
     <div
       ref={menuRef}
       className="flex items-center bg-office-ribbon border-b border-office-border h-7 px-1 shrink-0"
@@ -276,5 +289,6 @@ export const MenuBar: React.FC = () => {
         url={shareUrl}
       />
     </div>
+    </>
   );
 };
