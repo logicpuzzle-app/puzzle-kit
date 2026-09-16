@@ -13,11 +13,12 @@ import {
   generatePuzzlinkUrl,
 } from '../../../utils/penpaCompat';
 import { syncCountersFromPuzzleState } from '../../../utils/idGenerator';
-import { gridConfigToTopology, applyTopologyPreset } from '../../../utils/gridTopology';
-import { loadAutoSave } from '../../../utils/serialization';
+import { restoreTopology } from '../../../utils/topologyPersistence';
+import { restorePuzzleStateFromExport } from '../../../utils/puzzleExport';
+import { loadAutoSave, parseShareUrl } from '../../../utils/serialization';
 import { getDefaultStorageAdapter } from '../../../modules/storage';
 import { mergeDirectionalCluesIntoNumbers } from '../../../utils/legacyDirectionalClues';
-import type { GridConfig, PuzzleState } from '../../../types';
+import type { GridConfig, PuzzleState, PuzzleExport } from '../../../types';
 import type { PuzzleStore } from '../../../store/slices/types';
 import type { ModalStore } from '../../../store/modalStore';
 import { freshPuzzleSession } from '../../../store/puzzleSession';
@@ -43,28 +44,22 @@ export const loadPuzzleData = (
   data: {
   grid: GridConfig;
   state: PuzzleState;
-  topologySettings?: {
-    useTopology: boolean;
-    topologyPreset: string;
-    topologyIntensity: number;
-  };
+  topologySettings?: PuzzleExport['topologySettings'];
 }) => {
   const storeState = store.getState();
-  const normalizedState = mergeDirectionalCluesIntoNumbers(data.state);
+  const normalizedState = mergeDirectionalCluesIntoNumbers(restorePuzzleStateFromExport(data.state));
 
   // Use saved settings or fall back to current store settings
   const loadedUseTopology = data.topologySettings?.useTopology ?? storeState.useTopology;
   const loadedTopologyPreset = (data.topologySettings?.topologyPreset ?? storeState.topologyPreset) as typeof storeState.topologyPreset;
   const loadedTopologyIntensity = data.topologySettings?.topologyIntensity ?? storeState.topologyIntensity;
 
-  // Always regenerate topology from grid config (includes mergedCells, splitLines)
-  const baseTopology = gridConfigToTopology(data.grid);
-  const loadedTopology = loadedUseTopology
-    ? applyTopologyPreset(baseTopology, {
-        preset: loadedTopologyPreset,
-        intensity: loadedTopologyIntensity,
-      })
-    : baseTopology;
+  const loadedTopology = restoreTopology(data.grid, {
+    useTopology: loadedUseTopology,
+    topologyPreset: loadedTopologyPreset,
+    topologyIntensity: loadedTopologyIntensity,
+    ...data.topologySettings,
+  });
 
   syncCountersFromPuzzleState(normalizedState);
   store.setState({
@@ -84,6 +79,18 @@ export const loadPuzzleData = (
  */
 export const loadFromUrlOrAutoSave = async (store: PuzzleStoreHook) => {
   const urlParams = new URLSearchParams(window.location.search);
+
+  if (urlParams.has('p')) {
+    const shared = parseShareUrl(window.location.href);
+    if (!shared) return;
+    try {
+      loadPuzzleData(store, shared);
+      window.history.replaceState({}, '', window.location.pathname);
+    } catch (error) {
+      console.error('[Load URL] Invalid native snapshot:', error);
+    }
+    return;
+  }
 
   // Check for puzzle ID (new format)
   const puzzleId = urlParams.get('id');

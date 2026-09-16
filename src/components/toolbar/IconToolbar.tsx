@@ -10,7 +10,8 @@ import {
   downloadAsPng,
 } from '../../utils/serialization';
 import { getExportDimensions, prepareSvgForExport } from './menu/exportHandlers';
-import { createImportHandlers } from './menu/importHandlers';
+import { createImportHandlers, loadPuzzleData } from './menu/importHandlers';
+import { captureTopologySettings } from '../../utils/topologyPersistence';
 import { NewPuzzleDialog } from '../dialogs/NewPuzzleDialog';
 
 // SVG Icon components
@@ -160,7 +161,7 @@ export const IconToolbar: React.FC = () => {
   const modalStore = useModalStoreApi();
 
   const handleExportJson = () => {
-    downloadAsJson(grid, puzzle, { title: 'Puzzle' });
+    downloadAsJson(grid, puzzle, { title: 'Puzzle' }, captureTopologySettings(store.getState()));
   };
 
   const handleImportJson = () => {
@@ -176,10 +177,9 @@ export const IconToolbar: React.FC = () => {
             const content = e.target?.result as string;
             const data = JSON.parse(content);
             if (data.grid && data.state) {
-              store.setState({
-                grid: data.grid,
-                puzzle: data.state,
-              });
+              loadPuzzleData(store, data);
+            } else {
+              throw new Error('Invalid puzzle file');
             }
           } catch {
             showAlert({
@@ -209,7 +209,7 @@ export const IconToolbar: React.FC = () => {
   };
 
   const handleShareUrl = () => {
-    const url = generateShareUrl(grid, puzzle);
+    const url = generateShareUrl(grid, puzzle, undefined, captureTopologySettings(store.getState()));
     navigator.clipboard.writeText(url).then(() => {
       showAlert({
         title: t('share.copied'),

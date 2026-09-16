@@ -3,6 +3,8 @@
  * Handles JSON, SVG, and PNG exports
  */
 import type { StoreApi, UseBoundStore } from 'zustand';
+import { captureTopologySettings } from '../../../utils/topologyPersistence';
+import { PUZZLE_EXPORT_VERSION } from '../../../constants/version';
 import {
   downloadAsJson,
   exportToPng,
@@ -165,11 +167,9 @@ export const createExportHandlers = (options: ExportHandlersOptions) => {
   const { showAlert } = modalStore.getState();
 
   const handleExportJson = () => {
-    const topologySettings = {
-      useTopology,
-      topologyPreset,
-      topologyIntensity,
-    };
+    const topologySettings = captureTopologySettings({
+      topology, useTopology, topologyPreset, topologyIntensity,
+    });
     downloadAsJson(grid, puzzle, { title: 'Puzzle' }, topologySettings);
     setActiveMenu(null);
   };
@@ -236,14 +236,12 @@ export const createExportHandlers = (options: ExportHandlersOptions) => {
       return;
     }
 
-    const topologySettings = {
-      useTopology,
-      topologyPreset,
-      topologyIntensity,
-    };
+    const topologySettings = captureTopologySettings({
+      topology, useTopology, topologyPreset, topologyIntensity,
+    });
 
     const puzzleData = {
-      version: '1.1.0',
+      version: PUZZLE_EXPORT_VERSION,
       grid,
       state: optimizePuzzleStateForExport(puzzle),
       metadata: {

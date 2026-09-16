@@ -1,0 +1,419 @@
+{
+  "version": "1.2.0",
+  "grid": {
+    "rows": 1,
+    "cols": 2,
+    "cellSize": 60,
+    "outerPadding": 20,
+    "showGrid": true,
+    "gridStyle": "normal",
+    "gridType": "square",
+    "gridColor": "#555555",
+    "frameStyle": "normal",
+    "frameColor": "#000000",
+    "backgroundColor": "#ffffff"
+  },
+  "state": {
+    "problem": {
+      "surfaces": {
+        "zL": {
+          "id": "zL",
+          "cellId": "co",
+          "color": "#ffcccc",
+          "layer": "problem"
+        }
+      },
+      "lines": {
+        "co": {
+          "id": "co",
+          "edgeId": "shared",
+          "lineTarget": "edge",
+          "style": "solid",
+          "thickness": "normal",
+          "color": "#0000ff",
+          "layer": "problem",
+          "from": "joint/top",
+          "to": "joint/bottom"
+        }
+      },
+      "edges": {},
+      "walls": {},
+      "numbers": {
+        "color": {
+          "id": "color",
+          "cellId": "co",
+          "value": "17",
+          "size": "medium",
+          "position": "center",
+          "color": "#000000",
+          "layer": "problem"
+        }
+      },
+      "symbols": {},
+      "cages": {},
+      "specials": {},
+      "boxLines": {}
+    },
+    "answer": {
+      "surfaces": {},
+      "lines": {},
+      "edges": {},
+      "walls": {},
+      "numbers": {},
+      "symbols": {},
+      "cages": {},
+      "specials": {},
+      "boxLines": {}
+    }
+  },
+  "topologySettings": {
+    "useTopology": true,
+    "topologyPreset": "square",
+    "topologyIntensity": 0,
+    "topology": {
+      "cells": [
+        [
+          "co",
+          {
+            "id": "co",
+            "center": {
+              "x": 55,
+              "y": 60
+            },
+            "boundaryVertices": [
+              "corner:alpha",
+              "joint/top",
+              "joint/bottom",
+              "bottom|L"
+            ],
+            "boundaryEdges": [
+              "rim/a",
+              "shared",
+              "rim/b",
+              "rim/c"
+            ],
+            "adjacentCells": [
+              "cell-with-no-coordinates"
+            ],
+            "index": [
+              0,
+              0
+            ]
+          }
+        ],
+        [
+          "cell-with-no-coordinates",
+          {
+            "id": "cell-with-no-coordinates",
+            "center": {
+              "x": 105,
+              "y": 60
+            },
+            "boundaryVertices": [
+              "joint/top",
+              "corner:omega",
+              "bottom|R",
+              "joint/bottom"
+            ],
+            "boundaryEdges": [
+              "rim/d",
+              "rim/e",
+              "rim/f",
+              "shared"
+            ],
+            "adjacentCells": [
+              "co"
+            ],
+            "index": [
+              0,
+              1
+            ]
+          }
+        ]
+      ],
+      "vertices": [
+        [
+          "corner:alpha",
+          {
+            "id": "corner:alpha",
+            "position": {
+              "x": 20,
+              "y": 20
+            },
+            "adjacentCells": [
+              "co"
+            ],
+            "adjacentEdges": [
+              "rim/a",
+              "rim/c"
+            ],
+            "adjacentVertices": [
+              "joint/top",
+              "bottom|L"
+            ],
+            "index": null
+          }
+        ],
+        [
+          "joint/top",
+          {
+            "id": "joint/top",
+            "position": {
+              "x": 80,
+              "y": 20
+            },
+            "adjacentCells": [
+              "co",
+              "cell-with-no-coordinates"
+            ],
+            "adjacentEdges": [
+              "rim/a",
+              "shared",
+              "rim/d"
+            ],
+            "adjacentVertices": [
+              "corner:alpha",
+              "joint/bottom",
+              "corner:omega"
+            ],
+            "index": null
+          }
+        ],
+        [
+          "corner:omega",
+          {
+            "id": "corner:omega",
+            "position": {
+              "x": 140,
+              "y": 20
+            },
+            "adjacentCells": [
+              "cell-with-no-coordinates"
+            ],
+            "adjacentEdges": [
+              "rim/d",
+              "rim/e"
+            ],
+            "adjacentVertices": [
+              "joint/top",
+              "bottom|R"
+            ],
+            "index": null
+          }
+        ],
+        [
+          "bottom|R",
+          {
+            "id": "bottom|R",
+            "position": {
+              "x": 120,
+              "y": 100
+            },
+            "adjacentCells": [
+              "cell-with-no-coordinates"
+            ],
+            "adjacentEdges": [
+              "rim/e",
+              "rim/f"
+            ],
+            "adjacentVertices": [
+              "corner:omega",
+              "joint/bottom"
+            ],
+            "index": null
+          }
+        ],
+        [
+          "joint/bottom",
+          {
+            "id": "joint/bottom",
+            "position": {
+              "x": 80,
+              "y": 100
+            },
+            "adjacentCells": [
+              "co",
+              "cell-with-no-coordinates"
+            ],
+            "adjacentEdges": [
+              "shared",
+              "rim/b",
+              "rim/f"
+            ],
+            "adjacentVertices": [
+              "joint/top",
+              "bottom|L",
+              "bottom|R"
+            ],
+            "index": null
+          }
+        ],
+        [
+          "bottom|L",
+          {
+            "id": "bottom|L",
+            "position": {
+              "x": 40,
+              "y": 100
+            },
+            "adjacentCells": [
+              "co"
+            ],
+            "adjacentEdges": [
+              "rim/b",
+              "rim/c"
+            ],
+            "adjacentVertices": [
+              "joint/bottom",
+              "corner:alpha"
+            ],
+            "index": null
+          }
+        ]
+      ],
+      "edges": [
+        [
+          "rim/a",
+          {
+            "id": "rim/a",
+            "startVertex": "corner:alpha",
+            "endVertex": "joint/top",
+            "adjacentCells": [
+              "co"
+            ],
+            "isBoundary": true,
+            "midpoint": {
+              "x": 50.0,
+              "y": 20.0
+            },
+            "index": null
+          }
+        ],
+        [
+          "shared",
+          {
+            "id": "shared",
+            "startVertex": "joint/top",
+            "endVertex": "joint/bottom",
+            "adjacentCells": [
+              "co",
+              "cell-with-no-coordinates"
+            ],
+            "isBoundary": false,
+            "midpoint": {
+              "x": 80.0,
+              "y": 60.0
+            },
+            "index": null
+          }
+        ],
+        [
+          "rim/b",
+          {
+            "id": "rim/b",
+            "startVertex": "joint/bottom",
+            "endVertex": "bottom|L",
+            "adjacentCells": [
+              "co"
+            ],
+            "isBoundary": true,
+            "midpoint": {
+              "x": 60.0,
+              "y": 100.0
+            },
+            "index": null
+          }
+        ],
+        [
+          "rim/c",
+          {
+            "id": "rim/c",
+            "startVertex": "bottom|L",
+            "endVertex": "corner:alpha",
+            "adjacentCells": [
+              "co"
+            ],
+            "isBoundary": true,
+            "midpoint": {
+              "x": 30.0,
+              "y": 60.0
+            },
+            "index": null
+          }
+        ],
+        [
+          "rim/d",
+          {
+            "id": "rim/d",
+            "startVertex": "joint/top",
+            "endVertex": "corner:omega",
+            "adjacentCells": [
+              "cell-with-no-coordinates"
+            ],
+            "isBoundary": true,
+            "midpoint": {
+              "x": 110.0,
+              "y": 20.0
+            },
+            "index": null
+          }
+        ],
+        [
+          "rim/e",
+          {
+            "id": "rim/e",
+            "startVertex": "corner:omega",
+            "endVertex": "bottom|R",
+            "adjacentCells": [
+              "cell-with-no-coordinates"
+            ],
+            "isBoundary": true,
+            "midpoint": {
+              "x": 130.0,
+              "y": 60.0
+            },
+            "index": null
+          }
+        ],
+        [
+          "rim/f",
+          {
+            "id": "rim/f",
+            "startVertex": "bottom|R",
+            "endVertex": "joint/bottom",
+            "adjacentCells": [
+              "cell-with-no-coordinates"
+            ],
+            "isBoundary": true,
+            "midpoint": {
+              "x": 100.0,
+              "y": 100.0
+            },
+            "index": null
+          }
+        ]
+      ],
+      "bounds": {
+        "minX": 20,
+        "minY": 20,
+        "maxX": 140,
+        "maxY": 100,
+        "width": 160,
+        "height": 120
+      },
+      "sourceConfig": {
+        "rows": 1,
+        "cols": 2,
+        "cellSize": 60,
+        "outerPadding": 20,
+        "showGrid": true,
+        "gridStyle": "normal",
+        "gridType": "square",
+        "gridColor": "#555555",
+        "frameStyle": "normal",
+        "frameColor": "#000000",
+        "backgroundColor": "#ffffff"
+      }
+    }
+  }
+}

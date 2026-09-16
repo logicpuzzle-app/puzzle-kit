@@ -4,6 +4,7 @@ import i18n from '../../i18n';
 import { usePuzzleStore, usePuzzleStoreApi } from '../../store/puzzleStoreContext';
 import { useModalStore, useModalStoreApi } from '../../store/modalStoreContext';
 import { autoSave } from '../../utils/serialization';
+import { captureTopologySettings } from '../../utils/topologyPersistence';
 import { NewPuzzleDialog } from '../dialogs/NewPuzzleDialog';
 import { PerformanceTestDialog } from '../dialogs/PerformanceTestDialog';
 import { ShareUrlDialog } from '../dialogs/ShareUrlDialog';
@@ -58,15 +59,13 @@ export const MenuBar: React.FC = () => {
   // Auto-save on changes
   useEffect(() => {
     const timer = setTimeout(() => {
-      const topologySettings = {
-        useTopology,
-        topologyPreset,
-        topologyIntensity,
-      };
+      const topologySettings = captureTopologySettings({
+        topology, useTopology, topologyPreset, topologyIntensity,
+      });
       autoSave(grid, puzzle, undefined, topologySettings);
     }, 2000);
     return () => clearTimeout(timer);
-  }, [grid, puzzle, useTopology, topologyPreset, topologyIntensity]);
+  }, [grid, puzzle, topology, useTopology, topologyPreset, topologyIntensity]);
 
   // Load from URL or auto-save on mount
   useEffect(() => {

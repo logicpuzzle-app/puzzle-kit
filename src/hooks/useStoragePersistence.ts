@@ -5,7 +5,8 @@
  */
 
 import { useEffect, useRef, useCallback } from 'react';
-import { usePuzzleStore } from '../store/puzzleStoreContext';
+import { usePuzzleStore, usePuzzleStoreApi } from '../store/puzzleStoreContext';
+import { restoreTopology } from '../utils/topologyPersistence';
 import {
   saveToolSettings,
   loadToolSettings,
@@ -45,17 +46,15 @@ export function useStoragePersistence() {
     currentInputMode,
     validationOverrides,
     setToolSettings,
-    setGrid,
     setCanvasState,
-    setUseTopology,
-    setTopologyPreset,
-    setTopologyIntensity,
     setCurrentSchemaId,
     setInputMode,
     setValidationOverride,
   } = usePuzzleStore();
 
   const hasInitialized = useRef(false);
+  const initialGrid = useRef(grid);
+  const store = usePuzzleStoreApi();
   const toolSettingsSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const gridSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const canvasSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -94,26 +93,27 @@ export function useStoragePersistence() {
       ...persistedToolSettings,
     });
 
-    setGrid({
-      ...persistedGridConfig,
-    });
+    // Child components may already have restored a native document. Preferences
+    // must not regenerate its graph after the document's IDs have been loaded.
+    if (store.getState().grid === initialGrid.current) {
+      const restoredGrid = { ...store.getState().grid, ...persistedGridConfig };
+      const settings = {
+        useTopology: persistedTopologyState.useTopology,
+        topologyPreset: persistedTopologyState.topologyPreset,
+        topologyIntensity: persistedTopologyState.topologyIntensity,
+      };
+      store.setState({
+        grid: restoredGrid,
+        ...settings,
+        topologyPreset: settings.topologyPreset as typeof topologyPreset,
+        topology: persistedTopologyState.deserializedTopology ??
+          restoreTopology(restoredGrid, settings),
+      });
+    }
 
     setCanvasState({
       zoom: persistedCanvasState.zoom,
     });
-
-    // Apply topology state
-    if (persistedTopologyState.useTopology !== undefined) {
-      setUseTopology(persistedTopologyState.useTopology);
-    }
-    if (persistedTopologyState.topologyPreset) {
-      setTopologyPreset(persistedTopologyState.topologyPreset as any);
-    }
-    if (persistedTopologyState.topologyIntensity !== undefined) {
-      setTopologyIntensity(persistedTopologyState.topologyIntensity);
-    }
-    // Note: topology itself is restored via setGrid which regenerates it,
-    // or via importPuzzle which includes topology data
 
     // Apply constraint state
     if (persistedConstraintState.currentSchemaId !== undefined) {
@@ -135,7 +135,7 @@ export function useStoragePersistence() {
     }
 
     hasInitialized.current = true;
-  }, [setToolSettings, setGrid, setCanvasState, setUseTopology, setTopologyPreset, setTopologyIntensity, setCurrentSchemaId, setInputMode, setValidationOverride]);
+  }, [store, setToolSettings, setCanvasState, setCurrentSchemaId, setInputMode, setValidationOverride]);
 
   // Save tool settings when they change (debounced)
   useEffect(() => {
