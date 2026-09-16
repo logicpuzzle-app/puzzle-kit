@@ -504,6 +504,8 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
     return nodes;
   };
   if (!record(serialized)) throw new Error('Invalid topology snapshot');
+  const phase = serialized.sourceConfig?.hexRowOffset;
+  if (phase !== undefined && phase !== 0 && phase !== 1) throw new Error('Invalid hex row offset');
   const cells = readNodes<TopologyCell>(serialized.cells);
   const vertices = readNodes<TopologyVertex>(serialized.vertices);
   const edges = readNodes<TopologyEdge>(serialized.edges);
@@ -513,6 +515,7 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
       throw new Error('Nested exclusion base is not supported');
     }
     exclusionBase = deserializeTopology(serialized.exclusionBase);
+    if ((exclusionBase.sourceConfig?.hexRowOffset ?? 0) !== (phase ?? 0)) throw new Error('Inconsistent hidden hex row offset');
     for (const [id, vertex] of vertices) {
       const original = exclusionBase.vertices.get(id);
       if (!original || original.position.x !== vertex.position.x || original.position.y !== vertex.position.y

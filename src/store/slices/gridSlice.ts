@@ -18,7 +18,7 @@ import { getCellIndexById } from '../../utils/gridUtils';
 import { applyCellExclusions } from '../../utils/topology/exclusions';
 import { scaleTopologyLayout } from '../../utils/topology/layout';
 import { prepareExclusionBase } from '../../utils/topology/legacyExclusions';
-import { resizeSquareExtent } from '../../utils/topology/squareExtent';
+import { resizeRetainedExtent } from '../../utils/topology/retainedExtent';
 import { retainTopologyElements, retainTopologyPuzzle } from '../../utils/topology/retainedElements';
 import {
   sculptRotateCluster,
@@ -83,20 +83,23 @@ const createDefaultTopology = (): GridTopology => {
 
 const EXTENT_KEYS = new Set(['rows', 'cols', 'marginTop', 'marginBottom', 'marginLeft', 'marginRight']);
 
-function editSquareExtent(state: PuzzleStore, newGrid: GridConfig): Partial<PuzzleStore> | null {
-  if (!state.topology || (state.useTopology && state.topologyPreset !== 'square')) return null;
+function editGridExtent(state: PuzzleStore, newGrid: GridConfig): Partial<PuzzleStore> | null {
+  if (!state.topology) return null;
   const changed = [...TOPOLOGY_KEYS].filter(key => JSON.stringify(state.grid[key as keyof GridConfig]) !== JSON.stringify(newGrid[key as keyof GridConfig]));
   if (!changed.some(key => EXTENT_KEYS.has(key)) || changed.some(key => !EXTENT_KEYS.has(key) && key !== 'cellSize' && key !== 'outerPadding')) return null;
+  const applied = state.topology.appliedPreset;
   const before = prepareExclusionBase(state.topology, state.grid,
-    state.useTopology ? state.topologyPreset : 'square', state.topologyIntensity);
-  const resized = resizeSquareExtent(before, state.grid, newGrid);
+    applied?.preset ?? 'square', applied?.intensity ?? 0.5);
+  const resized = resizeRetainedExtent(before, state.grid, newGrid);
   if (!resized) return null;
   const full = resized.exclusionBase ?? resized;
-  const grid = { ...newGrid };
+  const grid = { ...newGrid, ...(resized.sourceConfig?.hexRowOffset !== undefined && { hexRowOffset: resized.sourceConfig.hexRowOffset }) };
   for (const key of ['voidCells', 'disabledCells', 'outboardCells'] as const) {
     if (grid[key]) grid[key] = grid[key]!.filter(id => state.useTopology ? full.cells.has(id) : getCellIndexById(id, grid) !== null);
   }
-  const topology = state.useTopology ? applyCellExclusions(resized, grid) : applyGridCellExclusions(resized, grid);
+  const projected = state.useTopology ? applyCellExclusions(resized, grid) : applyGridCellExclusions(resized, grid);
+  const topology = state.useTopology && (projected.appliedPreset?.preset !== state.topologyPreset || projected.appliedPreset?.intensity !== state.topologyIntensity)
+    ? applyTopologyPreset(projected, { preset: state.topologyPreset, intensity: state.topologyIntensity }) : projected;
   const filtered = retainTopologyPuzzle(state.puzzle, before, topology);
   // Legacy cell/line records use their own Grid-format coordinate system. Only
   // the new vertex notes reference this retained graph in that renderer mode.
@@ -145,7 +148,7 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
   setGrid: (gridUpdate) =>
     set((state) => {
       const newGrid = { ...state.grid, ...gridUpdate };
-      const extentEdit = editSquareExtent(state, newGrid);
+      const extentEdit = editGridExtent(state, newGrid);
       if (extentEdit) return recordGeometryEdit(state, extentEdit, 'Resize board');
       const forceTopology = newGrid.gridType === 'penrose_P3';
       const nextUseTopology = forceTopology ? true : state.useTopology;
@@ -263,7 +266,7 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       const layoutOnly = Object.entries(previewGridConfig).every(([key, value]) =>
         key === 'cellSize' || key === 'outerPadding'
         || JSON.stringify(value) === JSON.stringify(state.grid[key as keyof GridConfig]));
-      const extentPreview = editSquareExtent(state, previewGridConfig)?.topology;
+      const extentPreview = editGridExtent(state, previewGridConfig)?.topology;
       const layout = layoutOnly && state.topology ? scaleTopologyLayout(state.topology, state.grid, previewGridConfig) : null;
       const previewTopo = extentPreview ?? (layout
         ? (presetChanged ? applyTopologyPreset(layout, { preset: state.topologyPreset, intensity: state.topologyIntensity }) : layout)
@@ -344,7 +347,7 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       get().setGrid(configChanges);
       return;
     }
-    const extentEdit = editSquareExtent(state, newConfig);
+    const extentEdit = editGridExtent(state, newConfig);
     if (extentEdit) {
       set(recordGeometryEdit(state, extentEdit, 'Resize board'));
       return;

@@ -477,6 +477,8 @@ export type IsometricFace = 'top' | 'left' | 'right' | 'bottom';
 export type IsometricView = 'exterior' | 'interior';
 
 export interface GridConfig {
+  /** Hex layout phase, retained when top margin rows are inserted or removed. Not a node identity. */
+  hexRowOffset?: 0 | 1;
   rows: number;
   cols: number;
   level?: number; // for iso/cube grids (height/depth)

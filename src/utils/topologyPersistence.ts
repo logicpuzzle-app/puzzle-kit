@@ -25,6 +25,9 @@ export function captureTopologySettings(state: {
 
 /** A present but invalid snapshot must fail, not fall back to a different board. */
 export function restoreTopology(grid: GridConfig, settings: Settings): GridTopology {
+  if (grid.hexRowOffset !== undefined && grid.hexRowOffset !== 0 && grid.hexRowOffset !== 1) {
+    throw new Error('Invalid grid hex row offset');
+  }
   const topology = settings.topology !== undefined
     ? deserializeTopology(settings.topology)
     : settings.useTopology ? applyTopologyPreset(gridConfigToTopology(grid), {
@@ -32,6 +35,9 @@ export function restoreTopology(grid: GridConfig, settings: Settings): GridTopol
         intensity: settings.topologyIntensity,
       })
     : createGridReferenceTopology(grid);
+  if (grid.gridType === 'hex' && (grid.hexRowOffset ?? 0) !== (topology.sourceConfig?.hexRowOffset ?? 0)) {
+    throw new Error('Grid and topology disagree on hex row offset');
+  }
   topology.appliedPreset = settings.topology !== undefined || settings.useTopology
     ? { preset: settings.topologyPreset as TopologyPreset, intensity: settings.topologyIntensity }
     : { preset: 'square', intensity: 0.5 };
