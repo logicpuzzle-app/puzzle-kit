@@ -250,7 +250,9 @@ export function applyTopologyPreset(
     ? applyTopologyPreset(baseTopology.exclusionBase, params) : undefined;
   let nextBounds = bounds;
   if (exclusionBase) nextBounds = exclusionBase.bounds;
-  else if (!identity && newVertices.size) {
+  // A legacy deformation frame can describe only the previously visible board.
+  // Restored hidden nodes must also fit when returning to original geometry.
+  else if ((!identity || baseTopology.deformationBounds) && newVertices.size) {
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const { position } of newVertices.values()) {
       minX = Math.min(minX, position.x); minY = Math.min(minY, position.y);

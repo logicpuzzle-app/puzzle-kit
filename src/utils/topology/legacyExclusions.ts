@@ -13,6 +13,9 @@ export function prepareExclusionBase(
   topology: GridTopology, grid: GridConfig, preset: TopologyPreset, intensity: number,
 ): GridTopology {
   if (topology.exclusionBase) return topology;
+  // Structural legacy graphs require coordinated endpoint/history migration.
+  // Clearing exclusions and reusing split IDs can cut a different cell edge.
+  if (grid.mergedCells?.length || grid.splitLines?.length || grid.sculptOperations?.length) return topology;
   if (![grid.voidCells, grid.disabledCells, grid.outboardCells].some(ids => ids?.length)) return topology;
   const generate = (config: GridConfig) =>
     applyTopologyPreset(gridConfigToTopology(config), { preset, intensity });

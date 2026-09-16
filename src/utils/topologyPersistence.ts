@@ -7,6 +7,7 @@ import { deserializeTopology, serializeTopology } from './serialization';
 import { createGridReferenceTopology } from './topology/gridExclusions';
 import { prepareLegacyMerges } from './topology/legacyMerges';
 import { prepareExclusionBase } from './topology/legacyExclusions';
+import { prepareLegacyEditedExclusions } from './topology/legacyEditedExclusions';
 
 type Settings = NonNullable<PuzzleExport['topologySettings']>;
 
@@ -58,6 +59,7 @@ export function restoreTopology(grid: GridConfig, settings: Settings): GridTopol
   if (topology.editBase) topology.editBase.appliedPreset = topology.appliedPreset;
   if (topology.exclusionBase?.editBase) topology.exclusionBase.editBase.appliedPreset = topology.appliedPreset;
   if (settings.useTopology && !topology.editBase) {
+    topology = prepareLegacyEditedExclusions(topology, grid);
     topology = prepareLegacySplits(topology, grid);
     if (!topology.editBase) topology = prepareLegacyMerges(topology, grid);
   }
