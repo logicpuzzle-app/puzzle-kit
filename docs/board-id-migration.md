@@ -53,7 +53,7 @@
 | [LITSの判定・部屋同期・強調表示](lits-validation-identity.md) | 実セル・辺・頂点参照へ移行済み。mapだけの公開読込も実境界を補い、境界と部屋番号を履歴で復元する | 正方格子の明示indexと接続を検証し、未解決・非対応は検証不能。他ジャンル・汎用線入力の移行は継続 |
 | [ぬりみさき判定](nurimisaki-validation-identity.md) | 実セルID・行列・接続の検証へ移行済み。数字・塗りの未解決参照を成功にしない | 非対応の形状・曖昧な行列は検証不能を返す。他ジャンルの判定は継続対象 |
 | [リサイズ後の要素処理](../src/store/slices/gridSlice.ts) | from/to/positionの接頭辞で種類を判定する | 明示した対象種類と旧→新参照の対応 |
-| [線入力](../src/hooks/tool-handlers/useLineToolHandler.ts)、[点参照](../src/hooks/useGridPointUtils.ts) | `startsWith('cell-')` 等で対象の種類を判定する | 入力モード・型・対象のMap |
+| [線入力](../src/hooks/tool-handlers/useLineToolHandler.ts)、[点参照](../src/hooks/useGridPointUtils.ts)、[経路解決](../src/utils/topologyPath.ts) | TopologyモードでもGrid形式の解釈を先に試し、ID表記で方向判定が変わる。`startsWith('cell-')` で種類を判定し、種類を落とした端点は同じ文字列を持つcell/vertex/edgeを区別できない | 明示モードでresolverを選び、盤面と種類を伴う参照を検索・入力・経路・保存まで保持する。未解決をGrid形式へ再解釈しない |
 | [LineLayer](../src/components/canvas/LineLayer.tsx)、[SolverLayer](../src/components/canvas/SolverLayer.tsx)、[要素入力](../src/hooks/tool-handlers/useElementToolHandler.ts) | `parseEdgeId` を直接呼ぶ。Grid形式とTopology形式が混在する | 形式を明示した共通resolverへの集約 |
 | [線の出力](../src/utils/puzzleExport.ts)、[重複判定](../src/utils/lineOverlap.ts)、[共通判定](../src/constraints/validators/core.ts)、[スリザーリンク](../src/constraints/validators/slitherlink.ts)、[pzpr形式処理](../src/utils/pzprv3Parser.ts) | `lineTarget` がない場合などに端点接頭辞を解釈する | 旧形式の解釈を読込境界に集め、以降は明示した対象種類を使う |
 | [結合セル操作](../src/store/slices/grid/cellOperations.ts)、[彫刻操作](../src/store/slices/grid/sculptOperations.ts)、[彫刻モード](../src/hooks/useSculptMode.ts) | `merged-N` を配列添字に、接頭辞を形状判定に使う | 元セル・形状・編集対象の明示メタデータ |
