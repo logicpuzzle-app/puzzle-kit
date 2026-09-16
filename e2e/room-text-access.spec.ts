@@ -11,7 +11,7 @@ async function init(page: Page) {
     s.newPuzzle({ rows: 6, cols: 6, gridType: 'square' });
     s.setActiveLayer('problem');
     s.setCurrentSchemaId('lits');
-    s.setRoomMap(Object.fromEntries([...s.topology.cells.keys()].map(id => [id, 0])));
+    s.setRoomMap(Object.fromEntries([...usePuzzleStore.getState().topology.cells.keys()].map(id => [id, 0])));
     for (const cellId of ['cell-1-1', 'cell-1-2', 'cell-1-3', 'cell-1-4'])
       s.addSurface({ cellId, color: '#000000', layer: 'answer' });
     s.setTool('line-normal', 'line');
