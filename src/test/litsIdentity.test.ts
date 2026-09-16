@@ -126,14 +126,27 @@ it('returns actual IDs for 2x2, disconnected, wrong-shape and same-shape errors'
 });
 
 it('reports unavailable for missing targets or ambiguous geometry instead of reconstructing IDs', () => {
-  for (const mode of ['shade', 'map-missing', 'map-extra', 'index', 'adjacency', 'border-edge', 'border-vertex', 'topology']) {
-    const file = data(), topology = deserializeTopology(file.topologySettings!.topology!);
+  for (const mode of ['shade', 'map-missing', 'map-extra', 'index', 'adjacency', 'border-edge', 'border-vertex', 'border-ambiguous', 'topology']) {
+    const file = data();
+    let topology = deserializeTopology(file.topologySettings!.topology!);
     if (mode === 'shade') Object.values(file.state.answer.surfaces)[0].cellId = 'cell-0-0';
     if (mode === 'map-missing') file.state.problem.roomMap = { A: 0 };
     if (mode === 'map-extra') file.state.problem.roomMap = Object.fromEntries([...topology.cells.keys(), 'cell-0-0'].map(id => [id, 0]));
     if (mode === 'index') topology.cells.get('a')!.index = topology.cells.get('A')!.index;
     if (mode === 'adjacency') topology.cells.get('A')!.adjacentCells = [];
     if (mode.startsWith('border')) file.state.problem.lines.bad = { id: 'bad', ...border('vertex-0-0', 'vertex-0-1'), ...(mode === 'border-edge' ? { edgeId: 'edge-h-0-0' } : {}) };
+    if (mode === 'border-ambiguous') {
+      const vertices = file.topologySettings!.topology!.vertices;
+      const top = vertices.find(([, v]) => v.index?.[0] === 0 && v.index?.[1] === 2)![0];
+      const bottom = vertices.find(([, v]) => v.index?.[0] === 3 && v.index?.[1] === 2)![0];
+      // Fixture references are renamed explicitly. Cells A/a and vertices A/a
+      // are distinct scoped entities, so an untyped line cannot choose either.
+      const encoded = JSON.stringify(file.topologySettings!.topology)
+        .replaceAll(JSON.stringify(top), JSON.stringify('A')).replaceAll(JSON.stringify(bottom), JSON.stringify('a'));
+      topology = deserializeTopology(JSON.parse(encoded));
+      const { lineTarget: _target, ...untyped } = { id: 'bad', ...border('A', 'a') };
+      file.state.problem.lines.bad = untyped;
+    }
     const result = runDataDrivenValidation(file.state, file.grid, schema, {}, mode === 'topology' ? null : topology, 'topology');
     expect(result, mode).toMatchObject({ complete: false, undecided: true });
     expect(result.errors.every(e => e.failcode === 'unavailable'), mode).toBe(true);

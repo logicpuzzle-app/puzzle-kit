@@ -113,7 +113,12 @@ export function getLitsBorders(ctx: LitsContext, board: RectangularBoard): LitsB
     if (line.lineTarget && line.lineTarget !== 'edge' && line.lineTarget !== 'wall') continue;
     // Legacy untagged center lines are annotations, recognized by the scoped
     // cell collection, never by ID spelling. Unknown untyped targets fail closed.
-    if (!line.lineTarget && !line.edgeId && board.cells.has(line.from ?? '') && board.cells.has(line.to ?? '')) continue;
+    if (!line.lineTarget && line.edgeId === undefined && board.cells.has(line.from ?? '') && board.cells.has(line.to ?? '')) {
+      // IDs are only unique within a kind. If both scopes contain the pair,
+      // an old line without a target kind is ambiguous, not a center annotation.
+      if (vertices.has(line.from!) && vertices.has(line.to!)) return null;
+      continue;
+    }
     const resolved = resolveLine(line);
     if (!resolved) return null;
     for (const edge of resolved) if (edge.cells.length === 2) blocked.add(litsBorderKey(edge.cells[0], edge.cells[1]));
