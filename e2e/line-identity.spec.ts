@@ -121,4 +121,15 @@ test('half line retains cell and vertex endpoints sharing the same ID @productio
   await dragPoints(page, isMobile, browserName, end, start);
   expect(Object.values((await savePuzzleFile(page)).state.problem.lines)).toHaveLength(0);
   await page.screenshot({ animations: 'disabled', path: info.outputPath('mixed-line-erased.png') });
+  // Freehand shares this handler but must continue using raw coordinates.
+  await page.getByTitle('Freehand', { exact: true }).click();
+  await dragPoints(page, isMobile, browserName, start, end);
+  const freehand = await savePuzzleFile(page);
+  const strokes = Object.values(freehand.state.problem.lines);
+  expect(strokes.length).toBeGreaterThan(0);
+  expect(strokes.every(line => line.isFree && line.fromX !== undefined && line.toY !== undefined)).toBe(true);
+  expect(new Set(strokes.map(line => line.strokeId)).size).toBe(1);
+  expect(freehand.topologySettings!.topology).toEqual(topology);
+  await openPuzzleFile(page, Buffer.from(JSON.stringify(freehand)));
+  expect((await savePuzzleFile(page)).state).toEqual(freehand.state);
 });
