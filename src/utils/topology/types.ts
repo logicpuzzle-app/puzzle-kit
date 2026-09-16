@@ -136,6 +136,8 @@ export interface TopologyEdge {
  * Complete grid topology
  */
 export interface GridTopology {
+  /** Runtime metadata for the rendered graph; saved in topologySettings, not node IDs. */
+  appliedPreset?: { preset: TopologyPreset; intensity: number };
   /** Same board before temporary exclusions. One level only; IDs are preserved. */
   exclusionBase?: GridTopology;
   /** All cells indexed by ID */
