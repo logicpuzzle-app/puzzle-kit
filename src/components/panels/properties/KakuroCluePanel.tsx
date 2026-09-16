@@ -3,10 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../../store/puzzleStoreContext';
 import { findKakuroClue } from '../../../utils/kakuro';
 import type { KakuroClueElement } from '../../../types';
+import { useCellFinder } from '../../../hooks/useCellFinder';
+import { kakuroCellCorners } from '../../../utils/kakuroGeometry';
 
 export function KakuroCluePanel({ onLayoutChange }: { onLayoutChange?: (height: number) => void }) {
   const { t } = useTranslation();
-  const { numberSelection, puzzle, grid, topology, setKakuroClue } = usePuzzleStore();
+  const { numberSelection, puzzle, grid, topology, useTopology, setKakuroClue } = usePuzzleStore();
+  const { resolveSelection } = useCellFinder();
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!ref.current || !onLayoutChange) return;
@@ -14,9 +17,9 @@ export function KakuroCluePanel({ onLayoutChange }: { onLayoutChange?: (height: 
     observer.observe(ref.current);
     return () => observer.disconnect();
   }, [onLayoutChange]);
-  const cellId = numberSelection ? `cell-${numberSelection.row}-${numberSelection.col}` : null;
+  const cellId = numberSelection ? resolveSelection(numberSelection) : null;
   const clue = cellId ? findKakuroClue(puzzle.problem.clueCells, cellId) : undefined;
-  const canEdit = grid.gridType === 'square' && cellId && topology?.cells.has(cellId);
+  const canEdit = cellId && kakuroCellCorners({ grid, topology, useTopology }, cellId);
   return <div ref={ref} className="space-y-2 text-sm">
     <p className="font-medium">{t('kakuro.clue')}</p>
     {canEdit ? <ClueForm key={`${cellId}:${JSON.stringify(clue)}`} clue={clue}

@@ -38,7 +38,7 @@ export function retainTopologyElements(elements: PuzzleElements, before: GridTop
   };
   const result = { ...elements };
   // Preserve optional genre data instead of rebuilding a fixed subset of fields.
-  for (const collection of ['surfaces', 'vertexSurfaces', 'lines', 'edges', 'walls', 'numbers', 'symbols', 'cages', 'specials', 'boxLines']) {
+  for (const collection of ['surfaces', 'vertexSurfaces', 'lines', 'edges', 'walls', 'numbers', 'symbols', 'cages', 'specials', 'boxLines', 'clueCells']) {
     const entries = (elements as unknown as Record<string, unknown>)[collection];
     if (entries && typeof entries === 'object') (result as unknown as Record<string, unknown>)[collection] =
       Object.fromEntries(Object.entries(entries).filter(([, item]) => keep(item, collection)));

@@ -52,6 +52,7 @@
 | [選択状態](../src/store/slices/types.ts)、[選択処理](../src/hooks/useCanvasInputRouter.ts)、[セル検索](../src/hooks/useCellFinder.ts)、[数字キーボード](../src/hooks/useNumberKeyboard.ts)、[数字パネル](../src/components/panels/properties/NumberInputPanel.tsx) | 選択に行列番号だけを保存し、行列のないセルを選択対象から外す。検索ではIDの `hex` を優先し、数字入力では未解決時に `cell-${row}-${col}` を組み立てるため、任意ID・結合・分割セルで入力先を失う可能性がある | 選択した実際のcellIdを保持し、現在の盤面で解決する。未解決・曖昧な検索結果は入力を止め、キーボード・数字パネル・カーソルの参照先を揃える |
 | [LITSの判定・部屋同期・強調表示](lits-validation-identity.md) | 実セル・辺・頂点参照へ移行済み。mapだけの公開読込も実境界を補い、境界と部屋番号を履歴で復元する | 正方格子の明示indexと接続を検証し、未解決・非対応は検証不能。他ジャンル・汎用線入力の移行は継続 |
 | [ぬりみさき判定](nurimisaki-validation-identity.md) | 実セルID・行列・接続の検証へ移行済み。数字・塗りの未解決参照を成功にしない | 非対応の形状・曖昧な行列は検証不能を返す。他ジャンルの判定は継続対象 |
+| [Kakuroの入力・描画・判定](kakuro-identity.md) | 選択セルの実ID、頂点の論理方向、実際の連続区間を使う。余白変更・セル削除・履歴でもヒント参照を保持する | 正方格子の盤内セルが対象。盤外ヒント・外部形式の入出力は未対応。欠損・曖昧な参照は判定不能 |
 | [リサイズ後の要素処理](../src/store/slices/gridSlice.ts) | from/to/positionの接頭辞で種類を判定する | 明示した対象種類と旧→新参照の対応 |
 | [汎用線入力・端点参照](line-input-identity.md) | 新しい入力は端点の種類を保持し、明示モードで実接続を解決する。線レコードIDに依存せず消去し、混合端点と矢印方向を保存する | 型なしの旧データは辺参照または一意な点から解決し、曖昧な参照を推測しない。参照モード切替は検証した対応表による一体の移行へ変更。公開互換APIや他ジャンルのID解析の整理は継続 |
 | [LineLayer](../src/components/canvas/LineLayer.tsx)、[SolverLayer](../src/components/canvas/SolverLayer.tsx)、[要素入力](../src/hooks/tool-handlers/useElementToolHandler.ts) | `parseEdgeId` を直接呼ぶ。Grid形式とTopology形式が混在する | 形式を明示した共通resolverへの集約 |

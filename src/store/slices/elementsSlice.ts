@@ -1,12 +1,14 @@
 import { findLineByReferences, resolveLinePoints, resolveBoardPoint } from '../../utils/lineReferences';
 import { applyActionToState } from './historySlice';
 import { findKakuroClue, isKakuroSum } from '../../utils/kakuro';
+import { kakuroCellCorners } from '../../utils/kakuroGeometry';
 import type { PuzzleAction } from '../actions';
 /**
  * Elements Slice - Puzzle element CRUD operations
  */
 
 import {
+  generateId,
   generateSurfaceId,
   generateLineId as generateLineIdCompact,
   generateNumberId,
@@ -317,7 +319,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
   setKakuroClue: (cellId, values) => {
     const state = get();
     if (getEditableDataLayer(state.activeLayer, state.isPlayerMode) !== 'problem' ||
-        state.grid.gridType !== 'square' || !state.topology?.cells.has(cellId)) return;
+        !kakuroCellCorners(state, cellId)) return;
     if (values && (!isKakuroSum(values.horizontal) || !isKakuroSum(values.vertical))) return;
     const before = state.puzzle.problem.clueCells;
     const existing = findKakuroClue(before, cellId);
@@ -326,7 +328,10 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
     const after = { ...before };
     for (const [id, clue] of Object.entries(after)) if (clue.cellId === cellId) delete after[id];
     if (values) {
-      const id = existing?.id ?? `kakuro-${cellId}`;
+      let id = existing?.id;
+      if (id === undefined) {
+        do { id = generateId(); } while (Object.hasOwn(after, id));
+      }
       after[id] = { id, cellId, ...values };
     }
     const actions: PuzzleAction[] = [];

@@ -1,17 +1,13 @@
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
-import { getCellCorners, getCellIndexById } from '../../utils/gridUtils';
+import { kakuroCellCorners } from '../../utils/kakuroGeometry';
 
 export function KakuroClueLayer() {
   const { grid, puzzle, showProblemLayer, useTopology, topology } = usePuzzleStore();
   if (!showProblemLayer || grid.gridType !== 'square') return null;
   return <g className="kakuro-clue-layer" pointerEvents="none">
     {Object.values(puzzle.problem.clueCells ?? {}).map(clue => {
-      const cell = topology?.cells.get(clue.cellId);
-      const index = getCellIndexById(clue.cellId, grid);
-      const corners = useTopology
-        ? cell?.boundaryVertices.map(id => topology!.vertices.get(id)!.position)
-        : index ? getCellCorners(index.row, index.col, grid) : undefined;
-      if (!corners || corners.length !== 4 || corners.some(p => !p)) return null;
+      const corners = kakuroCellCorners({ grid, useTopology, topology }, clue.cellId);
+      if (!corners) return null;
       const [a, b, c, d] = corners;
       return <g key={clue.id} data-kakuro-cell={clue.cellId}>
         <polygon points={corners.map(p => `${p.x},${p.y}`).join(' ')} fill="#000000" />
