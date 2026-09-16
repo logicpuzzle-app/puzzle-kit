@@ -1,4 +1,6 @@
 import { v4 as uuid } from 'uuid';
+import type { Point } from '../../types';
+import { isPointInPolygon } from './helpers';
 import type { GridTopology, TopologyCell, TopologyEdge, TopologyVertex } from './types';
 
 export interface MergeGroup {
@@ -33,6 +35,16 @@ function validLegacyBoundary(base: GridTopology, canonical: string[], boundary: 
     }
     return total === n;
   });
+}
+
+/** Concave cells can have their average center outside the boundary. Apply the
+ * same interior rule to displayed and stored original geometry; otherwise a
+ * preset reset can move a clue into another cell. No reference is reassigned. */
+function mergeCenter(centers: Point[], polygon: Point[]): Point | undefined {
+  const mean = centers.reduce((p, c) => ({ x: p.x + c.x / centers.length, y: p.y + c.y / centers.length }), { x: 0, y: 0 });
+  if (isPointInPolygon(mean, polygon)) return mean;
+  return centers.filter(p => isPointInPolygon(p, polygon))
+    .sort((a, b) => Math.hypot(a.x - mean.x, a.y - mean.y) - Math.hypot(b.x - mean.x, b.y - mean.y))[0];
 }
 
 /** Project merges from the retained source graph. Boundary IDs come from actual
@@ -81,21 +93,21 @@ export function projectMerges(base: GridTopology, groups: MergeGroup[], retained
       boundaryVertices = group.boundary.vertices;
       boundaryEdges = group.boundary.edges;
     }
-    const center = members.reduce((p, cell) => ({ x: p.x + cell.center.x / members.length, y: p.y + cell.center.y / members.length }), { x: 0, y: 0 });
     const polygon = boundaryVertices.map(id => base.vertices.get(id)?.position);
     if (polygon.some(p => !p)) return null;
-    let inside = false;
-    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-      const a = polygon[i]!, b = polygon[j]!;
-      if ((a.y > center.y) !== (b.y > center.y) && center.x < (b.x - a.x) * (center.y - a.y) / (b.y - a.y) + a.x) inside = !inside;
-    }
-    const nearest = [...members].sort((a, b) => Math.hypot(a.center.x - center.x, a.center.y - center.y) - Math.hypot(b.center.x - center.x, b.center.y - center.y))[0];
     const retained = retainedCells?.get(group.id);
-    const baseCenter = base.deformationBounds ? members.reduce((p, cell) => ({
-      x: p.x + cell.baseCenter!.x / members.length, y: p.y + cell.baseCenter!.y / members.length,
-    }), { x: 0, y: 0 }) : undefined;
-    replacements.push({ id: group.id, center: retained?.center ?? (inside ? center : nearest.center), index: null,
-      ...(baseCenter && { baseCenter: retained?.baseCenter ?? baseCenter }),
+    const center = retained?.center ?? mergeCenter(members.map(cell => cell.center), polygon as Point[]);
+    if (!center) return null;
+    let baseCenter: Point | undefined;
+    if (base.deformationBounds) {
+      const origins = boundaryVertices.map(id => base.vertices.get(id)?.basePosition);
+      const centers = members.map(cell => cell.baseCenter);
+      if (origins.some(p => !p) || centers.some(p => !p)) return null;
+      baseCenter = retained?.baseCenter ?? mergeCenter(centers as Point[], origins as Point[]);
+      if (!baseCenter) return null;
+    }
+    replacements.push({ id: group.id, center, index: null,
+      ...(baseCenter && { baseCenter }),
       boundaryVertices, boundaryEdges, adjacentCells: [], originalCells: [...group.cellIds], outboard: members[0].outboard });
   }
   const cells = new Map<string, TopologyCell>();

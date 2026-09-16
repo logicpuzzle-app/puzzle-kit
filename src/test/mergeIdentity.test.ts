@@ -1,5 +1,7 @@
 import { expect, it } from 'vitest';
 import fixture from '../../e2e/fixtures/vertex-surfaces.json';
+import concaveFixture from '../../e2e/fixtures/concave-merge-board.json';
+import { findNearestCellInTopology } from '../utils/topology/queries';
 import { createPuzzleStore } from '../store/puzzleStore';
 
 it('merges opaque cells without changing surviving boundary identities and restores graph plus annotations with Undo', () => {
@@ -94,4 +96,32 @@ it('merges an existing opaque merged cell by explicit provenance and never reuse
   expect(new Set(store.getState().topology!.cells.keys())).toEqual(new Set(['room/a', 'room/b', 'room/c', 'room/d']));
   store.getState().mergeCells(['room/a', 'room/b']);
   expect(store.getState().topology!.mergeGroups![0].id).not.toBe(first);
+});
+
+
+it('keeps a concave merged clue inside its own cell after restoring a deformed board and native reload', () => {
+  const store = createPuzzleStore().useStore;
+  expect(store.getState().importPuzzle(JSON.stringify(concaveFixture))).toBe(true);
+  const source = store.getState().topology!;
+  const members = [...source.cells.values()].filter(cell => cell.index?.[1] !== 1 || cell.index?.[0] === 2).map(cell => cell.id);
+  store.getState().mergeCells(members);
+  const id = store.getState().topology!.mergeGroups![0].id;
+  store.getState().addNumber({ cellId: id, value: '17', layer: 'problem', color: '#000000', size: 'medium', position: 'center' });
+  const annotations = store.getState().puzzle;
+  const checkClueTarget = () => {
+    const graph = store.getState().topology!;
+    expect(findNearestCellInTopology(graph, graph.cells.get(id)!.center)?.id).toBe(id);
+    expect(store.getState().puzzle).toEqual(annotations);
+    expect(new Set(graph.vertices.keys())).toEqual(new Set(source.vertices.keys()));
+  };
+  checkClueTarget();
+  expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
+  store.getState().setTopologyPreset('square'); store.getState().applyTopologyPreset();
+  checkClueTarget();
+  const restored = store.getState().topology!;
+  for (const [vertexId, vertex] of restored.vertices) expect(vertex.position).toEqual(source.vertices.get(vertexId)!.basePosition);
+  store.getState().undo(); checkClueTarget();
+  store.getState().redo(); checkClueTarget();
+  expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
+  checkClueTarget();
 });
