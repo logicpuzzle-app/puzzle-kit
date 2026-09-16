@@ -121,9 +121,16 @@ export interface ClearLayerAction {
 
 export interface EditGridGeometryAction {
   type: 'EDIT_GRID_GEOMETRY';
-  before: { grid: GridConfig; topology: GridTopology | null };
-  after: { grid: GridConfig; topology: GridTopology | null };
+  before: GridGeometrySnapshot;
+  after: GridGeometrySnapshot;
   description: string;
+}
+
+export interface GridGeometrySnapshot {
+  grid: GridConfig;
+  topology: GridTopology | null;
+  editingState?: Pick<import('./slices/types').PuzzleStore,
+    'puzzle' | 'trialStack' | 'trialStage' | 'selectedElements' | 'hoverCell' | 'cursorCell' | 'numberSelection'>;
 }
 
 export interface SetGridAction {
