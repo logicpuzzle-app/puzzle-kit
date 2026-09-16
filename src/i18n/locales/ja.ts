@@ -716,6 +716,7 @@ export const ja = {
   'tool.number.center': '中央',
 
   // Symbol categories
+  'symbols.curves': '四分円・円弧',
   'symbols.battleships': 'バトルシップ',
   'symbols.shapes': '形状',
   'symbols.marks': 'マーク',

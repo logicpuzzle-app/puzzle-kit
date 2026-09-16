@@ -716,6 +716,7 @@ export const en = {
   'tool.number.center': 'Center',
 
   // Symbol categories
+  'symbols.curves': 'Quarter circles & arcs',
   'symbols.battleships': 'Battleships',
   'symbols.shapes': 'Shapes',
   'symbols.marks': 'Marks',

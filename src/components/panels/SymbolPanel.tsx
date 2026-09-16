@@ -6,6 +6,8 @@ import { ToolType } from '../../types';
 import { ANIMAL_ICON_MAP, GhostBlackIcon, FryingPanIcon } from '../icons/AnimalIcons';
 import { BattleshipSymbol } from '../canvas/symbols/BattleshipSymbols';
 import { isBattleshipSymbol } from '../../utils/battleshipSymbols';
+import { CornerSymbol } from '../canvas/symbols/CornerSymbols';
+import { isCornerSymbol } from '../../utils/cornerSymbols';
 
 // SVG icon components for special symbols
 const MineIcon: React.FC<{ size: number; color: string }> = ({ size, color }) => {
@@ -466,6 +468,20 @@ const SYMBOL_CATEGORIES: { id: string; labelKey: string; symbols: SymbolDef[] }[
     ],
   },
   {
+    id: 'curves',
+    labelKey: 'symbols.curves',
+    symbols: [
+      { id: 'quarter-top-left', icon: '', filled: true, tagsJa: ['四分円', '左上'], tagsEn: ['quarter', 'circle', 'sector', 'moonlight', 'top', 'left'] },
+      { id: 'quarter-top-right', icon: '', filled: true, tagsJa: ['四分円', '右上'], tagsEn: ['quarter', 'circle', 'sector', 'moonlight', 'top', 'right'] },
+      { id: 'quarter-bottom-right', icon: '', filled: true, tagsJa: ['四分円', '右下'], tagsEn: ['quarter', 'circle', 'sector', 'moonlight', 'bottom', 'right'] },
+      { id: 'quarter-bottom-left', icon: '', filled: true, tagsJa: ['四分円', '左下'], tagsEn: ['quarter', 'circle', 'sector', 'moonlight', 'bottom', 'left'] },
+      { id: 'arc-top-left', icon: '', filled: false, tagsJa: ['円弧', '左上'], tagsEn: ['arc', 'curve', 'top', 'left'] },
+      { id: 'arc-top-right', icon: '', filled: false, tagsJa: ['円弧', '右上'], tagsEn: ['arc', 'curve', 'top', 'right'] },
+      { id: 'arc-bottom-right', icon: '', filled: false, tagsJa: ['円弧', '右下'], tagsEn: ['arc', 'curve', 'bottom', 'right'] },
+      { id: 'arc-bottom-left', icon: '', filled: false, tagsJa: ['円弧', '左下'], tagsEn: ['arc', 'curve', 'bottom', 'left'] },
+    ],
+  },
+  {
     id: 'marks',
     labelKey: 'symbols.marks',
     symbols: [
@@ -693,6 +709,12 @@ export const SymbolPanel: React.FC<SymbolPanelProps> = ({ filterCategory, filter
                   const isSelected = currentSymbol === symbol.id;
                   // Render SVG icons for mine, bulb, arrows, and animals
                   const renderIcon = () => {
+                    if (isCornerSymbol(symbol.id)) {
+                      return <svg width={fontSize} height={fontSize} viewBox={`-2 -2 ${fontSize + 4} ${fontSize + 4}`} aria-hidden="true">
+                        <CornerSymbol type={symbol.id} x={fontSize / 2} y={fontSize / 2}
+                          size={fontSize} color={currentColor} rotation={0} />
+                      </svg>;
+                    }
                     if (isBattleshipSymbol(symbol.id)) {
                       return <svg width={fontSize} height={fontSize} viewBox={`0 0 ${fontSize} ${fontSize}`} aria-hidden="true">
                         <BattleshipSymbol type={symbol.id} x={fontSize / 2} y={fontSize / 2}
