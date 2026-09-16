@@ -7,7 +7,7 @@ import { applyCellExclusions } from './exclusions';
 
 /** Edge-connected fragments with the same inboard/outboard role. Corner contact
  * cannot keep a clipped group connected. Use actual incidences, never ID text. */
-export function fragments(base: GridTopology, members: string[], preserveMixedRoles = false): string[][] {
+export function fragments(base: GridTopology, members: string[]): string[][] {
   const remaining = new Set(members), result: string[][] = [];
   for (const first of members) {
     if (!remaining.delete(first)) continue;
@@ -15,7 +15,7 @@ export function fragments(base: GridTopology, members: string[], preserveMixedRo
     for (let i = 0; i < part.length; i++) {
       const cell = base.cells.get(part[i])!;
       for (const edgeId of cell.boundaryEdges) for (const id of base.edges.get(edgeId)!.adjacentCells) {
-        if ((preserveMixedRoles || !!base.cells.get(id)!.outboard === !!cell.outboard) && remaining.delete(id)) part.push(id);
+        if ((!!base.cells.get(id)!.outboard === !!cell.outboard) && remaining.delete(id)) part.push(id);
       }
     }
     // Keep explicit member order stable; traversal order is not identity.
@@ -47,7 +47,10 @@ export function resizeMergedExtent(topology: GridTopology, before: GridConfig, a
   const scale = after.cellSize / before.cellSize;
   for (const group of full.mergeGroups) {
     const members = group.cellIds.filter(id => resized.cells.has(id));
-    const parts = fragments(resized, members, group.boundary?.outboard !== undefined && members.length === group.cellIds.length);
+    // An unchanged archived output keeps its identity even when the legacy
+    // generator discarded a source component or an inner loop.
+    const parts = group.boundary && members.length === group.cellIds.length
+      ? [members] : fragments(resized, members);
     const ids: string[] = [];
     for (const cellIds of parts) {
       const id = parts.length === 1 ? group.id : fresh();

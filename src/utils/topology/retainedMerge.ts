@@ -77,26 +77,39 @@ export function projectMerges(base: GridTopology, groups: MergeGroup[], retained
     for (const edge of boundary) for (const id of [edge!.startVertex, edge!.endVertex]) {
       touching.set(id, [...(touching.get(id) ?? []), edge!.id]);
     }
-    // One simple closed boundary is representable. Disconnected groups and
-    // holes are rejected, never replaced by a convex hull or a guessed loop.
+    // New merges require one simple perimeter. A verified legacy output may
+    // have retained just one loop of disconnected members or a holed region.
+    // Enumerate actual source loops and validate against one whole loop; never
+    // connect components or infer a hull from coordinates.
     if ([...touching.values()].some(edges => edges.length !== 2)) return null;
-    let boundaryVertices: string[] = [], boundaryEdges: string[] = [];
-    const first = boundary[0]!.startVertex;
-    let vertex = first, previous: string | undefined;
-    do {
-      if (boundaryVertices.includes(vertex)) return null;
-      boundaryVertices.push(vertex);
-      const edgeId = touching.get(vertex)!.find(id => id !== previous)!;
-      const edge = base.edges.get(edgeId)!;
-      boundaryEdges.push(edgeId);
-      vertex = edge.startVertex === vertex ? edge.endVertex : edge.startVertex;
-      previous = edgeId;
-    } while (vertex !== first && boundaryEdges.length <= boundary.length);
-    if (vertex !== first || boundaryEdges.length !== boundary.length) return null;
+    const remainingEdges = new Set(boundary.map(edge => edge!.id));
+    const loops: { vertices: string[]; edges: string[] }[] = [];
+    while (remainingEdges.size) {
+      const firstEdge = base.edges.get(remainingEdges.values().next().value!)!;
+      const first = firstEdge.startVertex;
+      const loop = { vertices: [] as string[], edges: [] as string[] };
+      let vertex = first, previous: string | undefined;
+      do {
+        if (loop.vertices.includes(vertex)) return null;
+        loop.vertices.push(vertex);
+        const edgeId = touching.get(vertex)!.find(id => id !== previous)!;
+        if (!remainingEdges.delete(edgeId)) return null;
+        const edge = base.edges.get(edgeId)!;
+        loop.edges.push(edgeId);
+        vertex = edge.startVertex === vertex ? edge.endVertex : edge.startVertex;
+        previous = edgeId;
+      } while (vertex !== first);
+      loops.push(loop);
+    }
+    let boundaryVertices: string[], boundaryEdges: string[];
     if (group.boundary) {
-      if (!validLegacyBoundary(base, boundaryVertices, group.boundary)) return null;
+      if (!loops.some(loop => validLegacyBoundary(base, loop.vertices, group.boundary!))) return null;
       boundaryVertices = group.boundary.vertices;
       boundaryEdges = group.boundary.edges;
+    } else {
+      if (loops.length !== 1) return null;
+      boundaryVertices = loops[0].vertices;
+      boundaryEdges = loops[0].edges;
     }
     const polygon = boundaryVertices.map(id => base.vertices.get(id)?.position);
     if (polygon.some(p => !p)) return null;
