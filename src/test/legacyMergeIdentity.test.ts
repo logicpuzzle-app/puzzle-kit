@@ -1,8 +1,73 @@
 import { expect, it } from 'vitest';
 import fixture from '../../e2e/fixtures/legacy-merged-board.json';
+import margin from '../../e2e/fixtures/legacy-margin-roles-board.json';
 import { createPuzzleStore } from '../store/puzzleStore';
 import { deserializeTopology, serializeTopology } from '../utils/serialization';
-import { applyTopologyPreset } from '../utils/gridTopology';
+import { applyTopologyPreset, gridConfigToTopology } from '../utils/gridTopology';
+import type { GridConfig } from '../types';
+
+it('keeps a legacy mixed margin merge inboard and restores its distinct source roles through split removal, resize and history', () => {
+  const store = createPuzzleStore().useStore;
+  expect(store.getState().importPuzzle(JSON.stringify(margin))).toBe(true);
+  const initial = store.getState(), graph = initial.topology!;
+  expect(graph.editOperations).toHaveLength(3);
+  for (const key of ['cells', 'vertices', 'edges'] as const) expect(serializeTopology(graph)[key]).toEqual(margin.topologySettings.topology[key]);
+  expect(graph.editBase!.cells.get('cell-0-0')!.outboard).toBe(true);
+  expect(graph.editBase!.cells.get('cell-0-1')!.outboard).toBeUndefined();
+  expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
+  const bad = JSON.parse(store.getState().exportPuzzle());
+  bad.topologySettings.topology.editOperations[0].boundary.outboard = true;
+  const beforeBad = store.getState();
+  expect(store.getState().importPuzzle(JSON.stringify(bad))).toBe(false);
+  expect(store.getState().topology).toBe(beforeBad.topology);
+  store.getState().clearSplitLines();
+  expect(store.getState().topology!.cells.get('merged-0')!.outboard).toBeFalsy();
+  store.getState().setGrid({ cols: 6 });
+  expect(store.getState().topology!.cells.has('merged-0')).toBe(true);
+  const merged = store.getState();
+  store.getState().unmergeCells(['merged-0']);
+  const restored = store.getState();
+  expect(restored.topology!.cells.get('cell-0-0')!.outboard).toBe(true);
+  expect(restored.topology!.cells.get('cell-0-0')!.adjacentCells).toEqual([]);
+  expect(restored.topology!.cells.get('cell-0-1')!.outboard).toBeUndefined();
+  expect(restored.topology!.cells.get('cell-0-1')!.adjacentCells).not.toContain('cell-0-0');
+  expect(restored.topology!.cells.has('merged-1')).toBe(true);
+  expect(Object.values(restored.puzzle.problem.numbers).map(n => n.value).sort()).toEqual(['17', '9']);
+  store.getState().undo(); expect(store.getState().topology).toBe(merged.topology);
+  store.getState().redo();
+  expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
+  const beforeNewMerge = store.getState();
+  store.getState().mergeCells(['cell-0-0', 'cell-0-1']);
+  expect(store.getState().topology).toBe(beforeNewMerge.topology);
+  expect(store.getState().puzzle).toBe(beforeNewMerge.puzzle);
+});
+
+it.each([false, true])('restores legacy margin merge roles with hidden source cells=%s and rejects forged output roles', hidden => {
+  const store = createPuzzleStore().useStore;
+  const grid: GridConfig = { ...margin.grid, splitLines: undefined, ...(hidden && { voidCells: ['cell-0-2'] }) };
+  const topology = gridConfigToTopology(grid);
+  const doc = { ...margin, grid, state: store.getState().puzzle,
+    topologySettings: { ...margin.topologySettings, topology: serializeTopology(topology) } };
+  expect(store.getState().importPuzzle(JSON.stringify(doc))).toBe(true);
+  const restored = store.getState().topology!;
+  expect(restored.editBase ?? restored.mergeBase).toBeDefined();
+  for (const key of ['cells', 'vertices', 'edges'] as const) expect(serializeTopology(restored)[key]).toEqual(serializeTopology(topology)[key]);
+  store.getState().setGrid({ cols: 6 });
+  expect(store.getState().topology!.cells.has('merged-0')).toBe(true);
+  const saved = store.getState().exportPuzzle();
+  expect(store.getState().importPuzzle(saved)).toBe(true);
+  for (const invalid of [true, 'false']) {
+    const bad = JSON.parse(saved), graph = bad.topologySettings.topology;
+    for (const g of [graph, graph.exclusionBase].filter(Boolean)) (g.editOperations ?? g.mergeGroups)[0].boundary.outboard = invalid;
+    const before = store.getState();
+    expect(store.getState().importPuzzle(JSON.stringify(bad))).toBe(false);
+    expect(store.getState().topology).toBe(before.topology);
+  }
+  store.getState().unmergeCells(['merged-0']);
+  expect(store.getState().topology!.cells.get('cell-0-0')!.outboard).toBe(true);
+  expect(store.getState().topology!.cells.get('cell-0-1')!.outboard).toBeUndefined();
+  expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
+});
 
 it('attaches verified legacy sources without changing live identities and unmerges one group without renumbering the other', () => {
   const store = createPuzzleStore().useStore;

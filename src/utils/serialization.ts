@@ -594,11 +594,13 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
         : op.cellIds.length !== 2 || [op.cellId, op.startVertex, op.endVertex, op.edgeId].some(id => typeof id !== 'string')) throw new Error('Invalid topology operation identities');
     }
     const expected = projectEdits(editBase, serialized.editOperations);
+    const declaredRoles = serialized.editOperations.some(op => op.kind === 'merge' && op.boundary?.outboard !== undefined);
     const full = exclusionBase ?? { cells, vertices, edges };
     if (!expected || full.cells.size !== expected.cells.size || full.vertices.size !== expected.vertices.size || full.edges.size !== expected.edges.size) throw new Error('Edited graph does not match its source');
     for (const [id, cell] of full.cells) {
       const target = expected.cells.get(id), source = editBase.cells.get(id);
       if (!target || JSON.stringify(target.boundaryVertices) !== JSON.stringify(cell.boundaryVertices) || JSON.stringify(target.boundaryEdges) !== JSON.stringify(cell.boundaryEdges)) throw new Error('Edit source reassigns a cell');
+      if (declaredRoles && !!target.outboard !== !!cell.outboard) throw new Error('Edit source changes a declared cell role');
       if (JSON.stringify(target.originalCells) !== JSON.stringify(cell.originalCells)) throw new Error('Edit source changes cell provenance');
       if (source && (JSON.stringify(source.center) !== JSON.stringify(cell.center) || JSON.stringify(source.baseCenter) !== JSON.stringify(cell.baseCenter))) throw new Error('Edit source moves a surviving cell');
     }
@@ -623,6 +625,7 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
       throw new Error('Invalid merge groups');
     }
     const projected = projectMerges(mergeBase, serialized.mergeGroups);
+    const declaredRoles = serialized.mergeGroups.some(group => group.boundary?.outboard !== undefined);
     const full = exclusionBase ?? { cells, vertices, edges };
     if (!projected || full.cells.size !== projected.cells.size || full.vertices.size !== projected.vertices.size || full.edges.size !== projected.edges.size) throw new Error('Merge graph does not match its source');
     for (const [id, cell] of full.cells) {
@@ -630,6 +633,7 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
       const source = mergeBase.cells.get(id);
       if (source && (JSON.stringify(source.center) !== JSON.stringify(cell.center) || JSON.stringify(source.baseCenter) !== JSON.stringify(cell.baseCenter))) throw new Error('Merge source moves a surviving cell');
       if (!expected || JSON.stringify(expected.boundaryVertices) !== JSON.stringify(cell.boundaryVertices) || JSON.stringify(expected.boundaryEdges) !== JSON.stringify(cell.boundaryEdges)) throw new Error('Merge source reassigns a cell');
+      if (declaredRoles && !!expected.outboard !== !!cell.outboard) throw new Error('Merge source changes a declared cell role');
     }
     for (const [id, vertex] of full.vertices) {
       const source = mergeBase.vertices.get(id);

@@ -38,7 +38,9 @@ export function resizeEditedExtent(topology: GridTopology, before: GridConfig, a
   let current = base;
   for (const op of full.editOperations) {
     if (op.kind === 'merge') {
-      const members = op.cellIds.filter(id => current.cells.has(id)), parts = fragments(current, members), ids: string[] = [];
+      const members = op.cellIds.filter(id => current.cells.has(id));
+      const preserveRoles = op.boundary?.outboard !== undefined && members.length === op.cellIds.length && members.every(id => !changed.has(id));
+      const parts = fragments(current, members, preserveRoles), ids: string[] = [];
       const unchanged = parts.length === 1 && members.length === op.cellIds.length && members.every(id => !changed.has(id));
       for (const cellIds of parts) {
         const id = parts.length === 1 ? op.id : fresh(); ids.push(id);

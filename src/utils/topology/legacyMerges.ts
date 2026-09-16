@@ -68,6 +68,7 @@ export function prepareLegacyMerges(topology: GridTopology, grid: GridConfig): G
   });
   const cells = new Map<string, TopologyCell>();
   for (const [id, cell] of transformedSource.cells) cells.set(id, { ...cell, ...full.cells.get(id),
+    outboard: full.cells.has(id) ? full.cells.get(id)!.outboard : cell.outboard,
     ...(cell.baseCenter && { baseCenter: cell.baseCenter }),
     adjacentCells: cell.adjacentCells,
     boundaryVertices: cell.boundaryVertices.map(vertexId => vertexIds.get(vertexId)!),
@@ -79,7 +80,8 @@ export function prepareLegacyMerges(topology: GridTopology, grid: GridConfig): G
     const matches = [...full.cells.values()].filter(cell => cell.originalCells?.length === members.length && members.every(id => cell.originalCells!.includes(id)));
     if (matches.length !== 1) return topology;
     const cell = matches[0];
-    groups.push({ id: cell.id, cellIds: members, boundary: { vertices: cell.boundaryVertices, edges: cell.boundaryEdges } });
+    groups.push({ id: cell.id, cellIds: members, boundary: { vertices: cell.boundaryVertices, edges: cell.boundaryEdges,
+      ...(members.some(id => !!cells.get(id)!.outboard !== !!cell.outboard) && { outboard: !!cell.outboard }) } });
   }
   const projected = projectMerges(base, groups, full.cells);
   if (!projected || projected.cells.size !== full.cells.size || projected.vertices.size !== full.vertices.size || projected.edges.size !== full.edges.size) return topology;

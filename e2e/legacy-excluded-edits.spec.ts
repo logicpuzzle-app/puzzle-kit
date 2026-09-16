@@ -7,6 +7,7 @@ const scenarios = [
   { name: 'merge/split board', file: 'legacy-excluded-edits-board.json', stableMerge: 'merged-0', restoredMembers: undefined },
   { name: 'merge members', file: 'legacy-excluded-members-board.json', stableMerge: 'merged-1', restoredMembers: ['cell-0-1', 'cell-0-2'] },
   { name: 'outboard settings', file: 'legacy-outboard-settings-board.json', stableMerge: 'merged-1', restoredMembers: ['cell-0-1', 'cell-0-2'] },
+  { name: 'margin roles', file: 'legacy-margin-roles-board.json', stableMerge: 'merged-1', restoredMembers: ['cell-0-0', 'cell-0-1'], restoredMargin: 'cell-0-0' },
 ];
 
 for (const scenario of scenarios) {
@@ -62,5 +63,24 @@ test(`legacy excluded ${scenario.name} restores its cut with stable notes throug
   expect(reloaded.topologySettings!.topology).toEqual(graph);
   await expect(numbers).toHaveText(['9', '17']);
   await page.screenshot({ path: info.outputPath('excluded-edits-reloaded.png') });
+  if (scenario.restoredMargin) {
+    await page.getByRole('button', { name: 'Merge', exact: true }).click();
+    if (await properties.isVisible()) await properties.click();
+    const remove = page.getByRole('button', { name: 'Delete', exact: true }).first();
+    if (isMobile) await remove.tap(); else await remove.click();
+    if (await close.isVisible()) await close.click();
+    const source = await savePuzzleFile(page), cells = new Map(source.topologySettings!.topology!.cells);
+    expect(cells.has(parent)).toBe(false);
+    expect(cells.get(scenario.restoredMargin)!.outboard).toBe(true);
+    expect(cells.get(scenario.restoredMargin)!.adjacentCells).toEqual([]);
+    expect(cells.get('cell-0-1')!.outboard).toBeUndefined();
+    await expect(numbers).toHaveText(['9', '17']);
+    await page.screenshot({ path: info.outputPath('margin-unmerged.png') });
+    await page.getByTitle(/Undo \(Ctrl\+Z\)/).first().click();
+    expect((await savePuzzleFile(page)).topologySettings!.topology).toEqual(graph);
+    await page.getByTitle(/Redo/).first().click();
+    await openPuzzleFile(page, Buffer.from(JSON.stringify(source)));
+    expect((await savePuzzleFile(page)).topologySettings!.topology).toEqual(source.topologySettings!.topology);
+  }
 });
 }

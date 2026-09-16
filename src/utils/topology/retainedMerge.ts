@@ -10,10 +10,11 @@ export interface MergeGroup {
   cellIds: string[];
   /** A verified legacy merge may have simplified its outer boundary. These
    * actual references preserve that cell until it is explicitly replaced. */
-  boundary?: { vertices: string[]; edges: string[] };
+  boundary?: { vertices: string[]; edges: string[]; outboard?: boolean };
 }
 
 function validLegacyBoundary(base: GridTopology, canonical: string[], boundary: NonNullable<MergeGroup['boundary']>): boolean {
+  if (boundary.outboard !== undefined && typeof boundary.outboard !== 'boolean') return false;
   if (!Array.isArray(boundary.vertices) || !Array.isArray(boundary.edges) || boundary.vertices.length < 3
     || boundary.vertices.length !== boundary.edges.length || new Set(boundary.vertices).size !== boundary.vertices.length
     || new Set(boundary.edges).size !== boundary.edges.length) return false;
@@ -64,7 +65,9 @@ export function projectMerges(base: GridTopology, groups: MergeGroup[], retained
       if (!cell || usedCells.has(id)) return null;
       usedCells.add(id); members.push(cell);
     }
-    if (members.some(cell => !!cell.outboard !== !!members[0].outboard)) return null;
+    // A verified legacy output can have a different role from its source
+    // cells. This explicit boundary metadata never accompanies a new merge.
+    if (group.boundary?.outboard === undefined && members.some(cell => !!cell.outboard !== !!members[0].outboard)) return null;
     const edgeCounts = new Map<string, number>();
     for (const cell of members) for (const id of cell.boundaryEdges) edgeCounts.set(id, (edgeCounts.get(id) ?? 0) + 1);
     if ([...edgeCounts.values()].some(n => n > 2)) return null;
@@ -110,7 +113,7 @@ export function projectMerges(base: GridTopology, groups: MergeGroup[], retained
     }
     replacements.push({ id: group.id, center, index: null,
       ...(baseCenter && { baseCenter }),
-      boundaryVertices, boundaryEdges, adjacentCells: [], originalCells: [...group.cellIds], outboard: members[0].outboard });
+      boundaryVertices, boundaryEdges, adjacentCells: [], originalCells: [...group.cellIds], outboard: group.boundary?.outboard ?? members[0].outboard });
   }
   const projected = projectCells(base, [...base.cells.values(), ...replacements].filter(cell => !usedCells.has(cell.id)));
   return projected ? { ...projected, ...(groups.length && { mergeBase: base, mergeGroups: groups }) } : null;

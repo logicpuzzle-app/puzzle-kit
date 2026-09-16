@@ -112,6 +112,9 @@ export function prepareLegacyEditedExclusions(topology: GridTopology, grid: Grid
   };
   const mappedBase = remapGraph(complete, true), mappedBefore = remapGraph(before), mappedAfter = remapGraph(after);
   if (!mappedBase || !mappedBefore || !mappedAfter) return null;
+  // Surviving cells keep the role actually saved by the legacy generator;
+  // retired source cells retain their original margin role for restoration.
+  for (const [id, cell] of mappedBase.cells) if (raw.cells.has(id)) mappedBase.cells.set(id, { ...cell, outboard: raw.cells.get(id)!.outboard });
   const cuts = legacySplitOperations(before, structural, mappedAfter);
   if (!cuts) return null;
   const diagonals = new Set(cuts.map(cut => cut.edgeId));
@@ -124,7 +127,8 @@ export function prepareLegacyEditedExclusions(topology: GridTopology, grid: Grid
     if (matches.length !== 1) return null;
     const cell = matches[0];
     edits.push({ kind: 'merge', id: cell.id, cellIds: members,
-      boundary: { vertices: cell.boundaryVertices, edges: cell.boundaryEdges } });
+      boundary: { vertices: cell.boundaryVertices, edges: cell.boundaryEdges,
+        ...(members.some(id => !!mappedBase.cells.get(id)!.outboard !== !!cell.outboard) && { outboard: !!cell.outboard }) } });
   }
   edits.push(...cuts);
   // Archive the old perimeter, including coalesced edges, dropped corners and
