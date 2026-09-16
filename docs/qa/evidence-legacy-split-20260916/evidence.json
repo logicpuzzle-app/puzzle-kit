@@ -1,0 +1,114 @@
+{
+  "before": {
+    "commit": "10ed819b6fd9448340eea1956958804de3fed06a",
+    "createdAt": "2026-09-16T07:36:26.787Z",
+    "runner": "Playwright + Chromium; desktop mouse and Pixel 7 emulated tap; public legacy import, restore, save, reload and undo UI.",
+    "stats": {
+      "startTime": "2026-09-16T07:36:27.300Z",
+      "duration": 13855.011,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "testSha256": "dcb474634d35723ad0a6071421c18d1c01e4b5d32a7ba9eb540f33dcb54469bc",
+    "fixtureSha256": "bfcf9d7f54a4ee6777c1896895cc1fe35cd0d8a611303caae0944358a0137ede",
+    "tests": [
+      {
+        "title": "legacy edge-interior splits retain IDs and restore independently through public files and history @production",
+        "project": "chromium",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Legacy split metadata has no retained source: no Restore cell buttons are available."
+      },
+      {
+        "title": "legacy edge-interior splits retain IDs and restore independently through public files and history @production",
+        "project": "mobile-chrome",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Legacy split metadata has no retained source: no Restore cell buttons are available."
+      }
+    ]
+  },
+  "after": {
+    "commit": "cfc1e900823a73154afd9eb4453d6de2e33d3560",
+    "createdAt": "2026-09-16T07:42:07.402Z",
+    "runner": "Playwright + Chromium; desktop mouse and Pixel 7 emulated tap; public legacy import, restore, save, reload and undo UI.",
+    "stats": {
+      "startTime": "2026-09-16T07:42:07.825Z",
+      "duration": 3871.1360000000004,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "testSha256": "dcb474634d35723ad0a6071421c18d1c01e4b5d32a7ba9eb540f33dcb54469bc",
+    "fixtureSha256": "bfcf9d7f54a4ee6777c1896895cc1fe35cd0d8a611303caae0944358a0137ede",
+    "tests": [
+      {
+        "title": "legacy edge-interior splits retain IDs and restore independently through public files and history @production",
+        "project": "chromium",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "legacy edge-interior splits retain IDs and restore independently through public files and history @production",
+        "project": "mobile-chrome",
+        "status": "passed",
+        "runtimeErrors": []
+      }
+    ]
+  },
+  "fixture": "Synthetic native1.4 legacy 1x3 square board: first cell cut from top-edge fraction0.4 to opposite corner, last cell cut vertex-to-vertex; child clues7/9, neighbor17, blue left boundary, red original corner and orange edge-interior point.",
+  "scope": "Read the unchanged legacy graph; restore first cut only, preserve second cut,9,17,red corner,blue boundary; retire first child7 and orange point; save/reload and Undo/Redo restore full annotations. Units also cover hex edge-to-edge cuts, old merged parents, snapshotless import, Wave diagonal midpoint, extent/layout/exclusion, orphan retirement, corrupt provenance rejection, snapshot-based preference recovery. Excluded/sculpt legacy graphs and unknown generators remain pending.",
+  "files": {
+    "after-chromium-restored.png": {
+      "sha256": "970b9c4c465b8927cdf4b0035391956cc15d53a270aaee1f4177a5cc565099c4",
+      "bytes": 30756
+    },
+    "after-chromium.png": {
+      "sha256": "78b2c9fc6755909d7b90086e9e594cdcb9e89ae926838e42b2f4f3030494018a",
+      "bytes": 61042
+    },
+    "after-chromium.webm": {
+      "sha256": "bc633da344bd669db8214b2250356704170913d64393272de2f4b5cdb36e9a4c",
+      "bytes": 78369,
+      "durationSeconds": 3.32,
+      "fullDecode": "passed"
+    },
+    "after-mobile-chrome-restored.png": {
+      "sha256": "3a559ef37ac693107ce46d3e8df0022050fd09aa5b67b03b9ca765eef90f85da",
+      "bytes": 80012
+    },
+    "after-mobile-chrome.png": {
+      "sha256": "e6211e26893b8293b5d322677a19955c21a8bf7e585eaeea24986f24833c1ee2",
+      "bytes": 114367
+    },
+    "after-mobile-chrome.webm": {
+      "sha256": "8e3f07659ccc6e970f895f00a42cd1ff6de6cbe2eddb5946b4a4cb454cbc4536",
+      "bytes": 174706,
+      "durationSeconds": 3.44,
+      "fullDecode": "passed"
+    },
+    "before-chromium.png": {
+      "sha256": "a848f689b464655ef6ddd10cff6a9bec1f0f7f907d2159a4e96613f104bbd95c",
+      "bytes": 62270
+    },
+    "before-chromium.webm": {
+      "sha256": "da33430014d3f12c09881fd950cc7e1e08e210efcc5887b98f879a045af36207",
+      "bytes": 169744,
+      "durationSeconds": 14.2,
+      "fullDecode": "passed"
+    },
+    "before-mobile-chrome.png": {
+      "sha256": "856bc813fe98318ab2030a3555c5208c67800122cbf6c03b06884135bae94935",
+      "bytes": 114153
+    },
+    "before-mobile-chrome.webm": {
+      "sha256": "295eb0ff12557dd22ed29bd8cafd5f374fff5075c82e54a9846cb957e16d5daf",
+      "bytes": 269918,
+      "durationSeconds": 14.24,
+      "fullDecode": "passed"
+    }
+  }
+}
