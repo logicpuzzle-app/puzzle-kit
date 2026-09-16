@@ -3,6 +3,7 @@ import { SegmentedToggle } from '../common';
 import { INPUT_MODE_ICONS } from '../toolbar/RibbonIcons';
 import { PAINT_COLOR_SWATCHES } from './constants';
 import { PaintFreehandIcon, PaintLineIcon, PaintNumberIcon, PaintSurfaceIcon, PaintSymbolIcon, PaintWordIcon } from './PaintIcons';
+import { SurfaceTargetControl } from '../panels/properties/SurfaceTargetControl';
 import type { PaintCategory, TranslateFn } from './types';
 import type { InputMode } from '../../constraints/types';
 
@@ -77,6 +78,7 @@ const PaintToolButtons: React.FC<PaintToolButtonsProps> = ({
         </button>
       );
     })}
+    {activeCategory === 'surface' && <SurfaceTargetControl compact />}
   </>
 );
 

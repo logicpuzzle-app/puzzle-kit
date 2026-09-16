@@ -2,6 +2,10 @@
  * Japanese translations for PuzzleKit
  */
 export const ja = {
+  'surface.target': '塗りの対象',
+  'surface.target.cell': 'マス',
+  'surface.target.vertex': '頂点',
+  'surface.vertexHint': '頂点の塗りはメモ表示です。正解判定の黒マス数などには含まれません。',
   "size.largest": "最大",
   "symbol.size.object": "サイズを変更する記号",
   "symbol.size.new": "新しく配置する記号",

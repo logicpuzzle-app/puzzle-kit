@@ -22,7 +22,8 @@ import {
   INITIAL_FLICK_STATE,
   calculateFlickDirection,
 } from './inputStrategies';
-import { resolveEdge } from '../utils/pointResolver';
+import { usesVertexSurface } from '../utils/vertexSurfaces';
+import { resolveEdge, resolveVertex } from '../utils/pointResolver';
 import { shouldAllowOutboardForTool } from '../utils/outboardPolicy';
 import { useLineSelection } from './canvasInput/useLineSelection';
 import { useSymbolArrowInput } from './canvasInput/useSymbolArrowInput';
@@ -475,7 +476,9 @@ export function useCanvasInputRouter({
       const point = getCanvasPoint(e.clientX, e.clientY);
 
       const cellInfo = findCellAtPoint(point, { allowOutboard: shouldAllowOutboardForTool(toolSettings.currentTool, activeLayer) });
-      const cellId = cellInfo?.cellId ?? null;
+      const cellId = usesVertexSurface(toolSettings)
+        ? (topology ? resolveVertex(point, { grid, useTopology: true, topology }, { maxDistance: grid.cellSize * 0.75 })?.id ?? null : null)
+        : cellInfo?.cellId ?? null;
 
       if (cellId !== hoverCell) {
         setHoverCell(cellId);
@@ -651,6 +654,7 @@ export function useCanvasInputRouter({
       removeNumber,
       handleSymbolTool,
       toolSettings.currentTool,
+      toolSettings.surfaceTarget,
       toolSettings.color,
       useTopology,
       topology,

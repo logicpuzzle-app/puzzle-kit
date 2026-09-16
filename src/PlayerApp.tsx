@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import './i18n';
 import { PuzzleCanvas } from './components/canvas';
 import { ToolModeSelector } from './components/toolbar/ToolModeSelector';
+import { SurfaceTargetControl } from './components/panels/properties/SurfaceTargetControl';
 import { FloatingNumberPad } from './components/panels/FloatingNumberPad';
 import { TextInputDialog, StorageErrorDialog } from './components/dialogs';
 import { CheckAnswerModal, ConfirmModal, AlertModal, ShortcutsModal, UrlImportModal } from './components/modals';
@@ -431,6 +432,7 @@ function PlayerApp() {
                 currentMode={currentInputMode as InputMode}
                 onModeChange={(mode) => setInputMode(mode)}
               />
+              <SurfaceTargetControl compact />
             </div>
           ) : (
             <div className="text-xs text-office-text-secondary">

@@ -8,6 +8,7 @@
  * - Current layer (puzzle.answer): 50% (handled separately in PuzzleCanvas)
  */
 
+import { VertexSurfaceLayer } from './VertexSurfaceLayer';
 import React from 'react';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { getCellCenter, getCellIndexById, getEdgeIndexById, getEdgePosition, getVertexIndexById, getVertexPosition } from '../../utils/gridUtils';
@@ -36,6 +37,7 @@ const TrialLayer: React.FC<TrialStackLayerProps> = ({ elements, opacity, layerIn
 
   return (
     <g className={`trial-layer-${layerIndex}`} opacity={opacity}>
+      <VertexSurfaceLayer layer="answer" elements={elements.vertexSurfaces ?? {}} />
       {/* Surfaces */}
       {Object.values(elements.surfaces).map((surface: SurfaceElement) => {
         if (useTopology && topology) {

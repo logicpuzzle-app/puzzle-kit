@@ -2,6 +2,10 @@
  * English translations for PuzzleKit
  */
 export const en = {
+  'surface.target': 'Shading target',
+  'surface.target.cell': 'Cell',
+  'surface.target.vertex': 'Vertex',
+  'surface.vertexHint': 'Vertex shading is a visual note; it does not count as shaded cells in answer checking.',
   "size.largest": "Largest",
   "symbol.size.object": "Symbol to resize",
   "symbol.size.new": "New symbols",

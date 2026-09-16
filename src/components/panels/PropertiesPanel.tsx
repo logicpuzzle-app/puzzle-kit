@@ -2,6 +2,7 @@
  * Properties panel - main container for property editors
  */
 
+import { SurfaceTargetControl } from './properties/SurfaceTargetControl';
 import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
@@ -97,6 +98,8 @@ export const PropertiesPanel: React.FC<{ suspended?: boolean }> = ({ suspended }
             <ArrowDirectionSettings />
           </div>
         )}
+
+        {!isSolving && !isSolverMode && !isGridMode && !isSpecificMode && <SurfaceTargetControl />}
 
         {/* Tool properties - standard tool settings */}
         {!isSolving && !isSolverMode && !isGridMode && !isSpecificMode && !isConstraintEnabled && (

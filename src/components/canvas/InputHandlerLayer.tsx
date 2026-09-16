@@ -9,6 +9,7 @@
  * - Selection tool
  */
 
+import { getVertexSurfaceRegion, usesVertexSurface } from '../../utils/vertexSurfaces';
 import React, { useMemo, RefObject } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { useCanvasInputRouter } from '../../hooks/useCanvasInputRouter';
@@ -273,6 +274,9 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
 
   const cellCursorPath = useMemo(() => {
     const tool = toolSettings.currentTool;
+    if (usesVertexSurface(toolSettings)) {
+      return hoverCell && topology ? getVertexSurfaceRegion(topology, hoverCell)?.path ?? null : null;
+    }
     if (!tool.startsWith('number')) return null;
 
     // Determine target cellId using unified finder
@@ -303,7 +307,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     if (!index) return null;
     const corners = getCellCorners(index.row, index.col, grid);
     return `M ${corners[0].x} ${corners[0].y} L ${corners[1].x} ${corners[1].y} L ${corners[2].x} ${corners[2].y} L ${corners[3].x} ${corners[3].y} Z`;
-  }, [hoverCell, numberSelection, grid, toolSettings.currentTool, useTopology, topology, findCellIdByRowCol]);
+  }, [hoverCell, numberSelection, grid, toolSettings.currentTool, toolSettings.surfaceTarget, useTopology, topology, findCellIdByRowCol]);
 
   return (
     <svg
