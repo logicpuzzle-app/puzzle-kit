@@ -19,7 +19,7 @@ test('LITS opaque IDs keep validation, room borders, history and native files co
   };
   const close = () => page.getByRole('button', { name: 'Close', exact: true }).click();
   await check();
-  await page.screenshot({ path: info.outputPath('lits-valid.png') });
+  await page.screenshot({ animations: 'disabled', path: info.outputPath('lits-valid.png') });
   await expect(page.getByText('Correct!', { exact: true }).first()).toBeVisible();
   await close();
   const initial = await savePuzzleFile(page);
@@ -31,7 +31,7 @@ test('LITS opaque IDs keep validation, room borders, history and native files co
   await openPuzzleFile(page, Buffer.from(JSON.stringify(mapped)));
   await check();
   await expect(page.getByText('Incorrect', { exact: true })).toBeVisible();
-  await page.screenshot({ path: info.outputPath('lits-divided.png') });
+  await page.screenshot({ animations: 'disabled', path: info.outputPath('lits-divided.png') });
   await close();
   const divided = await savePuzzleFile(page);
   const lines = Object.values(divided.state.problem.lines);
@@ -65,7 +65,7 @@ test('LITS opaque IDs keep validation, room borders, history and native files co
   expect(merged.state.answer).toEqual(initial.state.answer);
   expect(merged.topologySettings!.topology).toEqual(initial.topologySettings!.topology);
   await check(); await expect(page.getByText('Correct!', { exact: true }).first()).toBeVisible();
-  await page.screenshot({ path: info.outputPath('lits-merged.png') }); await close();
+  await page.screenshot({ animations: 'disabled', path: info.outputPath('lits-merged.png') }); await close();
   await page.getByTitle(/Undo \(Ctrl\+Z\)/).first().click();
   expect((await savePuzzleFile(page)).state).toEqual(divided.state);
   await check(); await expect(page.getByText('Incorrect', { exact: true })).toBeVisible(); await close();
@@ -74,12 +74,12 @@ test('LITS opaque IDs keep validation, room borders, history and native files co
   await openPuzzleFile(page, Buffer.from(JSON.stringify(merged)));
   expect((await savePuzzleFile(page)).state).toEqual(merged.state);
   await check(); await expect(page.getByText('Correct!', { exact: true }).first()).toBeVisible();
-  await page.screenshot({ path: info.outputPath('lits-reloaded.png') }); await close();
+  await page.screenshot({ animations: 'disabled', path: info.outputPath('lits-reloaded.png') }); await close();
 
   const unavailable = structuredClone(initial);
   unavailable.topologySettings!.topology!.cells[0][1].index = null;
   await openPuzzleFile(page, Buffer.from(JSON.stringify(unavailable)));
   await check(); await expect(page.getByText('Undecided', { exact: true })).toBeVisible();
   await expect(page.getByText('Some required checks are unavailable. The answer cannot be confirmed.', { exact: true }).first()).toBeVisible();
-  await page.screenshot({ path: info.outputPath('lits-unavailable.png') });
+  await page.screenshot({ animations: 'disabled', path: info.outputPath('lits-unavailable.png') });
 });

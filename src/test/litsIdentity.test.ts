@@ -32,6 +32,8 @@ it('checks and highlights the same opaque cells through public load, edit histor
   }
   // A single-edge border needs incidence, not vertex coordinate metadata.
   for (const [, vertex] of file.topologySettings!.topology!.vertices) vertex.index = null;
+  const edge = file.topologySettings!.topology!.edges.find(([, e]) => e.adjacentCells.length === 2)![1];
+  file.state.problem.lines['opaque-border'] = { id: 'opaque-border', ...border(edge.startVertex, edge.endVertex) };
   const store = load(file), original = store.getState().puzzle;
   expect(store.getState().checkAnswer()).toMatchObject({ complete: true, errors: [] });
   expect(new Set(highlights(store).map(f => f.cellId))).toEqual(new Set(store.getState().topology!.cells.keys()));
