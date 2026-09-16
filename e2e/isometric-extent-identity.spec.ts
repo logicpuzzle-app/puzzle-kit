@@ -34,7 +34,7 @@ test('isometric growth retains vertex notes, accepts new-cell input and restores
   expect((await savePuzzleFile(page)).grid.cols).toBe(3);
   await page.getByTitle(/Redo/).first().click();
   await openPuzzleFile(page, Buffer.from(JSON.stringify(expanded)));
-  await resize('Height', '3');
+  await resize('Level', '3');
   const taller = await savePuzzleFile(page);
   expect(taller.grid.level).toBe(3);
   expect(taller.state).toEqual(expanded.state);
