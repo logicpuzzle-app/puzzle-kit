@@ -268,6 +268,8 @@ export const GridShapeContent: React.FC = () => {
         )}
       </div>
 
+      {!!grid.mergedCells?.length && <p className="text-xs text-office-text-secondary">{t('gridEdit.resizeMergedHelp')}</p>}
+
       {isIso && (
         <>
           {/* Exterior / Interior toggle */}

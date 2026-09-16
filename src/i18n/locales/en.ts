@@ -800,6 +800,7 @@ export const en = {
   'gridEdit.merge': 'Merge',
   'gridEdit.split': 'Split',
   'gridEdit.exclude': 'Exclude',
+  'gridEdit.resizeMergedHelp': 'Shrinking keeps a connected merged cell and its clues. If it splits into separate cells or disappears, its clues are removed. Notes on removed edges and vertices are also removed. Undo restores them.',
   'gridEdit.mergeHelp': 'Drag across cells to merge them. Right-click to unmerge.',
   'gridEdit.mergeAnnotations': 'Annotations on cells, edges or vertices removed by merging or unmerging are cleared. Use Undo to restore them.',
   'gridEdit.mergeSourceMissing': 'The merge source cannot be recovered from this saved board. Unmerge is unavailable.',

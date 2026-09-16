@@ -800,6 +800,7 @@ export const ja = {
   'gridEdit.merge': '結合',
   'gridEdit.split': '分割',
   'gridEdit.exclude': '除外',
+  'gridEdit.resizeMergedHelp': '縮小後も一つにつながる結合セルと数字は保持します。複数に分かれたり消えたりする結合セルの数字、なくなる辺・頂点の注記は削除されます。「元に戻す」で復元できます。',
   'gridEdit.mergeHelp': 'セルをドラッグして結合します。右クリックで解除。',
   'gridEdit.mergeAnnotations': '結合・解除でなくなるセル・辺・頂点の注記は削除されます。注記も戻す場合は「元に戻す」を使ってください。',
   'gridEdit.mergeSourceMissing': 'この保存盤面から結合前の形状を復元できないため、結合解除できません。',
