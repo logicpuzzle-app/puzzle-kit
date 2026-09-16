@@ -18,7 +18,7 @@ const key = (row: number, col: number) => JSON.stringify([row, col]);
 /** A logical square lattice, including holes and display deformation. Indexes
  * are query metadata, never persistent identities. Reject ambiguous indexes or
  * non-lattice incidence instead of reconstructing cells from an ID spelling. */
-export function rectangularBoard(ctx: ValidationContext): RectangularBoard | null {
+export function rectangularBoard(ctx: Pick<ValidationContext, 'grid' | 'topology' | 'referenceMode'>): RectangularBoard | null {
   const { grid, topology } = ctx;
   const referenceMode = ctx.referenceMode ?? (topology ? 'topology' : 'grid');
   if (grid.gridType !== 'square' || !Number.isInteger(grid.rows) || grid.rows < 1 || !Number.isInteger(grid.cols) || grid.cols < 1) return null;

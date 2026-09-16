@@ -1,18 +1,5 @@
-import type { GridConfig, PuzzleState } from '../../types';
-import type { GridTopology } from '../../utils/topology';
-import { getEdgeIndexById } from '../../utils/gridUtils';
-
-type Context = { puzzle: PuzzleState; grid: GridConfig; topology: GridTopology | null };
-const shades = new Set(['#000000', '#444444', '#808080']);
-export const isLitsShaded = (puzzle: PuzzleState, id: string) =>
-  Object.values(puzzle.answer.surfaces).some(s => s.cellId === id && s.displayMode !== 'dot' && shades.has(s.color));
-
-export function litsNeighbors(id: string): string[] {
-  const match = /^cell-(\d+)-(\d+)$/.exec(id);
-  if (!match) return [];
-  const [, r, c] = match.map(Number);
-  return [`cell-${r - 1}-${c}`, `cell-${r + 1}-${c}`, `cell-${r}-${c - 1}`, `cell-${r}-${c + 1}`];
-}
+import { rectangularBoard, type RectangularBoard, type RectangularCell } from './rectangularBoard';
+import { getLitsBorders, litsBorderKey, litsReferenceMode, type LitsContext } from './litsBorders';
 
 function shapeKey(points: number[][]): string {
   const minR = Math.min(...points.map(p => p[0])), minC = Math.min(...points.map(p => p[1]));
@@ -33,58 +20,24 @@ for (const [name, points] of Object.entries({
   }
 }
 
-/** Classifies all rotations/reflections, rejecting O, disconnected and non-four-cell shapes. */
-export function getLitsShape(ids: string[]): string | null {
-  if (new Set(ids).size !== 4 || ids.length !== 4) return null;
-  const matches = ids.map(id => /^cell-(\d+)-(\d+)$/.exec(id));
-  if (matches.some(m => !m)) return null;
-  return shapes.get(shapeKey(matches.map(m => [Number(m![1]), Number(m![2])])) ) ?? null;
+/** Classifies logical cell coordinates; ID spelling is irrelevant. */
+export function getLitsShape(cells: Pick<RectangularCell, 'row' | 'col'>[]): string | null {
+  if (cells.length !== 4) return null;
+  const points = cells.map(cell => [cell.row, cell.col]);
+  if (new Set(points.map(p => JSON.stringify(p))).size !== 4) return null;
+  return shapes.get(shapeKey(points)) ?? null;
 }
 
-export function getLitsCells(grid: GridConfig): string[] {
-  const excluded = new Set([...(grid.disabledCells ?? []), ...(grid.voidCells ?? []), ...(grid.outboardCells ?? [])]);
-  const cells: string[] = [];
-  for (let r = 0; r < grid.rows; r++) for (let c = 0; c < grid.cols; c++) {
-    const id = `cell-${r}-${c}`;
-    if (!excluded.has(id)) cells.push(id);
-  }
-  return cells;
+export function getLitsBoard(ctx: LitsContext): RectangularBoard | null {
+  return rectangularBoard({ ...ctx, referenceMode: litsReferenceMode(ctx) });
 }
 
-export const litsBorderKey = (a: string, b: string) => [a, b].sort().join('|');
-
-/** Cell adjacencies blocked by square-grid problem borders, excluding annotations. */
-export function getLitsBorderKeys({ puzzle, grid, topology }: Context): Set<string> {
-  const blocked = new Set<string>();
-  const grouped = new Set(Object.values(puzzle.problem.lineGroups ?? {}).flatMap(g => g.lineIds));
-  const key = litsBorderKey;
-  for (const line of Object.values(puzzle.problem.lines)) {
-    if (line.isFree || line.directed || grouped.has(line.id)) continue;
-    if (line.lineTarget ? !['edge', 'wall'].includes(line.lineTarget) : !line.from?.startsWith('vertex-')) continue;
-    const edge = line.edgeId ? topology?.edges.get(line.edgeId) : undefined;
-    if (edge?.adjacentCells.length === 2) { blocked.add(key(...edge.adjacentCells as [string, string])); continue; }
-    const index = line.edgeId ? getEdgeIndexById(line.edgeId, grid) : null;
-    if (index) {
-      const { row, col, type } = index;
-      blocked.add(key(`cell-${row}-${col}`, type === 'h' ? `cell-${row - 1}-${col}` : `cell-${row}-${col - 1}`));
-      continue;
-    }
-    const a = /^vertex-(\d+)-(\d+)$/.exec(line.from ?? ''), b = /^vertex-(\d+)-(\d+)$/.exec(line.to ?? '');
-    if (!a || !b) continue;
-    const [r1, c1, r2, c2] = [a[1], a[2], b[1], b[2]].map(Number);
-    if (r1 === r2) for (let c = Math.min(c1, c2); c < Math.max(c1, c2); c++) blocked.add(key(`cell-${r1 - 1}-${c}`, `cell-${r1}-${c}`));
-    if (c1 === c2) for (let r = Math.min(r1, r2); r < Math.max(r1, r2); r++) blocked.add(key(`cell-${r}-${c1 - 1}`, `cell-${r}-${c1}`));
-  }
-  return blocked;
-}
-
-export function getLitsRoomsFromBorders(cells: string[], blocked: Set<string>): Map<number, string[]> {
-  const rooms = new Map<number, string[]>();
-  const remaining = new Set(cells);
-  for (const id of cells) {
+export function getLitsRoomsFromBorders(board: RectangularBoard, blocked: Set<string>): Map<number, string[]> {
+  const rooms = new Map<number, string[]>(), remaining = new Set(board.cells.keys());
+  for (const id of board.cells.keys()) {
     if (!remaining.delete(id)) continue;
     const room = [id];
-    for (let i = 0; i < room.length; i++) for (const neighbor of litsNeighbors(room[i])) {
+    for (let i = 0; i < room.length; i++) for (const neighbor of board.cells.get(room[i])!.neighbors) {
       if (!blocked.has(litsBorderKey(room[i], neighbor)) && remaining.delete(neighbor)) room.push(neighbor);
     }
     rooms.set(rooms.size, room);
@@ -92,18 +45,56 @@ export function getLitsRoomsFromBorders(cells: string[], blocked: Set<string>): 
   return rooms;
 }
 
-/** Maps are synchronized on LITS border edits; unmapped boards derive rooms directly. */
-export function getLitsRooms(ctx: Context): Map<number, string[]> | null {
-  const cells = getLitsCells(ctx.grid);
+/** A complete map may preserve imported labels, but cannot refer to unknown
+ * cells or join disconnected components under a single room label. */
+export function getLitsMappedRooms(ctx: LitsContext, board: RectangularBoard): Map<number, string[]> | null {
   const map = ctx.puzzle.problem.roomMap;
-  if (map && Object.keys(map).length) {
-    const rooms = new Map<number, string[]>();
-    for (const id of cells) {
-      if (!Number.isInteger(map[id])) return null;
-      const room = map[id];
-      rooms.set(room, [...(rooms.get(room) ?? []), id]);
-    }
-    return rooms;
+  if (!map || Object.keys(map).some(id => !board.cells.has(id) && !board.excluded.has(id))) return null;
+  const rooms = new Map<number, string[]>();
+  for (const id of board.cells.keys()) {
+    if (!Object.hasOwn(map, id) || !Number.isInteger(map[id])) return null;
+    const cells = rooms.get(map[id]) ?? []; cells.push(id); rooms.set(map[id], cells);
   }
-  return getLitsRoomsFromBorders(cells, getLitsBorderKeys(ctx));
+  for (const [label, cells] of rooms) {
+    const visited = new Set([cells[0]]), queue = [cells[0]];
+    for (let i = 0; i < queue.length; i++) for (const id of board.cells.get(queue[i])!.neighbors) {
+      if (map[id] === label && !visited.has(id)) { visited.add(id); queue.push(id); }
+    }
+    if (visited.size !== cells.length) return null;
+  }
+  return rooms;
+}
+
+export function getLitsRooms(ctx: LitsContext, board = getLitsBoard(ctx)): Map<number, string[]> | null {
+  if (!board) return null;
+  const borders = getLitsBorders(ctx, board);
+  if (!borders) return null;
+  const map = ctx.puzzle.problem.roomMap;
+  if (!map || !Object.keys(map).length) return getLitsRoomsFromBorders(board, borders.blocked);
+  const mapped = getLitsMappedRooms(ctx, board);
+  if (!mapped) return null;
+  const blocked = new Set(borders.blocked);
+  for (const cell of board.cells.values()) for (const neighbor of cell.neighbors) {
+    if (map[cell.id] !== map[neighbor]) blocked.add(litsBorderKey(cell.id, neighbor));
+  }
+  // Imported maps can supply implicit boundaries, but a visible closed divider
+  // must not be hidden by a stale map that still claims one room on both sides.
+  if (getLitsRoomsFromBorders(board, blocked).size !== mapped.size) return null;
+  return mapped;
+}
+
+const shades = new Set(['#000000', '#444444', '#808080']);
+/** Shared by validation and highlights so missing references never look valid. */
+export function getLitsState(ctx: LitsContext) {
+  const board = getLitsBoard(ctx);
+  if (!board) return null;
+  const rooms = getLitsRooms(ctx, board);
+  if (!rooms) return null;
+  const shaded = new Set<string>();
+  for (const surface of Object.values(ctx.puzzle.answer.surfaces)) {
+    if (surface.displayMode === 'dot' || !shades.has(surface.color) || board.excluded.has(surface.cellId)) continue;
+    if (!board.cells.has(surface.cellId)) return null;
+    shaded.add(surface.cellId);
+  }
+  return { ...board, rooms, shaded };
 }

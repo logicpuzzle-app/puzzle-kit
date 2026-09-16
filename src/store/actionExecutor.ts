@@ -143,6 +143,9 @@ export class ActionExecutor {
     };
 
     switch (action.type) {
+      case 'EDIT_ROOM_BORDERS':
+        set(state => ({ puzzle: { ...state.puzzle, problem: { ...state.puzzle.problem, ...action.after } } }));
+        break;
       case 'ADD_VERTEX_SURFACE':
       case 'REMOVE_VERTEX_SURFACE':
         set((state) => {

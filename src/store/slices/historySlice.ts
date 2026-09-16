@@ -27,6 +27,8 @@ export const applyActionToState = (
   };
 
   switch (action.type) {
+    case 'EDIT_ROOM_BORDERS':
+      return { puzzle: { ...state.puzzle, problem: { ...state.puzzle.problem, ...action.after } } };
     case 'ADD_BOXLINE':
     case 'REMOVE_BOXLINE': {
       const layer = action.element.layer;

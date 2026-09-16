@@ -154,11 +154,19 @@ export interface BatchAction {
   description?: string;
 }
 
+/** Room labels and their visible borders are one reversible edit. */
+export interface EditRoomBordersAction {
+  type: 'EDIT_ROOM_BORDERS';
+  before: Pick<PuzzleState['problem'], 'lines' | 'roomMap'>;
+  after: Pick<PuzzleState['problem'], 'lines' | 'roomMap'>;
+}
+
 // ========================================
 // Union of All Actions
 // ========================================
 
 export type PuzzleAction =
+  | EditRoomBordersAction
   // Element operations
   | AddVertexSurfaceAction
   | RemoveVertexSurfaceAction
@@ -306,6 +314,8 @@ export function reverseAction(action: PuzzleAction): PuzzleAction {
 
   // Handle special cases
   switch (action.type) {
+    case 'EDIT_ROOM_BORDERS':
+      return { ...action, before: action.after, after: action.before };
     case 'UPDATE_NUMBER':
       return {
         type: 'UPDATE_NUMBER',
@@ -355,6 +365,7 @@ export function reverseAction(action: PuzzleAction): PuzzleAction {
 
 // Description mapping for element actions
 const ELEMENT_ACTION_DESCRIPTIONS: Record<string, string> = {
+  EDIT_ROOM_BORDERS: 'Edit room borders',
   ADD_VERTEX_SURFACE: 'Shade vertex',
   REMOVE_VERTEX_SURFACE: 'Erase vertex shading',
   ADD_SURFACE: 'Add surface',

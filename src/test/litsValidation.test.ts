@@ -10,11 +10,13 @@ function setup(cells: string[], split = false) {
   store.getState().newPuzzle({ rows: 6, cols: 6, gridType: 'square' });
   store.getState().setCurrentSchemaId('lits');
   store.getState().setActiveLayer('answer');
-  const map = Object.fromEntries([...store.getState().topology!.cells.keys()].map(id => [id, split && Number(id.split('-')[2]) >= 3 ? 1 : 0]));
+  const map = Object.fromEntries([...store.getState().topology!.cells].map(([id, cell]) => [id, split && cell.index![1]! >= 3 ? 1 : 0]));
   store.getState().setRoomMap(map);
   for (const cellId of cells) store.getState().addSurface({ cellId, color: '#000000', layer: 'answer' });
   return store;
 }
+const vertex = (store: ReturnType<typeof setup>, row: number, col: number) =>
+  [...store.getState().topology!.vertices.values()].find(v => v.index?.[0] === row && v.index?.[1] === col)!.id;
 const validate = (store: ReturnType<typeof setup>) => {
   const s = store.getState();
   return runDataDrivenValidation(s.puzzle, s.grid, schema, {}, s.topology);
@@ -42,7 +44,7 @@ describe('LITS validation', () => {
   });
   it('derives rooms from drawn borders when there is no imported map', () => {
     const store = setup([]);store.getState().clearRoomMap();
-    store.getState().addLine({ from: 'vertex-0-3', to: 'vertex-6-3', lineTarget: 'edge', layer: 'problem', style: 'solid', thickness: 'thick', color: '#000000' });
+    store.getState().addLine({ from: vertex(store, 0, 3), to: vertex(store, 6, 3), lineTarget: 'edge', layer: 'problem', style: 'solid', thickness: 'thick', color: '#000000' });
     expect([...getLitsRooms(store.getState())!.values()].map(c => c.length)).toEqual([18, 18]);
   });
   it('rejects incomplete room maps instead of ignoring unassigned cells', () => {
@@ -72,7 +74,7 @@ describe('LITS validation', () => {
   }))('recognizes each distinct orientation of %s', (name, diagrams) => {
     for (const diagram of diagrams) {
       const cells = diagram.split('/').flatMap((row, r) =>
-        [...row].flatMap((cell, c) => cell === '#' ? [`cell-${r + 5}-${c + 5}`] : [])
+        [...row].flatMap((cell, c) => cell === '#' ? [{ row: r + 5, col: c + 5 }] : [])
       );
       expect(getLitsShape(cells), diagram).toBe(name);
     }
@@ -93,7 +95,7 @@ it('updates imported rooms after drawing a border, undo, redo and reload', () =>
   const store = setup(['cell-1-1', 'cell-1-2', 'cell-1-3', 'cell-1-4']);
   store.getState().setActiveLayer('problem');
   expect(validate(store).complete).toBe(true);
-  const id = store.getState().addLine({ from: 'vertex-0-3', to: 'vertex-6-3', lineTarget: 'edge', layer: 'problem', style: 'solid', thickness: 'thick', color: '#000000' });
+  const id = store.getState().addLine({ from: vertex(store, 0, 3), to: vertex(store, 6, 3), lineTarget: 'edge', layer: 'problem', style: 'solid', thickness: 'thick', color: '#000000' });
   expect([...getLitsRooms(store.getState())!.values()].map(c => c.length)).toEqual([18, 18]);
   expect(validate(store).complete).toBe(false);
   store.getState().undo(); expect(validate(store).complete).toBe(true);
@@ -129,7 +131,7 @@ it('retains partial dividers until they close a room and reopens a deleted gap',
   store.getState().setActiveLayer('problem');
   const ids: string[] = [];
   for (let r = 0; r < 6; r++) {
-    ids.push(store.getState().addLine({ from: `vertex-${r}-3`, to: `vertex-${r+1}-3`, lineTarget: 'edge', layer: 'problem', style: 'solid', thickness: 'normal', color: '#000000' }));
+    ids.push(store.getState().addLine({ from: vertex(store, r, 3), to: vertex(store, r + 1, 3), lineTarget: 'edge', layer: 'problem', style: 'solid', thickness: 'normal', color: '#000000' }));
     expect(validate(store).complete).toBe(r < 5);
   }
   store.getState().removeLine(ids[2]); expect(validate(store).complete).toBe(true);
@@ -140,7 +142,7 @@ it('retains partial dividers until they close a room and reopens a deleted gap',
 it('keeps room labels for decorative/answer lines and does not change other genres', () => {
   const store = setup([]);
   const map = structuredClone(store.getState().puzzle.problem.roomMap);
-  const border = { from: 'vertex-0-3', to: 'vertex-6-3', lineTarget: 'edge' as const, layer: 'problem' as const, style: 'solid' as const, thickness: 'normal' as const, color: '#000000' };
+  const border = { from: vertex(store, 0, 3), to: vertex(store, 6, 3), lineTarget: 'edge' as const, layer: 'problem' as const, style: 'solid' as const, thickness: 'normal' as const, color: '#000000' };
   store.getState().addLine({ ...border, layer: 'answer' });
   store.getState().addLine({ ...border, isFree: true, fromX: 120, fromY: 0, toX: 120, toY: 240 });
   expect(store.getState().puzzle.problem.roomMap).toEqual(map);
@@ -153,7 +155,7 @@ it('keeps invalid maps invalid when borders are edited', () => {
   const store = setup(['cell-1-1', 'cell-1-2', 'cell-1-3', 'cell-1-4']);
   const map = { 'cell-1-1': 9 };
   store.getState().setRoomMap(structuredClone(map));
-  store.getState().addLine({ from: 'vertex-0-3', to: 'vertex-6-3', lineTarget: 'edge', layer: 'problem', style: 'solid', thickness: 'normal', color: '#000000' });
+  store.getState().addLine({ from: vertex(store, 0, 3), to: vertex(store, 6, 3), lineTarget: 'edge', layer: 'problem', style: 'solid', thickness: 'normal', color: '#000000' });
   expect(store.getState().puzzle.problem.roomMap).toEqual(map);
   expect(validate(store).complete).toBe(false);
 });

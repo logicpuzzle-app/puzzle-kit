@@ -23,6 +23,7 @@ import type {
   BoxLineElement,
   LineGroup,
 } from '../../types';
+import { withLitsRoomHistory } from '../litsRoomSync';
 import { getVertexSurfaceRegion } from '../../utils/vertexSurfaces';
 import { isSymbolSize } from '../../utils/symbolSize';
 import { toDataLayer, type DataLayerType } from '../../types';
@@ -216,9 +217,9 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
       return { puzzle: { ...state.puzzle, [layer]: { ...state.puzzle[layer], lines } } };
     });
     const addition = createAddLineAction(normalizedElement);
-    get().historyManager.addAction(merged.removed.length ? createBatchAction([
+    get().historyManager.addAction(withLitsRoomHistory(merged.removed.length ? createBatchAction([
       ...merged.removed.map(line => createRemoveLineAction(line.id, line)), addition,
-    ], 'Merge overlapping lines') : addition);
+    ], 'Merge overlapping lines') : addition, state.puzzle, get().puzzle));
     return id;
   },
 
@@ -245,7 +246,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
           },
         };
       });
-      get().historyManager.addAction(createRemoveLineAction(id, lineElement));
+      get().historyManager.addAction(withLitsRoomHistory(createRemoveLineAction(id, lineElement), state.puzzle, get().puzzle));
     }
   },
 
@@ -273,7 +274,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
           },
         };
       });
-      get().historyManager.addAction(createUpdateLineAction(id, element, newElement, layer));
+      get().historyManager.addAction(withLitsRoomHistory(createUpdateLineAction(id, element, newElement, layer), state.puzzle, get().puzzle));
     }
   },
 

@@ -42,6 +42,8 @@ export interface HighlightContext {
   grid: GridConfig;
   schema: ConstraintSchema;
   topology: GridTopology | null;
+  /** Explicit reference format; absent topology must not imply a Grid fallback. */
+  referenceMode?: 'grid' | 'topology';
   currentInputMode: InputMode;
   activeLayer: 'problem' | 'answer';
 }

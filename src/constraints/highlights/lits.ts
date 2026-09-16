@@ -6,23 +6,22 @@
 
 import {
   registerHighlightProvider,
-  type HighlightContext,
   type HighlightOutput,
   type HighlightFill,
 } from './core';
-import { getLitsRooms, getLitsShape, isLitsShaded } from '../helpers/lits';
+import { getLitsState, getLitsShape } from '../helpers/lits';
 
 const HIGHLIGHT_COLOR = '#60ffa0';
 const HIGHLIGHT_OPACITY = 1;
 
 registerHighlightProvider('lits.tetromino-region', (ctx): HighlightOutput => {
-  const rooms = getLitsRooms(ctx);
-  if (!rooms) return { fills: [] };
+  const board = getLitsState(ctx);
+  if (!board) return { fills: [] };
   const fills: HighlightFill[] = [];
 
-  rooms.forEach((cells) => {
-    const shadedInRoom = cells.filter((cellId) => isLitsShaded(ctx.puzzle, cellId));
-    if (!getLitsShape(shadedInRoom)) return;
+  board.rooms.forEach((cells) => {
+    const shadedInRoom = cells.filter((cellId) => board.shaded.has(cellId));
+    if (!getLitsShape(shadedInRoom.map(id => board.cells.get(id)!))) return;
 
     cells.forEach((cellId) => {
       fills.push({
