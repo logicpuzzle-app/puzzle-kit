@@ -3,6 +3,7 @@ import type { GridTopology, TopologyPreset } from './gridTopology';
 import { applyTopologyPreset, gridConfigToTopology } from './gridTopology';
 import { deserializeTopology, serializeTopology } from './serialization';
 import { createGridReferenceTopology } from './topology/gridExclusions';
+import { prepareLegacyMerges } from './topology/legacyMerges';
 import { prepareExclusionBase } from './topology/legacyExclusions';
 
 type Settings = NonNullable<PuzzleExport['topologySettings']>;
@@ -28,7 +29,7 @@ export function restoreTopology(grid: GridConfig, settings: Settings): GridTopol
   if (grid.hexRowOffset !== undefined && grid.hexRowOffset !== 0 && grid.hexRowOffset !== 1) {
     throw new Error('Invalid grid hex row offset');
   }
-  const topology = settings.topology !== undefined
+  let topology = settings.topology !== undefined
     ? deserializeTopology(settings.topology)
     : settings.useTopology ? applyTopologyPreset(gridConfigToTopology(grid), {
         preset: settings.topologyPreset as TopologyPreset,
@@ -48,6 +49,7 @@ export function restoreTopology(grid: GridConfig, settings: Settings): GridTopol
   if (topology.exclusionBase) topology.exclusionBase.appliedPreset = topology.appliedPreset;
   if (topology.mergeBase) topology.mergeBase.appliedPreset = topology.appliedPreset;
   if (topology.exclusionBase?.mergeBase) topology.exclusionBase.mergeBase.appliedPreset = topology.appliedPreset;
+  if (settings.useTopology) topology = prepareLegacyMerges(topology, grid);
   return settings.useTopology
     ? prepareExclusionBase(topology, grid, settings.topologyPreset as TopologyPreset, settings.topologyIntensity)
     : topology;

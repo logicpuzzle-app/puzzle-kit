@@ -1,7 +1,39 @@
 import { v4 as uuid } from 'uuid';
 import type { GridTopology, TopologyCell, TopologyEdge, TopologyVertex } from './types';
 
-export interface MergeGroup { id: string; cellIds: string[] }
+export interface MergeGroup {
+  id: string;
+  cellIds: string[];
+  /** A verified legacy merge may have simplified its outer boundary. These
+   * actual references preserve that cell until it is explicitly replaced. */
+  boundary?: { vertices: string[]; edges: string[] };
+}
+
+function validLegacyBoundary(base: GridTopology, canonical: string[], boundary: NonNullable<MergeGroup['boundary']>): boolean {
+  if (!Array.isArray(boundary.vertices) || !Array.isArray(boundary.edges) || boundary.vertices.length < 3
+    || boundary.vertices.length !== boundary.edges.length || new Set(boundary.vertices).size !== boundary.vertices.length
+    || new Set(boundary.edges).size !== boundary.edges.length) return false;
+  const indices = boundary.vertices.map(id => canonical.indexOf(id));
+  if (indices.some(i => i < 0)) return false;
+  // The old generator could drop a corner as well as collinear points. Preserve
+  // its explicitly archived boundary, but require a cyclic subsequence of the
+  // source perimeter: no foreign points, reordered crossings or invented IDs.
+  const n = canonical.length;
+  return [1, -1].some(direction => {
+    let total = 0;
+    for (let i = 0; i < indices.length; i++) {
+      const a = boundary.vertices[i], b = boundary.vertices[(i + 1) % indices.length];
+      const edge = base.edges.get(boundary.edges[i]);
+      if (!edge || !((edge.startVertex === a && edge.endVertex === b) || (edge.startVertex === b && edge.endVertex === a))) return false;
+      let current = indices[i];
+      do {
+        current = (current + direction + n) % n;
+        if (++total > n) return false;
+      } while (current !== indices[(i + 1) % indices.length]);
+    }
+    return total === n;
+  });
+}
 
 /** Project merges from the retained source graph. Boundary IDs come from actual
  * incidences; collinear boundary vertices are still real, surviving entities. */
@@ -31,7 +63,7 @@ export function projectMerges(base: GridTopology, groups: MergeGroup[], retained
     // One simple closed boundary is representable. Disconnected groups and
     // holes are rejected, never replaced by a convex hull or a guessed loop.
     if ([...touching.values()].some(edges => edges.length !== 2)) return null;
-    const boundaryVertices: string[] = [], boundaryEdges: string[] = [];
+    let boundaryVertices: string[] = [], boundaryEdges: string[] = [];
     const first = boundary[0]!.startVertex;
     let vertex = first, previous: string | undefined;
     do {
@@ -44,6 +76,11 @@ export function projectMerges(base: GridTopology, groups: MergeGroup[], retained
       previous = edgeId;
     } while (vertex !== first && boundaryEdges.length <= boundary.length);
     if (vertex !== first || boundaryEdges.length !== boundary.length) return null;
+    if (group.boundary) {
+      if (!validLegacyBoundary(base, boundaryVertices, group.boundary)) return null;
+      boundaryVertices = group.boundary.vertices;
+      boundaryEdges = group.boundary.edges;
+    }
     const center = members.reduce((p, cell) => ({ x: p.x + cell.center.x / members.length, y: p.y + cell.center.y / members.length }), { x: 0, y: 0 });
     const polygon = boundaryVertices.map(id => base.vertices.get(id)?.position);
     if (polygon.some(p => !p)) return null;
