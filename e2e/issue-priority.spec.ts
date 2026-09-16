@@ -11,42 +11,6 @@ async function init(page: Page, tool?: string) {
     s.setToolSettings({ color: '#000000', lineDirections: ['straight'], lineGridPoints: ['cell'], lineHalfMode: false });
   }, tool);
 }
-async function point(page: Page, row: number, col: number) {
-  await page.locator('#puzzle-canvas').scrollIntoViewIfNeeded();
-  return page.locator('#puzzle-canvas > g').first().evaluate(async (g, { row, col }) => {
-    const path = '/src/store/puzzleStore.ts';const { usePuzzleStore } = await import(path);
-    const p = usePuzzleStore.getState().topology.cells.get(`cell-${row}-${col}`).center;
-    const q = new DOMPoint(p.x, p.y).matrixTransform((g as SVGGraphicsElement).getScreenCTM()!);
-    return { x: q.x, y: q.y };
-  }, { row, col });
-}
-async function drag(page: Page, a: { x: number; y: number }, b: { x: number; y: number }) {
-  await page.mouse.move(a.x, a.y);await page.mouse.down();await page.mouse.move(b.x, b.y, { steps: 12 });await page.mouse.up();
-}
-const lineCount = (page: Page) => page.evaluate(async () => {
-  const path = '/src/store/puzzleStore.ts';const { usePuzzleStore } = await import(path);
-  return Object.keys(usePuzzleStore.getState().puzzle.problem.lines).length;
-});
-
-test('lines: long and short overlap stays normalized through undo and reload', async ({ page }) => {
-  await init(page, 'line-normal');const a = await point(page, 1, 1), b = await point(page, 1, 3), mid = await point(page, 1, 2);
-  await drag(page, a, b);await expect.poll(() => lineCount(page)).toBe(1);
-  await drag(page, b, a);await expect.poll(() => lineCount(page)).toBe(0);
-  await drag(page, a, b);await drag(page, a, mid);await expect.poll(() => lineCount(page)).toBe(1);
-  const undo = page.getByTitle(/Undo \(Ctrl\+Z\)/).first(), redo = page.getByTitle(/Redo/).first();
-  await undo.click();await expect.poll(() => lineCount(page)).toBe(0);
-  await redo.click();await expect.poll(() => lineCount(page)).toBe(1);
-  await expect.poll(() => page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('puzzlekit_autosave') || '{}').state?.problem?.lines || {}).length)).toBe(1);
-  await page.reload();await expect(page.locator('#puzzle-canvas')).toBeVisible();await expect.poll(() => lineCount(page)).toBe(1);
-});
-
-test('half: a half segment over a full segment adds no duplicate', { tag: '@desktop' }, async ({ page }) => {
-  await init(page, 'line-normal');const a = await point(page, 1, 1), b = await point(page, 1, 2);
-  await drag(page, a, b);await expect.poll(() => lineCount(page)).toBe(1);
-  await page.evaluate(async () => { const path = '/src/store/puzzleStore.ts';const { usePuzzleStore } = await import(path);usePuzzleStore.getState().setToolSettings({ lineHalfMode: true, lineGridPoints: ['cell', 'edge'] }); });
-  await drag(page, a, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });await expect.poll(() => lineCount(page)).toBe(1);
-});
-
 test('contrast: neutral numbers and text follow dark cell backgrounds', { tag: '@desktop' }, async ({ page }) => {
   await init(page);
   await page.evaluate(async () => {

@@ -1,0 +1,96 @@
+{
+  "applicationCommit": "ceee29088d9bdf1e9acdf5a9020d139aee9b65fa",
+  "testCommit": "f5bacd9192ba8b76e6146703b85adfdf539e1d98",
+  "testSha256": "fcdd5dadbffb2bddfa76b1e0b7bb94e4c74d0824da5fd283020df7044d5d0119",
+  "createdAt": "2026-09-16T00:18:37.245Z",
+  "stats": {
+    "startTime": "2026-09-16T00:18:37.691Z",
+    "duration": 3836.1299999999997,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "note": "Audit of unchanged develop application. Test was edited during capture and committed unchanged afterwards. This is not a product before/after fix. Mouse pointer input in both viewports.",
+  "command": [
+    "npm",
+    "run",
+    "qa:capture",
+    "--",
+    "after",
+    "--config",
+    "playwright.production.config.ts",
+    "e2e/editor-issues.spec.ts",
+    "--grep",
+    "#15/#40"
+  ],
+  "tests": [
+    {
+      "project": "chromium",
+      "status": "passed",
+      "runtimeErrors": []
+    },
+    {
+      "project": "mobile-chrome",
+      "status": "passed",
+      "runtimeErrors": []
+    }
+  ],
+  "files": {
+    "chromium.png": {
+      "sha256": "4bbbc19a0e0ae3b78e42c994267c1eadeae47b34cd5420d02551fec5e09cbe54",
+      "bytes": 48031
+    },
+    "chromium.webm": {
+      "sha256": "4cf2f097cea738d3d7143befe8e4adf29b048d987c153d292495199565550aab",
+      "bytes": 125928,
+      "fullDecode": "passed",
+      "durationSeconds": 2.72
+    },
+    "mobile-chrome.png": {
+      "sha256": "25d2e02d98f548f5c21adda470fc3679cf5455b37855f0204462a0f6bf73f57e",
+      "bytes": 82097
+    },
+    "mobile-chrome.webm": {
+      "sha256": "de37fd17635361f5820b80c20a0e46f5a11c235e718203858a13fa183ca6c630",
+      "bytes": 127968,
+      "fullDecode": "passed",
+      "durationSeconds": 2.76
+    }
+  },
+  "browserPlayback": [
+    {
+      "file": "chromium.webm",
+      "duration": 2.72,
+      "currentTime": 1.36,
+      "readyState": 4,
+      "error": null
+    },
+    {
+      "file": "mobile-chrome.webm",
+      "duration": 2.76,
+      "currentTime": 1.38,
+      "readyState": 4,
+      "error": null
+    }
+  ],
+  "verification": {
+    "unit": {
+      "passed": 591,
+      "files": 68
+    },
+    "developmentE2E": {
+      "passed": 144,
+      "skipped": 1
+    },
+    "productionE2E": {
+      "passed": 54,
+      "skipped": 1
+    },
+    "typecheck": "passed",
+    "e2eTypecheck": "passed",
+    "sourcemaps": "passed",
+    "appBuild": "passed",
+    "lineCodeAlsoUnchangedAt": "2396c889a3c1b5ee06c79e7dfeaa1cdb3231636e"
+  }
+}

@@ -1,5 +1,6 @@
 import { test, expect, isRecordingQA } from './fixtures';
 import type { Page } from '@playwright/test';
+import { openPuzzleFile, savePuzzleFile } from './puzzle-file';
 
 async function openEditor(page: Page) {
   await page.goto('/master');
@@ -26,7 +27,7 @@ async function drag(page: Page) {
   await page.mouse.up();
 }
 
-test('#40 Free Segment completes on pointer release and supports Undo/Redo', async ({ page }, info) => {
+test('#15/#40 Free Segment normalizes overlaps, half segments and saved history', { tag: '@production' }, async ({ page }, info) => {
   await openEditor(page);
   await page.getByRole('button', { name: 'Line', exact: true }).click();
   const lines = page.locator('.line-layer-problem > *');
@@ -36,14 +37,34 @@ test('#40 Free Segment completes on pointer release and supports Undo/Redo', asy
   await drag(page);
   await expect(lines).toHaveCount(0);
   await page.getByTitle('Free Segment', { exact: true }).click();
-  await drag(page);
-  if (isRecordingQA(info)) await page.screenshot({ path: info.outputPath('drawn.png') });
-  await expect(lines).not.toHaveCount(0);
-  const count = await lines.count();
-  await page.getByTitle(/Undo \(Ctrl\+Z\)/).first().click();
+  const stroke = async (from: number, to: number) => {
+    const a = await boardPoint(page, from, 80), b = await boardPoint(page, to, 80);
+    await page.mouse.move(a.x, a.y); await page.mouse.down();
+    await page.mouse.move(b.x, b.y, { steps: 8 }); await page.mouse.up();
+  };
+  await stroke(80, 160);
+  await stroke(160, 80); // Reverse redraw removes exactly the same segment.
   await expect(lines).toHaveCount(0);
+  await stroke(80, 160); await stroke(80, 120); // Contained redraw adds no duplicate.
+  await expect(lines).not.toHaveCount(0);
+  const before = await savePuzzleFile(page);
+  expect(Object.values(before.state.problem.lines)).toHaveLength(1);
+  await stroke(120, 200); // A partial overlap extends the existing segment.
+  const extended = await savePuzzleFile(page);
+  expect(Object.values(extended.state.problem.lines)).toMatchObject([{ from: 'cell-1-1', to: 'cell-1-4' }]);
+  await page.getByTitle(/Undo \(Ctrl\+Z\)/).first().click();
+  expect((await savePuzzleFile(page)).state.problem.lines).toEqual(before.state.problem.lines);
   await page.getByTitle(/Redo/).first().click();
-  await expect(lines).toHaveCount(count);
+  expect((await savePuzzleFile(page)).state.problem.lines).toEqual(extended.state.problem.lines);
+  await page.getByTitle('Orthogonal', { exact: true }).click();
+  await page.getByTitle('Edge', { exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Half', exact: true }).check();
+  await stroke(80, 100); // Center-to-edge half over the longer segment.
+  expect((await savePuzzleFile(page)).state.problem.lines).toEqual(extended.state.problem.lines);
+  await openPuzzleFile(page, Buffer.from(JSON.stringify(extended)));
+  expect((await savePuzzleFile(page)).state.problem.lines).toEqual(extended.state.problem.lines);
+  await expect(lines).not.toHaveCount(0);
+  if (isRecordingQA(info)) await page.screenshot({ path: info.outputPath('normalized-lines.png') });
 });
 
 test('number selection moves with ArrowRight', async ({ page }) => {
