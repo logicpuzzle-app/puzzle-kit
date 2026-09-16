@@ -19,6 +19,7 @@ import { mergeDirectionalCluesIntoNumbers } from '../../utils/legacyDirectionalC
 import { syncCountersFromPuzzleState } from '../../utils/idGenerator';
 import { freshPuzzleSession } from '../puzzleSession';
 import { captureTopologySettings, restoreBoard } from '../../utils/topologyPersistence';
+import { normalizeTriangleColumns } from '../../utils/triangleLayout';
 
 export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
   newPuzzle: (options = {}) => {
@@ -33,7 +34,8 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
       schemaId,
     } = options;
 
-    const baseGrid: GridConfig = {
+    const state = get();
+    const baseGrid: GridConfig = normalizeTriangleColumns({
       rows,
       cols,
       cellSize,
@@ -52,10 +54,9 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
       ...(level !== undefined && { level }),
       ...(isometricFaces !== undefined && { isometricFaces }),
       ...(isometricView !== undefined && { isometricView }),
-    };
+    }, state.useTopology);
 
     const baseTopology = gridConfigToTopology(baseGrid);
-    const state = get();
     const topology = state.useTopology
       ? applyTopologyPreset(baseTopology, {
           preset: state.topologyPreset,

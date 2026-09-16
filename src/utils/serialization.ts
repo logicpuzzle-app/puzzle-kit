@@ -525,6 +525,8 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
   if (phase !== undefined && phase !== 0 && phase !== 1) throw new Error('Invalid hex row offset');
   const trianglePhase = serialized.sourceConfig?.trianglePhase;
   if (trianglePhase !== undefined && trianglePhase !== 0 && trianglePhase !== 1) throw new Error('Invalid triangle phase');
+  const triangleUnit = serialized.sourceConfig?.triangleColumnUnit ?? 'cell';
+  if (triangleUnit !== 'cell' && triangleUnit !== 'pair') throw new Error('Invalid triangle column unit');
   const cells = readNodes<TopologyCell>(serialized.cells);
   const vertices = readNodes<TopologyVertex>(serialized.vertices);
   const edges = readNodes<TopologyEdge>(serialized.edges);
@@ -536,6 +538,7 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
     exclusionBase = deserializeTopology(serialized.exclusionBase);
     if ((exclusionBase.sourceConfig?.hexRowOffset ?? 0) !== (phase ?? 0)) throw new Error('Inconsistent hidden hex row offset');
     if ((exclusionBase.sourceConfig?.trianglePhase ?? 0) !== (trianglePhase ?? 0)) throw new Error('Inconsistent hidden triangle phase');
+    if ((exclusionBase.sourceConfig?.triangleColumnUnit ?? 'cell') !== triangleUnit) throw new Error('Inconsistent hidden triangle column unit');
     for (const [id, vertex] of vertices) {
       const original = exclusionBase.vertices.get(id);
       if (!original || original.position.x !== vertex.position.x || original.position.y !== vertex.position.y
@@ -597,6 +600,7 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
       || !Array.isArray(serialized.editOperations) || !serialized.editOperations.length) throw new Error('Invalid edit source graph');
     editBase = deserializeTopology(serialized.editBase);
     if ((editBase.sourceConfig?.trianglePhase ?? 0) !== (trianglePhase ?? 0)) throw new Error('Inconsistent edited triangle phase');
+    if ((editBase.sourceConfig?.triangleColumnUnit ?? 'cell') !== triangleUnit) throw new Error('Inconsistent edited triangle column unit');
     for (const op of serialized.editOperations) {
       if (!record(op) || (op.kind !== 'merge' && op.kind !== 'split' && op.kind !== 'sculpt') || !Array.isArray(op.cellIds) || op.cellIds.some(id => typeof id !== 'string')) throw new Error('Invalid topology operation');
       if (op.kind === 'sculpt') {
@@ -648,6 +652,7 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
     }
     mergeBase = deserializeTopology(serialized.mergeBase);
     if ((mergeBase.sourceConfig?.trianglePhase ?? 0) !== (trianglePhase ?? 0)) throw new Error('Inconsistent merged triangle phase');
+    if ((mergeBase.sourceConfig?.triangleColumnUnit ?? 'cell') !== triangleUnit) throw new Error('Inconsistent merged triangle column unit');
     if (serialized.mergeGroups.some(group => !record(group) || typeof group.id !== 'string' || !Array.isArray(group.cellIds) || group.cellIds.some(id => typeof id !== 'string'))) {
       throw new Error('Invalid merge groups');
     }

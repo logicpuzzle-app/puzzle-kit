@@ -2,12 +2,13 @@ import { v4 as uuid } from 'uuid';
 import type { GridConfig, Point } from '../../types';
 import type { GridTopology, TopologyCell, TopologyEdge, TopologyVertex } from './types';
 import { applyCellExclusions } from './exclusions';
+import { triangleColumns } from '../triangleLayout';
 
 const slot = (a: number, b: number) => JSON.stringify([a, b]);
 const pair = (a: string, b: string) => JSON.stringify([a, b].sort());
 const extent = (grid: GridConfig) => ({
   rows: grid.rows + (grid.marginTop ?? 0) + (grid.marginBottom ?? 0),
-  cols: grid.cols + (grid.marginLeft ?? 0) + (grid.marginRight ?? 0),
+  cols: (grid.gridType === 'triangle' ? triangleColumns(grid, 'cell') : grid.cols) + (grid.marginLeft ?? 0) + (grid.marginRight ?? 0),
 });
 const hexOffsets = [[0, -2], [1, -1], [1, 1], [0, 2], [-1, 1], [-1, -1]];
 
@@ -128,7 +129,7 @@ export function resizeLatticeExtent(topology: GridTopology, before: GridConfig, 
       edges.get(edgeId)!.adjacentCells.push(id); boundaryEdges.push(edgeId);
     }
     const outboard = row < (after.marginTop ?? 0) || row >= (after.marginTop ?? 0) + after.rows
-      || col < (after.marginLeft ?? 0) || col >= (after.marginLeft ?? 0) + after.cols;
+      || col < (after.marginLeft ?? 0) || col >= nextExtent.cols - (after.marginRight ?? 0);
     cells.set(id, { ...old, id, center: old ? move(old.center) : point(center(row, col, nextPhase), after, newUnits),
       index: [row, col], row, col, originalCells: old?.originalCells ?? [id],
       boundaryVertices, boundaryEdges: old?.boundaryEdges ?? boundaryEdges, adjacentCells: [], outboard: outboard || undefined });

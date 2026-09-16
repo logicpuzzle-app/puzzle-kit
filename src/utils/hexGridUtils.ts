@@ -1,5 +1,6 @@
 // Hexagonal and Triangular grid utilities
 import { GridConfig, Point } from '../types';
+import { triangleColumns } from './triangleLayout';
 
 // === Hexagonal Grid (pointy-top orientation) ===
 // Hexagons are arranged in an offset coordinate system (odd-q offset)
@@ -191,7 +192,7 @@ export function findNearestTriangleCell(
   let bestDist = Infinity;
 
   // Triangular grids have 2*cols columns per row effectively
-  const maxCols = cols * 2;
+  const maxCols = triangleColumns(grid, 'pair');
 
   for (let dr = -1; dr <= 1; dr++) {
     for (let dc = -2; dc <= 2; dc++) {
@@ -224,7 +225,7 @@ export function getTriangleGridDimensions(grid: GridConfig): { width: number; he
   const { width, height } = getTriangleSize(cellSize);
 
   return {
-    width: cols * width + ((grid.marginLeft ?? 0) + (grid.marginRight ?? 0)) * width / 2 + outerPadding * 2,
+    width: (triangleColumns(grid, 'pair') + 1 + (grid.marginLeft ?? 0) + (grid.marginRight ?? 0)) * width / 2 + outerPadding * 2,
     height: (rows + (grid.marginTop ?? 0) + (grid.marginBottom ?? 0)) * height + outerPadding * 2,
   };
 }

@@ -1,9 +1,16 @@
-import type { PuzzleElements, PuzzleState } from '../../types';
+import type { GridConfig, PuzzleElements, PuzzleState } from '../../types';
 import type { GridTopology } from './types';
+import { getCellIndexMap, getVertexIndexMap, getEdgeIndexMap } from '../gridUtils';
+
+type ReferenceKeys = Record<'cells' | 'vertices' | 'edges', { has(id: string): boolean }>;
 
 /** Remove references to actually deleted entities, not their surviving neighbors. */
 export function retainTopologyElements(elements: PuzzleElements, before: GridTopology, after: GridTopology): PuzzleElements {
   const old = before.exclusionBase ?? before, next = after.exclusionBase ?? after;
+  return retainElements(elements, old, next);
+}
+
+function retainElements(elements: PuzzleElements, old: ReferenceKeys, next: ReferenceKeys): PuzzleElements {
   const removed = (kind: 'cells' | 'vertices' | 'edges', id: unknown) =>
     typeof id === 'string' && old[kind].has(id) && !next[kind].has(id);
   // Ambiguous legacy references stay unresolved; do not delete one kind's note
@@ -53,11 +60,32 @@ export function retainTopologyElements(elements: PuzzleElements, before: GridTop
 
 export function retainTopologyPuzzle(puzzle: PuzzleState, before: GridTopology, after: GridTopology): PuzzleState {
   const old = before.exclusionBase ?? before, next = after.exclusionBase ?? after;
+  return retainPuzzle(puzzle, old, next);
+}
+
+function retainPuzzle(puzzle: PuzzleState, old: ReferenceKeys, next: ReferenceKeys): PuzzleState {
   const keepCell = (id: string) => !old.cells.has(id) || next.cells.has(id);
   return { ...puzzle,
-    problem: retainTopologyElements(puzzle.problem, before, after),
-    answer: retainTopologyElements(puzzle.answer, before, after),
+    problem: retainElements(puzzle.problem, old, next),
+    answer: retainElements(puzzle.answer, old, next),
     ...(puzzle.multicolorSurfaces && { multicolorSurfaces: Object.fromEntries(Object.entries(puzzle.multicolorSurfaces).filter(([, item]) => keepCell(item.cellId))) }),
     ...(puzzle.solutionArea && { solutionArea: { ...puzzle.solutionArea, cells: puzzle.solutionArea.cells.filter(keepCell) } }),
+  };
+}
+
+const gridKeys = (grid: GridConfig): ReferenceKeys => ({ cells: getCellIndexMap(grid), vertices: getVertexIndexMap(grid), edges: getEdgeIndexMap(grid) });
+
+/** Triangle Grid cells use relative compatibility keys; vertex notes always use
+ * the retained topology. Keep the two namespaces separate even for equal text. */
+export function retainGridTriangleElements(elements: PuzzleElements, before: GridTopology, after: GridTopology, oldGrid: GridConfig, newGrid: GridConfig): PuzzleElements {
+  return { ...retainElements(elements, gridKeys(oldGrid), gridKeys(newGrid)),
+    ...(elements.vertexSurfaces && { vertexSurfaces: retainTopologyElements(elements, before, after).vertexSurfaces }),
+  };
+}
+
+export function retainGridTrianglePuzzle(puzzle: PuzzleState, before: GridTopology, after: GridTopology, oldGrid: GridConfig, newGrid: GridConfig): PuzzleState {
+  return { ...retainPuzzle(puzzle, gridKeys(oldGrid), gridKeys(newGrid)),
+    problem: retainGridTriangleElements(puzzle.problem, before, after, oldGrid, newGrid),
+    answer: retainGridTriangleElements(puzzle.answer, before, after, oldGrid, newGrid),
   };
 }

@@ -1,4 +1,5 @@
 import { GridConfig, GridPoint, Point, GridPointType, GridType } from '../types';
+import { triangleColumns } from './triangleLayout';
 import {
   getHexCenter,
   getHexGridDimensions,
@@ -28,7 +29,7 @@ function gridIndexCacheKey(grid: GridConfig): string {
     marginLeft = 0,
     marginRight = 0,
   } = grid;
-  return `${gridType}|${rows}|${cols}|${marginTop}|${marginBottom}|${marginLeft}|${marginRight}`;
+  return `${gridType}|${rows}|${cols}|${marginTop}|${marginBottom}|${marginLeft}|${marginRight}|${grid.triangleColumnUnit ?? 'pair'}`;
 }
 
 const cellIndexByIdCache = new Map<string, Map<string, CellIndex>>();
@@ -62,7 +63,7 @@ export function getCellIndexMap(grid: GridConfig): Map<string, CellIndex> {
       }
     }
   } else if (gridType === 'triangle') {
-    const triColsPerRow = cols * 2;
+    const triColsPerRow = triangleColumns(grid, 'pair');
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < triColsPerRow; col++) {
         map.set(getTriCellId(row, col), { row, col });

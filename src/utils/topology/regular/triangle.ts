@@ -11,6 +11,7 @@ import type { GridConfig, Point } from '../../../types';
 import type { GridTopology, CellDefinition } from '../types';
 import { buildTopologyFromCells } from '../builder';
 import { TRI_HEIGHT_FACTOR, isUpwardTriangle } from '../helpers';
+import { triangleColumns } from '../../triangleLayout';
 
 /**
  * Convert a triangular GridConfig to GridTopology.
@@ -35,7 +36,8 @@ export function triangularGridToTopology(config: GridConfig): GridTopology {
   } = config;
 
   const totalRows = rows + marginTop + marginBottom;
-  const totalCols = cols + marginLeft + marginRight;
+  const columns = triangleColumns(config, 'cell');
+  const totalCols = columns + marginLeft + marginRight;
 
   // Merge legacy disabledCells into voidCells for backwards compatibility
   const voidSet = new Set([...voidCells, ...disabledCells]);
@@ -88,7 +90,7 @@ export function triangularGridToTopology(config: GridConfig): GridTopology {
         row < marginTop ||
         row >= marginTop + rows ||
         col < marginLeft ||
-        col >= marginLeft + cols;
+        col >= marginLeft + columns;
       const isOutboard = isInMargin || outboardSet.has(cellId);
 
       cellDefs.push({

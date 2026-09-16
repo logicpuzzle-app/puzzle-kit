@@ -6,6 +6,7 @@ import { resolveSurfaceVertex } from '../../utils/vertexSurfaces';
 import { migrateReferenceMode } from '../../utils/referenceModeMigration';
 import type { VertexSurfaceElement } from '../../types';
 import { normalizeBoardRotation } from '../../utils/boardLayout';
+import { normalizeTriangleColumns } from '../../utils/triangleLayout';
 import type { GridConfig } from '../../types';
 import type { GridSlice, SliceCreator, PuzzleStore } from './types';
 import type { TopologyPreset, GridTopology } from '../../utils/gridTopology';
@@ -21,7 +22,7 @@ import { applyCellExclusions } from '../../utils/topology/exclusions';
 import { scaleTopologyLayout } from '../../utils/topology/layout';
 import { prepareExclusionBase } from '../../utils/topology/legacyExclusions';
 import { resizeRetainedExtent } from '../../utils/topology/retainedExtent';
-import { retainTopologyElements, retainTopologyPuzzle } from '../../utils/topology/retainedElements';
+import { retainTopologyElements, retainTopologyPuzzle, retainGridTriangleElements, retainGridTrianglePuzzle } from '../../utils/topology/retainedElements';
 import {
   sculptRotateCluster,
   sculptCutCluster,
@@ -53,6 +54,7 @@ const TOPOLOGY_KEYS = new Set([
   'marginBottom',
   'marginLeft',
   'marginRight',
+  'triangleColumnUnit',
   'mergedCells',
   'splitLines',
   'sculptOperations',
@@ -85,7 +87,7 @@ const createDefaultTopology = (): GridTopology => {
   return applyTopologyPreset(baseTopology, { preset: 'square', intensity: 0.5 });
 };
 
-const EXTENT_KEYS = new Set(['rows', 'cols', 'marginTop', 'marginBottom', 'marginLeft', 'marginRight']);
+const EXTENT_KEYS = new Set(['rows', 'cols', 'marginTop', 'marginBottom', 'marginLeft', 'marginRight', 'triangleColumnUnit']);
 
 function editGridExtent(state: PuzzleStore, newGrid: GridConfig): Partial<PuzzleStore> | null {
   if (!state.topology) return null;
@@ -113,13 +115,14 @@ function editGridExtent(state: PuzzleStore, newGrid: GridConfig): Partial<Puzzle
   const retainVertexNotes = (layer: typeof state.puzzle.answer) => ({ ...layer,
     ...(layer.vertexSurfaces && { vertexSurfaces: retainTopologyElements(layer, before, topology).vertexSurfaces }),
   });
-  const puzzle = state.useTopology ? filtered : { ...state.puzzle,
+  const gridTriangle = !state.useTopology && grid.gridType === 'triangle';
+  const puzzle = state.useTopology ? filtered : gridTriangle ? retainGridTrianglePuzzle(state.puzzle, before, topology, state.grid, grid) : { ...state.puzzle,
     problem: retainVertexNotes(state.puzzle.problem), answer: retainVertexNotes(state.puzzle.answer) };
   const liveElements = new Set([puzzle.problem, puzzle.answer].flatMap(layer =>
     Object.values(layer).flatMap(collection => collection && typeof collection === 'object' ? Object.keys(collection) : [])));
   return { grid, topology, puzzle,
     trialStack: state.trialStack.map(layer => state.useTopology
-      ? retainTopologyElements(layer, before, topology) : retainVertexNotes(layer)),
+      ? retainTopologyElements(layer, before, topology) : gridTriangle ? retainGridTriangleElements(layer, before, topology, state.grid, grid) : retainVertexNotes(layer)),
     selectedElements: state.selectedElements.filter(id => liveElements.has(id)),
     hoverCell: state.hoverCell && full.cells.has(state.hoverCell) ? state.hoverCell : null,
     cursorCell: state.cursorCell && full.cells.has(state.cursorCell) ? state.cursorCell : null,
@@ -161,7 +164,7 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       if (Object.keys(gridUpdate).length === 1 && Object.prototype.hasOwnProperty.call(gridUpdate, 'sculptOperations') && !gridUpdate.sculptOperations?.length) {
         return recordGeometryEdit(state, clearSculptOperations(state), 'Clear sculpt operations');
       }
-      const newGrid = { ...state.grid, ...gridUpdate };
+      const newGrid = normalizeTriangleColumns({ ...state.grid, ...gridUpdate }, state.useTopology);
       if (Object.keys(gridUpdate).length === 1 && Object.prototype.hasOwnProperty.call(gridUpdate, 'mergedCells')) {
         return recordGeometryEdit(state, setMergedCellGroups(state, gridUpdate.mergedCells), 'Edit cell merges');
       }
@@ -282,7 +285,7 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       set({ previewTopology: null, previewGrid: null });
     } else {
       const state = get();
-      const previewGridConfig: GridConfig = {
+      const previewGridConfig: GridConfig = normalizeTriangleColumns({
         ...state.grid,
         gridType: config.gridType,
         rows: config.rows,
@@ -291,7 +294,7 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
         ...(config.level !== undefined && { level: config.level }),
         ...(config.isometricFaces !== undefined && { isometricFaces: config.isometricFaces }),
         ...(config.isometricView !== undefined && { isometricView: config.isometricView }),
-      };
+      }, state.useTopology);
       const appliedPreset = state.topology?.appliedPreset;
       const presetChanged = appliedPreset && (appliedPreset.preset !== state.topologyPreset || appliedPreset.intensity !== state.topologyIntensity);
       const layoutOnly = Object.entries(previewGridConfig).every(([key, value]) =>
@@ -373,7 +376,7 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
   resizeGrid: (configChanges) => {
     const state = get();
     const oldConfig = state.grid;
-    const newConfig: GridConfig = { ...oldConfig, ...configChanges };
+    const newConfig: GridConfig = normalizeTriangleColumns({ ...oldConfig, ...configChanges }, state.useTopology);
     if (!state.useTopology) {
       get().setGrid(configChanges);
       return;

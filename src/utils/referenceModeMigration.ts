@@ -4,6 +4,7 @@ import { gridConfigToTopology, applyTopologyPreset } from './gridTopology';
 import { getCellIndexMap, getCellIndexById, getCellCenter, getCellCorners, getVertexIndexMap, getVertexPosition, getEdgeIndexMap, getVertexId } from './gridUtils';
 import { resolveBoardPoint, resolveLinePoints } from './lineReferences';
 import type { PuzzleStore } from '../store/slices/types';
+import { normalizeTriangleColumns } from './triangleLayout';
 
 export type ReferenceModeChangeResult = { ok: true } | { ok: false; reason: string };
 type Maps = Record<LineGridPoint, Map<string, string>>;
@@ -86,7 +87,7 @@ function createMaps(grid: GridConfig, topology: GridTopology): Maps {
   }
 
   const maps = emptyMaps();
-  const margins = grid.gridType === 'square' || grid.gridType === 'hex';
+  const margins = grid.gridType === 'square' || grid.gridType === 'hex' || grid.gridType === 'triangle';
   for (const [id, p] of getCellIndexMap(grid)) {
     const target = byIndex.get(JSON.stringify([p.row + (margins ? grid.marginTop : 0), p.col + (margins ? grid.marginLeft : 0)]));
     const cell = target === undefined ? undefined : actual.cells.get(target);
@@ -110,7 +111,8 @@ export function migrateReferenceMode(state: PuzzleStore, useTopology: boolean): 
   if (!state.topology) fail('No retained topology is available for reference migration.');
   const topology = state.topology!;
   const full = topology.exclusionBase ?? topology;
-  const maps = createMaps(state.grid, topology);
+  const sourceGrid = normalizeTriangleColumns(state.grid, state.useTopology);
+  const maps = createMaps(sourceGrid, topology);
   const topologyToGridCells = new Map([...maps.cell].map(([a, b]) => [b, a]));
   // Current corner/side number rendering uses boundary offsets. Do not move a
   // clue to another corner on a custom reordered polygon during conversion.
@@ -119,9 +121,9 @@ export function migrateReferenceMode(state: PuzzleStore, useTopology: boolean): 
     const topologyId = state.useTopology ? cellId : maps.cell.get(cellId);
     const gridId = state.useTopology ? topologyToGridCells.get(cellId) : cellId;
     const cell = topologyId === undefined ? undefined : full.cells.get(topologyId);
-    const index = gridId === undefined ? null : getCellIndexById(gridId, state.grid);
+    const index = gridId === undefined ? null : getCellIndexById(gridId, sourceGrid);
     if (!cell || !index) fail('Unresolved number placement.');
-    const corners = getCellCorners(index.row, index.col, state.grid);
+    const corners = getCellCorners(index.row, index.col, sourceGrid);
     if (cell.boundaryVertices.length !== corners.length || corners.some((p, i) => {
       const vertex = full.vertices.get(cell.boundaryVertices[i]);
       const q = vertex?.basePosition ?? vertex?.position;
@@ -137,7 +139,7 @@ export function migrateReferenceMode(state: PuzzleStore, useTopology: boolean): 
     return result;
   };
   // Hidden notes are retained and migrate with the restorable graph too.
-  const context = { grid: state.grid, topology: full, useTopology: state.useTopology };
+  const context = { grid: sourceGrid, topology: full, useTopology: state.useTopology };
   const line = (entry: LineElement): LineElement => {
     if (entry.isFree) return entry;
     const points = resolveLinePoints(entry, context);
@@ -185,7 +187,7 @@ export function migrateReferenceMode(state: PuzzleStore, useTopology: boolean): 
     ...(state.puzzle.multicolorSurfaces && { multicolorSurfaces: record(state.puzzle.multicolorSurfaces, cellItem) }),
     ...(state.puzzle.solutionArea && { solutionArea: { ...state.puzzle.solutionArea, cells: state.puzzle.solutionArea.cells.map(id => reference(id, 'cell')) } }),
   };
-  const grid: GridConfig = { ...state.grid };
+  const grid: GridConfig = { ...sourceGrid };
   for (const key of ['voidCells', 'disabledCells', 'outboardCells'] as const) if (grid[key]) grid[key] = grid[key]!.map(id => reference(id, 'cell'));
   let nextTopology = JSON.stringify(grid) === JSON.stringify(state.grid) ? topology : { ...topology, sourceConfig: grid };
   const preset = useTopology ? state.topologyPreset : 'square';

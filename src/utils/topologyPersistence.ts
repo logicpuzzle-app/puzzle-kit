@@ -10,6 +10,8 @@ import { createGridReferenceTopology } from './topology/gridExclusions';
 import { prepareLegacyMerges } from './topology/legacyMerges';
 import { prepareExclusionBase } from './topology/legacyExclusions';
 import { prepareLegacyEditedExclusions } from './topology/legacyEditedExclusions';
+import { normalizeTriangleColumns } from './triangleLayout';
+import { restoreLegacyTriangleFootprint } from './topology/legacyTriangle';
 
 type Settings = NonNullable<PuzzleExport['topologySettings']>;
 
@@ -32,6 +34,8 @@ export function captureTopologySettings(state: {
 /** Restore the graph and its normalized configuration as one result. A present
  * invalid snapshot must fail without falling back to a different board. */
 export function restoreBoard(grid: GridConfig, settings: Settings): { topology: GridTopology; grid: GridConfig } {
+  const legacyTriangle = grid.gridType === 'triangle' && !settings.useTopology && grid.triangleColumnUnit === undefined;
+  grid = normalizeTriangleColumns(grid, settings.useTopology);
   if (grid.hexRowOffset !== undefined && grid.hexRowOffset !== 0 && grid.hexRowOffset !== 1) {
     throw new Error('Invalid grid hex row offset');
   }
@@ -47,6 +51,10 @@ export function restoreBoard(grid: GridConfig, settings: Settings): { topology: 
         intensity: settings.topologyIntensity,
       })
     : createGridReferenceTopology(grid);
+  if (legacyTriangle && settings.topology !== undefined) topology = restoreLegacyTriangleFootprint(topology, grid);
+  if (grid.gridType === 'triangle' && grid.triangleColumnUnit !== (topology.sourceConfig?.triangleColumnUnit ?? 'cell')) {
+    throw new Error('Grid and topology disagree on triangle column units');
+  }
   if (grid.gridType === 'hex' && (grid.hexRowOffset ?? 0) !== (topology.sourceConfig?.hexRowOffset ?? 0)) {
     throw new Error('Grid and topology disagree on hex row offset');
   }

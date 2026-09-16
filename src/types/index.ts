@@ -493,6 +493,8 @@ export interface GridConfig {
   hexRowOffset?: 0 | 1;
   /** Triangle orientation phase, retained on odd top/left margin edits. Not a node identity. */
   trianglePhase?: 0 | 1;
+  /** One configured column is a triangle or a pair; old Grid files use pairs. */
+  triangleColumnUnit?: 'cell' | 'pair';
   /** Clockwise display rotation in degrees; logical cell/edge IDs remain unchanged. */
   boardRotation?: number;
   rows: number;

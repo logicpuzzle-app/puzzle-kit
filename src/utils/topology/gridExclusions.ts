@@ -4,6 +4,7 @@ import type { GridTopology } from './types';
 import { gridConfigToTopology } from './converter';
 import { applyTopologyPreset } from './presets';
 import { applyCellExclusions } from './exclusions';
+import { normalizeTriangleColumns } from '../triangleLayout';
 
 /** Compatibility boundary for Grid-rendered documents (useTopology=false).
  * Their cell references use playable-board indices; the retained topology uses
@@ -38,6 +39,7 @@ export function applyGridCellExclusions(topology: GridTopology, grid: GridConfig
 
 /** Materialize a pre-snapshot Grid file once, including its restorable hidden cells. */
 export function createGridReferenceTopology(grid: GridConfig): GridTopology {
+  grid = normalizeTriangleColumns(grid, false);
   const full = { ...grid, voidCells: undefined, disabledCells: undefined, outboardCells: undefined };
   return applyGridCellExclusions(applyTopologyPreset(gridConfigToTopology(full), { preset: 'square', intensity: 0.5 }), grid);
 }

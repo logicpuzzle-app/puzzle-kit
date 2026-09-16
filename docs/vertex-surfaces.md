@@ -84,3 +84,5 @@ Masterの[注記選択](annotation-selection.md)では頂点塗り・セル塗�
 [U字形と50×50盤面のQA](qa/2026-09-17-vertex-geometry.md)では、2,601個の頂点塗りを
 表示した状態の入力・Undo・保存／再読込をPC・モバイルのChromiumとWebKitで確認した。
 この検証は任意の凹形状・自己交差形状や、実機の性能測定を網羅するものではない。
+
+従来Grid三角盤面の半幅スナップショットも、[列単位を明示した移行](legacy-triangle-identity.md)で既存IDを保持して全幅を補完する。右側の頂点入力・列追加・保存・参照モード往復は[QA](qa/2026-09-17-legacy-triangle.md)を参照。未知の旧形状とGrid固有の描画差は継続対象。
