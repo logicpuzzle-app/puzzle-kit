@@ -23,7 +23,7 @@ test('annotation selection preserves same-ID cell records while deleting vertex 
       const pending = page.waitForEvent('download');
       await page.getByText(`Export as ${format}`, { exact: true }).click();
       const download = await pending;
-      const file = info.outputPath(`${phase}.${format.toLowerCase()}`);
+      const file = info.outputPath(`export-${phase}.${format.toLowerCase()}`);
       await download.saveAs(file);
       const body = readFileSync(file);
       await info.attach(`${phase}-${format.toLowerCase()}`, { body, contentType: format === 'SVG' ? 'image/svg+xml' : 'image/png' });
