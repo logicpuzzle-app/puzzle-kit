@@ -8,6 +8,7 @@ const scenarios = [
   { name: 'merge members', file: 'legacy-excluded-members-board.json', stableMerge: 'merged-1', restoredMembers: ['cell-0-1', 'cell-0-2'] },
   { name: 'outboard settings', file: 'legacy-outboard-settings-board.json', stableMerge: 'merged-1', restoredMembers: ['cell-0-1', 'cell-0-2'] },
   { name: 'margin roles', file: 'legacy-margin-roles-board.json', stableMerge: 'merged-1', restoredMembers: ['cell-0-0', 'cell-0-1'], restoredMargin: 'cell-0-0' },
+  { name: 'margin split', file: 'legacy-margin-split-board.json', stableMerge: 'cell-0-2', restoredMembers: undefined, restoredSplitMargin: 'cell-0-0' },
 ];
 
 for (const scenario of scenarios) {
@@ -37,9 +38,14 @@ test(`legacy excluded ${scenario.name} restores its cut with stable notes throug
   const operations = initial.topologySettings!.topology!.editOperations!;
   const cut = operations.find(op => op.kind === 'split')!;
   if (cut.kind !== 'split') throw new Error('Missing imported cut');
-  expect(graph.editOperations).toEqual(operations.filter(op => op.kind !== 'split'));
+  expect(graph.editOperations ?? []).toEqual(operations.filter(op => op.kind !== 'split'));
   const cells = new Map(graph.cells), parent = fixture.grid.splitLines![0].cellId;
   expect(cells.has(parent)).toBe(true);
+  if (scenario.restoredSplitMargin) {
+    expect(cells.get(scenario.restoredSplitMargin)!.outboard).toBe(true);
+    expect(cells.get(scenario.restoredSplitMargin)!.adjacentCells).toEqual([]);
+    expect(cells.get('cell-1-0')!.outboard).toBeUndefined();
+  }
   for (const id of [...(fixture.grid.voidCells ?? []), ...(fixture.grid.disabledCells ?? [])]) expect(cells.has(id)).toBe(false);
   if (scenario.restoredMembers) expect(cells.get(parent)!.originalCells).toEqual(scenario.restoredMembers);
   const originalMerge = new Map(initial.topologySettings!.topology!.cells).get(scenario.stableMerge)!;
@@ -47,7 +53,7 @@ test(`legacy excluded ${scenario.name} restores its cut with stable notes throug
   // restored parent; legacy representative row/column is not persistent identity.
   expect(cells.get(scenario.stableMerge)).toMatchObject({ id: originalMerge.id, center: originalMerge.center,
     boundaryVertices: originalMerge.boundaryVertices, boundaryEdges: originalMerge.boundaryEdges,
-    originalCells: originalMerge.originalCells });
+    ...(originalMerge.originalCells && { originalCells: originalMerge.originalCells }) });
   expect([...cells.get(scenario.stableMerge)!.adjacentCells].sort()).toEqual(
     [...new Set(originalMerge.adjacentCells.map(id => cut.cellIds.includes(id) ? parent : id))].sort());
   expect(restored.state.problem.vertexSurfaces).toEqual(initial.state.problem.vertexSurfaces);

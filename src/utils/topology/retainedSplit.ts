@@ -11,7 +11,7 @@ export interface SplitEdit {
   edgeId: string;
   cellIds: [string, string];
   /** Verified legacy boundary refinement, including existing edge-interior points. */
-  boundary?: { vertices: string[]; edges: string[] };
+  boundary?: { vertices: string[]; edges: string[]; outboard?: boolean };
   /** Preserve the saved orientation of a legacy diagonal. */
   reverseEdge?: boolean;
   /** Legacy split children inherited their parent's original-cell lineage. */
@@ -39,6 +39,7 @@ function validChord(points: Point[], start: number, end: number): boolean {
  * change the perimeter, or borrow an unrelated edge. Validate in base geometry
  * so a nonlinear display preset cannot invalidate a previously valid cut. */
 function validRefinement(base: GridTopology, cell: TopologyCell, boundary: NonNullable<SplitEdit['boundary']>): boolean {
+  if (boundary.outboard !== undefined && typeof boundary.outboard !== 'boolean') return false;
   const ids = boundary.vertices;
   if (ids.length < cell.boundaryVertices.length || boundary.edges.length !== ids.length || new Set(ids).size !== ids.length) return false;
   const indices = cell.boundaryVertices.map(id => ids.indexOf(id));
@@ -119,7 +120,7 @@ export function projectSplit(base: GridTopology, edit: SplitEdit, retainedCells?
     const baseCenter = origins ? retainedCells?.get(edit.cellIds[output])?.baseCenter ?? interior(vertices.map(id => base.vertices.get(id)!.basePosition!)) : undefined;
     if (!center || (origins && !baseCenter)) return null;
     children.push({ id: edit.cellIds[output], index: null, center, ...(baseCenter && { baseCenter }),
-      boundaryVertices: vertices, boundaryEdges, adjacentCells: [], originalCells: edit.originalCells ?? [cell.id], outboard: cell.outboard });
+      boundaryVertices: vertices, boundaryEdges, adjacentCells: [], originalCells: edit.originalCells ?? [cell.id], outboard: edit.boundary?.outboard ?? cell.outboard });
   }
   return projectCells({ ...base, edges }, [...base.cells.values()].filter(c => c.id !== cell.id).concat(children));
 }

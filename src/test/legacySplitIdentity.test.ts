@@ -5,12 +5,51 @@ import { useStoragePersistence } from '../hooks/useStoragePersistence';
 import { saveGridConfig, saveTopologyState } from '../utils/storage';
 import { afterEach, expect, it } from 'vitest';
 import fixture from '../../e2e/fixtures/legacy-split-board.json';
+import margin from '../../e2e/fixtures/legacy-margin-split-board.json';
 import { createPuzzleStore } from '../store/puzzleStore';
 import { loadPuzzleData } from '../components/toolbar/menu/importHandlers';
 import { gridConfigToTopology, applyTopologyPreset } from '../utils/gridTopology';
 import { deserializeTopology, serializeTopology } from '../utils/serialization';
 import { prepareLegacySplits } from '../utils/topology/legacySplits';
 import type { PuzzleExport } from '../types';
+
+it.each([false, true])('restores an unmerged legacy margin split with hidden cells=%s without changing surviving roles or IDs', hidden => {
+  const store = createPuzzleStore().useStore;
+  const grid: PuzzleExport['grid'] = { ...margin.grid, ...(hidden && { voidCells: ['cell-1-3'] }) };
+  const savedGraph = hidden ? serializeTopology(gridConfigToTopology(grid)) : margin.topologySettings.topology;
+  const doc = { ...margin, grid, topologySettings: { ...margin.topologySettings, topology: savedGraph } };
+  expect(store.getState().importPuzzle(JSON.stringify(doc))).toBe(true);
+  const before = store.getState(), graph = before.topology!;
+  expect(graph.editOperations).toHaveLength(1);
+  for (const key of ['cells','vertices','edges'] as const) expect(serializeTopology(graph)[key]).toEqual(savedGraph[key]);
+  expect(graph.editBase!.cells.get('cell-0-0')!.outboard).toBe(true);
+  expect(graph.cells.get('cell-1-0')!.outboard).toBeUndefined();
+  expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
+  const saved = store.getState().exportPuzzle();
+  for (const invalid of [true, 'false']) {
+    const bad = JSON.parse(saved), topology = bad.topologySettings.topology;
+    for (const t of [topology, topology.exclusionBase].filter(Boolean)) t.editOperations[0].boundary.outboard = invalid;
+    const current = store.getState();
+    expect(store.getState().importPuzzle(JSON.stringify(bad))).toBe(false);
+    expect(store.getState().topology).toBe(current.topology);
+  }
+  store.getState().clearSplitLines();
+  const restored = store.getState();
+  expect(restored.topology!.cells.get('cell-0-0')!.outboard).toBe(true);
+  expect(restored.topology!.cells.get('cell-0-0')!.adjacentCells).toEqual([]);
+  expect(restored.topology!.cells.get('cell-1-0')!.outboard).toBeUndefined();
+  expect(restored.puzzle.problem.vertexSurfaces).toEqual(before.puzzle.problem.vertexSurfaces);
+  expect(Object.values(restored.puzzle.problem.numbers).map(n=>n.value).sort()).toEqual(['17','9']);
+  store.getState().undo(); expect(store.getState().puzzle).toEqual(before.puzzle);
+  store.getState().redo();
+  expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
+  const parent = store.getState().topology!.cells.get('cell-0-0')!;
+  store.getState().addSplitLine(parent.id,parent.boundaryVertices[0],parent.boundaryVertices[2]);
+  const cut = store.getState().topology!.editOperations![0];
+  expect(cut.boundary).toBeUndefined();
+  for (const id of cut.cellIds) expect(store.getState().topology!.cells.get(id)!.outboard).toBe(true);
+  expect(store.getState().importPuzzle(store.getState().exportPuzzle())).toBe(true);
+});
 
 it('migrates saved vertex/edge-interior cuts without reassigning live IDs, and restores only the selected source with undoable notes', () => {
   const store = createPuzzleStore().useStore;

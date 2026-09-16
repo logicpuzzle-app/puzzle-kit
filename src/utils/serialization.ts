@@ -594,7 +594,7 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
         : op.cellIds.length !== 2 || [op.cellId, op.startVertex, op.endVertex, op.edgeId].some(id => typeof id !== 'string')) throw new Error('Invalid topology operation identities');
     }
     const expected = projectEdits(editBase, serialized.editOperations);
-    const declaredRoles = serialized.editOperations.some(op => op.kind === 'merge' && op.boundary?.outboard !== undefined);
+    const declaredRoles = serialized.editOperations.some(op => op.boundary?.outboard !== undefined);
     const full = exclusionBase ?? { cells, vertices, edges };
     if (!expected || full.cells.size !== expected.cells.size || full.vertices.size !== expected.vertices.size || full.edges.size !== expected.edges.size) throw new Error('Edited graph does not match its source');
     for (const [id, cell] of full.cells) {

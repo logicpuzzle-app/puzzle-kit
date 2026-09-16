@@ -14,6 +14,7 @@ export function legacySplitOperations(before: GridTopology, grid: GridConfig, to
     const children = [...single.cells.keys()].filter(id => !before.cells.has(id)).map(id => topology.cells.get(id));
     if (children.length !== 2 || children.some(cell => !cell)) return null;
     const [a, b] = children as [TopologyCell, TopologyCell];
+    if (!!a.outboard !== !!b.outboard) return null;
     const diagonal = a.boundaryEdges.filter(id => b.boundaryEdges.includes(id));
     if (diagonal.length !== 1 || a.boundaryEdges.at(-1) !== diagonal[0] || b.boundaryEdges.at(-1) !== diagonal[0]) return null;
     const start = a.boundaryVertices[0], end = a.boundaryVertices.at(-1)!;
@@ -21,7 +22,8 @@ export function legacySplitOperations(before: GridTopology, grid: GridConfig, to
     const edge = topology.edges.get(diagonal[0]);
     if (!edge || !((edge.startVertex === start && edge.endVertex === end) || (edge.startVertex === end && edge.endVertex === start))) return null;
     const boundary = { vertices: [...a.boundaryVertices.slice(0, -1), ...b.boundaryVertices.slice(0, -1)],
-      edges: [...a.boundaryEdges.slice(0, -1), ...b.boundaryEdges.slice(0, -1)] };
+      edges: [...a.boundaryEdges.slice(0, -1), ...b.boundaryEdges.slice(0, -1)],
+      ...(!!parent.outboard !== !!a.outboard && { outboard: !!a.outboard }) };
     const originalCells = parent.originalCells ?? [parent.id];
     if (JSON.stringify(a.originalCells) !== JSON.stringify(originalCells) || JSON.stringify(b.originalCells) !== JSON.stringify(originalCells)) return null;
     cuts.push({ kind: 'split', cellId: parent.id, startVertex: start, endVertex: end, edgeId: edge.id,

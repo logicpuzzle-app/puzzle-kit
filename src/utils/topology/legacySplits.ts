@@ -57,6 +57,9 @@ export function prepareLegacySplits(topology: GridTopology, grid: GridConfig): G
   }
   const cells = new Map<string, TopologyCell>();
   for (const [id, cell] of source.cells) cells.set(id, { ...cell,
+    // Preserve surviving roles, while retired split parents keep their own
+    // source role. The legacy generator dropped both kinds of output flags.
+    outboard: topology.cells.has(id) ? topology.cells.get(id)!.outboard : cell.outboard,
     boundaryVertices: cell.boundaryVertices.map(v => vertexIds.get(v)!), boundaryEdges: cell.boundaryEdges.map(e => edgeIds.get(e)!),
   });
   const operations: TopologyEdit[] = (prepared.mergeGroups ?? []).map(group => ({ ...group, kind: 'merge',
