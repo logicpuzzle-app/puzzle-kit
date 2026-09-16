@@ -801,6 +801,8 @@ export const ja = {
   'gridEdit.split': '分割',
   'gridEdit.exclude': '除外',
   'gridEdit.mergeHelp': 'セルをドラッグして結合します。右クリックで解除。',
+  'gridEdit.mergeAnnotations': '置き換わるセルと消える内部境界の注記は削除されます。注記も戻す場合は「元に戻す」を使ってください。',
+  'gridEdit.mergeSourceMissing': 'この保存盤面には結合前の形状がなく、結合解除できません。',
   'gridEdit.splitHelp': '頂点をクリックしてセルを分割する線を引きます。',
   'gridEdit.excludeHelp': 'セルをクリックすると除外、もう一度クリックすると復元します。',
   'gridEdit.mergedGroups': '結合グループ数',

@@ -801,6 +801,8 @@ export const en = {
   'gridEdit.split': 'Split',
   'gridEdit.exclude': 'Exclude',
   'gridEdit.mergeHelp': 'Drag across cells to merge them. Right-click to unmerge.',
+  'gridEdit.mergeAnnotations': 'Annotations on replaced cells and removed internal boundaries are cleared. Use Undo to restore them.',
+  'gridEdit.mergeSourceMissing': 'This saved board has no merge source geometry. Unmerge is unavailable.',
   'gridEdit.splitHelp': 'Click vertices to draw a split line across a cell.',
   'gridEdit.excludeHelp': 'Click cells to exclude them, click again to restore.',
   'gridEdit.mergedGroups': 'Merged groups',

@@ -9,13 +9,17 @@ import { usePuzzleStore } from '../../../../store/puzzleStoreContext';
 // Merge mode content
 export const GridMergeContent: React.FC = () => {
   const { t } = useTranslation();
-  const { grid, setGrid } = usePuzzleStore();
+  const { grid, topology, unmergeCells } = usePuzzleStore();
 
+  const groups = topology?.mergeGroups ?? [];
   const mergedCount = grid.mergedCells?.length ?? 0;
   const totalMergedCells = grid.mergedCells?.reduce((sum, group) => sum + group.length, 0) ?? 0;
 
   return (
     <div className="space-y-3">
+      <p className="text-xs text-office-text-secondary">{t('gridEdit.mergeHelp')}</p>
+      <p className="text-xs text-office-text-secondary">{t('gridEdit.mergeAnnotations')}</p>
+      {mergedCount > 0 && !groups.length && <p role="status" className="text-xs text-office-text-secondary">{t('gridEdit.mergeSourceMissing')}</p>}
       <div className="space-y-1">
         <div className="text-xs text-office-text-secondary">
           {t('gridEdit.mergedGroups')}: <span className="font-medium text-office-text">{mergedCount}</span>
@@ -38,9 +42,10 @@ export const GridMergeContent: React.FC = () => {
                 </span>
                 <button
                   className="px-1.5 py-0.5 text-[10px] text-red-600 hover:bg-red-50 rounded"
+                  disabled={!groups.some(item => item.cellIds.length === group.length && item.cellIds.every(id => group.includes(id)))}
                   onClick={() => {
-                    const newMerged = grid.mergedCells?.filter((_, i) => i !== idx);
-                    setGrid({ mergedCells: newMerged && newMerged.length > 0 ? newMerged : undefined });
+                    const source = groups.find(item => item.cellIds.length === group.length && item.cellIds.every(id => group.includes(id)));
+                    if (source) unmergeCells([source.id]);
                   }}
                 >
                   {t('action.delete')}
