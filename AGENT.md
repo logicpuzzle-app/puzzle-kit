@@ -18,8 +18,9 @@
 
 ## Board IDs and References
 - Follow [the board ID contract](docs/board-id-contract.md). IDs are opaque keys scoped to a board and entity kind; do not derive coordinates, kinds, adjacency, order, or array indexes from their spelling.
+- Compare IDs exactly without trimming, case folding, Unicode normalization, or numeric conversion. An ID does not prove that its target currently exists or is editable; check the scoped topology and state.
 - Resolve geometry and adjacency from topology metadata/query APIs. Grid-format lookup belongs to an explicitly scoped compatibility adapter; a missing topology reference is not permission to parse the ID.
-- Preserve IDs of surviving cells, vertices, and edges across editing and native save/load. Do not reuse deleted IDs for unrelated entities. Migrations must update all affected references together with topology and history.
+- Preserve IDs of surviving cells, vertices, and edges across editing and native save/load. Do not reuse deleted IDs for unrelated entities, including after undoing an allocation and branching into a new edit. Migrations must update all affected references together with topology and history.
 - Keep display numbering separate from identity. Do not replace persistent identity with a row/column tuple, rounded position, or boundary-array offset.
 - Before changing topology, persistence, or references, describe ID lifetime, unresolved-reference behavior, and legacy/history handling in the PR. Keep focused identity regression tests; do not assert incidental allocation order.
 - Existing gaps are listed in [the migration inventory](docs/board-id-migration.md). Do not present planned guarantees as already implemented or add new application-level parsing because old code still does it.
