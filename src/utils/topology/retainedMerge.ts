@@ -10,33 +10,45 @@ export interface MergeGroup {
   cellIds: string[];
   /** A verified legacy merge may have simplified its outer boundary. These
    * actual references preserve that cell until it is explicitly replaced. */
-  boundary?: { vertices: string[]; edges: string[]; outboard?: boolean };
+  boundary?: { vertices: string[]; edges: string[]; outboard?: boolean;
+    sourceWalk?: { vertices: string[]; edges: string[] } };
 }
 
 function validLegacyBoundary(base: GridTopology, canonical: string[], boundary: NonNullable<MergeGroup['boundary']>): boolean {
   if (boundary.outboard !== undefined && typeof boundary.outboard !== 'boolean') return false;
   if (!Array.isArray(boundary.vertices) || !Array.isArray(boundary.edges) || boundary.vertices.length < 3
-    || boundary.vertices.length !== boundary.edges.length || new Set(boundary.vertices).size !== boundary.vertices.length
-    || new Set(boundary.edges).size !== boundary.edges.length) return false;
-  const indices = boundary.vertices.map(id => canonical.indexOf(id));
-  if (indices.some(i => i < 0)) return false;
-  // The old generator could drop a corner as well as collinear points. Preserve
-  // its explicitly archived boundary, but require a cyclic subsequence of the
-  // source perimeter: no foreign points, reordered crossings or invented IDs.
-  const n = canonical.length;
-  return [1, -1].some(direction => {
-    let total = 0;
-    for (let i = 0; i < indices.length; i++) {
-      const a = boundary.vertices[i], b = boundary.vertices[(i + 1) % indices.length];
-      const edge = base.edges.get(boundary.edges[i]);
-      if (!edge || !((edge.startVertex === a && edge.endVertex === b) || (edge.startVertex === b && edge.endVertex === a))) return false;
-      let current = indices[i];
-      do {
-        current = (current + direction + n) % n;
-        if (++total > n) return false;
-      } while (current !== indices[(i + 1) % indices.length]);
+    || boundary.vertices.length !== boundary.edges.length
+    || (!boundary.sourceWalk && (new Set(boundary.vertices).size !== boundary.vertices.length || new Set(boundary.edges).size !== boundary.edges.length))) return false;
+  // Match occurrences, not indexOf(vertex): a shared vertex can appear more
+  // than once in a verified old walk. Consume at most one cycle, in order.
+  if (boundary.vertices.length > canonical.length) return false;
+  return [canonical, [...canonical].reverse()].some(walk => walk.some((id, start) => {
+    if (id !== boundary.vertices[0]) return false;
+    let consumed = 1;
+    for (const wanted of boundary.vertices.slice(1)) {
+      while (consumed < walk.length && walk[(start + consumed) % walk.length] !== wanted) consumed++;
+      if (consumed >= walk.length) return false;
+      consumed++;
     }
-    return total === n;
+    return true;
+  })) && boundary.edges.every((id, i) => {
+    const edge = base.edges.get(id), a = boundary.vertices[i], b = boundary.vertices[(i + 1) % boundary.vertices.length];
+    return !!edge && ((edge.startVertex === a && edge.endVertex === b) || (edge.startVertex === b && edge.endVertex === a));
+  });
+}
+
+/** A source walk follows real perimeter edges exactly once and closes. It may
+ * revisit a shared vertex; that does not create a second entity at that point. */
+function validSourceWalk(base: GridTopology, members: TopologyCell[], walk: NonNullable<NonNullable<MergeGroup['boundary']>['sourceWalk']>): boolean {
+  if (!walk || !Array.isArray(walk.vertices) || !Array.isArray(walk.edges) || walk.vertices.length < 3
+    || walk.vertices.length !== walk.edges.length || new Set(walk.edges).size !== walk.edges.length) return false;
+  const counts = new Map<string, number>();
+  for (const cell of members) for (const id of cell.boundaryEdges) counts.set(id, (counts.get(id) ?? 0) + 1);
+  if ([...counts.values()].some(n => n > 2)) return false;
+  return walk.edges.every((id, i) => {
+    const edge = base.edges.get(id), a = walk.vertices[i], b = walk.vertices[(i + 1) % walk.vertices.length];
+    return counts.get(id) === 1 && base.vertices.has(a) && base.vertices.has(b) && a !== b && !!edge
+      && ((edge.startVertex === a && edge.endVertex === b) || (edge.startVertex === b && edge.endVertex === a));
   });
 }
 
@@ -120,17 +132,24 @@ export function projectMerges(base: GridTopology, groups: MergeGroup[], retained
     if (group.boundary?.outboard === undefined && members.some(cell => !!cell.outboard !== !!members[0].outboard)) return null;
     // New merges require one simple perimeter. Verified legacy output may
     // retain one loop of disconnected members, corner contacts or a hole.
-    const loops = sourceBoundaryLoops(base, members);
-    if (!loops) return null;
     let boundaryVertices: string[], boundaryEdges: string[];
-    if (group.boundary) {
-      if (!loops.some(loop => validLegacyBoundary(base, loop.vertices, group.boundary!))) return null;
+    if (group.boundary?.sourceWalk !== undefined) {
+      if (!validSourceWalk(base, members, group.boundary.sourceWalk)
+        || !validLegacyBoundary(base, group.boundary.sourceWalk.vertices, group.boundary)) return null;
       boundaryVertices = group.boundary.vertices;
       boundaryEdges = group.boundary.edges;
     } else {
-      if (loops.length !== 1) return null;
-      boundaryVertices = loops[0].vertices;
-      boundaryEdges = loops[0].edges;
+      const loops = sourceBoundaryLoops(base, members);
+      if (!loops) return null;
+      if (group.boundary) {
+        if (!loops.some(loop => validLegacyBoundary(base, loop.vertices, group.boundary!))) return null;
+        boundaryVertices = group.boundary.vertices;
+        boundaryEdges = group.boundary.edges;
+      } else {
+        if (loops.length !== 1) return null;
+        boundaryVertices = loops[0].vertices;
+        boundaryEdges = loops[0].edges;
+      }
     }
     const polygon = boundaryVertices.map(id => base.vertices.get(id)?.position);
     if (polygon.some(p => !p)) return null;

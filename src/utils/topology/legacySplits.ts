@@ -63,7 +63,11 @@ export function prepareLegacySplits(topology: GridTopology, grid: GridConfig): G
     boundaryVertices: cell.boundaryVertices.map(v => vertexIds.get(v)!), boundaryEdges: cell.boundaryEdges.map(e => edgeIds.get(e)!),
   });
   const operations: TopologyEdit[] = (prepared.mergeGroups ?? []).map(group => ({ ...group, kind: 'merge',
-    ...(group.boundary && { boundary: { ...group.boundary, vertices: group.boundary.vertices.map(id => vertexIds.get(id)!), edges: group.boundary.edges.map(id => edgeIds.get(id)!) } }),
+    ...(group.boundary && { boundary: { ...group.boundary, vertices: group.boundary.vertices.map(id => vertexIds.get(id)!), edges: group.boundary.edges.map(id => edgeIds.get(id)!),
+      ...(group.boundary.sourceWalk && { sourceWalk: {
+        vertices: group.boundary.sourceWalk.vertices.map(id => vertexIds.get(id)!),
+        edges: group.boundary.sourceWalk.edges.map(id => edgeIds.get(id)!),
+      } }) } }),
   }));
   const cuts = legacySplitOperations(before, grid, topology);
   if (!cuts) return topology;

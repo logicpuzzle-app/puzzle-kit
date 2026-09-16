@@ -1,4 +1,5 @@
 import { matchesLegacyGraph } from './legacyGraph';
+import { legacyMergeSourceWalk } from './legacyMergeWalk';
 import { v4 as uuid } from 'uuid';
 import type { GridConfig, Point } from '../../types';
 import type { GridTopology, TopologyCell, TopologyEdge, TopologyVertex } from './types';
@@ -80,7 +81,8 @@ export function prepareLegacyMerges(topology: GridTopology, grid: GridConfig): G
     const matches = [...full.cells.values()].filter(cell => cell.originalCells?.length === members.length && members.every(id => cell.originalCells!.includes(id)));
     if (matches.length !== 1) return topology;
     const cell = matches[0];
-    groups.push({ id: cell.id, cellIds: members, boundary: { vertices: cell.boundaryVertices, edges: cell.boundaryEdges,
+    const sourceWalk = legacyMergeSourceWalk(members, rawSource, id => vertexIds.get(id), id => edgeIds.get(id));
+    groups.push({ id: cell.id, cellIds: members, boundary: { vertices: cell.boundaryVertices, edges: cell.boundaryEdges, ...(sourceWalk && { sourceWalk }),
       ...(members.some(id => !!cells.get(id)!.outboard !== !!cell.outboard) && { outboard: !!cell.outboard }) } });
   }
   const projected = projectMerges(base, groups, full.cells);

@@ -2,7 +2,7 @@ import { test, expect } from './fixtures';
 import { readFileSync } from 'node:fs';
 import { openPuzzleFile, savePuzzleFile } from './puzzle-file';
 
-for (const [name, file] of [['disconnected and holed', 'legacy-multiple-boundaries-board.json'], ['corner contacts and holed', 'legacy-corner-contact-board.json']]) {
+for (const [name, file] of [['disconnected and holed', 'legacy-multiple-boundaries-board.json'], ['corner contacts and holed', 'legacy-corner-contact-board.json'], ['repeated walks and pinched', 'legacy-walk-board.json']]) {
 const fixture = JSON.parse(readFileSync(new URL(`./fixtures/${file}`, import.meta.url), 'utf8'));
 
 test(`legacy ${name} merges preserve saved boundaries and restore all members @production`, async ({ page, isMobile }, info) => {

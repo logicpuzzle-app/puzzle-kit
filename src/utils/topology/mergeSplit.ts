@@ -2,6 +2,7 @@ import type { GridConfig, Point, SplitLine, SplitPoint } from '../../types';
 import type { CellDefinition, GridTopology, TopologyCell, TopologyVertex } from './types';
 import { buildTopologyFromCells } from './builder';
 import { calculateCentroid } from './helpers';
+import { legacyMergeBoundary } from './legacyMergeWalk';
 
 function sortVerticesClockwise(vertices: TopologyVertex[]): TopologyVertex[] {
   const centroid = vertices.reduce(
@@ -68,78 +69,9 @@ function buildMergedCell(
   if (cells.length === 0) return null;
 
   const cellIdSet = new Set(group);
-  // Boundary edges: incident to at least one merged cell AND at least one non-merged (or missing) cell
-  const boundaryEdges = Array.from(topology.edges.values()).filter(edge => {
-    const adj = edge.adjacentCells || [];
-    const inCount = adj.filter(id => cellIdSet.has(id)).length;
-    const outCount = adj.length - inCount;
-    return inCount > 0 && (outCount > 0 || adj.length === 1);
-  });
-  if (boundaryEdges.length === 0) {
-    console.warn('[mergeSplit] no boundary edges found for merge group', group);
-    return null;
-  }
-
-  // Adjacency map (vertexId -> boundary edge ids)
-  const adjMap = new Map<string, string[]>();
-  const addAdj = (vId: string, eId: string) => {
-    if (!adjMap.has(vId)) adjMap.set(vId, []);
-    adjMap.get(vId)!.push(eId);
-  };
-  boundaryEdges.forEach(e => {
-    addAdj(e.startVertex, e.id);
-    addAdj(e.endVertex, e.id);
-  });
-
-  // Traverse each boundary loop; pick the one with largest area (outermost).
-  const usedEdges = new Set<string>();
-  const loops: string[][] = [];
-  for (const edge of boundaryEdges) {
-    if (usedEdges.has(edge.id)) continue;
-    const loop: string[] = [];
-    let currentEdge = edge;
-    let currentVertex = currentEdge.startVertex;
-    loop.push(currentVertex);
-
-    while (true) {
-      usedEdges.add(currentEdge.id);
-      const nextVertex =
-        currentEdge.startVertex === currentVertex ? currentEdge.endVertex : currentEdge.startVertex;
-      currentVertex = nextVertex;
-      loop.push(currentVertex);
-      const candidates = (adjMap.get(currentVertex) || []).filter(eId => !usedEdges.has(eId));
-      if (candidates.length === 0) break;
-      currentEdge = topology.edges.get(candidates[0])!;
-      if (loop.length > boundaryEdges.length + 2) break; // safety
-    }
-
-    // dedup consecutive
-    const uniq: string[] = [];
-    for (const vId of loop) {
-      if (uniq.length === 0 || uniq[uniq.length - 1] !== vId) uniq.push(vId);
-    }
-    if (uniq.length >= 3) loops.push(uniq);
-  }
-  if (loops.length === 0) {
-    console.warn('[mergeSplit] no boundary loop found for merge group', group);
-    return null;
-  }
-
-  const areaOf = (verts: string[]) => {
-    const pts = verts
-      .map(id => topology.vertices.get(id))
-      .filter((v): v is TopologyVertex => v !== undefined)
-      .map(v => v.position);
-    let sum = 0;
-    for (let i = 0; i < pts.length; i++) {
-      const a = pts[i];
-      const b = pts[(i + 1) % pts.length];
-      sum += a.x * b.y - a.y * b.x;
-    }
-    return Math.abs(sum) / 2;
-  };
-
-  const bestLoop = loops.reduce((best, loop) => (areaOf(loop) > areaOf(best) ? loop : best), loops[0]);
+  const legacy = legacyMergeBoundary(group, topology);
+  if (!legacy) return null;
+  const { boundaryEdges, bestLoop } = legacy;
 
   const loopVertices: TopologyVertex[] = bestLoop
     .map(id => topology.vertices.get(id))

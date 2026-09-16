@@ -4,6 +4,7 @@ import type { GridTopology } from './types';
 import { gridConfigToTopology } from './converter';
 import { matchesLegacyGraph } from './legacyGraph';
 import { legacySplitOperations } from './legacySplitOperations';
+import { legacyMergeSourceWalk } from './legacyMergeWalk';
 import { applyTopologyPreset } from './presets';
 import { applyCellExclusions } from './exclusions';
 import { editedGrid, projectEdits, type TopologyEdit } from './retainedEdits';
@@ -119,6 +120,13 @@ export function prepareLegacyEditedExclusions(topology: GridTopology, grid: Grid
   if (!cuts) return null;
   const diagonals = new Set(cuts.map(cut => cut.edgeId));
   const edits: TopologyEdit[] = [];
+  const sourceVertex = (id: string) => vertexAt.get(position(source.vertices.get(id)!.position));
+  const sourceEdgeAt = new Map([...mappedBase.edges.values()].map(edge => [pair(edge.startVertex, edge.endVertex), edge.id]));
+  if (sourceEdgeAt.size !== mappedBase.edges.size) return null;
+  const sourceEdge = (id: string) => {
+    const edge = source.edges.get(id)!;
+    return sourceEdgeAt.get(pair(sourceVertex(edge.startVertex)!, sourceVertex(edge.endVertex)!));
+  };
   for (const requested of grid.mergedCells ?? []) {
     const members = requested.filter(id => source.cells.has(id));
     if (!members.length) continue; // No merged entity existed for this group.
@@ -126,8 +134,9 @@ export function prepareLegacyEditedExclusions(topology: GridTopology, grid: Grid
       && cell.originalCells?.length === members.length && members.every(id => cell.originalCells!.includes(id)));
     if (matches.length !== 1) return null;
     const cell = matches[0];
+    const sourceWalk = legacyMergeSourceWalk(members, source, sourceVertex, sourceEdge);
     edits.push({ kind: 'merge', id: cell.id, cellIds: members,
-      boundary: { vertices: cell.boundaryVertices, edges: cell.boundaryEdges,
+      boundary: { vertices: cell.boundaryVertices, edges: cell.boundaryEdges, ...(sourceWalk && { sourceWalk }),
         ...(members.some(id => !!mappedBase.cells.get(id)!.outboard !== !!cell.outboard) && { outboard: !!cell.outboard }) } });
   }
   edits.push(...cuts);

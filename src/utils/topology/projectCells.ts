@@ -5,7 +5,8 @@ export function projectCells(base: GridTopology, input: TopologyCell[]): GridTop
   const cells = new Map(input.map(cell => [cell.id, { ...cell, adjacentCells: [] as string[] }]));
   const edges = new Map<string, TopologyEdge>(), vertices = new Map<string, TopologyVertex>();
   for (const cell of cells.values()) {
-    for (const id of cell.boundaryVertices) {
+    // A legacy boundary may revisit a vertex; incidence still names this cell once.
+    for (const id of new Set(cell.boundaryVertices)) {
       const vertex = base.vertices.get(id);
       if (!vertex) return null;
       if (!vertices.has(id)) vertices.set(id, { ...vertex, adjacentCells: [], adjacentEdges: [], adjacentVertices: [] });
