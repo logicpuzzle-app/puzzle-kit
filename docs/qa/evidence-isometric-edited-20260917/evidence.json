@@ -1,0 +1,406 @@
+{
+  "provenance": "Before: unchanged 24d7729 application on Vite dev, final test copied into isolated worktree. After: production preview. Mobile is Pixel 7 emulation.",
+  "files": {
+    "cut-after-chromium-restored.png": {
+      "bytes": 38081,
+      "sha256": "011c3f9c7d94158af30493f78cf1260da7b2c5a8f602383e5a88563370771d62"
+    },
+    "cut-after-chromium.png": {
+      "bytes": 38081,
+      "sha256": "011c3f9c7d94158af30493f78cf1260da7b2c5a8f602383e5a88563370771d62"
+    },
+    "cut-after-chromium.webm": {
+      "bytes": 121699,
+      "sha256": "c3298cc842bd85612e532244595a6d82fc08ebac2ce928b3d3557a0c18e2c43d",
+      "decode": "passed",
+      "durationSeconds": 2.16,
+      "dimensions": {
+        "width": 800,
+        "height": 450
+      },
+      "chromiumPlayback": {
+        "width": 800,
+        "height": 450,
+        "duration": 2.16,
+        "time": 1.512,
+        "frames": 54
+      }
+    },
+    "cut-after-mobile-chrome-restored.png": {
+      "bytes": 104995,
+      "sha256": "e028e7590fad03cbeba9091b1f16e4d203a897071169cdc2739e4e360421019f"
+    },
+    "cut-after-mobile-chrome.png": {
+      "bytes": 105912,
+      "sha256": "7577cae2c24c42e5fb61a4b97b4ac281a68967d6a493c2d16220be80c38fd557"
+    },
+    "cut-after-mobile-chrome.webm": {
+      "bytes": 165400,
+      "sha256": "57cfd117c0a09fd3684ad315e1b7d8f894bf700d9968739dfa73376116ed6fe1",
+      "decode": "passed",
+      "durationSeconds": 2.24,
+      "dimensions": {
+        "width": 392,
+        "height": 800
+      },
+      "chromiumPlayback": {
+        "width": 392,
+        "height": 800,
+        "duration": 2.24,
+        "time": 1.568,
+        "frames": 56
+      }
+    },
+    "cut-before-chromium.png": {
+      "bytes": 61061,
+      "sha256": "e5f0c8a25c190624e0d23f7397fcf5dc456cbae36b2afd5386919ef8f1c6f1b4"
+    },
+    "cut-before-chromium.webm": {
+      "bytes": 262587,
+      "sha256": "538a24fd505681d57972a244cf821a62dc5e1161adefd2f15592d80206067ffb",
+      "decode": "passed",
+      "durationSeconds": 12.32,
+      "dimensions": {
+        "width": 800,
+        "height": 450
+      },
+      "chromiumPlayback": {
+        "width": 800,
+        "height": 450,
+        "duration": 12.32,
+        "time": 8.623999,
+        "frames": 102
+      }
+    },
+    "cut-before-mobile-chrome.png": {
+      "bytes": 111372,
+      "sha256": "c899c507b56c2293ce2d5157c3ba8d13e4925e45f5954a5456a964b055222753"
+    },
+    "cut-before-mobile-chrome.webm": {
+      "bytes": 291621,
+      "sha256": "25d6ee0e34567bbc04cd337b1014824eb4ec6379f4966606ae8e8c31e29c096d",
+      "decode": "passed",
+      "durationSeconds": 11.96,
+      "dimensions": {
+        "width": 392,
+        "height": 800
+      },
+      "chromiumPlayback": {
+        "width": 392,
+        "height": 800,
+        "duration": 11.96,
+        "time": 8.372,
+        "frames": 98
+      }
+    },
+    "mixed-after-chromium-restored.png": {
+      "bytes": 38120,
+      "sha256": "0f2ef6ae02ddfd52d681a2842486da31eb54a812a026d7da151e3027708fb5fa"
+    },
+    "mixed-after-chromium.png": {
+      "bytes": 37792,
+      "sha256": "77f00097c33b6a566edfa273b4bf1668ee00869ddad0bbd67f4f4326338a4a4c"
+    },
+    "mixed-after-chromium.webm": {
+      "bytes": 164572,
+      "sha256": "ba8344945f178477017aaf4b4fdbfe97c1a21cc939c551bdbc391cb772c7498e",
+      "decode": "passed",
+      "durationSeconds": 2.48,
+      "dimensions": {
+        "width": 800,
+        "height": 450
+      },
+      "chromiumPlayback": {
+        "width": 800,
+        "height": 450,
+        "duration": 2.48,
+        "time": 1.736,
+        "frames": 59
+      }
+    },
+    "mixed-after-mobile-chrome-restored.png": {
+      "bytes": 104046,
+      "sha256": "4d01d568dcb0ba255a6cce8127e40162ff43b9bc3559d198e2c8274a7146c810"
+    },
+    "mixed-after-mobile-chrome.png": {
+      "bytes": 104182,
+      "sha256": "8e5239ca3fdf96a0bd7bd544d52a09541687db98d05ef450f500360240e7b5da"
+    },
+    "mixed-after-mobile-chrome.webm": {
+      "bytes": 167838,
+      "sha256": "f76cf74bf9b15a67f312f42a90bfae9debd9dbd356529557c98f21789ae43db4",
+      "decode": "passed",
+      "durationSeconds": 2.24,
+      "dimensions": {
+        "width": 392,
+        "height": 800
+      },
+      "chromiumPlayback": {
+        "width": 392,
+        "height": 800,
+        "duration": 2.24,
+        "time": 1.568,
+        "frames": 53
+      }
+    },
+    "mixed-before-chromium.png": {
+      "bytes": 77200,
+      "sha256": "e5ccc8da73d009bc5b48a59c2be1a44c87f44566ddcb46b1e0fc9176a8a83bb6"
+    },
+    "mixed-before-chromium.webm": {
+      "bytes": 240071,
+      "sha256": "5d7e3ebcc57cdebe01fa063065f606c2d849c7db59dc5fe97e0a2956a8aa4544",
+      "decode": "passed",
+      "durationSeconds": 13.2,
+      "dimensions": {
+        "width": 800,
+        "height": 450
+      },
+      "chromiumPlayback": {
+        "width": 800,
+        "height": 450,
+        "duration": 13.2,
+        "time": 9.239999,
+        "frames": 117
+      }
+    },
+    "mixed-before-mobile-chrome.png": {
+      "bytes": 154558,
+      "sha256": "f073b8adf4a10338c5d54f4e9cc6e8dd5c23d60642d035b8869f7dd666fb975e"
+    },
+    "mixed-before-mobile-chrome.webm": {
+      "bytes": 324914,
+      "sha256": "e918110e87bc3db0f8be0d8a4cbb67e15ed3b91a416d6ccaf35e8e1dffa52721",
+      "decode": "passed",
+      "durationSeconds": 12,
+      "dimensions": {
+        "width": 392,
+        "height": 800
+      },
+      "chromiumPlayback": {
+        "width": 392,
+        "height": 800,
+        "duration": 12,
+        "time": 8.399999,
+        "frames": 98
+      }
+    },
+    "rotate-after-chromium-restored.png": {
+      "bytes": 36924,
+      "sha256": "1b91eeb6c133131b6b99ccb2d950fe95532a14c1248dfb7a5283585de4a8274e"
+    },
+    "rotate-after-chromium.png": {
+      "bytes": 36924,
+      "sha256": "1b91eeb6c133131b6b99ccb2d950fe95532a14c1248dfb7a5283585de4a8274e"
+    },
+    "rotate-after-chromium.webm": {
+      "bytes": 105463,
+      "sha256": "8b10d171a58777640d71174e35575c75ac83a4feae3b6c7356f8298f397ee9d4",
+      "decode": "passed",
+      "durationSeconds": 2.16,
+      "dimensions": {
+        "width": 800,
+        "height": 450
+      },
+      "chromiumPlayback": {
+        "width": 800,
+        "height": 450,
+        "duration": 2.16,
+        "time": 1.512,
+        "frames": 54
+      }
+    },
+    "rotate-after-mobile-chrome-restored.png": {
+      "bytes": 100917,
+      "sha256": "2c09be0bdf481ad08992107dbd34f564bec6bdbddc3a2428e9a9bc1086161675"
+    },
+    "rotate-after-mobile-chrome.png": {
+      "bytes": 101764,
+      "sha256": "1e60f268160f3345934f981e27406ac669adff5a25511ee4d09cb3b9af04aecb"
+    },
+    "rotate-after-mobile-chrome.webm": {
+      "bytes": 181380,
+      "sha256": "1f3192adc755a7017829e961e7948d5fb5f8619a60e4950dc7a1e5ebec5d4701",
+      "decode": "passed",
+      "durationSeconds": 2.32,
+      "dimensions": {
+        "width": 392,
+        "height": 800
+      },
+      "chromiumPlayback": {
+        "width": 392,
+        "height": 800,
+        "duration": 2.32,
+        "time": 1.624,
+        "frames": 56
+      }
+    },
+    "rotate-before-chromium.png": {
+      "bytes": 59804,
+      "sha256": "1fafeaa122b972b51d1aafd27841eb4e21b10e317ed9376d3cdf3a70dcc9ee23"
+    },
+    "rotate-before-chromium.webm": {
+      "bytes": 215421,
+      "sha256": "88107087fcb1b2f3c3fbf1b21fba31e9d196cb2ce3edcc94578ba5782e821436",
+      "decode": "passed",
+      "durationSeconds": 12.36,
+      "dimensions": {
+        "width": 800,
+        "height": 450
+      },
+      "chromiumPlayback": {
+        "width": 800,
+        "height": 450,
+        "duration": 12.36,
+        "time": 8.652,
+        "frames": 103
+      }
+    },
+    "rotate-before-mobile-chrome.png": {
+      "bytes": 111335,
+      "sha256": "f1dc4cbfa437c9cc743542d4a24ccbadf8dcdac5f8442331146d52de0126e410"
+    },
+    "rotate-before-mobile-chrome.webm": {
+      "bytes": 286490,
+      "sha256": "63a232d6705c9af7bc451f1479aaa03b012d508dfee7c9e62207bbfb36a33f30",
+      "decode": "passed",
+      "durationSeconds": 12.04,
+      "dimensions": {
+        "width": 392,
+        "height": 800
+      },
+      "chromiumPlayback": {
+        "width": 392,
+        "height": 800,
+        "duration": 12.04,
+        "time": 8.427999,
+        "frames": 99
+      }
+    }
+  },
+  "before": {
+    "capture": {
+      "phase": "before",
+      "createdAt": "2026-09-16T22:00:08.416Z",
+      "commit": "24d772943a6c0eaec87dca118b628c43289b78b0",
+      "branch": "",
+      "status": "?? e2e/fixtures/isometric-edited.ts\n?? e2e/isometric-edited-extent.spec.ts",
+      "node": "v24.21.0",
+      "platform": "darwin",
+      "npm": "11.19.0",
+      "command": [
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/isometric-edited-extent.spec.ts",
+        "--project",
+        "chromium",
+        "--project",
+        "mobile-chrome",
+        "--workers",
+        "1"
+      ],
+      "exitCode": 1
+    },
+    "stats": {
+      "startTime": "2026-09-16T22:00:08.812Z",
+      "duration": 71093.11700000001,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 6,
+      "flaky": 0
+    },
+    "testHashes": {
+      "e2e/fixtures/isometric-edited.ts": "692228a8d08bfcb815b46265f2f999556f0f43991bfbf4e4a92a3f94bfd1388c",
+      "e2e/isometric-edited-extent.spec.ts": "37f316968e09005ac0500dd4b82420d18730120fefe4e30a7e95acd63f1e1c43",
+      "e2e/fixtures/isometric-extent.ts": "41becda92ab968d09f0993c3285d5f80b392ac5fbd6d34967a3cec8d6a07374d"
+    },
+    "unchangedBaselineSourceFiles": 575
+  },
+  "after": {
+    "capture": {
+      "phase": "after",
+      "createdAt": "2026-09-16T22:02:07.815Z",
+      "commit": "f7a3d193a4bcd22565860b8ea8edea038df2ec76",
+      "branch": "feature/issue-integration",
+      "status": "",
+      "node": "v24.21.0",
+      "platform": "darwin",
+      "npm": "11.19.0",
+      "command": [
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/isometric-edited-extent.spec.ts",
+        "--config",
+        "playwright.production.config.ts",
+        "--workers",
+        "1"
+      ],
+      "exitCode": 0
+    },
+    "stats": {
+      "startTime": "2026-09-16T22:02:08.209Z",
+      "duration": 10497.014,
+      "expected": 6,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "testHashes": {
+      "e2e/fixtures/isometric-edited.ts": "692228a8d08bfcb815b46265f2f999556f0f43991bfbf4e4a92a3f94bfd1388c",
+      "e2e/fixtures/isometric-extent.ts": "41becda92ab968d09f0993c3285d5f80b392ac5fbd6d34967a3cec8d6a07374d",
+      "e2e/isometric-edited-extent.spec.ts": "37f316968e09005ac0500dd4b82420d18730120fefe4e30a7e95acd63f1e1c43"
+    },
+    "verifiedCommit": "f7a3d193a4bcd22565860b8ea8edea038df2ec76",
+    "sourceManifestMatchedFiles": 728
+  },
+  "verification": {
+    "unit": {
+      "passed": 746,
+      "files": 104,
+      "finalChangedTestFilePassed": 5
+    },
+    "production": {
+      "startTime": "2026-09-16T22:02:35.977Z",
+      "duration": 201465.908,
+      "expected": 162,
+      "skipped": 1,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "build": "app, library and E2E types passed",
+    "solverSourceMaps": {
+      "sources": 221,
+      "artifacts": 442,
+      "maps": 442
+    },
+    "pngReview": {
+      "reviewed": 18,
+      "result": "Applied and restored geometry and marks inspected on PC and mobile emulation"
+    },
+    "webkit": {
+      "webkit": {
+        "startTime": "2026-09-16T22:06:16.612Z",
+        "duration": 61490.931,
+        "expected": 18,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "webkit-exclusion": {
+        "startTime": "2026-09-16T22:07:50.253Z",
+        "duration": 7210.673000000001,
+        "expected": 2,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    "videoReview": {
+      "decoded": 12,
+      "chromiumPlayedAndSeeked": 12,
+      "playbackFramesInspected": 12
+    }
+  }
+}
