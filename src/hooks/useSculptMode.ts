@@ -40,15 +40,6 @@ export function useSculptMode({ grid, topology }: UseSculptModeOptions) {
           .map((id) => topology.cells.get(id))
           .filter((c): c is TopologyCell => !!c);
         if (cells.length === 3) {
-          // Exclude vertices that are adjacent to cells created by cut operation
-          // These include: 'cell-triangle-' (center triangle) and 'cell-trapezoid-' (remaining triangles)
-          const hasCutCell = cells.some(
-            (c) => c.id.startsWith('cell-triangle-') || c.id.startsWith('cell-trapezoid-')
-          );
-          if (hasCutCell) {
-            return; // Skip this vertex - it's adjacent to a cut cell
-          }
-
           // Also verify all adjacent cells are quadrilaterals (4 vertices)
           // This ensures we're targeting original isometric grid vertices
           const allQuads = cells.every((c) => c.boundaryVertices.length === 4);

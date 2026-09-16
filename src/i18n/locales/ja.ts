@@ -845,6 +845,8 @@ export const ja = {
   'gridEdit.sculptMode.cut': 'カット',
   'gridEdit.sculptHelp.rotate': '六角形の中心をクリックして3つのセルを頂点周りに回転します。',
   'gridEdit.sculptHelp.cut': '六角形の中心をクリックして三角形でカット（頂点を削除）します。',
+  'gridEdit.sculptAnnotations': '消えるセル・頂点・辺の注記は削除されます。元に戻す操作で復元できます。',
+  'gridEdit.sculptSourceMissing': 'この保存済みの彫刻操作には、解除に必要な元の形状がありません。',
   'gridEdit.sculptOperations': 'スカルプト操作',
   'gridEdit.clearAllSculpt': '全てのスカルプト操作をクリア',
 

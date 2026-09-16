@@ -845,6 +845,8 @@ export const en = {
   'gridEdit.sculptMode.cut': 'Cut',
   'gridEdit.sculptHelp.rotate': 'Click hexagon centers to flip 3 cells around the vertex.',
   'gridEdit.sculptHelp.cut': 'Click hexagon centers to cut with a triangle (removes vertex).',
+  'gridEdit.sculptAnnotations': 'Notes on removed cells, vertices or edges are deleted. Undo restores them.',
+  'gridEdit.sculptSourceMissing': 'The original shape is unavailable for these saved sculpt edits.',
   'gridEdit.sculptOperations': 'Sculpt operations',
   'gridEdit.clearAllSculpt': 'Clear all sculpt operations',
 

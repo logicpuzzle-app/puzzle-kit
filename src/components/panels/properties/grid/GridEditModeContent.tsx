@@ -155,9 +155,10 @@ export const GridExcludeContent: React.FC = () => {
 // Sculpt mode content (for isometric grids)
 export const GridSculptContent: React.FC = () => {
   const { t } = useTranslation();
-  const { sculptMode, setSculptMode, grid, setGrid } = usePuzzleStore();
+  const { sculptMode, setSculptMode, grid, setGrid, topology } = usePuzzleStore();
 
   const sculptCount = grid.sculptOperations?.length ?? 0;
+  const canClear = (topology?.exclusionBase ?? topology)?.editOperations?.some(op => op.kind === 'sculpt') ?? false;
 
   return (
     <div className="space-y-3">
@@ -191,6 +192,9 @@ export const GridSculptContent: React.FC = () => {
           : t('gridEdit.sculptHelp.cut')}
       </div>
 
+      <p className="text-xs text-office-text-secondary">{t('gridEdit.sculptAnnotations')}</p>
+      {sculptCount > 0 && !canClear && <p role="status" className="text-xs text-office-text-secondary">{t('gridEdit.sculptSourceMissing')}</p>}
+
       {/* Sculpt operations count */}
       <div className="space-y-1">
         <div className="text-xs text-office-text-secondary">
@@ -202,6 +206,7 @@ export const GridSculptContent: React.FC = () => {
       {sculptCount > 0 && (
         <button
           className="w-full px-2 py-1.5 text-xs border border-office-border rounded-sm hover:bg-red-50 hover:border-red-300 text-red-600"
+          disabled={!canClear}
           onClick={() => setGrid({ sculptOperations: undefined })}
         >
           {t('gridEdit.clearAllSculpt')}
