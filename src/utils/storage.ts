@@ -5,7 +5,7 @@
  */
 
 import type { ToolSettings, GridConfig, CanvasState } from '../types';
-import type { GridTopology } from './topology/types';
+import type { GridTopology, TopologyPreset } from './topology/types';
 import { serializeTopology, deserializeTopology, type SerializedTopology } from './serialization';
 
 const STORAGE_KEYS = {
@@ -318,8 +318,8 @@ export function saveTopologyState(
   const data: PersistedTopologyState = {
     topology: topology ? serializeTopology(topology) : null,
     useTopology,
-    topologyPreset,
-    topologyIntensity,
+    topologyPreset: (useTopology ? topology?.appliedPreset?.preset : undefined) ?? topologyPreset,
+    topologyIntensity: (useTopology ? topology?.appliedPreset?.intensity : undefined) ?? topologyIntensity,
   };
   return setItem(STORAGE_KEYS.TOPOLOGY, data);
 }
@@ -329,6 +329,10 @@ export function loadTopologyState(): PersistedTopologyState & { deserializedTopo
   let deserializedTopology: GridTopology | null = null;
   try {
     deserializedTopology = state.topology ? deserializeTopology(state.topology) : null;
+    if (deserializedTopology) deserializedTopology.appliedPreset = {
+      preset: state.topologyPreset as TopologyPreset, intensity: state.topologyIntensity,
+    };
+    if (deserializedTopology?.exclusionBase) deserializedTopology.exclusionBase.appliedPreset = deserializedTopology.appliedPreset;
   } catch {
     // These are board preferences, not a native document. A corrupt preference
     // snapshot must not prevent the independently saved puzzle from opening.

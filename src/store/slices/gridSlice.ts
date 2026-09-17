@@ -12,6 +12,7 @@ import {
 } from '../../utils/gridTopology';
 import { remapLineEdgeIdsForTopology } from '../../utils/lineTopology';
 import { applyCellExclusions } from '../../utils/topology/exclusions';
+import { scaleTopologyLayout } from '../../utils/topology/layout';
 import { prepareExclusionBase } from '../../utils/topology/legacyExclusions';
 import {
   sculptRotateCluster,
@@ -24,6 +25,28 @@ import {
   removeSplitLine,
   clearSplitLines,
 } from './grid';
+
+const TOPOLOGY_KEYS = new Set([
+  'rows',
+  'cols',
+  'level',
+  'isometricFaces',
+  'isometricView',
+  'penroseSide',
+  'penroseOrder',
+  'penroseRotational',
+  'penroseVariation',
+  'cellSize',
+  'outerPadding',
+  'gridType',
+  'marginTop',
+  'marginBottom',
+  'marginLeft',
+  'marginRight',
+  'mergedCells',
+  'splitLines',
+  'sculptOperations',
+]);
 
 // Default grid configuration
 const DEFAULT_GRID: GridConfig = {
@@ -74,34 +97,24 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       const newGrid = { ...state.grid, ...gridUpdate };
       const forceTopology = newGrid.gridType === 'penrose_P3';
       const nextUseTopology = forceTopology ? true : state.useTopology;
-      const topologyKeys = new Set([
-        'rows',
-        'cols',
-        'level',
-        'isometricFaces',
-        'isometricView',
-        'penroseSide',
-        'penroseOrder',
-        'penroseRotational',
-        'penroseVariation',
-        'cellSize',
-        'outerPadding',
-        'gridType',
-        'marginTop',
-        'marginBottom',
-        'marginLeft',
-        'marginRight',
-        'mergedCells',
-        'splitLines',
-        'sculptOperations',
-      ]);
-      const hasTopologyChange = Object.keys(gridUpdate).some((key) => topologyKeys.has(key));
+      const changedTopologyKeys = Object.keys(gridUpdate).filter(key => TOPOLOGY_KEYS.has(key)
+        && JSON.stringify(newGrid[key as keyof GridConfig]) !== JSON.stringify(state.grid[key as keyof GridConfig]));
+      const appliedPreset = state.topology?.appliedPreset;
+      const presetChanged = appliedPreset && (appliedPreset.preset !== state.topologyPreset || appliedPreset.intensity !== state.topologyIntensity);
+      const hasTopologyChange = changedTopologyKeys.length > 0
+        || (presetChanged && Object.keys(gridUpdate).some(key => TOPOLOGY_KEYS.has(key)));
+      const hasLayoutChange = !presetChanged && changedTopologyKeys.length > 0
+        && changedTopologyKeys.every(key => key === 'cellSize' || key === 'outerPadding');
       const hasExclusionChange = ['voidCells', 'disabledCells', 'outboardCells']
         .some(key => Object.prototype.hasOwnProperty.call(gridUpdate, key));
 
       let newTopology = state.topology;
       let nextPuzzle = state.puzzle;
-      if (nextUseTopology && hasTopologyChange) {
+      if (nextUseTopology && hasLayoutChange && state.topology) {
+        const base = prepareExclusionBase(state.topology, state.grid, state.topologyPreset, state.topologyIntensity);
+        newTopology = scaleTopologyLayout(base, state.grid, newGrid);
+        if (hasExclusionChange) newTopology = applyCellExclusions(newTopology, newGrid);
+      } else if (nextUseTopology && hasTopologyChange) {
         const base = gridConfigToTopology(newGrid);
         newTopology = applyTopologyPreset(base, {
           preset: state.topologyPreset,
@@ -131,8 +144,8 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
         puzzle: nextPuzzle,
         ...(forceTopology ? { useTopology: true } : {}),
       };
-      return hasExclusionChange && !hasTopologyChange
-        ? recordGeometryEdit(state, result, 'Change cell exclusions') : result;
+      return hasLayoutChange || (hasExclusionChange && !hasTopologyChange)
+        ? recordGeometryEdit(state, result, hasLayoutChange ? 'Change board layout' : 'Change cell exclusions') : result;
     }),
 
   // Topology mode
@@ -207,11 +220,17 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
         ...(config.isometricFaces !== undefined && { isometricFaces: config.isometricFaces }),
         ...(config.isometricView !== undefined && { isometricView: config.isometricView }),
       };
-      const baseTopology = gridConfigToTopology(previewGridConfig);
-      const previewTopo = applyTopologyPreset(baseTopology, {
-        preset: state.topologyPreset,
-        intensity: state.topologyIntensity,
-      });
+      const appliedPreset = state.topology?.appliedPreset;
+      const presetChanged = appliedPreset && (appliedPreset.preset !== state.topologyPreset || appliedPreset.intensity !== state.topologyIntensity);
+      const layoutOnly = !presetChanged && Object.entries(previewGridConfig).every(([key, value]) =>
+        key === 'cellSize' || key === 'outerPadding'
+        || JSON.stringify(value) === JSON.stringify(state.grid[key as keyof GridConfig]));
+      const previewTopo = layoutOnly && state.useTopology && state.topology
+        ? scaleTopologyLayout(state.topology, state.grid, previewGridConfig)
+        : applyTopologyPreset(gridConfigToTopology(previewGridConfig), {
+            preset: state.topologyPreset,
+            intensity: state.topologyIntensity,
+          });
       set({ previewTopology: previewTopo, previewGrid: previewGridConfig });
     }
   },
@@ -281,6 +300,12 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
     const state = get();
     const oldConfig = state.grid;
     const newConfig: GridConfig = { ...oldConfig, ...configChanges };
+    const changedKeys = Object.keys(configChanges).filter(key =>
+      JSON.stringify(newConfig[key as keyof GridConfig]) !== JSON.stringify(oldConfig[key as keyof GridConfig]));
+    if (changedKeys.every(key => !TOPOLOGY_KEYS.has(key) || key === 'cellSize' || key === 'outerPadding')) {
+      get().setGrid(configChanges);
+      return;
+    }
 
     if (state.useTopology && state.topology) {
       const resizeResult = resizeTopology(state.topology, oldConfig, newConfig);

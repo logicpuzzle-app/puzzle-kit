@@ -273,6 +273,7 @@ export function applyTopologyPreset(
   const totalHeight = maxY + outerPadding;
 
   return {
+    appliedPreset: { preset, intensity },
     cells: newCells,
     vertices: newVertices,
     edges: newEdges,
