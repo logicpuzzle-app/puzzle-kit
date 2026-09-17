@@ -1,0 +1,1361 @@
+{
+  "version": "1.7.0",
+  "grid": {
+    "rows": 3,
+    "cols": 3,
+    "cellSize": 40,
+    "outerPadding": 20,
+    "showGrid": true,
+    "gridStyle": "normal",
+    "gridType": "square",
+    "marginTop": 0,
+    "marginBottom": 0,
+    "marginLeft": 0,
+    "marginRight": 0,
+    "frameStyle": "normal",
+    "frameColor": "#000000",
+    "gridColor": "#000000",
+    "backgroundColor": "#ffffff"
+  },
+  "state": {
+    "problem": {
+      "surfaces": {},
+      "lines": {},
+      "edges": {},
+      "walls": {},
+      "numbers": {},
+      "symbols": {},
+      "cages": {},
+      "specials": {},
+      "boxLines": {},
+      "clueCells": {
+        "cell-0-0": {
+          "id": "cell-0-0",
+          "cellId": "A",
+          "horizontal": null,
+          "vertical": null
+        },
+        "cell-0-1": {
+          "id": "cell-0-1",
+          "cellId": "a",
+          "horizontal": null,
+          "vertical": 4
+        },
+        "cell-0-2": {
+          "id": "cell-0-2",
+          "cellId": "cell-99-99",
+          "horizontal": null,
+          "vertical": 6
+        },
+        "cell-1-0": {
+          "id": "cell-1-0",
+          "cellId": "corner|south",
+          "horizontal": 3,
+          "vertical": null
+        },
+        "cell-2-0": {
+          "id": "cell-2-0",
+          "cellId": "edge-1-2",
+          "horizontal": 7,
+          "vertical": null
+        }
+      }
+    },
+    "answer": {
+      "surfaces": {},
+      "lines": {},
+      "edges": {},
+      "walls": {},
+      "numbers": {
+        "cell-1-1": {
+          "id": "cell-1-1",
+          "cellId": "opaque/β",
+          "value": "1",
+          "position": "center",
+          "size": "large",
+          "color": "#000000",
+          "layer": "answer"
+        },
+        "cell-1-2": {
+          "id": "cell-1-2",
+          "cellId": "cell-not-numeric",
+          "value": "2",
+          "position": "center",
+          "size": "large",
+          "color": "#000000",
+          "layer": "answer"
+        },
+        "cell-2-1": {
+          "id": "cell-2-1",
+          "cellId": " 空白 ",
+          "value": "3",
+          "position": "center",
+          "size": "large",
+          "color": "#000000",
+          "layer": "answer"
+        },
+        "cell-2-2": {
+          "id": "cell-2-2",
+          "cellId": "room::end",
+          "value": "4",
+          "position": "center",
+          "size": "large",
+          "color": "#000000",
+          "layer": "answer"
+        }
+      },
+      "symbols": {},
+      "cages": {},
+      "specials": {},
+      "boxLines": {}
+    }
+  },
+  "topologySettings": {
+    "useTopology": true,
+    "topologyPreset": "square",
+    "topologyIntensity": 0.5,
+    "topology": {
+      "cells": [
+        [
+          "A",
+          {
+            "id": "A",
+            "center": {
+              "x": 40,
+              "y": 40
+            },
+            "boundaryVertices": [
+              "vertex/@1",
+              "vertex/@2",
+              "vertex/@3",
+              "vertex/@0"
+            ],
+            "adjacentCells": [
+              "a",
+              "corner|south"
+            ],
+            "boundaryEdges": [
+              "border|3",
+              "border|2",
+              "border|1",
+              "border|0"
+            ],
+            "index": [
+              0,
+              0
+            ],
+            "row": 0,
+            "col": 0,
+            "originalCells": [
+              "A"
+            ]
+          }
+        ],
+        [
+          "a",
+          {
+            "id": "a",
+            "center": {
+              "x": 80,
+              "y": 40
+            },
+            "boundaryVertices": [
+              "vertex/@4",
+              "vertex/@5",
+              "vertex/@2",
+              "vertex/@1"
+            ],
+            "adjacentCells": [
+              "cell-99-99",
+              "opaque/β",
+              "A"
+            ],
+            "boundaryEdges": [
+              "border|1",
+              "border|6",
+              "border|5",
+              "border|4"
+            ],
+            "index": [
+              0,
+              1
+            ],
+            "row": 0,
+            "col": 1,
+            "originalCells": [
+              "a"
+            ]
+          }
+        ],
+        [
+          "cell-99-99",
+          {
+            "id": "cell-99-99",
+            "center": {
+              "x": 120,
+              "y": 40
+            },
+            "boundaryVertices": [
+              "vertex/@6",
+              "vertex/@7",
+              "vertex/@5",
+              "vertex/@4"
+            ],
+            "adjacentCells": [
+              "cell-not-numeric",
+              "a"
+            ],
+            "boundaryEdges": [
+              "border|5",
+              "border|9",
+              "border|8",
+              "border|7"
+            ],
+            "index": [
+              0,
+              2
+            ],
+            "row": 0,
+            "col": 2,
+            "originalCells": [
+              "cell-99-99"
+            ]
+          }
+        ],
+        [
+          "corner|south",
+          {
+            "id": "corner|south",
+            "center": {
+              "x": 40,
+              "y": 80
+            },
+            "boundaryVertices": [
+              "vertex/@2",
+              "vertex/@8",
+              "vertex/@9",
+              "vertex/@3"
+            ],
+            "adjacentCells": [
+              "A",
+              "opaque/β",
+              "edge-1-2"
+            ],
+            "boundaryEdges": [
+              "border|12",
+              "border|11",
+              "border|10",
+              "border|2"
+            ],
+            "index": [
+              1,
+              0
+            ],
+            "row": 1,
+            "col": 0,
+            "originalCells": [
+              "corner|south"
+            ]
+          }
+        ],
+        [
+          "opaque/β",
+          {
+            "id": "opaque/β",
+            "center": {
+              "x": 80,
+              "y": 80
+            },
+            "boundaryVertices": [
+              "vertex/@5",
+              "vertex/@10",
+              "vertex/@8",
+              "vertex/@2"
+            ],
+            "adjacentCells": [
+              "a",
+              "cell-not-numeric",
+              " 空白 ",
+              "corner|south"
+            ],
+            "boundaryEdges": [
+              "border|10",
+              "border|14",
+              "border|13",
+              "border|6"
+            ],
+            "index": [
+              1,
+              1
+            ],
+            "row": 1,
+            "col": 1,
+            "originalCells": [
+              "opaque/β"
+            ]
+          }
+        ],
+        [
+          "cell-not-numeric",
+          {
+            "id": "cell-not-numeric",
+            "center": {
+              "x": 120,
+              "y": 80
+            },
+            "boundaryVertices": [
+              "vertex/@7",
+              "vertex/@11",
+              "vertex/@10",
+              "vertex/@5"
+            ],
+            "adjacentCells": [
+              "cell-99-99",
+              "room::end",
+              "opaque/β"
+            ],
+            "boundaryEdges": [
+              "border|13",
+              "border|16",
+              "border|15",
+              "border|9"
+            ],
+            "index": [
+              1,
+              2
+            ],
+            "row": 1,
+            "col": 2,
+            "originalCells": [
+              "cell-not-numeric"
+            ]
+          }
+        ],
+        [
+          "edge-1-2",
+          {
+            "id": "edge-1-2",
+            "center": {
+              "x": 40,
+              "y": 120
+            },
+            "boundaryVertices": [
+              "vertex/@8",
+              "vertex/@12",
+              "vertex/@13",
+              "vertex/@9"
+            ],
+            "adjacentCells": [
+              "corner|south",
+              " 空白 "
+            ],
+            "boundaryEdges": [
+              "border|19",
+              "border|18",
+              "border|17",
+              "border|11"
+            ],
+            "index": [
+              2,
+              0
+            ],
+            "row": 2,
+            "col": 0,
+            "originalCells": [
+              "edge-1-2"
+            ]
+          }
+        ],
+        [
+          " 空白 ",
+          {
+            "id": " 空白 ",
+            "center": {
+              "x": 80,
+              "y": 120
+            },
+            "boundaryVertices": [
+              "vertex/@10",
+              "vertex/@14",
+              "vertex/@12",
+              "vertex/@8"
+            ],
+            "adjacentCells": [
+              "opaque/β",
+              "room::end",
+              "edge-1-2"
+            ],
+            "boundaryEdges": [
+              "border|17",
+              "border|21",
+              "border|20",
+              "border|14"
+            ],
+            "index": [
+              2,
+              1
+            ],
+            "row": 2,
+            "col": 1,
+            "originalCells": [
+              " 空白 "
+            ]
+          }
+        ],
+        [
+          "room::end",
+          {
+            "id": "room::end",
+            "center": {
+              "x": 120,
+              "y": 120
+            },
+            "boundaryVertices": [
+              "vertex/@11",
+              "vertex/@15",
+              "vertex/@14",
+              "vertex/@10"
+            ],
+            "adjacentCells": [
+              "cell-not-numeric",
+              " 空白 "
+            ],
+            "boundaryEdges": [
+              "border|20",
+              "border|23",
+              "border|22",
+              "border|16"
+            ],
+            "index": [
+              2,
+              2
+            ],
+            "row": 2,
+            "col": 2,
+            "originalCells": [
+              "room::end"
+            ]
+          }
+        ]
+      ],
+      "vertices": [
+        [
+          "vertex/@0",
+          {
+            "id": "vertex/@0",
+            "position": {
+              "x": 20,
+              "y": 20
+            },
+            "adjacentCells": [
+              "A"
+            ],
+            "adjacentEdges": [
+              "border|0",
+              "border|3"
+            ],
+            "adjacentVertices": [
+              "vertex/@1",
+              "vertex/@3"
+            ],
+            "index": [
+              0,
+              0
+            ],
+            "row": 0,
+            "col": 0
+          }
+        ],
+        [
+          "vertex/@1",
+          {
+            "id": "vertex/@1",
+            "position": {
+              "x": 60,
+              "y": 20
+            },
+            "adjacentCells": [
+              "A",
+              "a"
+            ],
+            "adjacentEdges": [
+              "border|0",
+              "border|1",
+              "border|4"
+            ],
+            "adjacentVertices": [
+              "vertex/@0",
+              "vertex/@2",
+              "vertex/@4"
+            ],
+            "index": [
+              0,
+              1
+            ],
+            "row": 0,
+            "col": 1
+          }
+        ],
+        [
+          "vertex/@2",
+          {
+            "id": "vertex/@2",
+            "position": {
+              "x": 60,
+              "y": 60
+            },
+            "adjacentCells": [
+              "A",
+              "a",
+              "corner|south",
+              "opaque/β"
+            ],
+            "adjacentEdges": [
+              "border|1",
+              "border|2",
+              "border|6",
+              "border|10"
+            ],
+            "adjacentVertices": [
+              "vertex/@1",
+              "vertex/@3",
+              "vertex/@5",
+              "vertex/@8"
+            ],
+            "index": [
+              1,
+              1
+            ],
+            "row": 1,
+            "col": 1
+          }
+        ],
+        [
+          "vertex/@3",
+          {
+            "id": "vertex/@3",
+            "position": {
+              "x": 20,
+              "y": 60
+            },
+            "adjacentCells": [
+              "A",
+              "corner|south"
+            ],
+            "adjacentEdges": [
+              "border|2",
+              "border|3",
+              "border|12"
+            ],
+            "adjacentVertices": [
+              "vertex/@2",
+              "vertex/@0",
+              "vertex/@9"
+            ],
+            "index": [
+              1,
+              0
+            ],
+            "row": 1,
+            "col": 0
+          }
+        ],
+        [
+          "vertex/@4",
+          {
+            "id": "vertex/@4",
+            "position": {
+              "x": 100,
+              "y": 20
+            },
+            "adjacentCells": [
+              "a",
+              "cell-99-99"
+            ],
+            "adjacentEdges": [
+              "border|4",
+              "border|5",
+              "border|7"
+            ],
+            "adjacentVertices": [
+              "vertex/@1",
+              "vertex/@5",
+              "vertex/@6"
+            ],
+            "index": [
+              0,
+              2
+            ],
+            "row": 0,
+            "col": 2
+          }
+        ],
+        [
+          "vertex/@5",
+          {
+            "id": "vertex/@5",
+            "position": {
+              "x": 100,
+              "y": 60
+            },
+            "adjacentCells": [
+              "a",
+              "cell-99-99",
+              "opaque/β",
+              "cell-not-numeric"
+            ],
+            "adjacentEdges": [
+              "border|5",
+              "border|6",
+              "border|9",
+              "border|13"
+            ],
+            "adjacentVertices": [
+              "vertex/@4",
+              "vertex/@2",
+              "vertex/@7",
+              "vertex/@10"
+            ],
+            "index": [
+              1,
+              2
+            ],
+            "row": 1,
+            "col": 2
+          }
+        ],
+        [
+          "vertex/@6",
+          {
+            "id": "vertex/@6",
+            "position": {
+              "x": 140,
+              "y": 20
+            },
+            "adjacentCells": [
+              "cell-99-99"
+            ],
+            "adjacentEdges": [
+              "border|7",
+              "border|8"
+            ],
+            "adjacentVertices": [
+              "vertex/@4",
+              "vertex/@7"
+            ],
+            "index": [
+              0,
+              3
+            ],
+            "row": 0,
+            "col": 3
+          }
+        ],
+        [
+          "vertex/@7",
+          {
+            "id": "vertex/@7",
+            "position": {
+              "x": 140,
+              "y": 60
+            },
+            "adjacentCells": [
+              "cell-99-99",
+              "cell-not-numeric"
+            ],
+            "adjacentEdges": [
+              "border|8",
+              "border|9",
+              "border|15"
+            ],
+            "adjacentVertices": [
+              "vertex/@6",
+              "vertex/@5",
+              "vertex/@11"
+            ],
+            "index": [
+              1,
+              3
+            ],
+            "row": 1,
+            "col": 3
+          }
+        ],
+        [
+          "vertex/@8",
+          {
+            "id": "vertex/@8",
+            "position": {
+              "x": 60,
+              "y": 100
+            },
+            "adjacentCells": [
+              "corner|south",
+              "opaque/β",
+              "edge-1-2",
+              " 空白 "
+            ],
+            "adjacentEdges": [
+              "border|10",
+              "border|11",
+              "border|14",
+              "border|17"
+            ],
+            "adjacentVertices": [
+              "vertex/@2",
+              "vertex/@9",
+              "vertex/@10",
+              "vertex/@12"
+            ],
+            "index": [
+              2,
+              1
+            ],
+            "row": 2,
+            "col": 1
+          }
+        ],
+        [
+          "vertex/@9",
+          {
+            "id": "vertex/@9",
+            "position": {
+              "x": 20,
+              "y": 100
+            },
+            "adjacentCells": [
+              "corner|south",
+              "edge-1-2"
+            ],
+            "adjacentEdges": [
+              "border|11",
+              "border|12",
+              "border|19"
+            ],
+            "adjacentVertices": [
+              "vertex/@8",
+              "vertex/@3",
+              "vertex/@13"
+            ],
+            "index": [
+              2,
+              0
+            ],
+            "row": 2,
+            "col": 0
+          }
+        ],
+        [
+          "vertex/@10",
+          {
+            "id": "vertex/@10",
+            "position": {
+              "x": 100,
+              "y": 100
+            },
+            "adjacentCells": [
+              "opaque/β",
+              "cell-not-numeric",
+              " 空白 ",
+              "room::end"
+            ],
+            "adjacentEdges": [
+              "border|13",
+              "border|14",
+              "border|16",
+              "border|20"
+            ],
+            "adjacentVertices": [
+              "vertex/@5",
+              "vertex/@8",
+              "vertex/@11",
+              "vertex/@14"
+            ],
+            "index": [
+              2,
+              2
+            ],
+            "row": 2,
+            "col": 2
+          }
+        ],
+        [
+          "vertex/@11",
+          {
+            "id": "vertex/@11",
+            "position": {
+              "x": 140,
+              "y": 100
+            },
+            "adjacentCells": [
+              "cell-not-numeric",
+              "room::end"
+            ],
+            "adjacentEdges": [
+              "border|15",
+              "border|16",
+              "border|22"
+            ],
+            "adjacentVertices": [
+              "vertex/@7",
+              "vertex/@10",
+              "vertex/@15"
+            ],
+            "index": [
+              2,
+              3
+            ],
+            "row": 2,
+            "col": 3
+          }
+        ],
+        [
+          "vertex/@12",
+          {
+            "id": "vertex/@12",
+            "position": {
+              "x": 60,
+              "y": 140
+            },
+            "adjacentCells": [
+              "edge-1-2",
+              " 空白 "
+            ],
+            "adjacentEdges": [
+              "border|17",
+              "border|18",
+              "border|21"
+            ],
+            "adjacentVertices": [
+              "vertex/@8",
+              "vertex/@13",
+              "vertex/@14"
+            ],
+            "index": [
+              3,
+              1
+            ],
+            "row": 3,
+            "col": 1
+          }
+        ],
+        [
+          "vertex/@13",
+          {
+            "id": "vertex/@13",
+            "position": {
+              "x": 20,
+              "y": 140
+            },
+            "adjacentCells": [
+              "edge-1-2"
+            ],
+            "adjacentEdges": [
+              "border|18",
+              "border|19"
+            ],
+            "adjacentVertices": [
+              "vertex/@12",
+              "vertex/@9"
+            ],
+            "index": [
+              3,
+              0
+            ],
+            "row": 3,
+            "col": 0
+          }
+        ],
+        [
+          "vertex/@14",
+          {
+            "id": "vertex/@14",
+            "position": {
+              "x": 100,
+              "y": 140
+            },
+            "adjacentCells": [
+              " 空白 ",
+              "room::end"
+            ],
+            "adjacentEdges": [
+              "border|20",
+              "border|21",
+              "border|23"
+            ],
+            "adjacentVertices": [
+              "vertex/@10",
+              "vertex/@12",
+              "vertex/@15"
+            ],
+            "index": [
+              3,
+              2
+            ],
+            "row": 3,
+            "col": 2
+          }
+        ],
+        [
+          "vertex/@15",
+          {
+            "id": "vertex/@15",
+            "position": {
+              "x": 140,
+              "y": 140
+            },
+            "adjacentCells": [
+              "room::end"
+            ],
+            "adjacentEdges": [
+              "border|22",
+              "border|23"
+            ],
+            "adjacentVertices": [
+              "vertex/@11",
+              "vertex/@14"
+            ],
+            "index": [
+              3,
+              3
+            ],
+            "row": 3,
+            "col": 3
+          }
+        ]
+      ],
+      "edges": [
+        [
+          "border|0",
+          {
+            "id": "border|0",
+            "midpoint": {
+              "x": 40,
+              "y": 20
+            },
+            "startVertex": "vertex/@0",
+            "endVertex": "vertex/@1",
+            "adjacentCells": [
+              "A"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "border|1",
+          {
+            "id": "border|1",
+            "midpoint": {
+              "x": 60,
+              "y": 40
+            },
+            "startVertex": "vertex/@1",
+            "endVertex": "vertex/@2",
+            "adjacentCells": [
+              "A",
+              "a"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "border|2",
+          {
+            "id": "border|2",
+            "midpoint": {
+              "x": 40,
+              "y": 60
+            },
+            "startVertex": "vertex/@2",
+            "endVertex": "vertex/@3",
+            "adjacentCells": [
+              "A",
+              "corner|south"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "border|3",
+          {
+            "id": "border|3",
+            "midpoint": {
+              "x": 20,
+              "y": 40
+            },
+            "startVertex": "vertex/@0",
+            "endVertex": "vertex/@3",
+            "adjacentCells": [
+              "A"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "border|4",
+          {
+            "id": "border|4",
+            "midpoint": {
+              "x": 80,
+              "y": 20
+            },
+            "startVertex": "vertex/@1",
+            "endVertex": "vertex/@4",
+            "adjacentCells": [
+              "a"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "border|5",
+          {
+            "id": "border|5",
+            "midpoint": {
+              "x": 100,
+              "y": 40
+            },
+            "startVertex": "vertex/@4",
+            "endVertex": "vertex/@5",
+            "adjacentCells": [
+              "a",
+              "cell-99-99"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "border|6",
+          {
+            "id": "border|6",
+            "midpoint": {
+              "x": 80,
+              "y": 60
+            },
+            "startVertex": "vertex/@2",
+            "endVertex": "vertex/@5",
+            "adjacentCells": [
+              "a",
+              "opaque/β"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "border|7",
+          {
+            "id": "border|7",
+            "midpoint": {
+              "x": 120,
+              "y": 20
+            },
+            "startVertex": "vertex/@4",
+            "endVertex": "vertex/@6",
+            "adjacentCells": [
+              "cell-99-99"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "border|8",
+          {
+            "id": "border|8",
+            "midpoint": {
+              "x": 140,
+              "y": 40
+            },
+            "startVertex": "vertex/@6",
+            "endVertex": "vertex/@7",
+            "adjacentCells": [
+              "cell-99-99"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "border|9",
+          {
+            "id": "border|9",
+            "midpoint": {
+              "x": 120,
+              "y": 60
+            },
+            "startVertex": "vertex/@5",
+            "endVertex": "vertex/@7",
+            "adjacentCells": [
+              "cell-99-99",
+              "cell-not-numeric"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "border|10",
+          {
+            "id": "border|10",
+            "midpoint": {
+              "x": 60,
+              "y": 80
+            },
+            "startVertex": "vertex/@2",
+            "endVertex": "vertex/@8",
+            "adjacentCells": [
+              "corner|south",
+              "opaque/β"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "border|11",
+          {
+            "id": "border|11",
+            "midpoint": {
+              "x": 40,
+              "y": 100
+            },
+            "startVertex": "vertex/@8",
+            "endVertex": "vertex/@9",
+            "adjacentCells": [
+              "corner|south",
+              "edge-1-2"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "border|12",
+          {
+            "id": "border|12",
+            "midpoint": {
+              "x": 20,
+              "y": 80
+            },
+            "startVertex": "vertex/@3",
+            "endVertex": "vertex/@9",
+            "adjacentCells": [
+              "corner|south"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "border|13",
+          {
+            "id": "border|13",
+            "midpoint": {
+              "x": 100,
+              "y": 80
+            },
+            "startVertex": "vertex/@10",
+            "endVertex": "vertex/@5",
+            "adjacentCells": [
+              "opaque/β",
+              "cell-not-numeric"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "border|14",
+          {
+            "id": "border|14",
+            "midpoint": {
+              "x": 80,
+              "y": 100
+            },
+            "startVertex": "vertex/@10",
+            "endVertex": "vertex/@8",
+            "adjacentCells": [
+              "opaque/β",
+              " 空白 "
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "border|15",
+          {
+            "id": "border|15",
+            "midpoint": {
+              "x": 140,
+              "y": 80
+            },
+            "startVertex": "vertex/@11",
+            "endVertex": "vertex/@7",
+            "adjacentCells": [
+              "cell-not-numeric"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "border|16",
+          {
+            "id": "border|16",
+            "midpoint": {
+              "x": 120,
+              "y": 100
+            },
+            "startVertex": "vertex/@10",
+            "endVertex": "vertex/@11",
+            "adjacentCells": [
+              "cell-not-numeric",
+              "room::end"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "border|17",
+          {
+            "id": "border|17",
+            "midpoint": {
+              "x": 60,
+              "y": 120
+            },
+            "startVertex": "vertex/@12",
+            "endVertex": "vertex/@8",
+            "adjacentCells": [
+              "edge-1-2",
+              " 空白 "
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "border|18",
+          {
+            "id": "border|18",
+            "midpoint": {
+              "x": 40,
+              "y": 140
+            },
+            "startVertex": "vertex/@12",
+            "endVertex": "vertex/@13",
+            "adjacentCells": [
+              "edge-1-2"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "border|19",
+          {
+            "id": "border|19",
+            "midpoint": {
+              "x": 20,
+              "y": 120
+            },
+            "startVertex": "vertex/@13",
+            "endVertex": "vertex/@9",
+            "adjacentCells": [
+              "edge-1-2"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "border|20",
+          {
+            "id": "border|20",
+            "midpoint": {
+              "x": 100,
+              "y": 120
+            },
+            "startVertex": "vertex/@10",
+            "endVertex": "vertex/@14",
+            "adjacentCells": [
+              " 空白 ",
+              "room::end"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "border|21",
+          {
+            "id": "border|21",
+            "midpoint": {
+              "x": 80,
+              "y": 140
+            },
+            "startVertex": "vertex/@12",
+            "endVertex": "vertex/@14",
+            "adjacentCells": [
+              " 空白 "
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "border|22",
+          {
+            "id": "border|22",
+            "midpoint": {
+              "x": 140,
+              "y": 120
+            },
+            "startVertex": "vertex/@11",
+            "endVertex": "vertex/@15",
+            "adjacentCells": [
+              "room::end"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "border|23",
+          {
+            "id": "border|23",
+            "midpoint": {
+              "x": 120,
+              "y": 140
+            },
+            "startVertex": "vertex/@14",
+            "endVertex": "vertex/@15",
+            "adjacentCells": [
+              "room::end"
+            ],
+            "isBoundary": true
+          }
+        ]
+      ],
+      "bounds": {
+        "minX": 20,
+        "minY": 20,
+        "maxX": 140,
+        "maxY": 140,
+        "width": 160,
+        "height": 160
+      },
+      "sourceConfig": {
+        "rows": 3,
+        "cols": 3,
+        "cellSize": 40,
+        "outerPadding": 20,
+        "showGrid": true,
+        "gridStyle": "normal",
+        "gridType": "square",
+        "marginTop": 0,
+        "marginBottom": 0,
+        "marginLeft": 0,
+        "marginRight": 0,
+        "frameStyle": "normal",
+        "frameColor": "#000000",
+        "gridColor": "#000000",
+        "backgroundColor": "#ffffff"
+      }
+    }
+  },
+  "constraintSettings": {
+    "currentSchemaId": "kakuro",
+    "currentInputMode": "auto",
+    "validationOverrides": {},
+    "highlightOverrides": {}
+  },
+  "metadata": {
+    "title": "Kakuro with opaque references and rotated boundary ordering"
+  }
+}

@@ -2,6 +2,7 @@
  * GridDisplayContent - Display settings like cell size, padding, background image
  */
 
+import { BoardRotationControl } from './BoardRotationControl';
 import React, { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trash2 } from 'lucide-react';
@@ -87,6 +88,7 @@ export const GridDisplayContent: React.FC = () => {
 
   return (
     <>
+      <BoardRotationControl />
       {/* Cell Size (direct change) */}
       <div>
         <label className="block text-xs text-office-text-secondary mb-1">

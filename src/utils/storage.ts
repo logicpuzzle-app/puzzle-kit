@@ -7,6 +7,7 @@
 import type { ToolSettings, GridConfig, CanvasState } from '../types';
 import type { GridTopology, TopologyPreset } from './topology/types';
 import { serializeTopology, deserializeTopology, type SerializedTopology } from './serialization';
+import { encodeStorageJson, decodeStorageJson } from './storageJson';
 
 const STORAGE_KEYS = {
   TOOL_SETTINGS: 'puzzlekit_tool_settings',
@@ -35,7 +36,7 @@ function getItem<T>(key: string, defaultValue: T): T {
     const item = localStorage.getItem(key);
     if (!item) return defaultValue;
 
-    const wrapper: StorageWrapper<T> = JSON.parse(item);
+    const wrapper = decodeStorageJson<StorageWrapper<T>>(item);
 
     // Version check - return default if version mismatch
     if (wrapper.version !== STORAGE_VERSION) {
@@ -60,7 +61,7 @@ function setItem<T>(key: string, value: T): boolean {
       data: value,
       timestamp: Date.now(),
     };
-    localStorage.setItem(key, JSON.stringify(wrapper));
+    localStorage.setItem(key, encodeStorageJson(wrapper));
     return true;
   } catch (error) {
     console.warn(`Failed to save to localStorage: ${key}`, error);
@@ -113,6 +114,7 @@ export function loadToolSettings(): PersistedToolSettings {
 
 type PersistedGridConfig = Pick<
   GridConfig,
+  | 'boardRotation'
   | 'rows'
   | 'cols'
   | 'cellSize'
@@ -136,6 +138,7 @@ const DEFAULT_PERSISTED_GRID_CONFIG: PersistedGridConfig = {
 
 export function saveGridConfig(config: GridConfig): boolean {
   const {
+    boardRotation,
     rows,
     cols,
     cellSize,
@@ -146,6 +149,7 @@ export function saveGridConfig(config: GridConfig): boolean {
     frameStyle,
   } = config;
   return setItem(STORAGE_KEYS.GRID_CONFIG, {
+    boardRotation,
     rows,
     cols,
     cellSize,

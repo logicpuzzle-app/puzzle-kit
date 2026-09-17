@@ -29,6 +29,7 @@ interface CanvasCursorsProps {
     panX: number;
     panY: number;
   };
+  boardTransform?: string;
   offsetX?: number;
   offsetY?: number;
   // Hover cell
@@ -82,6 +83,7 @@ function withAlpha(hex: string, alpha: number): string {
 
 export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
   canvas,
+  boardTransform,
   offsetX = 0,
   offsetY = 0,
   hoverCellPolygon,
@@ -109,7 +111,7 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
   const cursorThickness = usePuzzleStore(state => state.toolSettings.cursorCellThickness) ?? 3;
   const cursorFill = withAlpha(cursorColor, 0.25);
   const cursorStroke = withAlpha(cursorColor, 0.95);
-  const transform = `translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom}) translate(${offsetX}, ${offsetY})`;
+  const transform = `translate(${canvas.panX}, ${canvas.panY}) scale(${canvas.zoom}) ${boardTransform ?? `translate(${offsetX}, ${offsetY})`}`;
 
   return (
     <>

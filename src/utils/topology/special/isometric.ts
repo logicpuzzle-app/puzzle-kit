@@ -135,6 +135,7 @@ export function isometricGridToTopology(config: GridConfig): GridTopology {
 
   const disabledSet = new Set(disabledCells);
   const cellDefs: CellDefinition[] = [];
+  const cellFaces = new Map<string, 'top' | 'bottom' | 'left' | 'right'>();
   const facesToGenerate = new Set(isometricFaces);
 
   // Isometric factor: 2 * tan(30°) ≈ 1.155 for cube proportions
@@ -167,6 +168,7 @@ export function isometricGridToTopology(config: GridConfig): GridTopology {
       for (let c = 0; c < cols; c++) {
         const cellId = `cell-top-${r}-${c}`;
         if (disabledSet.has(cellId)) continue;
+        cellFaces.set(cellId, 'top');
 
         // Order: Top, Right, Bottom, Left (Clockwise visually)
         const p1 = project(r, c, z);         // Top-Center
@@ -187,6 +189,7 @@ export function isometricGridToTopology(config: GridConfig): GridTopology {
       for (let c = 0; c < cols; c++) {
         const cellId = `cell-bottom-${r}-${c}`;
         if (disabledSet.has(cellId)) continue;
+        cellFaces.set(cellId, 'bottom');
 
         // Order: Top, Right, Bottom, Left (Clockwise visually)
         const p1 = project(r, c, z);         // Top-Center
@@ -210,6 +213,7 @@ export function isometricGridToTopology(config: GridConfig): GridTopology {
         const lv = (level - 1) - z;
         const cellId = `cell-left-${lv}-${c}`;
         if (disabledSet.has(cellId)) continue;
+        cellFaces.set(cellId, 'left');
 
         // A vertical rectangle in 3D
         // Top-Left (in 2D space), Top-Right, Bottom-Right, Bottom-Left
@@ -233,6 +237,7 @@ export function isometricGridToTopology(config: GridConfig): GridTopology {
         const lv = (level - 1) - z;
         const cellId = `cell-right-${lv}-${r}`;
         if (disabledSet.has(cellId)) continue;
+        cellFaces.set(cellId, 'right');
 
         // A vertical rectangle in 3D
         const p1 = project(r, c, z + 1);     // Top-Left
@@ -271,7 +276,7 @@ export function isometricGridToTopology(config: GridConfig): GridTopology {
 
   const finalCells = new Map<string, any>();
   rawTopology.cells.forEach((c, k) => {
-    finalCells.set(k, { ...c, center: shift(c.center) });
+    finalCells.set(k, { ...c, isometricFace: cellFaces.get(k), center: shift(c.center) });
   });
 
   const finalEdges = new Map<string, any>();

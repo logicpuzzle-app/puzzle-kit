@@ -6,7 +6,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { useCanvasRenderState } from '../../hooks/useCanvasRenderState';
 import { getPenpaColor } from '../../types/penpaElements';
 import type { GridPoints, Point } from '../../types/point';
 import { PointType, PointUse } from '../../types/point';
@@ -252,7 +252,7 @@ export const CageLayer: React.FC<CageLayerProps> = ({
   gridPoints,
   layer = 'problem',
 }) => {
-  const { puzzle, grid } = usePuzzleStore();
+  const { puzzle, grid } = useCanvasRenderState();
 
   const cages = useMemo(() => {
     if (!gridPoints) return [];

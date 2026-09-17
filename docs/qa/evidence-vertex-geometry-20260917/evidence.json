@@ -1,0 +1,182 @@
+{
+  "capture": {
+    "phase": "after",
+    "createdAt": "2026-09-16T19:27:34.649Z",
+    "commit": "28fc88dfd8e25bdfe7a9544a581d84d7634d5201",
+    "branch": "feature/issue-integration",
+    "status": "?? e2e/vertex-surface-geometry.spec.ts",
+    "node": "v24.21.0",
+    "platform": "darwin",
+    "npm": "11.19.0",
+    "command": [
+      "/opt/homebrew/Cellar/node@24/24.21.0/bin/node",
+      "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+      "test",
+      "e2e/vertex-surface-geometry.spec.ts",
+      "--config",
+      "playwright.production.config.ts",
+      "--workers=1"
+    ],
+    "exitCode": 0
+  },
+  "verifiedCommit": "b74dcfc98abd92b068ae4059eec5587b024a795e",
+  "provenance": "No application change. Operation and save/reload comparisons captured against production build. Capture at 28fc88d with the final new E2E spec; all source-manifest entries match the committed test. The initial antialiased-edge assertion error was corrected before this capture.",
+  "sourceManifestMatchedFiles": 707,
+  "testSha256": "5fd81ff0969a3c241fea0baa2a38a6ae19e926f56ccb04554882b4a874c04baa",
+  "stats": {
+    "startTime": "2026-09-16T19:27:35.017Z",
+    "duration": 7911.775,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "tests": [
+    {
+      "title": "vertex fill and dots stay inside a concave cell through editing, undo and native reload @production",
+      "project": "chromium",
+      "status": "passed",
+      "runtime-errors": []
+    },
+    {
+      "title": "a fully annotated 50 by 50 board remains editable and preserves vertex references in files @production",
+      "project": "chromium",
+      "status": "passed",
+      "large-board-timings": {
+        "loadedMs": 454,
+        "editMs": 50,
+        "cells": 2500,
+        "notes": 2601
+      },
+      "runtime-errors": []
+    },
+    {
+      "title": "vertex fill and dots stay inside a concave cell through editing, undo and native reload @production",
+      "project": "mobile-chrome",
+      "status": "passed",
+      "runtime-errors": []
+    },
+    {
+      "title": "a fully annotated 50 by 50 board remains editable and preserves vertex references in files @production",
+      "project": "mobile-chrome",
+      "status": "passed",
+      "large-board-timings": {
+        "loadedMs": 372,
+        "editMs": 44,
+        "cells": 2500,
+        "notes": 2601
+      },
+      "runtime-errors": []
+    }
+  ],
+  "files": {
+    "concave-chromium.webm": {
+      "bytes": 72295,
+      "sha256": "6236b7ff5cecce6e833ecb1e5c397dfff26a8f0c80e012064ffcfe9933edff5e",
+      "decode": "passed",
+      "durationSeconds": 1.88,
+      "dimensions": {
+        "width": 800,
+        "height": 450
+      },
+      "chromiumPlayback": {
+        "width": 800,
+        "height": 450,
+        "duration": 1.88,
+        "time": 1.315999,
+        "frames": 50
+      }
+    },
+    "concave-dot-export.png": {
+      "bytes": 2125,
+      "sha256": "69feae53c978b0dd94b2d03223cd919a2ea5677095343d2fe55ae1871503ee05"
+    },
+    "concave-dot-reloaded-chromium.png": {
+      "bytes": 29539,
+      "sha256": "96abc5e57c156c3efb864a0a96d6a96cd5031294b66780a15e7bbbdbb0918b47"
+    },
+    "concave-dot-reloaded-mobile-chrome.png": {
+      "bytes": 65469,
+      "sha256": "d495025aa3b1eea71323091211c3f46fb08da5edbadf52e92fb476dccd7ddb4d"
+    },
+    "concave-fill-chromium.png": {
+      "bytes": 43379,
+      "sha256": "28fa44473d8085d305f249fe6f6773664313d2115efe72bfeb15f91b7cefe8e6"
+    },
+    "concave-fill-export.png": {
+      "bytes": 2327,
+      "sha256": "18751bddfba4f3d4aa36fecc9306f5414625c8f76ebb4c70b1cd6ff87cf3ed5f"
+    },
+    "concave-fill-mobile-chrome.png": {
+      "bytes": 77201,
+      "sha256": "ec30946ba376efd2d0c214f1016bbb85d3c6bc8984f1b78df26eca0f33a91eb8"
+    },
+    "concave-mobile-chrome.webm": {
+      "bytes": 92467,
+      "sha256": "2bab60aec141da8dc19c85db3bd1d73fed03fb2088e6f3768e90b67e2bb33ee2",
+      "decode": "passed",
+      "durationSeconds": 1.8,
+      "dimensions": {
+        "width": 392,
+        "height": 800
+      },
+      "chromiumPlayback": {
+        "width": 392,
+        "height": 800,
+        "duration": 1.8,
+        "time": 1.26,
+        "frames": 46
+      }
+    },
+    "large-board-chromium.webm": {
+      "bytes": 148016,
+      "sha256": "73f621d38261175e80e15efdd5e19606f08855747c2abfdaa6e65c484213f067",
+      "decode": "passed",
+      "durationSeconds": 2.92,
+      "dimensions": {
+        "width": 800,
+        "height": 450
+      },
+      "chromiumPlayback": {
+        "width": 800,
+        "height": 450,
+        "duration": 2.92,
+        "time": 2.044,
+        "frames": 68
+      }
+    },
+    "large-board-edited-chromium.png": {
+      "bytes": 118523,
+      "sha256": "0dc99399fc2079311a1a52c2384505c44bef656265bc904f43e88c545176c777"
+    },
+    "large-board-edited-mobile-chrome.png": {
+      "bytes": 192193,
+      "sha256": "61d3e866da08412044125b35d69f58dd02b5049809770ad92ced4709cc04b9db"
+    },
+    "large-board-mobile-chrome.webm": {
+      "bytes": 203263,
+      "sha256": "dd94fa0bacd3eb40137fc1f086a0f42f74ba865cd0344f20a1661f0ed425de18",
+      "decode": "passed",
+      "durationSeconds": 2.72,
+      "dimensions": {
+        "width": 392,
+        "height": 800
+      },
+      "chromiumPlayback": {
+        "width": 392,
+        "height": 800,
+        "duration": 2.72,
+        "time": 1.904,
+        "frames": 61
+      }
+    },
+    "large-board-reloaded-chromium.png": {
+      "bytes": 118316,
+      "sha256": "efb949fc4ac030e589c97989e7d483866ab50d5fc6f049ab2c017b9eec2e077b"
+    },
+    "large-board-reloaded-mobile-chrome.png": {
+      "bytes": 191252,
+      "sha256": "fecee31c4cd3913fe95ae689512f673b96de7c382638f100fe9d02ff07f1a80e"
+    }
+  }
+}

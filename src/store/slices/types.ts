@@ -97,6 +97,7 @@ export const DEFAULT_TOOL_SETTINGS: ToolSettings = {
 export interface GridSlice {
   grid: GridConfig;
   setGrid: (grid: Partial<GridConfig>) => void;
+  setBoardRotation: (angle: number) => void;
 
   // Topology mode
   useTopology: boolean;
@@ -114,6 +115,13 @@ export interface GridSlice {
   // Preview topology
   previewTopology: GridTopology | null;
   previewGrid: GridConfig | null;
+  /** Ephemeral render projection, valid only for the captured source objects. */
+  previewState: {
+    source: Pick<PuzzleStore, 'grid' | 'topology' | 'puzzle' | 'trialStack' | 'useTopology' | 'topologyPreset' | 'topologyIntensity'>;
+    puzzle: PuzzleState;
+    trialStack: PuzzleElements[];
+    useTopology: boolean;
+  } | null;
   setPreviewGrid: (config: {
     gridType: import('../../types').GridType;
     rows: number;
@@ -164,6 +172,7 @@ export interface ElementsSlice {
   removeEdge: (id: string) => void;
   addWall: (element: Omit<WallElement, 'id'>) => string;
   removeWall: (id: string) => void;
+  setKakuroClue: (cellId: string, values: { horizontal: number | null; vertical: number | null } | null) => void;
   addNumber: (element: Omit<NumberElement, 'id'>) => string;
   removeNumber: (id: string) => void;
   updateNumber: (id: string, value: string, appearance?: Partial<Pick<NumberElement, 'color' | 'size'>>) => void;

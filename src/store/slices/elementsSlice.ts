@@ -1,9 +1,14 @@
 import { findLineByReferences, resolveLinePoints, resolveBoardPoint } from '../../utils/lineReferences';
+import { applyActionToState } from './historySlice';
+import { findKakuroClue, isKakuroSum } from '../../utils/kakuro';
+import { kakuroCellCorners } from '../../utils/kakuroGeometry';
+import type { PuzzleAction } from '../actions';
 /**
  * Elements Slice - Puzzle element CRUD operations
  */
 
 import {
+  generateId,
   generateSurfaceId,
   generateLineId as generateLineIdCompact,
   generateNumberId,
@@ -311,8 +316,42 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
     get().removeLine(id);
   },
 
+  setKakuroClue: (cellId, values) => {
+    const state = get();
+    if (getEditableDataLayer(state.activeLayer, state.isPlayerMode) !== 'problem' ||
+        !kakuroCellCorners(state, cellId)) return;
+    if (values && (!isKakuroSum(values.horizontal) || !isKakuroSum(values.vertical))) return;
+    const before = state.puzzle.problem.clueCells;
+    const existing = findKakuroClue(before, cellId);
+    if ((!values && !existing) || (values && existing &&
+        existing.horizontal === values.horizontal && existing.vertical === values.vertical)) return;
+    const after = { ...before };
+    for (const [id, clue] of Object.entries(after)) if (clue.cellId === cellId) delete after[id];
+    if (values) {
+      let id = existing?.id;
+      if (id === undefined) {
+        do { id = generateId(); } while (Object.hasOwn(after, id));
+      }
+      after[id] = { id, cellId, ...values };
+    }
+    const actions: PuzzleAction[] = [];
+    // A clue cell is a wall, so remove any old answer/problem digits atomically.
+    if (values) for (const layer of ['problem', 'answer'] as const) {
+      for (const number of Object.values(state.puzzle[layer].numbers)) {
+        if (number.cellId === cellId) actions.push(createRemoveNumberAction(number.id, number));
+      }
+    }
+    actions.push({ type: 'SET_KAKURO_CLUES', before, after });
+    const action = createBatchAction(actions, 'Edit Kakuro clue');
+    set(current => applyActionToState(current, action));
+    get().historyManager.addAction(action);
+  },
+
   // Number operations
   addNumber: (element) => {
+    if (findKakuroClue(get().puzzle.problem.clueCells, element.cellId)) return '';
+    if (get().currentSchemaId === 'kakuro' && element.layer === 'answer' &&
+        !/^[1-9]$/.test(element.value)) return '';
     const id = generateNumberId();
     const fullElement: NumberElement = { ...element, id };
     if (!canEditLayer(fullElement.layer)) {
@@ -372,6 +411,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
 
   updateNumber: (id, value, appearance) => {
     const state = get();
+    if (state.currentSchemaId === 'kakuro' && state.activeLayer === 'answer' && !/^[1-9]$/.test(value)) return;
     const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
     if (!layer) {
       return;

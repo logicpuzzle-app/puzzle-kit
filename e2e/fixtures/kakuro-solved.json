@@ -1,0 +1,120 @@
+{
+  "version": "1.0.0",
+  "grid": {
+    "rows": 3,
+    "cols": 3,
+    "cellSize": 40,
+    "outerPadding": 20,
+    "showGrid": true,
+    "gridStyle": "normal",
+    "blockRows": 3,
+    "blockCols": 3,
+    "gridType": "square",
+    "marginTop": 0,
+    "marginBottom": 0,
+    "marginLeft": 0,
+    "marginRight": 0,
+    "frameStyle": "normal",
+    "frameColor": "#000000",
+    "gridColor": "#000000",
+    "backgroundColor": "#ffffff"
+  },
+  "state": {
+    "problem": {
+      "surfaces": {},
+      "lines": {},
+      "edges": {},
+      "walls": {},
+      "numbers": {},
+      "symbols": {},
+      "cages": {},
+      "specials": {},
+      "boxLines": {},
+      "clueCells": {
+        "cell-0-0": {
+          "id": "cell-0-0",
+          "cellId": "cell-0-0",
+          "horizontal": null,
+          "vertical": null
+        },
+        "cell-0-1": {
+          "id": "cell-0-1",
+          "cellId": "cell-0-1",
+          "horizontal": null,
+          "vertical": 4
+        },
+        "cell-0-2": {
+          "id": "cell-0-2",
+          "cellId": "cell-0-2",
+          "horizontal": null,
+          "vertical": 6
+        },
+        "cell-1-0": {
+          "id": "cell-1-0",
+          "cellId": "cell-1-0",
+          "horizontal": 3,
+          "vertical": null
+        },
+        "cell-2-0": {
+          "id": "cell-2-0",
+          "cellId": "cell-2-0",
+          "horizontal": 7,
+          "vertical": null
+        }
+      }
+    },
+    "answer": {
+      "surfaces": {},
+      "lines": {},
+      "edges": {},
+      "walls": {},
+      "numbers": {
+        "cell-1-1": {
+          "id": "cell-1-1",
+          "cellId": "cell-1-1",
+          "value": "1",
+          "position": "center",
+          "size": "large",
+          "color": "#000000",
+          "layer": "answer"
+        },
+        "cell-1-2": {
+          "id": "cell-1-2",
+          "cellId": "cell-1-2",
+          "value": "2",
+          "position": "center",
+          "size": "large",
+          "color": "#000000",
+          "layer": "answer"
+        },
+        "cell-2-1": {
+          "id": "cell-2-1",
+          "cellId": "cell-2-1",
+          "value": "3",
+          "position": "center",
+          "size": "large",
+          "color": "#000000",
+          "layer": "answer"
+        },
+        "cell-2-2": {
+          "id": "cell-2-2",
+          "cellId": "cell-2-2",
+          "value": "4",
+          "position": "center",
+          "size": "large",
+          "color": "#000000",
+          "layer": "answer"
+        }
+      },
+      "symbols": {},
+      "cages": {},
+      "specials": {},
+      "boxLines": {}
+    }
+  },
+  "topologySettings": {
+    "useTopology": true,
+    "topologyPreset": "none",
+    "topologyIntensity": 0
+  }
+}

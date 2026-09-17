@@ -1,6 +1,6 @@
 import { createTextColorResolver } from '../../utils/textContrast';
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { useCanvasRenderState } from '../../hooks/useCanvasRenderState';
 import { getCellCenter, getCellIndexById } from '../../utils/gridUtils';
 import type { LayerType, PuzzleElements } from '../../types';
 import { useHighlightOutput } from '../../hooks/useHighlightOutput';
@@ -140,7 +140,7 @@ export const DirectionalClueLayer: React.FC<DirectionalClueLayerProps> = ({
   layer,
   arrowStyle = 'polygon'
 }) => {
-  const { grid, puzzle, showProblemLayer, showAnswerLayer, trialStage, trialStack, useTopology, topology } = usePuzzleStore();
+  const { grid, puzzle, showProblemLayer, showAnswerLayer, trialStage, trialStack, useTopology, topology } = useCanvasRenderState();
   const highlightOutput = useHighlightOutput();
   const textColor = useMemo(() => createTextColorResolver(puzzle, showProblemLayer, showAnswerLayer, { backgroundColor: grid.backgroundColor, trialStage, trialStack }), [puzzle, showProblemLayer, showAnswerLayer, grid.backgroundColor, trialStage, trialStack]);
 

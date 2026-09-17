@@ -2,10 +2,17 @@
  * English translations for PuzzleKit
  */
 export const en = {
+  'file.autoSaveFailed': 'Automatic saving failed. Keep this page open and use File → Save to keep your changes.',
+  'file.retryAutoSave': 'Retry',
   'surface.target': 'Shading target',
   'surface.target.cell': 'Cell',
   'surface.target.vertex': 'Vertex',
   'surface.vertexHint': 'Vertex shading is a visual note; it does not count as shaded cells in answer checking.',
+  'grid.boardRotation': 'Board rotation (°)',
+  'grid.rotateMinus': 'Rotate board −15°',
+  'grid.rotatePlus': 'Rotate board +15°',
+  'grid.applyRotation': 'Apply angle',
+  'grid.resetRotation': 'Reset to 0°',
   "size.largest": "Largest",
   "symbol.size.object": "Symbol to resize",
   "symbol.size.new": "New symbols",
@@ -579,6 +586,14 @@ export const en = {
   'tool.wall.normal': 'Wall',
 
   // Number tools
+  'tool.number.kakuro': 'Kakuro clue',
+  'kakuro.clue': 'Split cell clues',
+  'kakuro.selectCell': 'Select a cell on a square grid.',
+  'kakuro.across': 'Across sum (upper right)',
+  'kakuro.down': 'Down sum (lower left)',
+  'kakuro.blankHint': '0–45. Blank or 0 means no sum constraint. Both blank keeps a split wall cell.',
+  'kakuro.apply': 'Apply clue',
+  'kakuro.remove': 'Remove split cell',
   'tool.number.normal': 'Normal',
   'tool.number.directional': 'Arrow Number',
   'tool.number.large': 'Large',
@@ -716,6 +731,7 @@ export const en = {
   'tool.number.center': 'Center',
 
   // Symbol categories
+  'symbols.curves': 'Quarter circles & arcs',
   'symbols.battleships': 'Battleships',
   'symbols.shapes': 'Shapes',
   'symbols.marks': 'Marks',
@@ -819,6 +835,9 @@ export const en = {
   'gridEdit.restoreSplit': 'Restore cell',
   'gridEdit.restoreAllSplits': 'Restore all split cells',
   'gridEdit.unsupportedSplitResize': 'This change cannot preserve the existing cuts. Cancel to keep the board, or restore the affected split cells before resizing.',
+  'gridEdit.unsupportedResize': 'This board cannot be resized while preserving its contents. Cancel to keep the current board.',
+  'gridEdit.isometricResizeNotes': 'Marks on removed cells or corners that split or join at face seams will be removed. Sculpt edits that lose their pivot, and edits depending on them, will be removed too. Undo restores them.',
+  'gridEdit.isometricFaceNotes': 'Hiding a face also hides cells that span it and other faces. Their marks are kept and return when all their faces are shown.',
   'gridEdit.splitHelp': 'Drag between two boundary vertices to split a cell. Right-click a resulting cell to restore its source.',
   'gridEdit.excludeHelp': 'Click cells to exclude them, click again to restore.',
   'gridEdit.mergedGroups': 'Merged groups',

@@ -6,6 +6,9 @@ import type { PuzzleStore } from './slices/types';
  */
 export function freshPuzzleSession(state: Pick<PuzzleStore, 'canvas'>) {
   return {
+    previewTopology: null,
+    previewGrid: null,
+    previewState: null,
     canvas: { ...state.canvas, isDrawing: false, isDragging: false, selection: [] },
     selectedElements: [],
     annotationSelection: null,

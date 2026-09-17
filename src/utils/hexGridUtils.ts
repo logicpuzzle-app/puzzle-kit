@@ -1,5 +1,6 @@
 // Hexagonal and Triangular grid utilities
 import { GridConfig, Point } from '../types';
+import { triangleColumns } from './triangleLayout';
 
 // === Hexagonal Grid (pointy-top orientation) ===
 // Hexagons are arranged in an offset coordinate system (odd-q offset)
@@ -126,9 +127,11 @@ export function getTriangleSize(cellSize: number): { width: number; height: numb
 }
 
 export function getTriangleCenter(row: number, col: number, grid: GridConfig): Point {
+  row += grid.marginTop ?? 0;
+  col += grid.marginLeft ?? 0;
   const { cellSize, outerPadding } = grid;
   const { width, height } = getTriangleSize(cellSize);
-  const orientation = getTriangleOrientation(row, col);
+  const orientation = getTriangleOrientation(row + (grid.trianglePhase ?? 0), col);
 
   // X position: col * (width/2)
   const x = outerPadding + col * (width / 2) + width / 2;
@@ -136,7 +139,6 @@ export function getTriangleCenter(row: number, col: number, grid: GridConfig): P
   // Y position depends on orientation
   // For up-pointing: center is lower (2/3 from top)
   // For down-pointing: center is higher (1/3 from top)
-  const rowOffset = Math.floor(col / 2);
   let y = outerPadding + row * height + height / 2;
 
   if (orientation === 'up') {
@@ -149,9 +151,11 @@ export function getTriangleCenter(row: number, col: number, grid: GridConfig): P
 }
 
 export function getTriangleVertices(row: number, col: number, grid: GridConfig): Point[] {
+  row += grid.marginTop ?? 0;
+  col += grid.marginLeft ?? 0;
   const { cellSize, outerPadding } = grid;
   const { width, height } = getTriangleSize(cellSize);
-  const orientation = getTriangleOrientation(row, col);
+  const orientation = getTriangleOrientation(row + (grid.trianglePhase ?? 0), col);
 
   // Base X position for the triangle
   const baseX = outerPadding + col * (width / 2);
@@ -180,15 +184,15 @@ export function findNearestTriangleCell(
   const { width, height } = getTriangleSize(cellSize);
 
   // Approximate position
-  const approxCol = Math.floor((point.x - outerPadding) / (width / 2));
-  const approxRow = Math.floor((point.y - outerPadding) / height);
+  const approxCol = Math.floor((point.x - outerPadding) / (width / 2)) - (grid.marginLeft ?? 0);
+  const approxRow = Math.floor((point.y - outerPadding) / height) - (grid.marginTop ?? 0);
 
   // Check nearby cells
   let bestCell: { row: number; col: number } | null = null;
   let bestDist = Infinity;
 
   // Triangular grids have 2*cols columns per row effectively
-  const maxCols = cols * 2;
+  const maxCols = triangleColumns(grid, 'pair');
 
   for (let dr = -1; dr <= 1; dr++) {
     for (let dc = -2; dc <= 2; dc++) {
@@ -221,8 +225,8 @@ export function getTriangleGridDimensions(grid: GridConfig): { width: number; he
   const { width, height } = getTriangleSize(cellSize);
 
   return {
-    width: cols * width + outerPadding * 2,
-    height: rows * height + outerPadding * 2,
+    width: (triangleColumns(grid, 'pair') + 1 + (grid.marginLeft ?? 0) + (grid.marginRight ?? 0)) * width / 2 + outerPadding * 2,
+    height: (rows + (grid.marginTop ?? 0) + (grid.marginBottom ?? 0)) * height + outerPadding * 2,
   };
 }
 

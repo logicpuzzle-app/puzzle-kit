@@ -1,8 +1,8 @@
-import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { useCanvasRenderState } from '../../hooks/useCanvasRenderState';
 import { selectedAnnotations } from '../../utils/annotationSelection';
 
 export function AnnotationSelectionLayer() {
-  const state = usePuzzleStore();
+  const state = useCanvasRenderState();
   if (state.toolSettings.currentTool !== 'select') return null;
   return <g className="annotation-selection" data-preview="true" pointerEvents="none" aria-hidden="true">
     {selectedAnnotations(state).map(ref => <circle key={JSON.stringify([ref.kind, ref.id])}

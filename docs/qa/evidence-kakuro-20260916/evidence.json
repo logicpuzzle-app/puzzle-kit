@@ -1,0 +1,208 @@
+{
+  "before": {
+    "commit": "ceee29088d9bdf1e9acdf5a9020d139aee9b65fa",
+    "createdAt": "2026-09-16T00:07:03.526Z",
+    "command": [
+      "npm",
+      "run",
+      "qa:capture",
+      "--",
+      "before",
+      "--config",
+      "playwright.production.config.ts",
+      "e2e/kakuro-clues.spec.ts",
+      "--grep",
+      "#17 Kakuro: edit"
+    ],
+    "stats": {
+      "startTime": "2026-09-16T00:07:04.011Z",
+      "duration": 12142.807,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "testSha256": "f98a72692dbef1c3799b5e1b0b6645dfd4042688f1fa2a594436e14e39b4b724",
+    "tests": [
+      {
+        "project": "chromium",
+        "status": "failed",
+        "runtimeErrors": [],
+        "error": "Error: expect(locator).toHaveText(expected) failed\n\nLocator: locator('[data-kakuro-cell=\"cell-1-1\"]').locator('[data-clue-direction=\"horizontal\"]')\nExpected: \"12\"\nTimeout: 10000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toHaveText\" with timeout 10000ms\n  - waiting for locator('[data-kakuro-cell=\"cell-1-1\"]').locator('[data-clue-direction=\"horizontal\"]')\n"
+      },
+      {
+        "project": "mobile-chrome",
+        "status": "failed",
+        "runtimeErrors": [],
+        "error": "Error: expect(locator).toHaveText(expected) failed\n\nLocator: locator('[data-kakuro-cell=\"cell-1-1\"]').locator('[data-clue-direction=\"horizontal\"]')\nExpected: \"12\"\nTimeout: 10000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toHaveText\" with timeout 10000ms\n  - waiting for locator('[data-kakuro-cell=\"cell-1-1\"]').locator('[data-clue-direction=\"horizontal\"]')\n"
+      }
+    ]
+  },
+  "after": {
+    "commit": "10ca38d6b6345eb9ef93163740d20e22a0e8c033",
+    "createdAt": "2026-09-16T00:07:56.223Z",
+    "command": [
+      "npm",
+      "run",
+      "qa:capture",
+      "--",
+      "after",
+      "--config",
+      "playwright.production.config.ts",
+      "e2e/kakuro-clues.spec.ts",
+      "--grep",
+      "#17 Kakuro: edit"
+    ],
+    "stats": {
+      "startTime": "2026-09-16T00:07:56.613Z",
+      "duration": 2768.728,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "testSha256": "f98a72692dbef1c3799b5e1b0b6645dfd4042688f1fa2a594436e14e39b4b724",
+    "tests": [
+      {
+        "project": "chromium",
+        "status": "passed",
+        "runtimeErrors": [],
+        "error": null
+      },
+      {
+        "project": "mobile-chrome",
+        "status": "passed",
+        "runtimeErrors": [],
+        "error": null
+      }
+    ]
+  },
+  "fixture": {
+    "path": "../../../e2e/fixtures/kakuro-clue.json",
+    "origin": "synthetic native puzzle; one split cell with across 12 and down 34"
+  },
+  "files": {
+    "after-chromium.png": {
+      "sha256": "20af30c2b8ec305cacc7745295edbe881a2fc03a1f5d996693d900a03d52fdc6",
+      "bytes": 43838
+    },
+    "after-chromium.webm": {
+      "sha256": "47466b8fba1d23e78f2a1cd834d01abfe5ce3fe32271679c6c81e4fe8fad61b1",
+      "bytes": 83906,
+      "durationSeconds": 1.96,
+      "fullDecode": "passed"
+    },
+    "after-mobile-chrome.png": {
+      "sha256": "01a823e7ef6dbb3e85fe492c8eafca49100262b58982777e944123f027c7cf0b",
+      "bytes": 79998
+    },
+    "after-mobile-chrome.webm": {
+      "sha256": "d513c73c3819f34f7287866a2548c496b93f7ab017a28bd3e654596b1b1f95ff",
+      "bytes": 102423,
+      "durationSeconds": 2.0,
+      "fullDecode": "passed"
+    },
+    "before-chromium.png": {
+      "sha256": "852b9709df680316a117cf5582ed47cbfdc64c9c58966fde9ae4349c1b88c6f7",
+      "bytes": 43165
+    },
+    "before-chromium.webm": {
+      "sha256": "55a766404cc05d0c965837536cb524fe91ae2b6146df924365fc255149ca894e",
+      "bytes": 216520,
+      "durationSeconds": 12.36,
+      "fullDecode": "passed"
+    },
+    "before-mobile-chrome.png": {
+      "sha256": "0b327d7560a1893da78e4bcb8063671d92532b642af6ac1b3de659ca586baed7",
+      "bytes": 77211
+    },
+    "before-mobile-chrome.webm": {
+      "sha256": "245705b7eaa9fef78a26a3f61c00b6d5a29fb3e9899822e27f6c90440f0d5fbf",
+      "bytes": 171429,
+      "durationSeconds": 10.48,
+      "fullDecode": "passed"
+    },
+    "chromium-kakuro-edited.png": {
+      "sha256": "28fbd660e1c9cb88901d0ecaad5cd041478b21162b9d1cfb53688dfedd7dfdad",
+      "bytes": 32380
+    },
+    "chromium-kakuro-editor.png": {
+      "sha256": "8d5178275f0be9b733bf7e2b3c086f4eb924d715de4ae8fe700a5606f010f85d",
+      "bytes": 51319
+    },
+    "chromium-kakuro.png": {
+      "sha256": "b7714e5484f52c33d7e813d33e5fb6984b9cf858593c233cdcc44b16c1d493b3",
+      "bytes": 3963
+    },
+    "chromium-kakuro.svg": {
+      "sha256": "a06ff52c431830cbc14f32e1ac489f55fa999cf7af991d4fe105f379f019050c",
+      "bytes": 10989
+    },
+    "mobile-chrome-kakuro-edited.png": {
+      "sha256": "971c2d8adc08cb276362f4de122f3d97cbdc7fe4ca5a661b53ab049e9f1fbd20",
+      "bytes": 75412
+    },
+    "mobile-chrome-kakuro-editor.png": {
+      "sha256": "8c86dc5885a91f0a5a12e03efdf762bd3b44c265df11abc9765e16eb556bee10",
+      "bytes": 87078
+    },
+    "mobile-chrome-kakuro.png": {
+      "sha256": "b7714e5484f52c33d7e813d33e5fb6984b9cf858593c233cdcc44b16c1d493b3",
+      "bytes": 3963
+    },
+    "mobile-chrome-kakuro.svg": {
+      "sha256": "a06ff52c431830cbc14f32e1ac489f55fa999cf7af991d4fe105f379f019050c",
+      "bytes": 10989
+    }
+  },
+  "browserPlayback": [
+    {
+      "file": "before-chromium.webm",
+      "duration": 12.36,
+      "currentTime": 6.18,
+      "readyState": 4,
+      "error": null
+    },
+    {
+      "file": "after-chromium.webm",
+      "duration": 1.96,
+      "currentTime": 0.98,
+      "readyState": 4,
+      "error": null
+    },
+    {
+      "file": "before-mobile-chrome.webm",
+      "duration": 10.48,
+      "currentTime": 5.24,
+      "readyState": 4,
+      "error": null
+    },
+    {
+      "file": "after-mobile-chrome.webm",
+      "duration": 2,
+      "currentTime": 1,
+      "readyState": 4,
+      "error": null
+    }
+  ],
+  "verification": {
+    "sourceCommit": "10ca38d6b6345eb9ef93163740d20e22a0e8c033",
+    "unit": {
+      "files": 69,
+      "passed": 593
+    },
+    "developmentE2E": {
+      "passed": 155,
+      "skipped": 1
+    },
+    "productionE2E": {
+      "passed": 55,
+      "skipped": 1
+    },
+    "typecheck": "passed",
+    "e2eTypecheck": "passed",
+    "sourcemaps": "passed",
+    "appBuild": "passed",
+    "libraryBuild": "passed"
+  }
+}

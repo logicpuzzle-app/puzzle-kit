@@ -50,6 +50,9 @@ export function resizeTopology(
   // Other tilings still use the legacy generator until their edit semantics migrate.
   const retained = resizeRetainedExtent(oldTopology, oldConfig, newConfig);
   if (!retained && oldTopology.editBase) throw new Error('Cannot resize this edited source without changing cut references');
+  if (!retained && oldConfig.gridType === 'iso' && newConfig.gridType === 'iso') {
+    throw new Error('Cannot resize this isometric source without changing references');
+  }
   const newTopology = retained ?? gridConfigToTopology(newConfig);
 
   const addedCells: string[] = [];

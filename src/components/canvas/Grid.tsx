@@ -1,5 +1,5 @@
 import React from 'react';
-import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { useCanvasRenderState } from '../../hooks/useCanvasRenderState';
 import { HexGrid, TriangleGrid, PyramidGrid } from './HexGrid';
 import { SquareGrid, SquareGridBackground, SquareGridLines } from './SquareGrid';
 import { TopologyGrid, TopologyGridBackground, TopologyGridLines } from './TopologyGrid';
@@ -19,7 +19,7 @@ interface GridBackgroundProps {
  * Used to render surfaces between background and grid lines
  */
 export const GridBackground: React.FC<GridBackgroundProps> = ({ children }) => {
-  const { grid, useTopology, topology, previewTopology, previewGrid } = usePuzzleStore();
+  const { grid, useTopology, topology, previewTopology, previewGrid } = useCanvasRenderState();
   // Use preview topology/grid if available
   const effectiveTopology = previewTopology ?? topology;
   const effectiveGrid = previewGrid ?? grid;
@@ -49,7 +49,7 @@ export const GridBackground: React.FC<GridBackgroundProps> = ({ children }) => {
  * GridLines - Renders grid lines and frame (without background)
  */
 export const GridLines: React.FC = () => {
-  const { grid, useTopology, topology, previewTopology, previewGrid } = usePuzzleStore();
+  const { grid, useTopology, topology, previewTopology, previewGrid } = useCanvasRenderState();
   // Use preview topology/grid if available
   const effectiveTopology = previewTopology ?? topology;
   const effectiveGrid = previewGrid ?? grid;
@@ -79,7 +79,7 @@ export const GridLines: React.FC = () => {
  * Grid - Full grid component (background + lines + frame)
  */
 export const Grid: React.FC = () => {
-  const { grid, useTopology, topology, previewTopology, previewGrid } = usePuzzleStore();
+  const { grid, useTopology, topology, previewTopology, previewGrid } = useCanvasRenderState();
   // Use preview topology/grid if available
   const effectiveTopology = previewTopology ?? topology;
   const effectiveGrid = previewGrid ?? grid;

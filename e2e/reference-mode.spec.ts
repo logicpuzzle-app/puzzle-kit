@@ -3,8 +3,51 @@ import { readFileSync } from 'node:fs';
 import type { PuzzleExport } from '../src/types';
 import { openPuzzleFile, savePuzzleFile } from './puzzle-file';
 import { point } from './canvas-point';
+import { legacyTriangleFixture } from './fixtures/legacy-triangle';
 
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/line-opaque-board.json', import.meta.url), 'utf8').replaceAll('vertex/@0', 'cell-0-0')) as PuzzleExport;
+
+test('triangle columns and annotations keep their positions through both reference modes and reload', async ({ page }, info) => {
+  await page.goto('/harness.html?scenario=orthogonal');
+  await openPuzzleFile(page, Buffer.from(JSON.stringify(legacyTriangleFixture())));
+  const before = await savePuzzleFile(page);
+  const note = page.locator('.vertex-surface-layer-answer [data-vertex-surface="corner/bottom|β"]');
+  const path = await note.getAttribute('d');
+  const clue = page.locator('.number-layer-problem text');
+  // The harness status message moves the entire canvas. Compare the rendered
+  // glyph in board coordinates, including any transforms on its ancestors.
+  const clueBounds = () => clue.evaluate(element => {
+    const text = element as SVGGraphicsElement;
+    const board = document.querySelector('#puzzle-canvas > g') as SVGGraphicsElement;
+    const matrix = board.getScreenCTM()!.inverse().multiply(text.getScreenCTM()!);
+    const box = text.getBBox();
+    return [[box.x, box.y], [box.x + box.width, box.y + box.height]].flatMap(([x, y]) => {
+      const point = new DOMPoint(x, y).matrixTransform(matrix);
+      return [point.x, point.y];
+    });
+  });
+  const box = await clueBounds();
+  await page.screenshot({ path: info.outputPath('triangle-grid-mode.png') });
+  await page.getByRole('button', { name: 'Use Topology references', exact: true }).click();
+  await expect(page.getByLabel('Current reference mode')).toHaveText('Topology');
+  await expect(note).toHaveAttribute('d', path!);
+  const afterBox = await clueBounds();
+  afterBox.forEach((value, i) => expect(value).toBeCloseTo(box[i], 4));
+  const converted = await savePuzzleFile(page);
+  expect(converted.topologySettings!.topology!.cells).toEqual(before.topologySettings!.topology!.cells);
+  expect(converted.state.answer.vertexSurfaces).toEqual(before.state.answer.vertexSurfaces);
+  const target = new Map(converted.topologySettings!.topology!.cells).get(converted.state.problem.numbers.clue.cellId)!;
+  expect(target.index).toEqual([2, 7]);
+  await page.screenshot({ path: info.outputPath('triangle-topology-mode.png') });
+  await page.getByTitle(/Undo \(Ctrl\+Z\)/).first().click();
+  expect((await savePuzzleFile(page)).state).toEqual(before.state);
+  await page.getByTitle(/Redo/).first().click();
+  await openPuzzleFile(page, Buffer.from(JSON.stringify(await savePuzzleFile(page))));
+  await page.getByRole('button', { name: 'Use Grid references', exact: true }).click();
+  expect((await savePuzzleFile(page)).state).toEqual(before.state);
+  await expect(note).toHaveAttribute('d', path!);
+  await page.screenshot({ path: info.outputPath('triangle-grid-restored.png') });
+});
 
 test('reference mode migrates drawn lines and scoped notes with history and native files', async ({ page, isMobile, browserName }, info) => {
   const data = structuredClone(fixture);

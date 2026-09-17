@@ -1,0 +1,124 @@
+{
+  "version": "1.0.0",
+  "grid": {
+    "rows": 6,
+    "cols": 6,
+    "cellSize": 40,
+    "outerPadding": 20,
+    "showGrid": true,
+    "gridStyle": "normal",
+    "blockRows": 3,
+    "blockCols": 3,
+    "gridType": "square",
+    "marginTop": 0,
+    "marginBottom": 0,
+    "marginLeft": 0,
+    "marginRight": 0,
+    "frameStyle": "normal",
+    "frameColor": "#000000",
+    "gridColor": "#000000",
+    "backgroundColor": "#ffffff"
+  },
+  "state": {
+    "problem": {
+      "surfaces": {},
+      "lines": {},
+      "edges": {},
+      "walls": {},
+      "numbers": {},
+      "symbols": {
+        "quarter-top-left": {
+          "id": "quarter-top-left",
+          "cellId": "cell-1-1",
+          "symbolType": "quarter-top-left",
+          "size": 1,
+          "rotation": 0,
+          "color": "#000000",
+          "layer": "problem"
+        },
+        "quarter-top-right": {
+          "id": "quarter-top-right",
+          "cellId": "cell-1-2",
+          "symbolType": "quarter-top-right",
+          "size": 1,
+          "rotation": 0,
+          "color": "#000000",
+          "layer": "problem"
+        },
+        "quarter-bottom-right": {
+          "id": "quarter-bottom-right",
+          "cellId": "cell-1-3",
+          "symbolType": "quarter-bottom-right",
+          "size": 1,
+          "rotation": 0,
+          "color": "#000000",
+          "layer": "problem"
+        },
+        "quarter-bottom-left": {
+          "id": "quarter-bottom-left",
+          "cellId": "cell-1-4",
+          "symbolType": "quarter-bottom-left",
+          "size": 1,
+          "rotation": 0,
+          "color": "#000000",
+          "layer": "problem"
+        },
+        "arc-top-left": {
+          "id": "arc-top-left",
+          "cellId": "cell-3-1",
+          "symbolType": "arc-top-left",
+          "size": 1,
+          "rotation": 0,
+          "color": "#000000",
+          "layer": "problem"
+        },
+        "arc-top-right": {
+          "id": "arc-top-right",
+          "cellId": "cell-3-2",
+          "symbolType": "arc-top-right",
+          "size": 1,
+          "rotation": 0,
+          "color": "#000000",
+          "layer": "problem"
+        },
+        "arc-bottom-right": {
+          "id": "arc-bottom-right",
+          "cellId": "cell-3-3",
+          "symbolType": "arc-bottom-right",
+          "size": 1,
+          "rotation": 0,
+          "color": "#000000",
+          "layer": "problem"
+        },
+        "arc-bottom-left": {
+          "id": "arc-bottom-left",
+          "cellId": "cell-3-4",
+          "symbolType": "arc-bottom-left",
+          "size": 1,
+          "rotation": 0,
+          "color": "#000000",
+          "layer": "problem"
+        }
+      },
+      "cages": {},
+      "specials": {},
+      "boxLines": {}
+    },
+    "answer": {
+      "surfaces": {},
+      "lines": {},
+      "edges": {},
+      "walls": {},
+      "numbers": {},
+      "symbols": {},
+      "cages": {},
+      "specials": {},
+      "boxLines": {}
+    }
+  },
+  "topologySettings": {
+    "useTopology": true,
+    "topologyPreset": "none",
+    "topologyIntensity": 0
+  }
+}

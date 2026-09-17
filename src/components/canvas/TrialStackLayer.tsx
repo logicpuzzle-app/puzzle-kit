@@ -10,7 +10,7 @@
 
 import { VertexSurfaceLayer } from './VertexSurfaceLayer';
 import React from 'react';
-import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { useCanvasRenderState } from '../../hooks/useCanvasRenderState';
 import { getCellCenter, getCellIndexById, getEdgeIndexById, getEdgePosition, getVertexIndexById, getVertexPosition } from '../../utils/gridUtils';
 import type { PuzzleElements, SurfaceElement, LineElement, SymbolElement, NumberElement } from '../../types';
 import type { TopologyVertex } from '../../utils/gridTopology';
@@ -30,7 +30,7 @@ interface TrialStackLayerProps {
  * Renders a single trial layer with all its elements
  */
 const TrialLayer: React.FC<TrialStackLayerProps> = ({ elements, opacity, layerIndex }) => {
-  const { grid, showAnswerLayer, useTopology, topology } = usePuzzleStore();
+  const { grid, showAnswerLayer, useTopology, topology } = useCanvasRenderState();
   const { cellSize } = grid;
 
   if (!showAnswerLayer) return null;
@@ -305,7 +305,7 @@ const TrialLayer: React.FC<TrialStackLayerProps> = ({ elements, opacity, layerIn
  * Renders all trial stack layers with graduated opacity
  */
 export const TrialStackLayer: React.FC = () => {
-  const { trialStack, trialStage } = usePuzzleStore();
+  const { trialStack, trialStage } = useCanvasRenderState();
 
   // Only render if in trial mode
   if (trialStage === 0 || trialStack.length === 0) {

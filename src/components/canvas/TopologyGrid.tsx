@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { useCanvasRenderState } from '../../hooks/useCanvasRenderState';
 import type { GridTopology, TopologyCell, TopologyVertex, TopologyEdge } from '../../utils/gridTopology';
 import type { GridConfig } from '../../types';
 
@@ -12,7 +12,7 @@ interface TopologyGridProps {
  * TopologyGrid - Renders grid based on topology data (deformed grids)
  */
 export const TopologyGrid: React.FC<TopologyGridProps> = (props) => {
-  const store = usePuzzleStore();
+  const store = useCanvasRenderState();
   const topology = props.topology ?? store.topology;
   const grid = props.grid ?? store.grid;
   const {
@@ -300,7 +300,7 @@ interface TopologyGridBackgroundProps {
  * TopologyGridBackground - Renders only the cell backgrounds
  */
 export const TopologyGridBackground: React.FC<TopologyGridBackgroundProps> = ({ children, topology: topologyProp }) => {
-  const store = usePuzzleStore();
+  const store = useCanvasRenderState();
   const topology = topologyProp ?? store.topology;
   const { backgroundColor } = store.grid;
 
@@ -352,7 +352,7 @@ interface TopologyGridLinesProps {
  * TopologyGridLines - Renders only the grid lines and frame
  */
 export const TopologyGridLines: React.FC<TopologyGridLinesProps> = (props) => {
-  const store = usePuzzleStore();
+  const store = useCanvasRenderState();
   const topology = props.topology ?? store.topology;
   const grid = props.grid ?? store.grid;
   const {

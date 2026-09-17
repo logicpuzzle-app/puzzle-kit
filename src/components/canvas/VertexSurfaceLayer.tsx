@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { useCanvasRenderState } from '../../hooks/useCanvasRenderState';
 import type { DataLayerType, VertexSurfaceElement } from '../../types';
 import type { GridTopology } from '../../utils/gridTopology';
 import { getVertexSurfaceRegion, resolveSurfaceVertex } from '../../utils/vertexSurfaces';
@@ -17,7 +17,7 @@ function VertexSurface({ element, topology, cellSize }: { element: VertexSurface
 }
 
 export function VertexSurfaceLayer({ layer, elements }: { layer: DataLayerType; elements?: Record<string, VertexSurfaceElement> }) {
-  const { grid, topology, puzzle, showProblemLayer, showAnswerLayer } = usePuzzleStore();
+  const { grid, topology, puzzle, showProblemLayer, showAnswerLayer } = useCanvasRenderState();
   if (!topology) return null;
   if (layer === 'problem' ? !showProblemLayer : !showAnswerLayer) return null;
   return <g className={`vertex-surface-layer-${layer}`}>

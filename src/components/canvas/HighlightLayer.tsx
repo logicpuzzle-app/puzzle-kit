@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { useCanvasRenderState } from '../../hooks/useCanvasRenderState';
 import { useHighlightOutput } from '../../hooks/useHighlightOutput';
 import { type HighlightFill, type HighlightLayerHint } from '../../constraints/highlights';
 import { getCellCenter, getCellIndexById } from '../../utils/gridUtils';
@@ -10,7 +10,7 @@ interface HighlightLayerProps {
 }
 
 export const HighlightLayer: React.FC<HighlightLayerProps> = ({ layer = 'under-lines' }) => {
-  const { grid, useTopology, topology } = usePuzzleStore();
+  const { grid, useTopology, topology } = useCanvasRenderState();
   const highlightOutput = useHighlightOutput();
 
   const fills = highlightOutput?.fills ?? [];

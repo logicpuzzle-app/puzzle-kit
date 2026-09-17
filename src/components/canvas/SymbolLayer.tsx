@@ -5,7 +5,7 @@ import { createTextColorResolver } from '../../utils/textContrast';
  */
 
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { useCanvasRenderState } from '../../hooks/useCanvasRenderState';
 import { resolveBoardPoint } from '../../utils/lineReferences';
 import type { SymbolElement, LayerType } from '../../types';
 import { renderSymbol } from './symbols';
@@ -15,7 +15,7 @@ interface SymbolLayerProps {
 }
 
 export const SymbolLayer: React.FC<SymbolLayerProps> = ({ layer }) => {
-  const { grid, puzzle, showProblemLayer, showAnswerLayer, trialStage, trialStack, useTopology, topology } = usePuzzleStore();
+  const { grid, puzzle, showProblemLayer, showAnswerLayer, trialStage, trialStack, useTopology, topology } = useCanvasRenderState();
   const { cellSize } = grid;
 
   const textColor = useMemo(() => createTextColorResolver(puzzle, showProblemLayer, showAnswerLayer, { backgroundColor: grid.backgroundColor, trialStage, trialStack }), [puzzle, showProblemLayer, showAnswerLayer, grid.backgroundColor, trialStage, trialStack]);

@@ -7,6 +7,8 @@ import React from 'react';
 import type { SymbolProps } from './types';
 import { isBattleshipSymbol } from '../../../utils/battleshipSymbols';
 import { BattleshipSymbol } from './BattleshipSymbols';
+import { CornerSymbol } from './CornerSymbols';
+import { isCornerSymbol } from '../../../utils/cornerSymbols';
 
 // Basic shapes
 import {
@@ -104,6 +106,7 @@ const renderAnimalSymbol = (
 );
 
 export const renderSymbol = (type: string, props: SymbolProps): React.ReactElement | null => {
+  if (isCornerSymbol(type)) return <CornerSymbol type={type} {...props} />;
   if (isBattleshipSymbol(type)) return <BattleshipSymbol type={type} {...props} />;
   // Handle text symbols (format: text-{type}:{value})
   if (type.startsWith('text-') && type.includes(':')) {

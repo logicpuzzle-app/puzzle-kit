@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>盤面変更プレビュー Before / After</title>
+<style>
+body{font:16px system-ui;max-width:1400px;margin:24px auto;padding:16px;color:#17212b;background:#f5f7fa}section{background:white;padding:20px;margin:20px 0}.pair{display:grid;grid-template-columns:1fr 1fr;gap:20px}img,video{width:100%;max-height:70vh;object-fit:contain}button{padding:10px;margin-right:10px}@media(max-width:650px){.pair{grid-template-columns:1fr}}
+</style>
+<h1>盤面変更プレビュー Before / After</h1>
+<p>Apply前の格子と注記を比較します。Beforeは旧注記が残り、Afterは確定時と同じ投影を表示します。別実行のため動画の操作時刻は同期していません。</p>
+<p><a href="evidence.json">SHA-256・取得条件</a></p>
+<button onclick="document.querySelectorAll('video').forEach(v=>{v.currentTime=0;v.play()})">先頭から再生</button><button onclick="document.querySelectorAll('video').forEach(v=>v.pause())">一時停止</button>
+<section><h2>列追加中のセル塗り</h2><div class="pair"><div><h3>Before</h3><a href="mixed-before-extent.png"><img src="mixed-before-extent.png" alt="列追加プレビュー Before"></a></div><div><h3>After</h3><a href="mixed-after-extent.png"><img src="mixed-after-extent.png" alt="列追加プレビュー After"></a></div></div></section>
+<section><h2>Top面を外した直後</h2><div class="pair"><div><h3>Before</h3><a href="mixed-before-hidden.png"><img src="mixed-before-hidden.png" alt="面非表示プレビュー Before"></a></div><div><h3>After</h3><a href="mixed-after-hidden.png"><img src="mixed-after-hidden.png" alt="面非表示プレビュー After"></a></div></div></section>
+<section><h2>Top面を戻した直後</h2><div class="pair"><div><h3>Before</h3><a href="mixed-before-restored.png"><img src="mixed-before-restored.png" alt="面再表示プレビュー Before"></a></div><div><h3>After</h3><a href="mixed-after-restored.png"><img src="mixed-after-restored.png" alt="面再表示プレビュー After"></a></div></div></section>
+<section><h2>結合＋分割</h2><div class="pair"><div><h3>Before</h3><video controls preload="metadata" src="mixed-before.webm"></video></div><div><h3>After</h3><video controls preload="metadata" src="mixed-after.webm"></video></div></div></section>
+<section><h2>彫刻回転</h2><div class="pair"><div><h3>Before</h3><video controls preload="metadata" src="rotate-before.webm"></video></div><div><h3>After</h3><video controls preload="metadata" src="rotate-after.webm"></video></div></div></section>
+<section><h2>彫刻切断</h2><div class="pair"><div><h3>Before</h3><video controls preload="metadata" src="cut-before.webm"></video></div><div><h3>After</h3><video controls preload="metadata" src="cut-after.webm"></video></div></div></section>
+</html>

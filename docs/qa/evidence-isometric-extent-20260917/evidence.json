@@ -1,0 +1,231 @@
+{
+  "provenance": "Before: unchanged de09b09 application on Vite dev with final test/fixture copied into an isolated worktree. After: final production build. Mobile: Pixel 7 emulation, not physical hardware.",
+  "files": {
+    "after-chromium-original.png": {
+      "bytes": 49979,
+      "sha256": "c8ee2d63e29da4dcccf39e718f107932fc7562fd300c9804e5982a3d4dff403e"
+    },
+    "after-chromium-restored.png": {
+      "bytes": 36920,
+      "sha256": "7dea7f79c901c1a92258c563bec9ed2b35e877c7173da9cc2442fb9b40348449"
+    },
+    "after-chromium-taller.png": {
+      "bytes": 37993,
+      "sha256": "190cdcb7ae62e57e012236da37623787e1f095e4c962577047e537d22a0924fe"
+    },
+    "after-chromium-unsupported.png": {
+      "bytes": 58884,
+      "sha256": "9231c5098486ba15bf6798ebcf0de39b978417f60d2a5db3bf36c4b4a4bac3f2"
+    },
+    "after-chromium.png": {
+      "bytes": 36214,
+      "sha256": "805b2bfde3ffec1c04e7c2a8a9816ba15c38789428a38046f7b10a56872a41a3"
+    },
+    "after-chromium.webm": {
+      "bytes": 201963,
+      "sha256": "3533562bbce3283a23ead281a3e4e6d716e30bffa7e1abcfde5a5a3498c0a43c",
+      "decode": "passed",
+      "durationSeconds": 2.88,
+      "dimensions": {
+        "width": 800,
+        "height": 450
+      },
+      "chromiumPlayback": {
+        "width": 800,
+        "height": 450,
+        "duration": 2.88,
+        "time": 2.016,
+        "frames": 67
+      }
+    },
+    "after-mobile-chrome-original.png": {
+      "bytes": 96168,
+      "sha256": "a040b189d8942a5ae6e5b006f07518dca3aa2677278614a80cad1ab715840c07"
+    },
+    "after-mobile-chrome-restored.png": {
+      "bytes": 100300,
+      "sha256": "b8bfcee2535e56082b10b507915397bef6744089e98d0472c7260f5e716ae7e4"
+    },
+    "after-mobile-chrome-taller.png": {
+      "bytes": 103060,
+      "sha256": "0e07cbcfbd5df4ec8c840ea05943052369a79d0ccaccb0ab6deef23a21856f2c"
+    },
+    "after-mobile-chrome-unsupported.png": {
+      "bytes": 105678,
+      "sha256": "910571983a87de6dfb9f869108c1a6e26a457a71d61902c043ded12fe4a2985d"
+    },
+    "after-mobile-chrome.png": {
+      "bytes": 100028,
+      "sha256": "c8632231c359ed13af47ed14179091e93dd820b30a8e7c5e7ed261a839081b97"
+    },
+    "after-mobile-chrome.webm": {
+      "bytes": 214759,
+      "sha256": "26cdb7f9e7b78b2e9bed7f6e9b7e29483cd43ee11c80ed8ca4f93978a1986afb",
+      "decode": "passed",
+      "durationSeconds": 2.72,
+      "dimensions": {
+        "width": 392,
+        "height": 800
+      },
+      "chromiumPlayback": {
+        "width": 392,
+        "height": 800,
+        "duration": 2.72,
+        "time": 1.904,
+        "frames": 61
+      }
+    },
+    "before-chromium-original.png": {
+      "bytes": 49979,
+      "sha256": "c8ee2d63e29da4dcccf39e718f107932fc7562fd300c9804e5982a3d4dff403e"
+    },
+    "before-chromium.png": {
+      "bytes": 35393,
+      "sha256": "c7e25946f29e8b66746c04d9053e4a9941519902db932b0ec96e74177a3dc072"
+    },
+    "before-chromium.webm": {
+      "bytes": 174071,
+      "sha256": "188bba79fb009141444df5bcd6a1cbf993108d50b7e5db75bac89c26160c299a",
+      "decode": "passed",
+      "durationSeconds": 13.84,
+      "dimensions": {
+        "width": 800,
+        "height": 450
+      },
+      "chromiumPlayback": {
+        "width": 800,
+        "height": 450,
+        "duration": 13.84,
+        "time": 9.687999,
+        "frames": 130
+      }
+    },
+    "before-mobile-chrome-original.png": {
+      "bytes": 96168,
+      "sha256": "a040b189d8942a5ae6e5b006f07518dca3aa2677278614a80cad1ab715840c07"
+    },
+    "before-mobile-chrome.png": {
+      "bytes": 97792,
+      "sha256": "f3e31b72fdaabf34d3a146648ec92856ae152dc4f0c6d59fc3e654aa4707de19"
+    },
+    "before-mobile-chrome.webm": {
+      "bytes": 227037,
+      "sha256": "e6b27e5b7dd9766067c2b82c32d81ce5535c256f3971ad3648d3bb9e4c8b516b",
+      "decode": "passed",
+      "durationSeconds": 11,
+      "dimensions": {
+        "width": 392,
+        "height": 800
+      },
+      "chromiumPlayback": {
+        "width": 392,
+        "height": 800,
+        "duration": 11,
+        "time": 7.699999,
+        "frames": 78
+      }
+    }
+  },
+  "before": {
+    "capture": {
+      "phase": "before",
+      "createdAt": "2026-09-16T21:10:11.357Z",
+      "commit": "de09b097930302ac93b7232cfbdfcb90bcf83759",
+      "branch": "",
+      "status": "?? e2e/fixtures/isometric-extent.ts\n?? e2e/isometric-extent-identity.spec.ts",
+      "node": "v24.21.0",
+      "platform": "darwin",
+      "npm": "11.19.0",
+      "command": [
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/isometric-extent-identity.spec.ts",
+        "--project",
+        "chromium",
+        "--project",
+        "mobile-chrome",
+        "--workers",
+        "1"
+      ],
+      "exitCode": 1
+    },
+    "stats": {
+      "startTime": "2026-09-16T21:10:11.849Z",
+      "duration": 25728.195,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "testHashes": {
+      "e2e/fixtures/isometric-extent.ts": "41becda92ab968d09f0993c3285d5f80b392ac5fbd6d34967a3cec8d6a07374d",
+      "e2e/isometric-extent-identity.spec.ts": "b1ad645fea5cc97879fc283479965fcc1ab708752d8764c2e0b7d82fb8eeeb22"
+    },
+    "unchangedBaselineSourceFiles": 571
+  },
+  "after": {
+    "capture": {
+      "phase": "after",
+      "createdAt": "2026-09-16T21:11:06.645Z",
+      "commit": "5bca745c7a41c0fa1ef77cfef6b2dbc26cf4ce3e",
+      "branch": "feature/issue-integration",
+      "status": "",
+      "node": "v24.21.0",
+      "platform": "darwin",
+      "npm": "11.19.0",
+      "command": [
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/isometric-extent-identity.spec.ts",
+        "--config",
+        "playwright.production.config.ts",
+        "--workers",
+        "1"
+      ],
+      "exitCode": 0
+    },
+    "stats": {
+      "startTime": "2026-09-16T21:11:07.050Z",
+      "duration": 5991.885,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "testHashes": {
+      "e2e/fixtures/isometric-extent.ts": "41becda92ab968d09f0993c3285d5f80b392ac5fbd6d34967a3cec8d6a07374d",
+      "e2e/isometric-extent-identity.spec.ts": "b1ad645fea5cc97879fc283479965fcc1ab708752d8764c2e0b7d82fb8eeeb22"
+    },
+    "verifiedCommit": "5bca745c7a41c0fa1ef77cfef6b2dbc26cf4ce3e",
+    "sourceManifestMatchedFiles": 721
+  },
+  "verification": {
+    "unit": {
+      "passed": 738,
+      "files": 102
+    },
+    "production": {
+      "startTime": "2026-09-16T21:11:37.991Z",
+      "duration": 188132.971,
+      "expected": 152,
+      "skipped": 1,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "build": "app, library, E2E types and source maps passed (221/442/442)",
+    "media": "14 PNGs visually reviewed; 4 videos fully decoded, Chromium play/seek and playback frames reviewed",
+    "webkit": {
+      "stats": {
+        "startTime": "2026-09-16T21:15:26.992Z",
+        "duration": 35195.66,
+        "expected": 10,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "scope": "PC/Mobile isometric resize, legacy sculpt rotate/cut, square extent and cell split"
+    }
+  }
+}

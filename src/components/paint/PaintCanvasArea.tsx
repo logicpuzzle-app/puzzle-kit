@@ -1,4 +1,6 @@
 import React from 'react';
+import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { getBoardLayout, normalizeBoardRotation } from '../../utils/boardLayout';
 import { PuzzleCanvas } from '../canvas';
 import type { TranslateFn, BoardResizeHandleType, ResizeHandleType } from './types';
 import type { GridConfig } from '../../types';
@@ -58,7 +60,15 @@ export const PaintCanvasArea: React.FC<PaintCanvasAreaProps> = ({
   handleResizePointerDown,
   handleResizePointerMove,
   handleResizePointerUp,
-}) => (
+}) => {
+  const { canvas, topology, useTopology } = usePuzzleStore();
+  const { width, height, baseWidth, baseHeight } = getBoardLayout(grid, topology, useTopology);
+  const { panX, panY, zoom } = canvas;
+  const overlayStyle = {
+    transformOrigin: '0 0',
+    transform: `translate(${panX + width * zoom / 2}px, ${panY + height * zoom / 2}px) rotate(${normalizeBoardRotation(grid.boardRotation)}deg) translate(${-panX - baseWidth * zoom / 2}px, ${-panY - baseHeight * zoom / 2}px)`,
+  };
+  return (
   <div ref={canvasWrapperRef} className={`flex-1 flex flex-col relative ${className}`}>
     <PuzzleCanvas allowMultiTouchPanZoom={false} />
     {boardAdjustMode && hasImage && (
@@ -72,7 +82,7 @@ export const PaintCanvasArea: React.FC<PaintCanvasAreaProps> = ({
       />
     )}
     {boardAdjustMode && hasImage && (
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="absolute inset-0 pointer-events-none" style={overlayStyle}>
         {(() => {
           if (boardBounds.width <= 0 || boardBounds.height <= 0) return null;
           const isSquareGrid = grid.gridType === 'square' || !grid.gridType;
@@ -236,7 +246,7 @@ export const PaintCanvasArea: React.FC<PaintCanvasAreaProps> = ({
       />
     )}
     {imageAdjustMode && hasImage && (
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="absolute inset-0 pointer-events-none" style={overlayStyle}>
         {(() => {
           const handleSize = 18;
           const baseClassName =
@@ -298,3 +308,4 @@ export const PaintCanvasArea: React.FC<PaintCanvasAreaProps> = ({
     )}
   </div>
 );
+};

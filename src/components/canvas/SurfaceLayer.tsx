@@ -1,6 +1,6 @@
 import { VertexSurfaceLayer } from './VertexSurfaceLayer';
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { useCanvasRenderState } from '../../hooks/useCanvasRenderState';
 import { getCellCenter, getCellIndexById } from '../../utils/gridUtils';
 import type { SurfaceElement, DataLayerType } from '../../types';
 import type { TopologyVertex } from '../../utils/gridTopology';
@@ -15,7 +15,7 @@ const DOT_COLOR = 'gray';
 const DOT_SIZE_RATIO = 0.06;
 
 export const SurfaceLayer: React.FC<SurfaceLayerProps> = ({ layer }) => {
-  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology } = usePuzzleStore();
+  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology } = useCanvasRenderState();
 
   const surfacesData = puzzle[layer].surfaces;
   const { cellSize } = grid;

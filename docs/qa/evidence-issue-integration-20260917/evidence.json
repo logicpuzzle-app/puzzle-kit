@@ -1,0 +1,201 @@
+{
+  "before": {
+    "commit": "2396c889a3c1b5ee06c79e7dfeaa1cdb3231636e",
+    "createdAt": "2026-09-16T00:56:01.205Z",
+    "runner": "Playwright, Vite dev server; published Chromium desktop / Pixel 7 recordings; additional WebKit checks in after run",
+    "stats": {
+      "startTime": "2026-09-16T00:56:01.703Z",
+      "duration": 3594.612,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "testSha256": "7eed88e0c3372a121e6c5e61295b004d85d720805cb012f364570da7210403dc",
+    "fixtureSha256": "c5c7d159fb5aa1fd014e681c91a06f99b90c099218fe0f1020dfae69d7b83b27",
+    "tests": [
+      {
+        "title": "#6 board rotation: controls, input, history, persistence and image export",
+        "project": "chromium",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Expected rotated PNG 120×160 with red top-right; baseline exports 160×120 with red top-left."
+      },
+      {
+        "title": "#6 board rotation: controls, input, history, persistence and image export",
+        "project": "mobile-chrome",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Expected rotated PNG 120×160 with red top-right; baseline exports 160×120 with red top-left."
+      }
+    ]
+  },
+  "after": {
+    "phase": "after",
+    "createdAt": "2026-09-16T18:59:43.422Z",
+    "commit": "81ffa7e85c3ee5d87ec197e69f45a4592a5d5fbc",
+    "branch": "feature/issue-integration",
+    "status": "M e2e/kakuro-identity.spec.ts\n M src/test/kakuroIdentity.test.tsx",
+    "node": "v24.21.0",
+    "platform": "darwin",
+    "npm": "11.19.0",
+    "command": [
+      "/opt/homebrew/Cellar/node@24/24.21.0/bin/node",
+      "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+      "test",
+      "e2e/board-rotation.spec.ts",
+      "e2e/kakuro-identity.spec.ts",
+      "--project=chromium",
+      "--project=mobile-chrome",
+      "--workers=1"
+    ],
+    "exitCode": 0,
+    "sourceManifestSubset": {
+      "e2e/board-rotation.spec.ts": "7eed88e0c3372a121e6c5e61295b004d85d720805cb012f364570da7210403dc",
+      "e2e/fixtures/board-rotation.json": "c5c7d159fb5aa1fd014e681c91a06f99b90c099218fe0f1020dfae69d7b83b27",
+      "e2e/fixtures/kakuro-opaque-board.json": "acd3f57fac4ddf1b2b1ccd313c48ab9ed57684c63703f3e05c1c8035c07591cb",
+      "e2e/kakuro-identity.spec.ts": "ba35bdf8aceaf2703724fb92dc396d0acb9f537e8d0fdaac2bc953e82598717d"
+    },
+    "verifiedCommit": "3b65061e2b16b47564cfce1db445e15207a84f5e",
+    "provenance": "Captured 81ffa7e with final test-only working changes, committed unchanged as 3b65061. Before media are the existing rotation baseline; identical rotation test and fixture SHA256 verified. Kakuro rotated editing is additional after-only integration coverage."
+  },
+  "files": {
+    "controls-chromium.png": {
+      "bytes": 54043,
+      "sha256": "ced91109442090314a77afb2c6d565a9fda21df381fc53e40f43aeef67b93954"
+    },
+    "controls-mobile-chrome.png": {
+      "bytes": 85274,
+      "sha256": "59f5c66d5f7debe87ea68e274f7784960292135f87136a522512fc1930c33170"
+    },
+    "edited-chromium.png": {
+      "bytes": 29765,
+      "sha256": "4a05172041a4649129875396a6cb93d56db503f1e733a44d411edbb3f1afc39e"
+    },
+    "edited-mobile-chrome.png": {
+      "bytes": 67477,
+      "sha256": "3e5366fdc00486588ec565cb16983daddfe47fdc30f793de6337a5919e343df1"
+    },
+    "export-chromium.png": {
+      "bytes": 1089,
+      "sha256": "d392b2bb9ed82ae1c2a2b17f8b9019f11d9b33c08aef3945c117fd7b701ae0f4"
+    },
+    "export-mobile-chrome.png": {
+      "bytes": 1089,
+      "sha256": "d392b2bb9ed82ae1c2a2b17f8b9019f11d9b33c08aef3945c117fd7b701ae0f4"
+    },
+    "hex-chromium.png": {
+      "bytes": 34601,
+      "sha256": "279234f7457757876163bae0a3e9125b95dbff91476c218b7f23083b99dfd5f6"
+    },
+    "hex-mobile-chrome.png": {
+      "bytes": 78592,
+      "sha256": "824263559f10823e535aa4367e409860918a2567787eb65b0b6dc9891b818d8e"
+    },
+    "kakuro-chromium.png": {
+      "bytes": 38984,
+      "sha256": "ef0bee19773f8ed28d2653fbc69875367fc31a7fa45e28b3ce61319f9c59371d"
+    },
+    "kakuro-chromium.webm": {
+      "bytes": 183874,
+      "sha256": "41b77454a6d7831228b18fc4460857d32e056122b4d97d046a499f04d5a21d0f",
+      "decode": "passed",
+      "durationSeconds": 4.04,
+      "dimensions": {
+        "width": 800,
+        "height": 450
+      },
+      "chromiumPlayback": {
+        "width": 800,
+        "height": 450,
+        "duration": 4.04,
+        "time": 2.828,
+        "frames": 87
+      }
+    },
+    "kakuro-mobile-chrome.png": {
+      "bytes": 101085,
+      "sha256": "5b5b17b7dfb880dcddad50e7e644d6cfa6957b5c85a26c522076fb6fb4fdec10"
+    },
+    "kakuro-mobile-chrome.webm": {
+      "bytes": 300209,
+      "sha256": "57b256b4cd59feaaece44a8c88c1e6fff2a5d80304a3d3350a108aa6ec671e1d",
+      "decode": "passed",
+      "durationSeconds": 4.32,
+      "dimensions": {
+        "width": 392,
+        "height": 800
+      },
+      "chromiumPlayback": {
+        "width": 392,
+        "height": 800,
+        "duration": 4.32,
+        "time": 3.024,
+        "frames": 90
+      }
+    },
+    "paint.png": {
+      "bytes": 42556,
+      "sha256": "4e7b7496f7a414463042fc148e52aa6552f474a308ab58ddbab120787121cd42"
+    },
+    "paint.webm": {
+      "bytes": 98331,
+      "sha256": "b5bf58eee9c1e6a77418c11bcf95695606d688d4bd7978a3b32ce193b7bd9b5a",
+      "decode": "passed",
+      "durationSeconds": 4.32,
+      "dimensions": {
+        "width": 800,
+        "height": 450
+      },
+      "chromiumPlayback": {
+        "width": 800,
+        "height": 450,
+        "duration": 4.32,
+        "time": 3.024,
+        "frames": 90
+      }
+    },
+    "rotation-chromium.png": {
+      "bytes": 43131,
+      "sha256": "06db1f22190e14ce0ea93ba7ce539e9e84bd97ea43d9e4cbee91b7da8fdf91f2"
+    },
+    "rotation-chromium.webm": {
+      "bytes": 156621,
+      "sha256": "382120bd5455b4438976662e614a4151dca7d5de9f588fae55cea1d3f42fe6ab",
+      "decode": "passed",
+      "durationSeconds": 7.16,
+      "dimensions": {
+        "width": 800,
+        "height": 450
+      },
+      "chromiumPlayback": {
+        "width": 800,
+        "height": 450,
+        "duration": 7.16,
+        "time": 5.012,
+        "frames": 142
+      }
+    },
+    "rotation-mobile-chrome.png": {
+      "bytes": 76103,
+      "sha256": "8e9e3d7848e0dca07660dc01933bc0e65564ab99c02927122ee54a914a3b905b"
+    },
+    "rotation-mobile-chrome.webm": {
+      "bytes": 152768,
+      "sha256": "55fa03fb40db03454339ebcb9c8748633ba58c070e9e3b9c035bfe30642d2129",
+      "decode": "passed",
+      "durationSeconds": 3.52,
+      "dimensions": {
+        "width": 392,
+        "height": 800
+      },
+      "chromiumPlayback": {
+        "width": 392,
+        "height": 800,
+        "duration": 3.52,
+        "time": 2.464,
+        "frames": 78
+      }
+    }
+  }
+}

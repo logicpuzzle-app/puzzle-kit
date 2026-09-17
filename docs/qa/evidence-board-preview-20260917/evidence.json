@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "baselineCommit": "042eb98ca19145e85fa5f14be2c6fd21b2536ce0",
+  "implementationCommit": "f806eca4c12d7683be2ef053882907ad43b5aecf",
+  "capture": {
+    "before": {
+      "id": "2026-09-17T05-32-23-592Z-before",
+      "result": { "passed": 0, "failed": 3, "skipped": 0 },
+      "sourceManifestSha256": "19bf50069dbdc6532a64ac28166616fdb59df0739d13a3cff7070fd018d3e4b3"
+    },
+    "after": {
+      "id": "2026-09-17T05-32-57-070Z-after",
+      "result": { "passed": 3, "failed": 0, "skipped": 0 },
+      "sourceManifestSha256": "6c182d3dcfa77e5085acc2e2fdddd62d4b68c0e421af06ae89ee847d1cfdc5b8"
+    }
+  },
+  "fullProduction": { "passed": 162, "failed": 0, "skipped": 1, "projects": ["chromium", "mobile-chrome"] },
+  "videoVerification": {
+    "decoder": "ffmpeg",
+    "allFramesDecoded": true,
+    "chromiumPlayedAndSeeked": true,
+    "dimensions": { "width": 800, "height": 450 },
+    "playbackFramesInspected": 6
+  },
+  "files": {
+    "mixed-before-extent.png": "19edd7a1180fbc5b480c8e5fb1ae1ce89051dce1160e47ff4a120f06185e976c",
+    "mixed-after-extent.png": "431c85cc0075941f552a13fdca58686c26f00bfb168c40817bd7b9b6804e86a6",
+    "mixed-before-hidden.png": "0a911ef97c2557f8c8ed26855975f2946a88dae982dcdad2089ecf3736fcd5c0",
+    "mixed-after-hidden.png": "a8e13a39455b9ffa92ddee53b7f39c2de5ef76c798855cd6eeaf2a35d281971b",
+    "mixed-before-restored.png": "f1bb01dc33012ee35354fbe8f576d791fca8ac7f449ec4e226af241f4cfe5a0c",
+    "mixed-after-restored.png": "3f79893ef79a0a54b2f6746561518873cac7ca64255f36bb5e53fd0ad0062be7",
+    "mixed-before.webm": { "sha256": "a73df1dd64a6e72ed19ba0b08967bdd65c7112921c6d22fb9c7f6f6eab923dd5", "durationSeconds": 8.68 },
+    "mixed-after.webm": { "sha256": "3b080efa4538aa5f1b4029f7381ae6091aeb1dd6c94fb3a9a15689aa73276181", "durationSeconds": 4.68 },
+    "rotate-before.webm": { "sha256": "818822942d819d952f4c0dbd5b5baef4f22cf389faeda4f2b57d22a8204e6dfc", "durationSeconds": 7.56 },
+    "rotate-after.webm": { "sha256": "29c2753438472b807b282a3ef197e90839d9092515e2f8185aa059690f55479c", "durationSeconds": 3.48 },
+    "cut-before.webm": { "sha256": "41ba8196fc2bdf14703ee7983d58f5ffec4e2582d9e6dc3733fefd809f0a8ade", "durationSeconds": 7.52 },
+    "cut-after.webm": { "sha256": "0f354f74df01f919c529845e827a00c5db3451471455a49fb79b0de1b78721c0", "durationSeconds": 4.0 }
+  }
+}

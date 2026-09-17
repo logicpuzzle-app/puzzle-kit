@@ -1,0 +1,379 @@
+{
+  "provenance": "Before: unchanged 92a5750 app on Vite dev, two captures. Final large-board spec plus a storage decoder used only by the test were copied into an isolated baseline worktree. After: production preview of the final fix. Mobile is Pixel 7 emulation.",
+  "files": {
+    "large-after-chromium.png": {
+      "bytes": 132956,
+      "sha256": "4aa0b2f874b3dd5abf241e87c6758d717f0131d33095f18f68a67c5f7f8a6cf4"
+    },
+    "large-after-chromium.webm": {
+      "bytes": 250173,
+      "sha256": "dd5ee31b91f6675361e9462b72cfec1fdc719c27e10d19c7aa8b26b3201b0143",
+      "decode": "passed",
+      "durationSeconds": 6.24,
+      "dimensions": {
+        "width": 800,
+        "height": 450
+      },
+      "chromiumPlayback": {
+        "width": 800,
+        "height": 450,
+        "duration": 6.24,
+        "time": 4.367999,
+        "frames": 127
+      }
+    },
+    "large-after-mobile-chrome.png": {
+      "bytes": 204229,
+      "sha256": "94ad7a62d845e77c662a69318b14b86ee7e2f50cc15007e6f36f45d2aa252bb2"
+    },
+    "large-after-mobile-chrome.webm": {
+      "bytes": 400093,
+      "sha256": "4f4532a3bd4f98accf089b88e6b040d5328a350408adf8c71e3260eee343175e",
+      "decode": "passed",
+      "durationSeconds": 5.96,
+      "dimensions": {
+        "width": 392,
+        "height": 800
+      },
+      "chromiumPlayback": {
+        "width": 392,
+        "height": 800,
+        "duration": 5.96,
+        "time": 4.171998,
+        "frames": 120
+      }
+    },
+    "large-before-chromium.png": {
+      "bytes": 118316,
+      "sha256": "efb949fc4ac030e589c97989e7d483866ab50d5fc6f049ab2c017b9eec2e077b"
+    },
+    "large-before-chromium.webm": {
+      "bytes": 336476,
+      "sha256": "b7ef17919c60c4db97a07f14f79389b73017e0b5ed53a12692b4859ff010f779",
+      "decode": "passed",
+      "durationSeconds": 15.92,
+      "dimensions": {
+        "width": 800,
+        "height": 450
+      },
+      "chromiumPlayback": {
+        "width": 800,
+        "height": 450,
+        "duration": 15.92,
+        "time": 11.144,
+        "frames": 36
+      }
+    },
+    "large-before-mobile-chrome.png": {
+      "bytes": 191252,
+      "sha256": "fecee31c4cd3913fe95ae689512f673b96de7c382638f100fe9d02ff07f1a80e"
+    },
+    "large-before-mobile-chrome.webm": {
+      "bytes": 566040,
+      "sha256": "0343b3cb7512f9ce4998617bc4405b31ba88597ac7c51881b064e6c6d7bd4fa1",
+      "decode": "passed",
+      "durationSeconds": 12.96,
+      "dimensions": {
+        "width": 392,
+        "height": 800
+      },
+      "chromiumPlayback": {
+        "width": 392,
+        "height": 800,
+        "duration": 12.96,
+        "time": 9.072,
+        "frames": 115
+      }
+    },
+    "quota-after-chromium.png": {
+      "bytes": 55079,
+      "sha256": "f44aa48945749d268d5956fa19455859502f7eabd7723a4804c8cc8cc4867779"
+    },
+    "quota-after-chromium.webm": {
+      "bytes": 202111,
+      "sha256": "a3a6d7e6d64506f8ab5c24eee2b513a388c8515af39fce88a0ba43ca8bfb7b0b",
+      "decode": "passed",
+      "durationSeconds": 6.88,
+      "dimensions": {
+        "width": 800,
+        "height": 450
+      },
+      "chromiumPlayback": {
+        "width": 800,
+        "height": 450,
+        "duration": 6.88,
+        "time": 4.816,
+        "frames": 136
+      }
+    },
+    "quota-after-mobile-chrome.png": {
+      "bytes": 118049,
+      "sha256": "04410520b75bcf2843cdd2657f36191729faac67e8174ff506fdd2e2cb48f935"
+    },
+    "quota-after-mobile-chrome.webm": {
+      "bytes": 218261,
+      "sha256": "c0bdb96281dd618b22d4c46f618ece9db93d66637ab30214c965a41b76d1b384",
+      "decode": "passed",
+      "durationSeconds": 6.76,
+      "dimensions": {
+        "width": 392,
+        "height": 800
+      },
+      "chromiumPlayback": {
+        "width": 392,
+        "height": 800,
+        "duration": 6.76,
+        "time": 4.731999,
+        "frames": 134
+      }
+    },
+    "quota-before-chromium.png": {
+      "bytes": 47340,
+      "sha256": "b6d3d5759a0fa21c8fd84b54ec4324f8d677f595efe8d654442eae5940a2d22b"
+    },
+    "quota-before-chromium.webm": {
+      "bytes": 188630,
+      "sha256": "2c9039a091d5ee8c0cd7e4064edf19909d532c05ff93cbd55a67a90a302b6abd",
+      "decode": "passed",
+      "durationSeconds": 16.52,
+      "dimensions": {
+        "width": 800,
+        "height": 450
+      },
+      "chromiumPlayback": {
+        "width": 800,
+        "height": 450,
+        "duration": 16.52,
+        "time": 11.563999,
+        "frames": 50
+      }
+    },
+    "quota-before-mobile-chrome.png": {
+      "bytes": 89489,
+      "sha256": "510216d5b55bbd436e9edcc3c6dc2ca4a04f8586b69cc4053d5c9d108d74fb17"
+    },
+    "quota-before-mobile-chrome.webm": {
+      "bytes": 169698,
+      "sha256": "9412e5592fee36bad3393ec1901c9526d4a080928bec3f917207b78ef4fc1d99",
+      "decode": "passed",
+      "durationSeconds": 13.64,
+      "dimensions": {
+        "width": 392,
+        "height": 800
+      },
+      "chromiumPlayback": {
+        "width": 392,
+        "height": 800,
+        "duration": 13.64,
+        "time": 9.548,
+        "frames": 124
+      }
+    },
+    "quota-recovered-chromium.png": {
+      "bytes": 47180,
+      "sha256": "f948ceaea994a54a0b4375f8c8573edd19ee67b99a08c3f4621c38c21b8827a9"
+    },
+    "quota-recovered-mobile-chrome.png": {
+      "bytes": 89188,
+      "sha256": "c620116b5510a4d104ee14552960e207c03f31c8c1230b828fa073cd129cfd79"
+    }
+  },
+  "largeBefore": {
+    "capture": {
+      "phase": "before",
+      "createdAt": "2026-09-16T20:37:03.689Z",
+      "commit": "92a57505faa691828bfe9545ccb697fed24770dc",
+      "branch": "",
+      "status": "M e2e/vertex-surface-geometry.spec.ts\n?? src/utils/storageJson.ts",
+      "node": "v24.21.0",
+      "platform": "darwin",
+      "npm": "11.19.0",
+      "command": [
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/vertex-surface-geometry.spec.ts",
+        "--grep",
+        "fully annotated",
+        "--project=chromium",
+        "--project=mobile-chrome",
+        "--workers=1"
+      ],
+      "exitCode": 1
+    },
+    "stats": {
+      "startTime": "2026-09-16T20:37:04.348Z",
+      "duration": 29820.817,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "testHashes": {
+      "src/utils/storageJson.ts": "460afcaf9e77c5b91994963d65e5a26f569eb8e3394aa80d6c2cb2f916cda4bf",
+      "e2e/fixtures/opaque-board-ids.json": "2850dcf040ab49418372e651e5332d9115ef6161804c0c6d724a474560a965dc",
+      "e2e/vertex-surface-geometry.spec.ts": "193e6b4d49dd091cdfca3fa713e20acde3a190068743e30cae4113a871a0237e"
+    },
+    "unchangedBaselineSourceFiles": 570,
+    "tests": [
+      {
+        "title": "a fully annotated 50 by 50 board remains editable and preserves vertex references in files @production",
+        "project": "chromium",
+        "status": "failed",
+        "runtimeErrors": [
+          "QuotaExceededError: Failed to execute 'setItem' on 'Storage': Setting the value of 'puzzlekit_autosave' exceeded the quota.\n    at autoSave (http://127.0.0.1:4174/src/utils/serialization.ts:146:16)\n    at http://127.0.0.1:4174/src/components/toolbar/MenuBar.tsx:68:7"
+        ]
+      },
+      {
+        "title": "a fully annotated 50 by 50 board remains editable and preserves vertex references in files @production",
+        "project": "mobile-chrome",
+        "status": "failed",
+        "runtimeErrors": [
+          "QuotaExceededError: Failed to execute 'setItem' on 'Storage': Setting the value of 'puzzlekit_autosave' exceeded the quota.\n    at autoSave (http://127.0.0.1:4174/src/utils/serialization.ts:146:16)\n    at http://127.0.0.1:4174/src/components/toolbar/MenuBar.tsx:68:7"
+        ]
+      }
+    ]
+  },
+  "quotaBefore": {
+    "capture": {
+      "phase": "before",
+      "createdAt": "2026-09-16T20:23:21.244Z",
+      "commit": "92a57505faa691828bfe9545ccb697fed24770dc",
+      "branch": "feature/issue-integration",
+      "status": "M e2e/vertex-surface-geometry.spec.ts\n?? e2e/autosave-quota.spec.ts",
+      "node": "v24.21.0",
+      "platform": "darwin",
+      "npm": "11.19.0",
+      "command": [
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/autosave-quota.spec.ts",
+        "--project=chromium",
+        "--project=mobile-chrome",
+        "--workers=1"
+      ],
+      "exitCode": 1
+    },
+    "stats": {
+      "startTime": "2026-09-16T20:23:21.801Z",
+      "duration": 30394.528,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "testHashes": {
+      "e2e/autosave-quota.spec.ts": "3307074697b23b7d264a77e4ef60a12d1e029952ef6ff05c4290d02000e45e69",
+      "e2e/fixtures/opaque-board-ids.json": "2850dcf040ab49418372e651e5332d9115ef6161804c0c6d724a474560a965dc",
+      "e2e/vertex-surface-geometry.spec.ts": "f97e31c4db0210ab4865d50a6833c538927281db55758e88cb2a2fe997f48d52"
+    },
+    "tests": [
+      {
+        "title": "autosave quota failure preserves the previous save and allows file export and retry @production",
+        "project": "chromium",
+        "status": "failed",
+        "runtimeErrors": [
+          "QuotaExceededError: Failed to execute 'setItem' on 'Storage': Setting the value of 'puzzlekit_autosave' exceeded the quota.\n    at autoSave (http://127.0.0.1:4174/src/utils/serialization.ts:146:16)\n    at http://127.0.0.1:4174/src/components/toolbar/MenuBar.tsx:68:7"
+        ]
+      },
+      {
+        "title": "autosave quota failure preserves the previous save and allows file export and retry @production",
+        "project": "mobile-chrome",
+        "status": "failed",
+        "runtimeErrors": [
+          "QuotaExceededError: Failed to execute 'setItem' on 'Storage': Setting the value of 'puzzlekit_autosave' exceeded the quota.\n    at autoSave (http://127.0.0.1:4174/src/utils/serialization.ts:146:16)\n    at http://127.0.0.1:4174/src/components/toolbar/MenuBar.tsx:68:7"
+        ]
+      }
+    ]
+  },
+  "after": {
+    "capture": {
+      "phase": "after",
+      "createdAt": "2026-09-16T20:37:47.930Z",
+      "commit": "ead298393f5b2fb8bbca3f402f26e79a8ea5d355",
+      "branch": "feature/issue-integration",
+      "status": "M docs/qa/2026-09-17-legacy-triangle.md\n M docs/vertex-surfaces.md\n?? docs/qa/2026-09-17-autosave.md\n?? docs/qa/evidence-autosave-20260917/",
+      "node": "v24.21.0",
+      "platform": "darwin",
+      "npm": "11.19.0",
+      "command": [
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node",
+        "/Users/HHosono/Files/0_Group/LogicPuzzleApp/PuzzleTools/puzzle-kit-quality/node_modules/@playwright/test/cli.js",
+        "test",
+        "--config",
+        "playwright.production.config.ts",
+        "e2e/autosave-quota.spec.ts",
+        "e2e/vertex-surface-geometry.spec.ts",
+        "--grep",
+        "autosave quota|fully annotated",
+        "--workers=1"
+      ],
+      "exitCode": 0
+    },
+    "stats": {
+      "startTime": "2026-09-16T20:37:48.285Z",
+      "duration": 24534.436,
+      "expected": 4,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "testHashes": {
+      "e2e/autosave-quota.spec.ts": "3307074697b23b7d264a77e4ef60a12d1e029952ef6ff05c4290d02000e45e69",
+      "e2e/fixtures/opaque-board-ids.json": "2850dcf040ab49418372e651e5332d9115ef6161804c0c6d724a474560a965dc",
+      "e2e/vertex-surface-geometry.spec.ts": "193e6b4d49dd091cdfca3fa713e20acde3a190068743e30cae4113a871a0237e",
+      "src/utils/storageJson.ts": "460afcaf9e77c5b91994963d65e5a26f569eb8e3394aa80d6c2cb2f916cda4bf"
+    },
+    "verifiedCommit": "ead298393f5b2fb8bbca3f402f26e79a8ea5d355",
+    "sourceManifestMatchedFiles": 717,
+    "tests": [
+      {
+        "title": "autosave quota failure preserves the previous save and allows file export and retry @production",
+        "project": "chromium",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "autosave quota failure preserves the previous save and allows file export and retry @production",
+        "project": "mobile-chrome",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "a fully annotated 50 by 50 board remains editable and preserves vertex references in files @production",
+        "project": "chromium",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "a fully annotated 50 by 50 board remains editable and preserves vertex references in files @production",
+        "project": "mobile-chrome",
+        "status": "passed",
+        "runtimeErrors": []
+      }
+    ]
+  },
+  "verification": {
+    "unit": {
+      "passed": 734,
+      "files": 101
+    },
+    "webkit": {
+      "passed": 6,
+      "scope": "PC/Mobile quota recovery, 50x50 autosave and concave vertex geometry"
+    },
+    "build": "app, library, E2E types and source maps passed (221/442/442)",
+    "production": {
+      "stats": {
+        "startTime": "2026-09-16T20:39:16.760Z",
+        "duration": 183649.875,
+        "expected": 150,
+        "skipped": 1,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "command": "npm run qa:production -- --workers=1"
+    }
+  }
+}

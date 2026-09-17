@@ -1,5 +1,6 @@
 import { projectEdits } from './topology/retainedEdits';
 import pako from 'pako';
+import { encodeStorageJson, decodeStorageJson } from './storageJson';
 import type { PuzzleExport, GridConfig, PuzzleState } from '../types';
 import type { GridTopology, TopologyCell, TopologyVertex, TopologyEdge } from './topology/types';
 import { projectMerges } from './topology/retainedMerge';
@@ -203,14 +204,15 @@ export function autoSave(
   if (topologySettings) {
     data.topologySettings = topologySettings;
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  // One atomic write: a failed save must leave the previous document intact.
+  localStorage.setItem(STORAGE_KEY, encodeStorageJson(data));
 }
 
 export function loadAutoSave(): PuzzleExport | null {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (!saved) return null;
-    return JSON.parse(saved) as PuzzleExport;
+    return decodeStorageJson<PuzzleExport>(saved);
   } catch {
     return null;
   }
@@ -523,6 +525,10 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
   if (!record(serialized)) throw new Error('Invalid topology snapshot');
   const phase = serialized.sourceConfig?.hexRowOffset;
   if (phase !== undefined && phase !== 0 && phase !== 1) throw new Error('Invalid hex row offset');
+  const trianglePhase = serialized.sourceConfig?.trianglePhase;
+  if (trianglePhase !== undefined && trianglePhase !== 0 && trianglePhase !== 1) throw new Error('Invalid triangle phase');
+  const triangleUnit = serialized.sourceConfig?.triangleColumnUnit ?? 'cell';
+  if (triangleUnit !== 'cell' && triangleUnit !== 'pair') throw new Error('Invalid triangle column unit');
   const cells = readNodes<TopologyCell>(serialized.cells);
   const vertices = readNodes<TopologyVertex>(serialized.vertices);
   const edges = readNodes<TopologyEdge>(serialized.edges);
@@ -533,6 +539,8 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
     }
     exclusionBase = deserializeTopology(serialized.exclusionBase);
     if ((exclusionBase.sourceConfig?.hexRowOffset ?? 0) !== (phase ?? 0)) throw new Error('Inconsistent hidden hex row offset');
+    if ((exclusionBase.sourceConfig?.trianglePhase ?? 0) !== (trianglePhase ?? 0)) throw new Error('Inconsistent hidden triangle phase');
+    if ((exclusionBase.sourceConfig?.triangleColumnUnit ?? 'cell') !== triangleUnit) throw new Error('Inconsistent hidden triangle column unit');
     for (const [id, vertex] of vertices) {
       const original = exclusionBase.vertices.get(id);
       if (!original || original.position.x !== vertex.position.x || original.position.y !== vertex.position.y
@@ -550,6 +558,7 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
     for (const [id, cell] of cells) {
       const original = exclusionBase.cells.get(id);
       if (!original || original.center.x !== cell.center.x || original.center.y !== cell.center.y
+          || (cell.isometricFace !== undefined && cell.isometricFace !== original.isometricFace)
           || JSON.stringify(original.baseCenter) !== JSON.stringify(cell.baseCenter) ||
           JSON.stringify(original.boundaryVertices) !== JSON.stringify(cell.boundaryVertices) ||
           JSON.stringify(original.boundaryEdges) !== JSON.stringify(cell.boundaryEdges)) {
@@ -571,6 +580,9 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
   }
   const origin = (value: unknown) => serialized.deformationBounds !== undefined ? point(value) : value === undefined;
   for (const cell of cells.values()) {
+    if (cell.isometricFace !== undefined && !['top', 'bottom', 'left', 'right'].includes(cell.isometricFace)) {
+      throw new Error('Invalid isometric face');
+    }
     if (!point(cell.center) || !origin(cell.baseCenter) || !refs(cell.boundaryVertices, vertices) ||
         !refs(cell.boundaryEdges, edges) || !refs(cell.adjacentCells, cells)) {
       throw new Error('Invalid cell geometry or reference');
@@ -593,6 +605,8 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
     if (serialized.mergeBase || !record(serialized.editBase) || serialized.editBase.editBase || serialized.editBase.mergeBase || serialized.editBase.exclusionBase
       || !Array.isArray(serialized.editOperations) || !serialized.editOperations.length) throw new Error('Invalid edit source graph');
     editBase = deserializeTopology(serialized.editBase);
+    if ((editBase.sourceConfig?.trianglePhase ?? 0) !== (trianglePhase ?? 0)) throw new Error('Inconsistent edited triangle phase');
+    if ((editBase.sourceConfig?.triangleColumnUnit ?? 'cell') !== triangleUnit) throw new Error('Inconsistent edited triangle column unit');
     for (const op of serialized.editOperations) {
       if (!record(op) || (op.kind !== 'merge' && op.kind !== 'split' && op.kind !== 'sculpt') || !Array.isArray(op.cellIds) || op.cellIds.some(id => typeof id !== 'string')) throw new Error('Invalid topology operation');
       if (op.kind === 'sculpt') {
@@ -643,6 +657,8 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
       throw new Error('Invalid merge source graph');
     }
     mergeBase = deserializeTopology(serialized.mergeBase);
+    if ((mergeBase.sourceConfig?.trianglePhase ?? 0) !== (trianglePhase ?? 0)) throw new Error('Inconsistent merged triangle phase');
+    if ((mergeBase.sourceConfig?.triangleColumnUnit ?? 'cell') !== triangleUnit) throw new Error('Inconsistent merged triangle column unit');
     if (serialized.mergeGroups.some(group => !record(group) || typeof group.id !== 'string' || !Array.isArray(group.cellIds) || group.cellIds.some(id => typeof id !== 'string'))) {
       throw new Error('Invalid merge groups');
     }

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { triangleColumns } from '../../utils/triangleLayout';
 import { GridConfig } from '../../types';
 import {
   getHexVertices,
@@ -103,8 +104,7 @@ export const TriangleGrid: React.FC<NonSquareGridProps> = ({ grid }) => {
     backgroundColor,
   } = grid;
 
-  // Triangle grid has 2*cols triangles per row
-  const triColsPerRow = cols * 2;
+  const triColsPerRow = triangleColumns(grid, 'pair');
 
   const cells = useMemo(() => {
     if (!showGrid) return null;

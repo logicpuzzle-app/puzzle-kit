@@ -7,7 +7,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { useCanvasRenderState } from '../../hooks/useCanvasRenderState';
 import { getPenpaColor } from '../../types/penpaElements';
 import type { GridPoints, Point } from '../../types/point';
 import { PointType } from '../../types/point';
@@ -276,7 +276,7 @@ export const ThermoArrowLayer: React.FC<ThermoArrowLayerProps> = ({
   gridPoints,
   layer = 'problem',
 }) => {
-  const { puzzle } = usePuzzleStore();
+  const { puzzle } = useCanvasRenderState();
 
   const elements = useMemo(() => {
     if (!gridPoints) {

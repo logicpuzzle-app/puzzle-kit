@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { useCanvasRenderState } from '../../hooks/useCanvasRenderState';
 import { getCellCenter, getCellIndexById } from '../../utils/gridUtils';
 import type { BoxLineElement, DataLayerType } from '../../types';
 import type { TopologyVertex } from '../../utils/gridTopology';
@@ -95,7 +95,7 @@ function getSquarePolygon(center: Point, cellSize: number): Point[] {
  * Each cell is filled at 90% size, with connections as polygons connecting shared edge vertices
  */
 export const BoxLineLayer: React.FC<BoxLineLayerProps> = ({ layer }) => {
-  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology } = usePuzzleStore();
+  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology } = useCanvasRenderState();
 
   const boxLinesData = puzzle[layer].boxLines || {};
   const { cellSize } = grid;

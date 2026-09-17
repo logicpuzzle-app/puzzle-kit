@@ -5,6 +5,8 @@
 import { resolveSurfaceVertex } from '../../utils/vertexSurfaces';
 import { migrateReferenceMode } from '../../utils/referenceModeMigration';
 import type { VertexSurfaceElement } from '../../types';
+import { normalizeBoardRotation } from '../../utils/boardLayout';
+import { normalizeTriangleColumns } from '../../utils/triangleLayout';
 import type { GridConfig } from '../../types';
 import type { GridSlice, SliceCreator, PuzzleStore } from './types';
 import type { TopologyPreset, GridTopology } from '../../utils/gridTopology';
@@ -20,7 +22,7 @@ import { applyCellExclusions } from '../../utils/topology/exclusions';
 import { scaleTopologyLayout } from '../../utils/topology/layout';
 import { prepareExclusionBase } from '../../utils/topology/legacyExclusions';
 import { resizeRetainedExtent } from '../../utils/topology/retainedExtent';
-import { retainTopologyElements, retainTopologyPuzzle } from '../../utils/topology/retainedElements';
+import { retainTopologyElements, retainTopologyPuzzle, retainGridTriangleElements, retainGridTrianglePuzzle } from '../../utils/topology/retainedElements';
 import {
   sculptRotateCluster,
   sculptCutCluster,
@@ -52,6 +54,7 @@ const TOPOLOGY_KEYS = new Set([
   'marginBottom',
   'marginLeft',
   'marginRight',
+  'triangleColumnUnit',
   'mergedCells',
   'splitLines',
   'sculptOperations',
@@ -84,7 +87,13 @@ const createDefaultTopology = (): GridTopology => {
   return applyTopologyPreset(baseTopology, { preset: 'square', intensity: 0.5 });
 };
 
-const EXTENT_KEYS = new Set(['rows', 'cols', 'marginTop', 'marginBottom', 'marginLeft', 'marginRight']);
+const EXTENT_KEYS = new Set(['rows', 'cols', 'level', 'isometricFaces', 'isometricView', 'marginTop', 'marginBottom', 'marginLeft', 'marginRight', 'triangleColumnUnit']);
+
+// A failed retained edit must not silently replace an isometric board's IDs.
+function isIsometricExtentChange(before: GridConfig, after: GridConfig): boolean {
+  return before.gridType === 'iso' && after.gridType === 'iso'
+    && [...EXTENT_KEYS].some(key => JSON.stringify(before[key as keyof GridConfig]) !== JSON.stringify(after[key as keyof GridConfig]));
+}
 
 function editGridExtent(state: PuzzleStore, newGrid: GridConfig): Partial<PuzzleStore> | null {
   if (!state.topology) return null;
@@ -97,8 +106,9 @@ function editGridExtent(state: PuzzleStore, newGrid: GridConfig): Partial<Puzzle
   if (!resized) return null;
   const full = resized.exclusionBase ?? resized;
   const grid = { ...newGrid,
-    ...(resized.sourceConfig && { mergedCells: resized.sourceConfig.mergedCells, splitLines: resized.sourceConfig.splitLines, voidCells: resized.sourceConfig.voidCells, disabledCells: resized.sourceConfig.disabledCells, outboardCells: resized.sourceConfig.outboardCells }),
-    ...(resized.sourceConfig?.hexRowOffset !== undefined && { hexRowOffset: resized.sourceConfig.hexRowOffset }) };
+    ...(resized.sourceConfig && { mergedCells: resized.sourceConfig.mergedCells, splitLines: resized.sourceConfig.splitLines, sculptOperations: resized.sourceConfig.sculptOperations, voidCells: resized.sourceConfig.voidCells, disabledCells: resized.sourceConfig.disabledCells, outboardCells: resized.sourceConfig.outboardCells }),
+    ...(resized.sourceConfig?.hexRowOffset !== undefined && { hexRowOffset: resized.sourceConfig.hexRowOffset }),
+    ...(resized.sourceConfig?.trianglePhase !== undefined && { trianglePhase: resized.sourceConfig.trianglePhase }) };
   for (const key of ['voidCells', 'disabledCells', 'outboardCells'] as const) {
     if (grid[key]) grid[key] = grid[key]!.filter(id => state.useTopology ? full.cells.has(id) : getCellIndexById(id, grid) !== null);
   }
@@ -111,13 +121,14 @@ function editGridExtent(state: PuzzleStore, newGrid: GridConfig): Partial<Puzzle
   const retainVertexNotes = (layer: typeof state.puzzle.answer) => ({ ...layer,
     ...(layer.vertexSurfaces && { vertexSurfaces: retainTopologyElements(layer, before, topology).vertexSurfaces }),
   });
-  const puzzle = state.useTopology ? filtered : { ...state.puzzle,
+  const gridTriangle = !state.useTopology && grid.gridType === 'triangle';
+  const puzzle = state.useTopology ? filtered : gridTriangle ? retainGridTrianglePuzzle(state.puzzle, before, topology, state.grid, grid) : { ...state.puzzle,
     problem: retainVertexNotes(state.puzzle.problem), answer: retainVertexNotes(state.puzzle.answer) };
   const liveElements = new Set([puzzle.problem, puzzle.answer].flatMap(layer =>
     Object.values(layer).flatMap(collection => collection && typeof collection === 'object' ? Object.keys(collection) : [])));
   return { grid, topology, puzzle,
     trialStack: state.trialStack.map(layer => state.useTopology
-      ? retainTopologyElements(layer, before, topology) : retainVertexNotes(layer)),
+      ? retainTopologyElements(layer, before, topology) : gridTriangle ? retainGridTriangleElements(layer, before, topology, state.grid, grid) : retainVertexNotes(layer)),
     selectedElements: state.selectedElements.filter(id => liveElements.has(id)),
     hoverCell: state.hoverCell && full.cells.has(state.hoverCell) ? state.hoverCell : null,
     cursorCell: state.cursorCell && full.cells.has(state.cursorCell) ? state.cursorCell : null,
@@ -159,12 +170,13 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       if (Object.keys(gridUpdate).length === 1 && Object.prototype.hasOwnProperty.call(gridUpdate, 'sculptOperations') && !gridUpdate.sculptOperations?.length) {
         return recordGeometryEdit(state, clearSculptOperations(state), 'Clear sculpt operations');
       }
-      const newGrid = { ...state.grid, ...gridUpdate };
+      const newGrid = normalizeTriangleColumns({ ...state.grid, ...gridUpdate }, state.useTopology);
       if (Object.keys(gridUpdate).length === 1 && Object.prototype.hasOwnProperty.call(gridUpdate, 'mergedCells')) {
         return recordGeometryEdit(state, setMergedCellGroups(state, gridUpdate.mergedCells), 'Edit cell merges');
       }
       const extentEdit = editGridExtent(state, newGrid);
       if (extentEdit) return recordGeometryEdit(state, extentEdit, 'Resize board');
+      if (state.topology && isIsometricExtentChange(state.grid, newGrid)) return {};
       const forceTopology = newGrid.gridType === 'penrose_P3';
       const nextUseTopology = forceTopology ? true : state.useTopology;
       const changedTopologyKeys = Object.keys(gridUpdate).filter(key => TOPOLOGY_KEYS.has(key)
@@ -221,6 +233,15 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
         ? recordGeometryEdit(state, result, hasLayoutChange ? 'Change board layout' : 'Change cell exclusions') : result;
     }),
 
+  setBoardRotation: (angle) => set((state) => {
+    if (!Number.isFinite(angle)) return {};
+    const before = normalizeBoardRotation(state.grid.boardRotation);
+    const after = normalizeBoardRotation(angle);
+    if (before === after) return {};
+    state.historyManager.addAction({ type: 'SET_BOARD_ROTATION', before, after });
+    return { grid: { ...state.grid, boardRotation: after } };
+  }),
+
   // Topology mode
   useTopology: true,
   setUseTopology: (useTopology) => {
@@ -265,13 +286,14 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
   // Preview topology
   previewTopology: null,
   previewGrid: null,
+  previewState: null,
 
   setPreviewGrid: (config) => {
     if (config === null) {
-      set({ previewTopology: null, previewGrid: null });
+      set({ previewTopology: null, previewGrid: null, previewState: null });
     } else {
       const state = get();
-      const previewGridConfig: GridConfig = {
+      const previewGridConfig: GridConfig = normalizeTriangleColumns({
         ...state.grid,
         gridType: config.gridType,
         rows: config.rows,
@@ -280,21 +302,30 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
         ...(config.level !== undefined && { level: config.level }),
         ...(config.isometricFaces !== undefined && { isometricFaces: config.isometricFaces }),
         ...(config.isometricView !== undefined && { isometricView: config.isometricView }),
-      };
+      }, state.useTopology);
       const appliedPreset = state.topology?.appliedPreset;
       const presetChanged = appliedPreset && (appliedPreset.preset !== state.topologyPreset || appliedPreset.intensity !== state.topologyIntensity);
       const layoutOnly = Object.entries(previewGridConfig).every(([key, value]) =>
         key === 'cellSize' || key === 'outerPadding'
         || JSON.stringify(value) === JSON.stringify(state.grid[key as keyof GridConfig]));
-      const extentPreview = editGridExtent(state, previewGridConfig)?.topology;
+      const extentEdit = editGridExtent(state, previewGridConfig);
+      const extentPreview = extentEdit?.topology;
       const layout = layoutOnly && state.topology ? scaleTopologyLayout(state.topology, state.grid, previewGridConfig) : null;
       const previewTopo = extentPreview ?? (layout
         ? (presetChanged ? applyTopologyPreset(layout, { preset: state.topologyPreset, intensity: state.topologyIntensity }) : layout)
-        : state.topology?.editBase ? null : applyTopologyPreset(gridConfigToTopology(previewGridConfig), {
+        : state.topology?.editBase || (state.topology && isIsometricExtentChange(state.grid, previewGridConfig)) ? null : applyTopologyPreset(gridConfigToTopology(previewGridConfig), {
             preset: state.topologyPreset,
             intensity: state.topologyIntensity,
           }));
-      set({ previewTopology: previewTopo, previewGrid: previewGridConfig });
+      set({ previewTopology: previewTopo, previewGrid: extentEdit?.grid ?? previewGridConfig,
+        previewState: previewTopo ? {
+          source: { grid: state.grid, topology: state.topology, puzzle: state.puzzle, trialStack: state.trialStack, useTopology: state.useTopology,
+            topologyPreset: state.topologyPreset, topologyIntensity: state.topologyIntensity },
+          puzzle: extentEdit?.puzzle ?? state.puzzle,
+          trialStack: extentEdit?.trialStack ?? state.trialStack,
+          useTopology: previewGridConfig.gridType === 'penrose_P3' || state.useTopology,
+        } : null,
+      });
     }
   },
 
@@ -362,7 +393,7 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
   resizeGrid: (configChanges) => {
     const state = get();
     const oldConfig = state.grid;
-    const newConfig: GridConfig = { ...oldConfig, ...configChanges };
+    const newConfig: GridConfig = normalizeTriangleColumns({ ...oldConfig, ...configChanges }, state.useTopology);
     if (!state.useTopology) {
       get().setGrid(configChanges);
       return;
@@ -379,7 +410,7 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       return;
     }
 
-    if (state.topology?.editBase) return;
+    if (state.topology?.editBase || (state.topology && isIsometricExtentChange(oldConfig, newConfig))) return;
     if (state.useTopology && state.topology) {
       const resizeResult = resizeTopology(state.topology, oldConfig, newConfig);
       const removedCellSet = new Set(resizeResult.removedCells);

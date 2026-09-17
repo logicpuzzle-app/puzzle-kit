@@ -85,7 +85,7 @@ export const PropertiesPanel: React.FC<{ suspended?: boolean }> = ({ suspended }
         )}
 
         {/* Arrow direction panel - for direc/number modes in constraint-enabled state */}
-        {!isSolving && !isSolverMode && !isSpecificMode && isConstraintEnabled &&
+        {currentSchemaId !== 'kakuro' && !isSolving && !isSolverMode && !isSpecificMode && isConstraintEnabled &&
          (currentInputMode === 'direc' || currentInputMode === 'number' || currentInputMode === 'number-') && (
           <div className="p-2 bg-gray-50 rounded-sm border border-gray-200">
             <div className="font-medium text-xs text-gray-700 mb-2">

@@ -33,7 +33,7 @@ it('migrates scoped annotations, genre data and trial snapshots without changing
   const p = store.getState().puzzle;
   store.setState({ puzzle: { ...p,
     problem: { ...p.problem, roomMap: { 'cell-0-0': 4, 'cell-2-2': 8 },
-      clueCells: { clue: { cellId: 'cell-2-2', horizontal: 12 } },
+      clueCells: { clue: { id: 'clue', cellId: 'cell-2-2', horizontal: 12, vertical: null } },
       borders: { border: { edgeId: 'border|0' } },
       lineGroups: { group: { id: 'group', lineIds: [mixed], groupType: 'arrow', layer: 'problem' } },
     },

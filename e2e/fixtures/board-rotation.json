@@ -1,0 +1,54 @@
+{
+  "version": "1.1.0",
+  "grid": {
+    "rows": 2,
+    "cols": 3,
+    "cellSize": 40,
+    "outerPadding": 20,
+    "gridType": "square",
+    "showGrid": true,
+    "gridStyle": "normal",
+    "frameStyle": "normal",
+    "backgroundColor": "#ffffff",
+    "boardRotation": 90,
+    "gridColor": "#000000",
+    "frameColor": "#000000"
+  },
+  "state": {
+    "problem": {
+      "surfaces": {
+        "fixture-red": {
+          "id": "fixture-red",
+          "cellId": "cell-0-0",
+          "layer": "problem",
+          "color": "#ff0000"
+        }
+      },
+      "lines": {},
+      "edges": {},
+      "walls": {},
+      "numbers": {},
+      "symbols": {},
+      "cages": {},
+      "specials": {},
+      "boxLines": {}
+    },
+    "answer": {
+      "surfaces": {},
+      "lines": {},
+      "edges": {},
+      "walls": {},
+      "numbers": {},
+      "symbols": {},
+      "cages": {},
+      "specials": {},
+      "boxLines": {}
+    },
+    "multicolorSurfaces": {}
+  },
+  "topologySettings": {
+    "useTopology": true,
+    "topologyPreset": "square",
+    "topologyIntensity": 0.5
+  }
+}

@@ -2,10 +2,17 @@
  * Japanese translations for PuzzleKit
  */
 export const ja = {
+  'file.autoSaveFailed': '自動保存できませんでした。このページを開いたまま、ファイル → 保存で変更を保存してください。',
+  'file.retryAutoSave': '再試行',
   'surface.target': '塗りの対象',
   'surface.target.cell': 'マス',
   'surface.target.vertex': '頂点',
   'surface.vertexHint': '頂点の塗りはメモ表示です。正解判定の黒マス数などには含まれません。',
+  'grid.boardRotation': '盤面の回転（°）',
+  'grid.rotateMinus': '盤面を−15°回転',
+  'grid.rotatePlus': '盤面を+15°回転',
+  'grid.applyRotation': '角度を適用',
+  'grid.resetRotation': '0°に戻す',
   "size.largest": "最大",
   "symbol.size.object": "サイズを変更する記号",
   "symbol.size.new": "新しく配置する記号",
@@ -579,6 +586,14 @@ export const ja = {
   'tool.wall.normal': '壁',
 
   // Number tools
+  'tool.number.kakuro': 'カックロのヒント',
+  'kakuro.clue': '斜線セルのヒント',
+  'kakuro.selectCell': '正方形の盤面でセルを選択してください。',
+  'kakuro.across': '右への合計（右上）',
+  'kakuro.down': '下への合計（左下）',
+  'kakuro.blankHint': '0〜45。空欄・0は合計を制約しません。両方空欄でも斜線セルを保持します。',
+  'kakuro.apply': 'ヒントを適用',
+  'kakuro.remove': '斜線セルを解除',
   'tool.number.normal': '通常',
   'tool.number.directional': '矢印数字',
   'tool.number.large': '大',
@@ -716,6 +731,7 @@ export const ja = {
   'tool.number.center': '中央',
 
   // Symbol categories
+  'symbols.curves': '四分円・円弧',
   'symbols.battleships': 'バトルシップ',
   'symbols.shapes': '形状',
   'symbols.marks': 'マーク',
@@ -819,6 +835,9 @@ export const ja = {
   'gridEdit.restoreSplit': 'セルを復元',
   'gridEdit.restoreAllSplits': 'すべての分割を解除',
   'gridEdit.unsupportedSplitResize': 'この変更では現在の分割を保持できません。キャンセルするか、対象セルの分割を解除してから盤面を変更してください。',
+  'gridEdit.unsupportedResize': 'この盤面は現在の内容を保持したままサイズ変更できません。キャンセルすると元の盤面を保持します。',
+  'gridEdit.isometricResizeNotes': '削除されるセルや、面の接合部で分離・統合される頂点の注記は消去されます。支点を失う彫刻と、それに依存する編集も取り消されます。元に戻す操作で復元できます。',
+  'gridEdit.isometricFaceNotes': '面を非表示にすると、その面と他の面にまたがるセルも非表示になります。注記は保持され、関係する面をすべて表示すると戻ります。',
   'gridEdit.splitHelp': '境界の頂点から別の頂点へドラッグしてセルを分割します。分割後のセルを右クリックすると解除します。',
   'gridEdit.excludeHelp': 'セルをクリックすると除外、もう一度クリックすると復元します。',
   'gridEdit.mergedGroups': '結合グループ数',

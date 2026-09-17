@@ -1,6 +1,6 @@
 import { createTextColorResolver } from '../../utils/textContrast';
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { useCanvasRenderState } from '../../hooks/useCanvasRenderState';
 import { getCellCenter, getCellCorners, getCellIndexById } from '../../utils/gridUtils';
 import type { NumberElement, LayerType, Point } from '../../types';
 import type { TopologyVertex } from '../../utils/gridTopology';
@@ -26,7 +26,7 @@ const getFontSize = (size: 'large' | 'medium' | 'small', cellSize: number): numb
 type DominantBaseline = 'auto' | 'middle' | 'hanging' | 'ideographic';
 
 export const NumberLayer: React.FC<NumberLayerProps> = ({ layer }) => {
-  const { grid, puzzle, showProblemLayer, showAnswerLayer, trialStage, trialStack, useTopology, topology, currentSchemaId } = usePuzzleStore();
+  const { grid, puzzle, showProblemLayer, showAnswerLayer, trialStage, trialStack, useTopology, topology, currentSchemaId } = useCanvasRenderState();
   const { cellSize } = grid;
 
   const textColor = useMemo(() => createTextColorResolver(puzzle, showProblemLayer, showAnswerLayer, { backgroundColor: grid.backgroundColor, trialStage, trialStack }), [puzzle, showProblemLayer, showAnswerLayer, grid.backgroundColor, trialStage, trialStack]);

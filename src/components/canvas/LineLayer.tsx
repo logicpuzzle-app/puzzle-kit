@@ -1,6 +1,6 @@
 import { resolveLinePoints } from '../../utils/lineReferences';
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { useCanvasRenderState } from '../../hooks/useCanvasRenderState';
 import {
   resolveGridIdToPosition,
   parseEdgeId,
@@ -104,7 +104,7 @@ const findSharedEdgeMidpoint = (
 };
 
 export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
-  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology, highlightedLineIds, drawingLineIds } = usePuzzleStore();
+  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology, highlightedLineIds, drawingLineIds } = useCanvasRenderState();
 
   const isVisible =
     (layer === 'problem' && showProblemLayer) ||

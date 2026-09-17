@@ -7,7 +7,7 @@ import { resolveSymbolSize } from '../../utils/symbolSize';
  */
 
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { useCanvasRenderState } from '../../hooks/useCanvasRenderState';
 import { resolveGridIdToPosition, parseEdgeId } from '../../utils/gridIds';
 import {
   getCellCenter,
@@ -73,7 +73,7 @@ const getPointPosition = (
 };
 
 export const SolverLayer: React.FC = () => {
-  const { grid, isSolverMode, solverResult, isPartialResult, useTopology, topology } = usePuzzleStore();
+  const { grid, isSolverMode, solverResult, isPartialResult, useTopology, topology } = useCanvasRenderState();
 
   const activeTopology = useTopology ? topology : null;
   const { cellSize, outerPadding, rows, cols } = grid;

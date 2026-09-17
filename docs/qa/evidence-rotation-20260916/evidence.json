@@ -1,0 +1,239 @@
+{
+  "before": {
+    "commit": "2396c889a3c1b5ee06c79e7dfeaa1cdb3231636e",
+    "createdAt": "2026-09-16T00:56:01.205Z",
+    "runner": "Playwright, Vite dev server; published Chromium desktop / Pixel 7 recordings; additional WebKit checks in after run",
+    "stats": {
+      "startTime": "2026-09-16T00:56:01.703Z",
+      "duration": 3594.612,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "testSha256": "7eed88e0c3372a121e6c5e61295b004d85d720805cb012f364570da7210403dc",
+    "fixtureSha256": "c5c7d159fb5aa1fd014e681c91a06f99b90c099218fe0f1020dfae69d7b83b27",
+    "tests": [
+      {
+        "title": "#6 board rotation: controls, input, history, persistence and image export",
+        "project": "chromium",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Expected rotated PNG 120×160 with red top-right; baseline exports 160×120 with red top-left."
+      },
+      {
+        "title": "#6 board rotation: controls, input, history, persistence and image export",
+        "project": "mobile-chrome",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Expected rotated PNG 120×160 with red top-right; baseline exports 160×120 with red top-left."
+      }
+    ]
+  },
+  "after": {
+    "commit": "2f1ba9eb3de2258f9164913b3f51898052ffae42",
+    "createdAt": "2026-09-16T00:55:27.724Z",
+    "runner": "Playwright, Vite dev server; published Chromium desktop / Pixel 7 recordings; additional WebKit checks in after run",
+    "stats": {
+      "startTime": "2026-09-16T00:55:28.104Z",
+      "duration": 12029.805,
+      "expected": 5,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "testSha256": "7eed88e0c3372a121e6c5e61295b004d85d720805cb012f364570da7210403dc",
+    "fixtureSha256": "c5c7d159fb5aa1fd014e681c91a06f99b90c099218fe0f1020dfae69d7b83b27",
+    "tests": [
+      {
+        "title": "#6 board rotation: controls, input, history, persistence and image export",
+        "project": "chromium",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "#6 Paint: rotated image handles and dragging follow the visible image",
+        "project": "chromium",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "#6 board rotation: controls, input, history, persistence and image export",
+        "project": "mobile-chrome",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "#6 board rotation: controls, input, history, persistence and image export",
+        "project": "webkit",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "#6 Paint: rotated image handles and dragging follow the visible image",
+        "project": "webkit",
+        "status": "passed",
+        "runtimeErrors": []
+      }
+    ],
+    "provenance": "Application src files exactly match 2f1ba9e. Only test artifact naming and same-frame Paint measurement changed after that commit; the exact test hash above is shared with the baseline capture."
+  },
+  "fixture": "Synthetic native JSON: square 2×3, 40px cells, 20px padding, 90° rotation, one red surface. Same test also loads hex at 15°; separate Paint scenario uses a synthetic blue SVG.",
+  "scope": "Desktop uses mouse; mobile editor uses native touchscreen taps. Paint adjustment uses desktop mouse. Native JSON and image output supported; external Penpa/puzz.link rotation interchange is not implemented.",
+  "files": {
+    "after-chromium.png": {
+      "sha256": "06db1f22190e14ce0ea93ba7ce539e9e84bd97ea43d9e4cbee91b7da8fdf91f2",
+      "bytes": 43131
+    },
+    "after-chromium.webm": {
+      "sha256": "d4372da7447fa5dfe0f6fb5461029008aad6fbc26e99ab357989f5a4e64bbd6e",
+      "bytes": 107088,
+      "durationSeconds": 3.6,
+      "fullDecode": "passed"
+    },
+    "after-mobile-chrome.png": {
+      "sha256": "8e9e3d7848e0dca07660dc01933bc0e65564ab99c02927122ee54a914a3b905b",
+      "bytes": 76103
+    },
+    "after-mobile-chrome.webm": {
+      "sha256": "ff88292d25f0fa0bbbcf687b28addff31cd92571a5cbd9d8e5ac2f5d2fdd2142",
+      "bytes": 163563,
+      "durationSeconds": 3.76,
+      "fullDecode": "passed"
+    },
+    "after-paint.png": {
+      "sha256": "1aee8d916883888e0b3c31fbf7d32fa4405a818006c898225ea3185ef0fe4ae1",
+      "bytes": 41458
+    },
+    "after-paint.webm": {
+      "sha256": "19c0c6d6cb8e4c003f5f1905f9c0bb9f97dd2e2a15974f92fb008180c52e7e18",
+      "bytes": 101766,
+      "durationSeconds": 4.0,
+      "fullDecode": "passed"
+    },
+    "before-chromium.png": {
+      "sha256": "ef84b03d71aac81a919c9f3e0930b77f2a054ba70fa04fec853075426d2a6c7f",
+      "bytes": 43089
+    },
+    "before-chromium.webm": {
+      "sha256": "04b6cf2948c11a3d367054e728cc194e5fa07706ca06885013dffab73f26d891",
+      "bytes": 37719,
+      "durationSeconds": 3.0,
+      "fullDecode": "passed"
+    },
+    "before-mobile-chrome.png": {
+      "sha256": "867b0e5514e330ba31cc6cfc2c9a0f3618987137691b92759bae6ff40bc5fd6a",
+      "bytes": 76066
+    },
+    "before-mobile-chrome.webm": {
+      "sha256": "5832d940fc21b3cb693ccdd3a0c113e59c89ca9c475865cda7d08e1fb6064b4b",
+      "bytes": 67609,
+      "durationSeconds": 2.92,
+      "fullDecode": "passed"
+    },
+    "chromium-before-export.png": {
+      "sha256": "5a620bd4bae8d975807866ed89a84bf298ba3afcbd182460cef7f0fa1d29e5e0",
+      "bytes": 1052
+    },
+    "chromium-edited-rotation.png": {
+      "sha256": "8b253fd955cbb4d3218a7d8ca798e2f9552272430857cfd2c901e04739f42031",
+      "bytes": 29088
+    },
+    "chromium-hex-rotation.png": {
+      "sha256": "733b56b098314c3ed9af1dc6b92a4072a3d96e6c615c417a2104b0f443f4b0c8",
+      "bytes": 34294
+    },
+    "chromium-rotated-board.png": {
+      "sha256": "d392b2bb9ed82ae1c2a2b17f8b9019f11d9b33c08aef3945c117fd7b701ae0f4",
+      "bytes": 1089
+    },
+    "chromium-rotated-board.svg": {
+      "sha256": "df0df2da98922b413349364e40ab8ad8ff983ede78731158d72b711bb7ea492e",
+      "bytes": 3215
+    },
+    "chromium-rotation-controls.png": {
+      "sha256": "f6b2be670bd5da225fa4d212a66f66b03c9086e54d9ba621c36305a50a3df8f6",
+      "bytes": 54226
+    },
+    "mobile-chrome-before-export.png": {
+      "sha256": "5a620bd4bae8d975807866ed89a84bf298ba3afcbd182460cef7f0fa1d29e5e0",
+      "bytes": 1052
+    },
+    "mobile-chrome-edited-rotation.png": {
+      "sha256": "ed14e32fc15df1d6648a0bc5d2865281508e07d35cc8ff2efcd6f0b35be4b2cb",
+      "bytes": 66927
+    },
+    "mobile-chrome-hex-rotation.png": {
+      "sha256": "aef53f6d78d4dcec1981c401eca8558e7dcde47d5add7e5959a571fff0956794",
+      "bytes": 77870
+    },
+    "mobile-chrome-rotated-board.png": {
+      "sha256": "d392b2bb9ed82ae1c2a2b17f8b9019f11d9b33c08aef3945c117fd7b701ae0f4",
+      "bytes": 1089
+    },
+    "mobile-chrome-rotated-board.svg": {
+      "sha256": "df0df2da98922b413349364e40ab8ad8ff983ede78731158d72b711bb7ea492e",
+      "bytes": 3215
+    },
+    "mobile-chrome-rotation-controls.png": {
+      "sha256": "59f5c66d5f7debe87ea68e274f7784960292135f87136a522512fc1930c33170",
+      "bytes": 85274
+    }
+  },
+  "validation": {
+    "unit": {
+      "passed": 593,
+      "files": 70
+    },
+    "developmentE2E": {
+      "passed": 157,
+      "skipped": 1
+    },
+    "productionE2E": {
+      "passed": 57,
+      "skipped": 1
+    },
+    "typecheck": "passed",
+    "e2eTypecheck": "passed",
+    "sourcemaps": "passed",
+    "appBuild": "passed",
+    "libraryBuild": "passed"
+  },
+  "galleryPlayback": [
+    {
+      "file": "before-chromium.webm",
+      "duration": 3,
+      "currentTime": 1.5,
+      "readyState": 4,
+      "error": null
+    },
+    {
+      "file": "after-chromium.webm",
+      "duration": 3.6,
+      "currentTime": 1.8,
+      "readyState": 4,
+      "error": null
+    },
+    {
+      "file": "before-mobile-chrome.webm",
+      "duration": 2.92,
+      "currentTime": 1.46,
+      "readyState": 4,
+      "error": null
+    },
+    {
+      "file": "after-mobile-chrome.webm",
+      "duration": 3.76,
+      "currentTime": 1.88,
+      "readyState": 4,
+      "error": null
+    },
+    {
+      "file": "after-paint.webm",
+      "duration": 4,
+      "currentTime": 2,
+      "readyState": 4,
+      "error": null
+    }
+  ]
+}
