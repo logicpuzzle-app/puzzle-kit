@@ -11,7 +11,7 @@ import { KakuroClueLayer } from './KakuroClueLayer';
 
 import React, { useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { useCanvasRenderState } from '../../hooks/useCanvasRenderState';
 import { getBoardLayout } from '../../utils/boardLayout';
 import { getHexGridDimensions } from '../../utils/hexGridUtils';
 import type { NumberClickInfo, TextClickInfo } from '../../types/canvasInput';
@@ -79,7 +79,7 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
     trialStage,
     setZoom,
     setPan,
-  } = usePuzzleStore();
+  } = useCanvasRenderState();
 
   // Trial mode opacity for current answer layer:
   // - Not in trial: 100%

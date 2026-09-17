@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { useCanvasRenderState } from '../../hooks/useCanvasRenderState';
 import { BackgroundImageLayer } from './grid/BackgroundImageLayer';
 
 function isSudokuBoldLine(
@@ -22,7 +22,7 @@ function isSudokuBoldLine(
  * SquareGrid - Renders a standard square grid
  */
 export const SquareGrid: React.FC = () => {
-  const { grid } = usePuzzleStore();
+  const { grid } = useCanvasRenderState();
   const {
     rows,
     cols,
@@ -283,7 +283,7 @@ export const SquareGrid: React.FC = () => {
  * SquareGridBackground - Renders only the background
  */
 export const SquareGridBackground: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
-  const { grid } = usePuzzleStore();
+  const { grid } = useCanvasRenderState();
   const {
     rows,
     cols,
@@ -329,7 +329,7 @@ export const SquareGridBackground: React.FC<{ children?: React.ReactNode }> = ({
  * SquareGridLines - Renders only the grid lines and frame
  */
 export const SquareGridLines: React.FC = () => {
-  const { grid } = usePuzzleStore();
+  const { grid } = useCanvasRenderState();
   const {
     rows,
     cols,

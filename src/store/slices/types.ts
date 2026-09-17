@@ -115,6 +115,13 @@ export interface GridSlice {
   // Preview topology
   previewTopology: GridTopology | null;
   previewGrid: GridConfig | null;
+  /** Ephemeral render projection, valid only for the captured source objects. */
+  previewState: {
+    source: Pick<PuzzleStore, 'grid' | 'topology' | 'puzzle' | 'trialStack' | 'useTopology' | 'topologyPreset' | 'topologyIntensity'>;
+    puzzle: PuzzleState;
+    trialStack: PuzzleElements[];
+    useTopology: boolean;
+  } | null;
   setPreviewGrid: (config: {
     gridType: import('../../types').GridType;
     rows: number;

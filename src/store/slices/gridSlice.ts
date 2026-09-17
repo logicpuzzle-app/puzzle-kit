@@ -286,10 +286,11 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
   // Preview topology
   previewTopology: null,
   previewGrid: null,
+  previewState: null,
 
   setPreviewGrid: (config) => {
     if (config === null) {
-      set({ previewTopology: null, previewGrid: null });
+      set({ previewTopology: null, previewGrid: null, previewState: null });
     } else {
       const state = get();
       const previewGridConfig: GridConfig = normalizeTriangleColumns({
@@ -307,7 +308,8 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
       const layoutOnly = Object.entries(previewGridConfig).every(([key, value]) =>
         key === 'cellSize' || key === 'outerPadding'
         || JSON.stringify(value) === JSON.stringify(state.grid[key as keyof GridConfig]));
-      const extentPreview = editGridExtent(state, previewGridConfig)?.topology;
+      const extentEdit = editGridExtent(state, previewGridConfig);
+      const extentPreview = extentEdit?.topology;
       const layout = layoutOnly && state.topology ? scaleTopologyLayout(state.topology, state.grid, previewGridConfig) : null;
       const previewTopo = extentPreview ?? (layout
         ? (presetChanged ? applyTopologyPreset(layout, { preset: state.topologyPreset, intensity: state.topologyIntensity }) : layout)
@@ -315,7 +317,15 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
             preset: state.topologyPreset,
             intensity: state.topologyIntensity,
           }));
-      set({ previewTopology: previewTopo, previewGrid: previewGridConfig });
+      set({ previewTopology: previewTopo, previewGrid: extentEdit?.grid ?? previewGridConfig,
+        previewState: previewTopo ? {
+          source: { grid: state.grid, topology: state.topology, puzzle: state.puzzle, trialStack: state.trialStack, useTopology: state.useTopology,
+            topologyPreset: state.topologyPreset, topologyIntensity: state.topologyIntensity },
+          puzzle: extentEdit?.puzzle ?? state.puzzle,
+          trialStack: extentEdit?.trialStack ?? state.trialStack,
+          useTopology: previewGridConfig.gridType === 'penrose_P3' || state.useTopology,
+        } : null,
+      });
     }
   },
 

@@ -1,8 +1,8 @@
-import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { useCanvasRenderState } from '../../hooks/useCanvasRenderState';
 import { kakuroCellCorners } from '../../utils/kakuroGeometry';
 
 export function KakuroClueLayer() {
-  const { grid, puzzle, showProblemLayer, useTopology, topology } = usePuzzleStore();
+  const { grid, puzzle, showProblemLayer, useTopology, topology } = useCanvasRenderState();
   if (!showProblemLayer || grid.gridType !== 'square') return null;
   return <g className="kakuro-clue-layer" pointerEvents="none">
     {Object.values(puzzle.problem.clueCells ?? {}).map(clue => {

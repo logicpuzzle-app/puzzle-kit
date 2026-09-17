@@ -7,7 +7,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { useCanvasRenderState } from '../../hooks/useCanvasRenderState';
 import type { TopologyVertex } from '../../utils/gridTopology';
 import { getCellCorners, getCellId, getCellIndexById } from '../../utils/gridUtils';
 
@@ -29,7 +29,7 @@ export const SolutionAreaMaskLayer: React.FC<SolutionAreaMaskLayerProps> = ({
   maskOpacity = 0.3,
   maskColor = '#888888',
 }) => {
-  const { grid, puzzle, useTopology, topology } = usePuzzleStore();
+  const { grid, puzzle, useTopology, topology } = useCanvasRenderState();
   const solutionArea = puzzle.solutionArea;
 
   const { cellData, nonSolutionCellIds } = useMemo(() => {
@@ -130,7 +130,7 @@ export const SolutionAreaBorderLayer: React.FC<SolutionAreaBorderLayerProps> = (
   visible = true,
   borderColor = '#0000ff',
 }) => {
-  const { grid, puzzle, useTopology, topology } = usePuzzleStore();
+  const { grid, puzzle, useTopology, topology } = useCanvasRenderState();
   const solutionArea = puzzle.solutionArea;
 
   const boundaryEdges = useMemo(() => {

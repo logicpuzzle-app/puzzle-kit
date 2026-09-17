@@ -7,12 +7,14 @@ for (const kind of ['mixed', 'rotate', 'cut'] as const) {
     const fixture = isometricEditedFixture(kind);
     await page.goto('/master'); await openPuzzleFile(page, Buffer.from(JSON.stringify(fixture)));
     const note = page.locator('.vertex-surface-layer-answer [data-vertex-surface="corner/roof|β"]');
+    const fill = page.locator('.surface-layer-answer polygon');
     await expect(note).toBeVisible();
     await expect(page.locator('.number-layer-problem')).toContainText('23');
+    const originalFill = kind === 'mixed' ? await fill.getAttribute('points') : null;
     const original = await savePuzzleFile(page);
     await page.screenshot({ path: info.outputPath('original.png') });
     const close = page.getByTitle('Close', { exact: true });
-    const change = async (label: string, value?: string) => {
+    const change = async (label: string, value?: string, faceVisible?: boolean) => {
       if (await close.isVisible()) await close.click();
       await page.getByRole('button', { name: 'Problem', exact: true }).click();
       await page.getByRole('button', { name: 'Grid', exact: true }).click();
@@ -23,8 +25,25 @@ for (const kind of ['mixed', 'rotate', 'cut'] as const) {
       if (value) await page.getByText(label, { exact: true }).locator('..').getByRole('spinbutton').fill(value);
       else await page.getByRole('button', { name: label, exact: true }).click();
       const apply = page.getByRole('button', { name: 'Apply', exact: true });
-      // Capture the unchanged baseline and rejection message before assertion.
-      if (value) await page.screenshot({ path: info.outputPath('preview.png') });
+      // Wait for the button's color transition so visual evidence represents
+      // the settled pending state rather than an intermediate CSS frame.
+      await page.waitForTimeout(200);
+      await page.screenshot({ path: info.outputPath(value ? 'extent-preview.png'
+        : `faces-${faceVisible ? 'restored' : 'hidden'}-preview.png`) });
+      if (kind === 'mixed' && value) {
+        const previewFill = await fill.getAttribute('points');
+        expect.soft(previewFill, 'the fill follows its cell during preview').not.toBe(originalFill);
+      }
+      if (!value && label === 'Top') {
+        const number = page.locator('.number-layer-problem');
+        if (faceVisible) {
+          await expect.soft(number, 'restored-face number returns during preview').toContainText('23', { timeout: 1_000 });
+          await expect.soft(note, 'restored-face vertex fill returns during preview').toHaveCount(1, { timeout: 1_000 });
+        } else {
+          await expect.soft(number, 'hidden-face number is removed during preview').not.toContainText('23', { timeout: 1_000 });
+          await expect.soft(note, 'hidden-face vertex fill is removed during preview').toHaveCount(0, { timeout: 1_000 });
+        }
+      }
       await expect(apply).toBeEnabled();
       await apply.click();
       if (await close.isVisible()) await close.click();
@@ -40,12 +59,12 @@ for (const kind of ['mixed', 'rotate', 'cut'] as const) {
     expect((await savePuzzleFile(page)).topologySettings!.topology).toEqual(original.topologySettings!.topology);
     await page.getByTitle(/Redo/).first().click();
     await openPuzzleFile(page, Buffer.from(JSON.stringify(resized)));
-    await change('Top');
+    await change('Top', undefined, false);
     await expect(page.locator('.number-layer-problem')).not.toContainText('23');
     const hidden = await savePuzzleFile(page);
     expect(hidden.state).toEqual(fixture.state);
     await openPuzzleFile(page, Buffer.from(JSON.stringify(hidden)));
-    await change('Top');
+    await change('Top', undefined, true);
     await expect(page.locator('.number-layer-problem')).toContainText('23');
     await expect(note).toBeVisible();
     expect((await savePuzzleFile(page)).state).toEqual(fixture.state);

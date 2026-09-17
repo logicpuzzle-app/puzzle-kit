@@ -197,5 +197,5 @@ export function migrateReferenceMode(state: PuzzleStore, useTopology: boolean): 
   }
   return { useTopology, grid, topology: nextTopology, puzzle, trialStack: state.trialStack.map(elements),
     selectedElements: [], annotationSelection: null, highlightedLineIds: [], drawingLineIds: [],
-    previewGrid: null, previewTopology: null, hoverCell: null, cursorCell: null, numberSelection: null };
+    previewGrid: null, previewTopology: null, previewState: null, hoverCell: null, cursorCell: null, numberSelection: null };
 }

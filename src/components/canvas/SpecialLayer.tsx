@@ -1,7 +1,7 @@
 import { getEditableDataLayer } from '../../utils/editPolicy';
 import { resolveGridIdToPosition } from '../../utils/gridIds';
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { useCanvasRenderState } from '../../hooks/useCanvasRenderState';
 import { getCellCenter, getCellCorners, getCellIndexById } from '../../utils/gridUtils';
 import type { CageElement, SpecialElement, LayerType, GridConfig } from '../../types';
 import type { GridTopology, TopologyVertex } from '../../utils/gridTopology';
@@ -381,7 +381,7 @@ const PolygonRenderer: React.FC<{
 };
 
 export const SpecialLayer: React.FC<SpecialLayerProps> = ({ layer }) => {
-  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology, selectedElements, activeLayer, isPlayerMode, toolSettings } = usePuzzleStore();
+  const { grid, puzzle, showProblemLayer, showAnswerLayer, useTopology, topology, selectedElements, activeLayer, isPlayerMode, toolSettings } = useCanvasRenderState();
 
   const isVisible =
     (layer === 'problem' && showProblemLayer) ||

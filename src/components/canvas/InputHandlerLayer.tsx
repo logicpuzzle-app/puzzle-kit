@@ -13,6 +13,7 @@ import { getVertexSurfaceRegion, usesVertexSurface } from '../../utils/vertexSur
 import { getBoardLayout } from '../../utils/boardLayout';
 import React, { useMemo, RefObject } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { useCanvasRenderState } from '../../hooks/useCanvasRenderState';
 import { useCanvasInputRouter } from '../../hooks/useCanvasInputRouter';
 import { useCellFinder } from '../../hooks/useCellFinder';
 import { useSpecialPreview } from '../../hooks/useSpecialPreview';
@@ -64,7 +65,7 @@ export const InputHandlerLayer: React.FC<InputHandlerLayerProps> = ({
     gridEditMode,
     currentInputMode,
     activeLayer,
-  } = usePuzzleStore();
+  } = useCanvasRenderState();
 
   // Excel-like keyboard input for number tools
   useNumberKeyboard();

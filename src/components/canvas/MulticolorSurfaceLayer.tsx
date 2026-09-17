@@ -7,7 +7,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { useCanvasRenderState } from '../../hooks/useCanvasRenderState';
 import { getPenpaColor } from '../../types/penpaElements';
 import type { DataLayerType, MulticolorSurfaceElement } from '../../types';
 import type { TopologyVertex } from '../../utils/gridTopology';
@@ -243,7 +243,7 @@ export const MulticolorSurfaceLayer: React.FC<MulticolorSurfaceLayerProps> = ({
   visible = true,
   layer,
 }) => {
-  const { grid, puzzle, useTopology, topology, showProblemLayer, showAnswerLayer } = usePuzzleStore();
+  const { grid, puzzle, useTopology, topology, showProblemLayer, showAnswerLayer } = useCanvasRenderState();
   const multicolorSurfaces = puzzle.multicolorSurfaces;
 
   const cellData = useMemo(() => {

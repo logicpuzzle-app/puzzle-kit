@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { usePuzzleStore } from '../../store/puzzleStoreContext';
+import { useCanvasRenderState } from '../../hooks/useCanvasRenderState';
 
 /**
  * AdjacencyOverlay - Draws dotted lines between adjacent cell centers
@@ -13,7 +13,7 @@ export const AdjacencyOverlay: React.FC = () => {
     previewTopology,
     useTopology,
     grid,
-  } = usePuzzleStore();
+  } = useCanvasRenderState();
 
   // Use preview topology if available
   const topology = previewTopology ?? storeTopology;

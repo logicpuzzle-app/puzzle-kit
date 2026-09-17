@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { usePuzzleStore } from '../store/puzzleStoreContext';
+import { useCanvasRenderState } from './useCanvasRenderState';
 import { constraintCatalog } from '../constraints/ConstraintCatalog';
 import { getHighlightProvider, mergeHighlightOutputs, type HighlightContext, type HighlightOutput } from '../constraints/highlights';
 import type { InputMode } from '../constraints/types';
@@ -16,7 +16,7 @@ export const useHighlightOutput = (): HighlightOutput | null => {
     isHighlightRuleEnabled,
     useTopology,
     topology,
-  } = usePuzzleStore();
+  } = useCanvasRenderState();
 
   return useMemo(() => {
     if (!showConstraintLayer || !currentSchemaId) return null;
