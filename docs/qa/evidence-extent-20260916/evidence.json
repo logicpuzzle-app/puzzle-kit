@@ -1,0 +1,114 @@
+{
+  "before": {
+    "commit": "2be0bf5d7de669cdd91fe5b52388effc11e2e53d",
+    "createdAt": "2026-09-16T03:21:17.416Z",
+    "runner": "Playwright + Chromium, Vite dev server; desktop mouse / Pixel 7 native touch",
+    "stats": {
+      "startTime": "2026-09-16T03:21:18.184Z",
+      "duration": 15198.847,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "testSha256": "e2dbe242af257c55658033da3e224fdccf9a84381e41553e4c34dbda751a943f",
+    "fixtureSha256": "ab2546d503c6aea7579687b6c41505755298af41ec5156df808f46013b544859",
+    "tests": [
+      {
+        "title": "column edits preserve opaque board references, shared borders, history and native files @production",
+        "project": "chromium",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Adding a column regenerates node IDs; the opaque-ID shade, clue and blue edge disappear."
+      },
+      {
+        "title": "column edits preserve opaque board references, shared borders, history and native files @production",
+        "project": "mobile-chrome",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Adding a column regenerates node IDs; the opaque-ID shade, clue and blue edge disappear."
+      }
+    ]
+  },
+  "after": {
+    "commit": "42e4e064a52a61034ac9170fecb8c8351db2740a",
+    "createdAt": "2026-09-16T03:28:01.985Z",
+    "runner": "Playwright + Chromium, Vite dev server; desktop mouse / Pixel 7 native touch",
+    "stats": {
+      "startTime": "2026-09-16T03:28:02.355Z",
+      "duration": 3877.274,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "testSha256": "e2dbe242af257c55658033da3e224fdccf9a84381e41553e4c34dbda751a943f",
+    "fixtureSha256": "ab2546d503c6aea7579687b6c41505755298af41ec5156df808f46013b544859",
+    "tests": [
+      {
+        "title": "column edits preserve opaque board references, shared borders, history and native files @production",
+        "project": "chromium",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "column edits preserve opaque board references, shared borders, history and native files @production",
+        "project": "mobile-chrome",
+        "status": "passed",
+        "runtimeErrors": []
+      }
+    ]
+  },
+  "fixture": "Synthetic 2x2 square board with opaque cell/vertex/edge IDs, explicit cell indices, a rotated boundary list, pink lower-left shade, clue 17, blue bottom edge and green shared edge.",
+  "scope": "Columns 2 to 3: retain all original vertices, annotations, Undo/Redo and file reload. Paint a newly added cell with desktop mouse / native mobile touch. Columns 3 to 1: remove that paint but retain the shared edge, original shade and clue, including reload. Unit coverage additionally checks margins, exclusions, trials and no deleted-ID reuse.",
+  "files": {
+    "after-chromium-trimmed.png": {
+      "sha256": "efb8030c4ac124b3d1f8619c5a2f5dc8ba9aea81e7f12408cd1eadf203c47420",
+      "bytes": 29849
+    },
+    "after-chromium.png": {
+      "sha256": "0f3b6ef9f83c65974590c98a846270de147bcc4019b579400147e79c25c53fcd",
+      "bytes": 30144
+    },
+    "after-chromium.webm": {
+      "sha256": "6b86a709597bbf4635e43edadc7478bd96ad80d9e5fdb4c25529d6162419ade4",
+      "bytes": 71537,
+      "durationSeconds": 3.64,
+      "fullDecode": "passed"
+    },
+    "after-mobile-chrome-trimmed.png": {
+      "sha256": "055d3c446453c87ce0749c88a2c4950d687c49dd91c8dade7adb62f2cbf6c5c9",
+      "bytes": 77708
+    },
+    "after-mobile-chrome.png": {
+      "sha256": "511bc939314dcdb895134e33a774877472503135afe42a1b24ddb0d97491e3b1",
+      "bytes": 78077
+    },
+    "after-mobile-chrome.webm": {
+      "sha256": "5a179d936d8e8556af10fead1a04c0808013064ec781d8e4694ae60bae871adc",
+      "bytes": 180246,
+      "durationSeconds": 3.76,
+      "fullDecode": "passed"
+    },
+    "before-chromium.png": {
+      "sha256": "b3499a3dfd7b6f4af91806408a5ffc2b33c29dfa57a9ed5511569e3d5b335d9d",
+      "bytes": 29787
+    },
+    "before-chromium.webm": {
+      "sha256": "7aac1d173d5e0e675c5ae09c6ba1c845132bfb5812a7c6f998477f2210ad25b4",
+      "bytes": 147118,
+      "durationSeconds": 15.68,
+      "fullDecode": "passed"
+    },
+    "before-mobile-chrome.png": {
+      "sha256": "9e844b7e05002bf16a6798bca33dc822f9542f03f7de371a120970cda24d0362",
+      "bytes": 77379
+    },
+    "before-mobile-chrome.webm": {
+      "sha256": "f278453978db19b14fc9c0af077d6ce2d6868e5f00eaa114b04eb6c5dfb2c56b",
+      "bytes": 217066,
+      "durationSeconds": 15.6,
+      "fullDecode": "passed"
+    }
+  }
+}

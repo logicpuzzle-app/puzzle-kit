@@ -741,6 +741,7 @@ export const ja = {
   'grid.height': '高さ',
   'grid.level': 'レベル',
   'grid.cellSize': 'セルサイズ',
+  'grid.shrinkNotice': '盤面を縮小すると、範囲外の数字・線・塗りも削除されます。',
   'grid.style': 'グリッドスタイル',
   'grid.style.normal': '通常',
   'grid.style.thick': '太線',

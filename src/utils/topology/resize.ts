@@ -7,6 +7,7 @@
 import type { GridConfig } from '../../types';
 import type { GridTopology, TopologyCell, TopologyVertex, TopologyEdge } from './types';
 import { gridConfigToTopology } from './converter';
+import { resizeSquareExtent } from './squareExtent';
 
 /**
  * Direction for adding/removing rows or columns
@@ -45,8 +46,10 @@ export function resizeTopology(
   oldConfig: GridConfig,
   newConfig: GridConfig
 ): ResizeResult {
-  // Create new topology
-  const newTopology = gridConfigToTopology(newConfig);
+  // The public API follows the same identity-preserving square edit as the UI.
+  // Other tilings still use the legacy generator until their edit semantics migrate.
+  const newTopology = resizeSquareExtent(oldTopology, oldConfig, newConfig)
+    ?? gridConfigToTopology(newConfig);
 
   const addedCells: string[] = [];
   const removedCells: string[] = [];
