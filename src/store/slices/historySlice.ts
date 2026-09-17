@@ -27,6 +27,8 @@ export const applyActionToState = (
   };
 
   switch (action.type) {
+    case 'EDIT_ROOM_BORDERS':
+      return { puzzle: { ...state.puzzle, problem: { ...state.puzzle.problem, ...action.after } } };
     case 'ADD_BOXLINE':
     case 'REMOVE_BOXLINE': {
       const layer = action.element.layer;
@@ -34,6 +36,14 @@ export const applyActionToState = (
       if (action.type === 'ADD_BOXLINE') boxLines[action.element.id] = action.element;
       else delete boxLines[action.id];
       return { puzzle: { ...state.puzzle, [layer]: { ...state.puzzle[layer], boxLines } } };
+    }
+    case 'ADD_VERTEX_SURFACE':
+    case 'REMOVE_VERTEX_SURFACE': {
+      const layer = action.element.layer;
+      const vertexSurfaces = { ...state.puzzle[layer].vertexSurfaces };
+      if (action.type === 'ADD_VERTEX_SURFACE') vertexSurfaces[action.element.id] = action.element;
+      else delete vertexSurfaces[action.id];
+      return { puzzle: { ...state.puzzle, [layer]: { ...state.puzzle[layer], vertexSurfaces } } };
     }
     case 'ADD_SURFACE': {
       const layer = action.element.layer;
@@ -300,12 +310,17 @@ export const applyActionToState = (
       return {
         puzzle: {
           ...state.puzzle,
-          [action.layer]: createEmptyElements(),
+          [action.layer]: action.restore ? action.previousState : createEmptyElements(),
         },
       };
     case 'EDIT_GRID_GEOMETRY':
       // Restore exact snapshots, including removal of optional geometry fields.
-      return { grid: action.after.grid, topology: action.after.topology, ...action.after.editingState };
+      return { grid: action.after.grid, topology: action.after.topology,
+        ...(action.after.topology?.appliedPreset && { topologyPreset: action.after.topology.appliedPreset.preset, topologyIntensity: action.after.topology.appliedPreset.intensity }),
+        ...(action.after.useTopology !== undefined && { useTopology: action.after.useTopology }),
+        ...(action.after.topologyPreset !== undefined && { topologyPreset: action.after.topologyPreset }),
+        ...(action.after.topologyIntensity !== undefined && { topologyIntensity: action.after.topologyIntensity }),
+        ...action.after.editingState };
     case 'SET_GRID':
       return {
         grid: { ...state.grid, ...action.grid },

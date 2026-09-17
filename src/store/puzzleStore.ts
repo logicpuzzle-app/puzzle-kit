@@ -50,6 +50,9 @@ const buildPuzzleStore = (
         rawSet(state => syncLitsRoomMap(state, typeof partial === 'function' ? partial(state) : partial));
       }
     };
+    // Public file/URL/autosave loaders use setState; they need the same room
+    // materialization as slice imports and history replay.
+    api.setState = set;
     args = [set, get, api];
 
     // Connect ActionExecutor to this store synchronously

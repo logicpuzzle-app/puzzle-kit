@@ -1,0 +1,119 @@
+{
+  "before": {
+    "commit": "5dce9b9b9510cf1e00a0ef166d3c6c25aa90adee",
+    "createdAt": "2026-09-16T09:39:13.591Z",
+    "stats": {
+      "startTime": "2026-09-16T09:39:14.157Z",
+      "duration": 14074.167,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "testSha256": "d3c6f4577e912fc94794c3b7aaa9099c9492965a18d330ba33b3bccdc0a0df7b",
+    "fixtureSha256": "0f4f6e54bce67bb3227aff9f55ba577d17f7095500b1c0d08c42cfae4517620f",
+    "tests": [
+      {
+        "title": "legacy excluded outboard settings restores its cut with stable notes through public files and history @production",
+        "project": "chromium",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Restore cell is unavailable: no structural source was migrated for the excluded board."
+      },
+      {
+        "title": "legacy excluded outboard settings restores its cut with stable notes through public files and history @production",
+        "project": "mobile-chrome",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Restore cell is unavailable: no structural source was migrated for the excluded board."
+      }
+    ]
+  },
+  "after": {
+    "commit": "31f41a50fa15791c471268a0ccd0c710693bb07b",
+    "createdAt": "2026-09-16T09:41:11.089Z",
+    "stats": {
+      "startTime": "2026-09-16T09:41:11.570Z",
+      "duration": 4152.644,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "testSha256": "d3c6f4577e912fc94794c3b7aaa9099c9492965a18d330ba33b3bccdc0a0df7b",
+    "fixtureSha256": "0f4f6e54bce67bb3227aff9f55ba577d17f7095500b1c0d08c42cfae4517620f",
+    "tests": [
+      {
+        "title": "legacy excluded outboard settings restores its cut with stable notes through public files and history @production",
+        "project": "chromium",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "legacy excluded outboard settings restores its cut with stable notes through public files and history @production",
+        "project": "mobile-chrome",
+        "status": "passed",
+        "runtimeErrors": []
+      }
+    ]
+  },
+  "scope": "Public File Open of a fixed legacy 1x6 board with stale outboard settings, an excluded merge member, two merges and an edge-interior cut. Preserve actual saved roles, all visible IDs/geometry/adjacency and notes 7/9/17; restore cut, Undo/Redo, native reload. Desktop mouse and Pixel 7 emulated touch, no application-state injection. Margin-derived role conflicts, disconnected/unverified graphs and sculpt remain pending.",
+  "files": {
+    "after-chromium-reloaded.png": {
+      "sha256": "bea01f83455c02f7583481aa3925af92a7af61caa7e61714c4b502535978da63",
+      "bytes": 30892
+    },
+    "after-chromium-restored.png": {
+      "sha256": "3acbedfb17ced0b4f6b052af5e08eafeba9f4931d48d0c3249d0e93040f32cc3",
+      "bytes": 30936
+    },
+    "after-chromium.png": {
+      "sha256": "0821e889c62476aff9fc16c7e8d78e5256bd6c453b7ad97037a64328e6832512",
+      "bytes": 58795
+    },
+    "after-chromium.webm": {
+      "sha256": "241361a524a58eacb187056bcc0db2dad429d7d11c45f72cfd339aab1a54ef48",
+      "bytes": 62381,
+      "durationSeconds": 3.44,
+      "fullDecode": "passed"
+    },
+    "after-mobile-chrome-reloaded.png": {
+      "sha256": "209f8c61ce88016351dee905f58ba67113627581cc1de072c4980ce1e170df10",
+      "bytes": 80230
+    },
+    "after-mobile-chrome-restored.png": {
+      "sha256": "08a3a62ba060777cd43d6cbc0de755e081e14e8cff2642e51cc0861a89138eb0",
+      "bytes": 79800
+    },
+    "after-mobile-chrome.png": {
+      "sha256": "2f93ac00d8d6351cc0f9727d036296e9ae54c5bfbd849e97687898260c159037",
+      "bytes": 106391
+    },
+    "after-mobile-chrome.webm": {
+      "sha256": "cc37d5e6b072751cb854e8be8f45593336e0221150d0423ba0c8acaa69a5f128",
+      "bytes": 170245,
+      "durationSeconds": 3.56,
+      "fullDecode": "passed"
+    },
+    "before-chromium.png": {
+      "sha256": "ed64c7d3eb60c1427c4f3f8a78c26980e1f7fc899ad2fb52ff8b97e01a536073",
+      "bytes": 61976
+    },
+    "before-chromium.webm": {
+      "sha256": "e70c7e81fe8112689c46c5e25408af2a9d74bc057320f1047cfc18404edaa4a7",
+      "bytes": 176908,
+      "durationSeconds": 14.28,
+      "fullDecode": "passed"
+    },
+    "before-mobile-chrome.png": {
+      "sha256": "6e839f93d5b9a9587bb3c15596503f4da5bab9547cde7277101eaf1e33771705",
+      "bytes": 111816
+    },
+    "before-mobile-chrome.webm": {
+      "sha256": "6f52ba4ddc795cf778d797ac2e7886f4c0999accdb20eb6419da421812d5dd04",
+      "bytes": 239345,
+      "durationSeconds": 14.32,
+      "fullDecode": "passed"
+    }
+  }
+}

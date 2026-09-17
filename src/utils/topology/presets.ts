@@ -97,7 +97,7 @@ function getPresetTransform(
         const nx = (x - centerX) / (width / 2);
         const ny = (y - centerY) / (height / 2);
         const dist = Math.sqrt(nx * nx + ny * ny);
-        if (dist === 0) return { x, y };
+        if (dist === 0 || intensity === 0) return { x, y };
         const maxRadius = Math.sqrt(2);
         const hyperbolicDist = Math.tanh(dist * intensity) / Math.tanh(maxRadius * intensity);
         const scale = hyperbolicDist / dist;
@@ -207,85 +207,67 @@ export function applyTopologyPreset(
   params: TopologyPresetParams
 ): GridTopology {
   const { preset, intensity = 0.5 } = params;
-  const bounds = baseTopology.bounds;
-  const centerX = params.centerX ?? (bounds.minX + bounds.maxX) / 2;
-  const centerY = params.centerY ?? (bounds.minY + bounds.maxY) / 2;
-
-  // Get transformation function based on preset
+  const bounds = baseTopology.exclusionBase?.deformationBounds ?? baseTopology.deformationBounds
+    ?? baseTopology.exclusionBase?.bounds ?? baseTopology.bounds;
   const transform = getPresetTransform(preset, {
     intensity,
-    centerX,
-    centerY,
-    width: bounds.width,
-    height: bounds.height,
-    direction: params.direction,
-    customTransform: params.customTransform,
+    centerX: params.centerX ?? (bounds.minX + bounds.maxX) / 2,
+    centerY: params.centerY ?? (bounds.minY + bounds.maxY) / 2,
+    width: bounds.width, height: bounds.height,
+    direction: params.direction, customTransform: params.customTransform,
   });
-
-  // Create new topology with transformed positions
+  const identity = preset === 'square' || preset === 'pyramid';
   const newCells = new Map<string, TopologyCell>();
   const newVertices = new Map<string, TopologyVertex>();
   const newEdges = new Map<string, TopologyEdge>();
-
-  // Transform vertices
+  // Keep the actual graph and its incidences. Every preset starts from the same
+  // stored geometry, so repeated Apply does not accumulate deformation.
   for (const [id, vertex] of baseTopology.vertices) {
-    const newPos = transform(vertex.position.x, vertex.position.y, vertex.row ?? 0, vertex.col ?? 0);
-    newVertices.set(id, {
-      ...vertex,
-      position: newPos,
+    const { basePosition, ...rest } = vertex;
+    const origin = basePosition ?? vertex.position;
+    newVertices.set(id, { ...rest,
+      position: transform(origin.x, origin.y, vertex.row ?? 0, vertex.col ?? 0),
+      ...(!identity && { basePosition: origin }),
     });
   }
-
-  // Transform cells (center positions)
   for (const [id, cell] of baseTopology.cells) {
-    const newCenter = transform(cell.center.x, cell.center.y, cell.row ?? 0, cell.col ?? 0);
-    newCells.set(id, {
-      ...cell,
-      center: newCenter,
+    const { baseCenter, ...rest } = cell;
+    const origin = baseCenter ?? cell.center;
+    newCells.set(id, { ...rest,
+      center: transform(origin.x, origin.y, cell.row ?? 0, cell.col ?? 0),
+      ...(!identity && { baseCenter: origin }),
     });
   }
-
-  // Transform edges (midpoint positions)
   for (const [id, edge] of baseTopology.edges) {
-    const newMidpoint = transform(edge.midpoint.x, edge.midpoint.y, edge.row ?? 0, edge.col ?? 0);
-    newEdges.set(id, {
-      ...edge,
-      midpoint: newMidpoint,
+    const { baseMidpoint, ...rest } = edge;
+    const origin = baseMidpoint ?? edge.midpoint;
+    newEdges.set(id, { ...rest,
+      midpoint: transform(origin.x, origin.y, edge.row ?? 0, edge.col ?? 0),
+      ...(!identity && { baseMidpoint: origin }),
     });
   }
-
-  // Recalculate bounds
-  let minX = Infinity, minY = Infinity;
-  let maxX = -Infinity, maxY = -Infinity;
-
-  for (const vertex of newVertices.values()) {
-    minX = Math.min(minX, vertex.position.x);
-    minY = Math.min(minY, vertex.position.y);
-    maxX = Math.max(maxX, vertex.position.x);
-    maxY = Math.max(maxY, vertex.position.y);
+  const exclusionBase = baseTopology.exclusionBase
+    ? applyTopologyPreset(baseTopology.exclusionBase, params) : undefined;
+  let nextBounds = bounds;
+  if (exclusionBase) nextBounds = exclusionBase.bounds;
+  // A legacy deformation frame can describe only the previously visible board.
+  // Restored hidden nodes must also fit when returning to original geometry.
+  else if ((!identity || baseTopology.deformationBounds) && newVertices.size) {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const { position } of newVertices.values()) {
+      minX = Math.min(minX, position.x); minY = Math.min(minY, position.y);
+      maxX = Math.max(maxX, position.x); maxY = Math.max(maxY, position.y);
+    }
+    const padding = baseTopology.sourceConfig?.outerPadding ?? 0;
+    nextBounds = { minX, minY, maxX, maxY, width: maxX + padding, height: maxY + padding };
   }
-
-  // Calculate total width/height including padding
-  // Content starts at minX (typically outerPadding) and ends at maxX
-  // Total size = maxX + outerPadding (for right padding)
-  const outerPadding = baseTopology.sourceConfig?.outerPadding ?? 0;
-  const totalWidth = maxX + outerPadding;
-  const totalHeight = maxY + outerPadding;
-
   return {
-    appliedPreset: { preset, intensity },
-    cells: newCells,
-    vertices: newVertices,
-    edges: newEdges,
-    bounds: {
-      minX,
-      minY,
-      maxX,
-      maxY,
-      width: totalWidth,
-      height: totalHeight,
-    },
-    sourceConfig: baseTopology.sourceConfig,
+    appliedPreset: { preset, intensity }, cells: newCells, vertices: newVertices, edges: newEdges,
+    bounds: nextBounds, sourceConfig: baseTopology.sourceConfig,
+    ...(!identity && { deformationBounds: bounds }),
+    ...(exclusionBase && { exclusionBase }),
+    ...(baseTopology.editBase && { editBase: applyTopologyPreset(baseTopology.editBase, params), editOperations: baseTopology.editOperations }),
+    ...(baseTopology.mergeBase && { mergeBase: applyTopologyPreset(baseTopology.mergeBase, params), mergeGroups: baseTopology.mergeGroups }),
   };
 }
 

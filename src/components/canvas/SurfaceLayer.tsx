@@ -1,3 +1,4 @@
+import { VertexSurfaceLayer } from './VertexSurfaceLayer';
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { getCellCenter, getCellIndexById } from '../../utils/gridUtils';
@@ -116,5 +117,5 @@ export const SurfaceLayer: React.FC<SurfaceLayerProps> = ({ layer }) => {
 
   if (!isVisible) return null;
 
-  return <g className={`surface-layer-${layer}`}>{surfaces}</g>;
+  return <><g className={`surface-layer-${layer}`}>{surfaces}</g><VertexSurfaceLayer layer={layer} /></>;
 };

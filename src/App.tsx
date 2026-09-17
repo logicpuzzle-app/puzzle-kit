@@ -12,7 +12,7 @@ import { useStoragePersistence } from './hooks/useStoragePersistence';
 import { useTextSymbolDialog } from './hooks/useTextSymbolDialog';
 
 function App() {
-  const { addSymbol, removeSymbol, activeLayer, toolSettings, setPlayerMode } = usePuzzleStore();
+  const { addSymbol, removeSymbol, activeLayer, toolSettings, setPlayerMode, grid, topology, useTopology } = usePuzzleStore();
 
   // Global keyboard shortcuts
   useKeyboardShortcuts();
@@ -27,7 +27,7 @@ function App() {
   // Storage error handling
   const { error: storageError, clearError: clearStorageError, isErrorOpen: isStorageErrorOpen } = useStorageErrorHandler();
 
-  const { handleTextClick, dialogProps } = useTextSymbolDialog({ addSymbol, removeSymbol, activeLayer, toolSettings });
+  const { handleTextClick, dialogProps } = useTextSymbolDialog({ addSymbol, removeSymbol, activeLayer, toolSettings, grid, topology, useTopology });
 
   return (
     <div className="flex flex-col h-screen bg-office-bg font-segoe">

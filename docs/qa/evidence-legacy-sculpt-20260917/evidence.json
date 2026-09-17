@@ -1,0 +1,219 @@
+{
+  "before": {
+    "commit": "af7a86357b1355ba9195220088eed26d8dbb9c52",
+    "createdAt": "2026-09-16T17:27:24.586Z",
+    "stats": {
+      "startTime": "2026-09-16T17:27:25.229Z",
+      "duration": 48712.403999999995,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 4,
+      "flaky": 0
+    },
+    "testSha256": "7ba9194bdf56dbb9d1950cb6d1a045356cdf9ea2970683516475c088d53a70f4",
+    "fixtureSha256": {
+      "rotate": "d3187932b0b8a861dd92d1cfd6e48aba8357b51be0e8b45da74721f625c23f50",
+      "cut": "4e08c5df4a189225130f1eee605d08abfe310489185334b681bff2f76a6d445b"
+    },
+    "tests": [
+      {
+        "title": "legacy sculpt rotate restores its saved geometry and notes through public files",
+        "project": "chromium",
+        "mode": "rotate",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failureLine": 14,
+        "failure": "The legacy rotated snapshot is rejected, so its clue is not restored."
+      },
+      {
+        "title": "legacy sculpt cut restores its saved geometry and notes through public files",
+        "project": "chromium",
+        "mode": "cut",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failureLine": 14,
+        "failure": "Settings-only replay ignores the legacy Cut, so the cut-cell clue is not rendered."
+      },
+      {
+        "title": "legacy sculpt rotate restores its saved geometry and notes through public files",
+        "project": "mobile-chrome",
+        "mode": "rotate",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failureLine": 14,
+        "failure": "The legacy rotated snapshot is rejected, so its clue is not restored."
+      },
+      {
+        "title": "legacy sculpt cut restores its saved geometry and notes through public files",
+        "project": "mobile-chrome",
+        "mode": "cut",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failureLine": 14,
+        "failure": "Settings-only replay ignores the legacy Cut, so the cut-cell clue is not rendered."
+      }
+    ]
+  },
+  "after": {
+    "commit": "6b1c8f5e476d4824dcc06d54ecdf3dff65eac95f",
+    "createdAt": "2026-09-16T17:43:09.235Z",
+    "stats": {
+      "startTime": "2026-09-16T17:43:09.606Z",
+      "duration": 8241.966,
+      "expected": 4,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "testSha256": "7ba9194bdf56dbb9d1950cb6d1a045356cdf9ea2970683516475c088d53a70f4",
+    "fixtureSha256": {
+      "rotate": "d3187932b0b8a861dd92d1cfd6e48aba8357b51be0e8b45da74721f625c23f50",
+      "cut": "4e08c5df4a189225130f1eee605d08abfe310489185334b681bff2f76a6d445b"
+    },
+    "tests": [
+      {
+        "title": "legacy sculpt rotate restores its saved geometry and notes through public files",
+        "project": "chromium",
+        "mode": "rotate",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "legacy sculpt cut restores its saved geometry and notes through public files",
+        "project": "chromium",
+        "mode": "cut",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "legacy sculpt rotate restores its saved geometry and notes through public files",
+        "project": "mobile-chrome",
+        "mode": "rotate",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "legacy sculpt cut restores its saved geometry and notes through public files",
+        "project": "mobile-chrome",
+        "mode": "cut",
+        "status": "passed",
+        "runtimeErrors": []
+      }
+    ]
+  },
+  "scope": "Public Master File Open/Save, clear sculpt, undo/redo and reload into the cleared board. Legacy Rotate snapshot and settings-only Cut. Desktop Chromium and Pixel 7 emulation; not a physical device. No internal store injection. Legacy fixtures captured from actual store at 846a5f4.",
+  "files": {
+    "after-chromium-cut-cleared.png": {
+      "sha256": "c66f197567916bd8c2e23f8c5b61a2f36c6b56bbd2f90242b82d5f0aa3ce8841",
+      "bytes": 32872
+    },
+    "after-chromium-cut-restored.png": {
+      "sha256": "b058ec39d597b5955d2c745dc7e8b3f7a5cfeb2f01821ccdd2925c0fb1233892",
+      "bytes": 33720
+    },
+    "after-chromium-cut.png": {
+      "sha256": "6083528b84c385c9aa0d81cfc519dc96c1612fff4a57cc32966b21f079b47ccc",
+      "bytes": 34225
+    },
+    "after-chromium-cut.webm": {
+      "sha256": "77af3c5028228a2b59115c53bf72e98792cfaf893d36ef622b0ecc186f164950",
+      "bytes": 65997,
+      "durationSeconds": 2.16,
+      "fullDecode": "passed"
+    },
+    "after-chromium-rotate-cleared.png": {
+      "sha256": "95dfceab373dd7635c4bcbeaeb4a32905c2df6bf8962199b7f62b84cd76fc16c",
+      "bytes": 33098
+    },
+    "after-chromium-rotate-restored.png": {
+      "sha256": "044ec380b968bc32ff6dbe8db755a8e9f5932899d041ef7c6e0cdf66c00f44ab",
+      "bytes": 32439
+    },
+    "after-chromium-rotate.png": {
+      "sha256": "672621d3160a950f9dab235a892a281b7c8fb6301bd351b395726746d7cce2df",
+      "bytes": 32831
+    },
+    "after-chromium-rotate.webm": {
+      "sha256": "86f8f7974c37348fead22ab635611e3356f5feb4f6ce697705cffdd27318cd41",
+      "bytes": 77513,
+      "durationSeconds": 3.28,
+      "fullDecode": "passed"
+    },
+    "after-mobile-chrome-cut-cleared.png": {
+      "sha256": "a6df452c6d8c7358cd6144f02be90cbc24858d4d29c6b24403d3b056e955a39c",
+      "bytes": 87747
+    },
+    "after-mobile-chrome-cut-restored.png": {
+      "sha256": "e8ab0b4431739dda86dd2c83a38efb3fc8361b1a2941378cd2aa02f6310bdf2b",
+      "bytes": 89437
+    },
+    "after-mobile-chrome-cut.png": {
+      "sha256": "cdcbb54bd8de8e494b434de8f674b007b626f4341a866f24777aa6a6887c211f",
+      "bytes": 91034
+    },
+    "after-mobile-chrome-cut.webm": {
+      "sha256": "1c5fb4fd72d69a74fdca46eedeaa448a2499c2a8de5f42186362dd316deef0de",
+      "bytes": 119549,
+      "durationSeconds": 2.4,
+      "fullDecode": "passed"
+    },
+    "after-mobile-chrome-rotate-cleared.png": {
+      "sha256": "41fa0aa176930256e93c1a4bb7a5685454a5f94805ee0380ac54bb7bb8ef4afd",
+      "bytes": 88187
+    },
+    "after-mobile-chrome-rotate-restored.png": {
+      "sha256": "2e8ae955899475e76d6a9f3c31228ca8f59449d028582436c4edef29fd656d9b",
+      "bytes": 85370
+    },
+    "after-mobile-chrome-rotate.png": {
+      "sha256": "daab1fb212aeb12ea6d595e6ef014d1195cf82b1cadbf0b94c91e4a653c8184e",
+      "bytes": 87012
+    },
+    "after-mobile-chrome-rotate.webm": {
+      "sha256": "57956f86aa32bca9cea4e3df9e5d8aa5bbbdc0838e8d03968fd09d83a6612b4b",
+      "bytes": 122906,
+      "durationSeconds": 2.16,
+      "fullDecode": "passed"
+    },
+    "before-chromium-cut.png": {
+      "sha256": "3fcbb882e7e1a88d2b84f438e33d5f34abe598b10ebdbc886d665f72ba92e5c4",
+      "bytes": 46576
+    },
+    "before-chromium-cut.webm": {
+      "sha256": "1d90242eaf05f753390bc390e29a4b0c00d64acb4011c462c071960304bd57f2",
+      "bytes": 229762,
+      "durationSeconds": 12.6,
+      "fullDecode": "passed"
+    },
+    "before-chromium-rotate.png": {
+      "sha256": "763242619391eca94b52e01a1cda236d90a751b25d11a81152b7e820531db729",
+      "bytes": 48557
+    },
+    "before-chromium-rotate.webm": {
+      "sha256": "65845f785beb6bd947f84d7fe73221cd440a0433733c5ce1b1293d9b662b533e",
+      "bytes": 184876,
+      "durationSeconds": 14.44,
+      "fullDecode": "passed"
+    },
+    "before-mobile-chrome-cut.png": {
+      "sha256": "4cd69c53b3efdb933029109d36c4693e33f463251e12516ecf83de6bd8150bdc",
+      "bytes": 84924
+    },
+    "before-mobile-chrome-cut.webm": {
+      "sha256": "485b105719d1fecf318f18c45ee09d32916d0014d10364fbdfef1d541aa87a5c",
+      "bytes": 161168,
+      "durationSeconds": 10.6,
+      "fullDecode": "passed"
+    },
+    "before-mobile-chrome-rotate.png": {
+      "sha256": "da8e95b4104f8ef3f0d67462e6ff755fc940d8f3637682a5e9ae0f94c4314240",
+      "bytes": 96963
+    },
+    "before-mobile-chrome-rotate.webm": {
+      "sha256": "14357cfec9df2f999db48beee3983a395b3e4f4a67a52520fe12729123140cdd",
+      "bytes": 227338,
+      "durationSeconds": 12.52,
+      "fullDecode": "passed"
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import { useCellFinder } from '../../../hooks/useCellFinder';
 import React, { useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pipette } from 'lucide-react';
@@ -48,6 +49,7 @@ export const ColorSelector: React.FC<ColorSelectorProps> = ({ compact = false })
     updateLine,
   } = usePuzzleStore();
 
+  const { resolveSelection } = useCellFinder();
   const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
   const dataLayer = editableLayer ?? toDataLayer(activeLayer);
   const [customColor, setCustomColor] = useState(toolSettings.color);
@@ -74,7 +76,8 @@ export const ColorSelector: React.FC<ColorSelectorProps> = ({ compact = false })
   // Find existing number at current position (for position-specific updates)
   const findExistingNumberAtPosition = () => {
     if (!numberSelection) return null;
-    const cellId = `cell-${numberSelection.row}-${numberSelection.col}`;
+    const cellId = resolveSelection(numberSelection);
+    if (!cellId) return null;
     const position = toolSettings.numberPosition;
     const cornerIndex = toolSettings.cornerIndex;
     const sideIndex = toolSettings.sideIndex;
@@ -101,12 +104,12 @@ export const ColorSelector: React.FC<ColorSelectorProps> = ({ compact = false })
 
     // Update existing number/directional number if cell is selected
     if (editableLayer && numberSelection && toolSettings.currentTool.startsWith('number')) {
-      const cellId = `cell-${numberSelection.row}-${numberSelection.col}`;
+      const cellId = resolveSelection(numberSelection);
+      if (!cellId) return;
 
       if (toolSettings.currentTool === 'number-directional') {
         // Update directional number color (preserve all existing properties)
-        const cellIndex = numberSelection.row * grid.cols + numberSelection.col;
-        const cellId = `cell-${numberSelection.row}-${numberSelection.col}`;
+        const cellIndex = numberSelection.row !== undefined && numberSelection.col !== undefined ? numberSelection.row * grid.cols + numberSelection.col : undefined;
         const existingDirectionalEntry = findDirectionalNumberByCellId(puzzle[dataLayer].numbers, cellId);
         const existing = existingDirectionalEntry
           ? toPenpaDirectionalClue(existingDirectionalEntry.number)
@@ -161,7 +164,7 @@ export const ColorSelector: React.FC<ColorSelectorProps> = ({ compact = false })
         }
       }
     }
-  }, [numberSelection, toolSettings, grid, puzzle, dataLayer, editableLayer, addNumber, addDirectionalClue, setToolSettings, hasSelectedLines, highlightedLineIds, updateLine]);
+  }, [numberSelection, resolveSelection, toolSettings, grid, puzzle, dataLayer, editableLayer, addNumber, addDirectionalClue, setToolSettings, hasSelectedLines, highlightedLineIds, updateLine]);
 
   const handleCustomColorInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newColor = e.target.value;

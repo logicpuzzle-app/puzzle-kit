@@ -1,0 +1,211 @@
+{
+  "before": {
+    "commit": "217bb626b9951d9ca816fc24cabde623643ef682",
+    "createdAt": "2026-09-16T15:10:30.742Z",
+    "stats": {
+      "startTime": "2026-09-16T15:10:31.177Z",
+      "duration": 49100.242,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 4,
+      "flaky": 0
+    },
+    "testSha256": "a9425472572cb672b31f96756e400344f85c0dc1391e9c847abaa7fb728610e1",
+    "harnessSha256": "dbd578e263bcb287f1137180bb1df9f12ba1f3850bbea1b528f2b11686a5f4cb",
+    "fixtureSha256": "f7dbf53acec5443e0126a3e6ef7f6a43c28246c8af6655244009790e8ab25713",
+    "tests": [
+      {
+        "title": "reference mode migrates drawn lines and scoped notes with history and native files",
+        "project": "chromium",
+        "case": "migration",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Expected one rendered line; received zero."
+      },
+      {
+        "title": "reference mode refuses an ambiguous symbol without changing data or undo history",
+        "project": "chromium",
+        "case": "rejection",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Expected Topology to be retained; switched to Grid."
+      },
+      {
+        "title": "reference mode migrates drawn lines and scoped notes with history and native files",
+        "project": "mobile-chrome",
+        "case": "migration",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Expected one rendered line; received zero."
+      },
+      {
+        "title": "reference mode refuses an ambiguous symbol without changing data or undo history",
+        "project": "mobile-chrome",
+        "case": "rejection",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Expected Topology to be retained; switched to Grid."
+      }
+    ]
+  },
+  "after": {
+    "commit": "beb050851e9c163d08097d79530a7b71ae8a970f",
+    "createdAt": "2026-09-16T15:11:49.262Z",
+    "stats": {
+      "startTime": "2026-09-16T15:11:50.115Z",
+      "duration": 7725.594,
+      "expected": 4,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "testSha256": "a9425472572cb672b31f96756e400344f85c0dc1391e9c847abaa7fb728610e1",
+    "harnessSha256": "dbd578e263bcb287f1137180bb1df9f12ba1f3850bbea1b528f2b11686a5f4cb",
+    "fixtureSha256": "f7dbf53acec5443e0126a3e6ef7f6a43c28246c8af6655244009790e8ab25713",
+    "tests": [
+      {
+        "title": "reference mode migrates drawn lines and scoped notes with history and native files",
+        "project": "chromium",
+        "case": "migration",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "reference mode refuses an ambiguous symbol without changing data or undo history",
+        "project": "chromium",
+        "case": "rejection",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "reference mode migrates drawn lines and scoped notes with history and native files",
+        "project": "mobile-chrome",
+        "case": "migration",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "reference mode refuses an ambiguous symbol without changing data or undo history",
+        "project": "mobile-chrome",
+        "case": "rejection",
+        "status": "passed",
+        "runtimeErrors": []
+      }
+    ]
+  },
+  "scope": "Development harness calls the public reference-mode API; native File Open/Save and actual PC mouse / Chromium Pixel 7 touch drawing. No direct test injection into application state. Before loses the drawn line on mode change and wrongly accepts ambiguous references. Later save/history round trips are After checks. Pixel 7 is emulation, not a physical device.",
+  "files": {
+    "after-chromium-migration-grid-drawn.png": {
+      "sha256": "9a9751d400af644cfdbbd01d633f7d4c97505d74acfda41f1514f7834b0ba757",
+      "bytes": 66705
+    },
+    "after-chromium-migration-grid-restored.png": {
+      "sha256": "93784e9ca1c1fcf40e7a9995fb8e09facdcc5f6d50b363060a6b9ef4472e3019",
+      "bytes": 69206
+    },
+    "after-chromium-migration-topology-reloaded.png": {
+      "sha256": "c032414e02db0d7402b5e2302b1a30a156a4292daee1da8b6211329e19fc3a5d",
+      "bytes": 69703
+    },
+    "after-chromium-migration.png": {
+      "sha256": "2649423736dbde9f118eba8d0c196e2b2a4a1314c118aacb6f7097a4d9c26075",
+      "bytes": 70052
+    },
+    "after-chromium-migration.webm": {
+      "sha256": "87678c04d8b0f4e1da35c67921b4ba6aefc3acd71182d80b4e9fab1165f27ed9",
+      "bytes": 84353,
+      "durationSeconds": 3.24,
+      "fullDecode": "passed"
+    },
+    "after-chromium-rejection.png": {
+      "sha256": "be0268ee001fbc51dd782363af4053f1f3daf6d4c506713ef93acbdfba7946c1",
+      "bytes": 75757
+    },
+    "after-chromium-rejection.webm": {
+      "sha256": "d693d35c766e3f3fb1d742e3a5f576b6e0552b97409decd78b1ce05738177c31",
+      "bytes": 54882,
+      "durationSeconds": 1.72,
+      "fullDecode": "passed"
+    },
+    "after-mobile-chrome-migration-grid-drawn.png": {
+      "sha256": "2489e5b7c705109a54e040f2825552f4d02f1008087e8e76a9171e9e17748f76",
+      "bytes": 177389
+    },
+    "after-mobile-chrome-migration-grid-restored.png": {
+      "sha256": "47ef6682dc72d92dd12b6a7c4684e71853a63ab9655ae1b62f199a9993c23fe8",
+      "bytes": 185657
+    },
+    "after-mobile-chrome-migration-topology-reloaded.png": {
+      "sha256": "6081a3541bda374ba808e2d89a4dfe08b5294cf3d418cb01db380e51da69b933",
+      "bytes": 192462
+    },
+    "after-mobile-chrome-migration.png": {
+      "sha256": "87a52e63ffd64e231f2ed4d4f96cf051c2b07e4362ba62319aef1e1e04566d82",
+      "bytes": 193007
+    },
+    "after-mobile-chrome-migration.webm": {
+      "sha256": "fa79b4f9fd8aeee2b6a5c0d27f36bb95cfd9b0d84424decb80cbba309982eaba",
+      "bytes": 168503,
+      "durationSeconds": 2.32,
+      "fullDecode": "passed"
+    },
+    "after-mobile-chrome-rejection.png": {
+      "sha256": "d05dc7170405806d628dc234d4cce1b33dc3f694d13eb152c24cfcf17a0fab4c",
+      "bytes": 196083
+    },
+    "after-mobile-chrome-rejection.webm": {
+      "sha256": "746ced9ab6542d7ffbf33cc0da378cb510a86129862fed1c795926ac8aa6282d",
+      "bytes": 76545,
+      "durationSeconds": 1.72,
+      "fullDecode": "passed"
+    },
+    "before-chromium-migration-grid-drawn.png": {
+      "sha256": "5aca4ad21efdf41aed5c325c5d63f8e72c4e74ba7ec09253268d464a6e35f383",
+      "bytes": 66692
+    },
+    "before-chromium-migration.png": {
+      "sha256": "30a848eefda89d53f6739b3d92fb05725738b3e9daf8d876c4c840c43a611d9b",
+      "bytes": 69504
+    },
+    "before-chromium-migration.webm": {
+      "sha256": "9392da269f168a246e16fae443d71e58be3d5b3f9690d5435447953d288b8a8c",
+      "bytes": 233620,
+      "durationSeconds": 14.28,
+      "fullDecode": "passed"
+    },
+    "before-chromium-rejection.png": {
+      "sha256": "59d8ed0180df5e6b3f8349fa4e2808a2a3dc0fa2d6abc4b1859b42fb4d9149ea",
+      "bytes": 75279
+    },
+    "before-chromium-rejection.webm": {
+      "sha256": "6f3bd89707924e4a8e6ed1b331b38d97aca971990b36ec1107c976650a8a7dd5",
+      "bytes": 266625,
+      "durationSeconds": 12.64,
+      "fullDecode": "passed"
+    },
+    "before-mobile-chrome-migration-grid-drawn.png": {
+      "sha256": "2489e5b7c705109a54e040f2825552f4d02f1008087e8e76a9171e9e17748f76",
+      "bytes": 177389
+    },
+    "before-mobile-chrome-migration.png": {
+      "sha256": "351f720a7859562778c74fb69bbf1bb49903dee50183c2191280485a15383326",
+      "bytes": 190024
+    },
+    "before-mobile-chrome-migration.webm": {
+      "sha256": "601e874a66e50a532249891612df58f4bd5b4a475b8b6170b8e531ead0aeb81a",
+      "bytes": 305865,
+      "durationSeconds": 13.4,
+      "fullDecode": "passed"
+    },
+    "before-mobile-chrome-rejection.png": {
+      "sha256": "3c63a2f3fc0c804241072261d3ba84b67c37edfa310e072bc4f50f3768001976",
+      "bytes": 188869
+    },
+    "before-mobile-chrome-rejection.webm": {
+      "sha256": "ecc88655b86de7d0bc5b3554998a0d75e62d514f0fa22e7da8a5c726c9e318d2",
+      "bytes": 275608,
+      "durationSeconds": 12.6,
+      "fullDecode": "passed"
+    }
+  }
+}

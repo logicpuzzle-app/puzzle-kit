@@ -58,6 +58,15 @@ export function Harness() {
   const [session, setSession] = useState(() => newSession(initial));
   const [revision, setRevision] = useState(0);
   const [snapshot, setSnapshot] = useState('');
+  const [modeMessage, setModeMessage] = useState('');
+  const useTopology = session.useStore(state => state.useTopology);
+  function changeReferenceMode(next: boolean) {
+    // Keep this adapter usable against a before build whose setter returned void.
+    const result: unknown = session.useStore.getState().setUseTopology(next);
+    const changed = session.useStore.getState().useTopology === next;
+    setModeMessage(changed ? 'Reference mode applied.' : result && typeof result === 'object' && 'reason' in result
+      ? String(result.reason) : 'Reference mode was not changed.');
+  }
   // App restores preferences in a mount effect, including its default input mode.
   // Apply the chosen tool after that initialization so every scenario is reproducible.
   useEffect(() => {
@@ -72,6 +81,7 @@ export function Harness() {
     setSession(newSession(next));
     setRevision(value => value + 1);
     setSnapshot('');
+    setModeMessage('');
     history.replaceState(null, '', `?scenario=${next}`);
   }
   return <>
@@ -82,6 +92,13 @@ export function Harness() {
       </select></label>{' '}
       <button onClick={() => reset(scenario)}>Reset scenario</button>{' · '}
       <button onClick={() => setSnapshot(session.useStore.getState().exportPuzzle())}>Inspect puzzle JSON</button>
+      <fieldset style={{ marginTop: 8 }}>
+        <legend>Reference mode API</legend>
+        <span aria-label="Current reference mode">{useTopology ? 'Topology' : 'Grid'}</span>{' · '}
+        <button onClick={() => changeReferenceMode(false)}>Use Grid references</button>{' '}
+        <button onClick={() => changeReferenceMode(true)}>Use Topology references</button>
+        {modeMessage && <p role="status">{modeMessage}</p>}
+      </fieldset>
       <p>Drag between cell centers, then release. Number: click a cell, use Backspace or ArrowRight. Reset starts a fresh store and history.</p>
       {snapshot && <textarea aria-label="Puzzle snapshot" readOnly value={snapshot} rows={8} style={{ width: '100%' }} />}
     </aside>

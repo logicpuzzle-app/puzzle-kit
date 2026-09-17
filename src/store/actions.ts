@@ -13,6 +13,7 @@ import type {
   LayerType,
   DataLayerType,
   SurfaceElement,
+  VertexSurfaceElement,
   LineElement,
   EdgeElement,
   WallElement,
@@ -32,6 +33,7 @@ import type {
 // Map element names to their types
 type ElementTypeMap = {
   SURFACE: SurfaceElement;
+  VERTEX_SURFACE: VertexSurfaceElement;
   LINE: LineElement;
   EDGE: EdgeElement;
   WALL: WallElement;
@@ -62,6 +64,8 @@ interface RemoveElementAction<N extends ElementName> {
 }
 
 // Specific element actions (for type inference)
+export type AddVertexSurfaceAction = AddElementAction<'VERTEX_SURFACE'>;
+export type RemoveVertexSurfaceAction = RemoveElementAction<'VERTEX_SURFACE'>;
 export type AddSurfaceAction = AddElementAction<'SURFACE'>;
 export type RemoveSurfaceAction = RemoveElementAction<'SURFACE'>;
 export type AddLineAction = AddElementAction<'LINE'>;
@@ -113,6 +117,7 @@ export interface ClearLayerAction {
   type: 'CLEAR_LAYER';
   layer: 'problem' | 'answer';
   previousState: PuzzleState['problem'] | PuzzleState['answer'];
+  restore?: boolean;
 }
 
 // ========================================
@@ -129,6 +134,9 @@ export interface EditGridGeometryAction {
 export interface GridGeometrySnapshot {
   grid: GridConfig;
   topology: GridTopology | null;
+  useTopology?: boolean;
+  topologyPreset?: import('../utils/gridTopology').TopologyPreset;
+  topologyIntensity?: number;
   editingState?: Pick<import('./slices/types').PuzzleStore,
     'puzzle' | 'trialStack' | 'trialStage' | 'selectedElements' | 'hoverCell' | 'cursorCell' | 'numberSelection'>;
 }
@@ -149,12 +157,22 @@ export interface BatchAction {
   description?: string;
 }
 
+/** Room labels and their visible borders are one reversible edit. */
+export interface EditRoomBordersAction {
+  type: 'EDIT_ROOM_BORDERS';
+  before: Pick<PuzzleState['problem'], 'lines' | 'roomMap'>;
+  after: Pick<PuzzleState['problem'], 'lines' | 'roomMap'>;
+}
+
 // ========================================
 // Union of All Actions
 // ========================================
 
 export type PuzzleAction =
+  | EditRoomBordersAction
   // Element operations
+  | AddVertexSurfaceAction
+  | RemoveVertexSurfaceAction
   | AddSurfaceAction
   | RemoveSurfaceAction
   | AddLineAction
@@ -204,6 +222,9 @@ function createRemoveActionCreator<N extends ElementName>(name: N) {
     element,
   });
 }
+
+export const createAddVertexSurfaceAction = createAddActionCreator('VERTEX_SURFACE');
+export const createRemoveVertexSurfaceAction = createRemoveActionCreator('VERTEX_SURFACE');
 
 // Element action creators using the factories
 export const createAddSurfaceAction = createAddActionCreator('SURFACE');
@@ -296,6 +317,8 @@ export function reverseAction(action: PuzzleAction): PuzzleAction {
 
   // Handle special cases
   switch (action.type) {
+    case 'EDIT_ROOM_BORDERS':
+      return { ...action, before: action.after, after: action.before };
     case 'UPDATE_NUMBER':
       return {
         type: 'UPDATE_NUMBER',
@@ -319,8 +342,7 @@ export function reverseAction(action: PuzzleAction): PuzzleAction {
         previousLayer: action.layer,
       };
     case 'CLEAR_LAYER':
-      // Clear layer cannot be easily reversed without snapshot
-      return action;
+      return { ...action, restore: !action.restore };
     case 'EDIT_GRID_GEOMETRY':
       return { ...action, before: action.after, after: action.before };
     case 'SET_GRID':
@@ -346,6 +368,9 @@ export function reverseAction(action: PuzzleAction): PuzzleAction {
 
 // Description mapping for element actions
 const ELEMENT_ACTION_DESCRIPTIONS: Record<string, string> = {
+  EDIT_ROOM_BORDERS: 'Edit room borders',
+  ADD_VERTEX_SURFACE: 'Shade vertex',
+  REMOVE_VERTEX_SURFACE: 'Erase vertex shading',
   ADD_SURFACE: 'Add surface',
   REMOVE_SURFACE: 'Remove surface',
   ADD_LINE: 'Add line',

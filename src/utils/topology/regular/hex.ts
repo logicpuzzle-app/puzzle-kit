@@ -57,7 +57,7 @@ export function hexagonalGridToTopology(config: GridConfig): GridTopology {
       if (voidSet.has(cellId)) continue;
 
       // Odd rows are offset by half width
-      const isOddRow = row % 2 === 1;
+      const isOddRow = (row + (config.hexRowOffset ?? 0)) % 2 === 1;
       const xOffset = isOddRow ? hexWidth / 2 : 0;
 
       const centerX = outerPadding + col * hexWidth + xOffset + hexWidth / 2;

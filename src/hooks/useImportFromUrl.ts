@@ -1,6 +1,7 @@
-import { useCallback, useEffect } from 'react';
+import { useInitialPuzzleLoad } from './useInitialPuzzleLoad';
+import { useCallback } from 'react';
 import type { TFunction } from 'i18next';
-import { createImportHandlers, loadFromUrlOrAutoSave } from '../components/toolbar/menu';
+import { createImportHandlers } from '../components/toolbar/menu';
 import type { useModalStoreApi } from '../store/modalStoreContext';
 import type { usePuzzleStoreApi } from '../store/puzzleStoreContext';
 
@@ -20,9 +21,7 @@ export function useImportFromUrl({
   t,
   setActiveMenu,
 }: UseImportFromUrlOptions) {
-  useEffect(() => {
-    void loadFromUrlOrAutoSave(store);
-  }, [store]);
+  useInitialPuzzleLoad(store);
 
   const handleImportFromUrl = useCallback(() => {
     const storeState = store.getState();

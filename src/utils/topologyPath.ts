@@ -1,19 +1,10 @@
 import type { GridTopology } from './gridTopology';
 import type { LineDirection } from '../types';
 
-/**
- * Decide whether two grid points may be joined by a single line segment, using the
- * topology itself rather than grid indices.
- *
- * The index-based rules in `useGridPointUtils` only ever apply to square grids outside
- * topology mode: topology IDs (`cell-2-2`, `vertex-14`, `edge-32`) carry no row/col, so
- * `parsePointId` returns null for them. Everything reachable in topology mode therefore
- * has to be expressed in terms of shared cells / vertices, which also makes it work for
- * hex, triangle and the rest of the tilings.
- *
- * Returns the path to draw (`[toId]` for a single segment) or null when the two points
- * may not be connected.
- */
+import type { BoardPointRef } from './lineReferences';
+import { sameBoardPoint } from './lineReferences';
+import type { LineGridPoint, Point } from '../types';
+
 /** Do the two edges run the same way? Used to tell a straight continuation from a bend. */
 function isParallel(topology: GridTopology, edgeAId: string, edgeBId: string): boolean {
   const a = topology.edges.get(edgeAId);
@@ -40,18 +31,22 @@ export function resolveTopologyPath(
   fromId: string,
   toId: string,
   allowedDirections: LineDirection[],
-  halfMode: boolean
+  halfMode: boolean,
+  fromType?: LineGridPoint,
+  toType?: LineGridPoint,
 ): string[] | null {
-  if (fromId === toId) return null;
+  const fromKind = fromType ?? uniqueKind(topology, fromId);
+  const toKind = toType ?? uniqueKind(topology, toId);
+  if (!fromKind || !toKind || (fromId === toId && fromKind === toKind)) return null;
   const orthogonal = allowedDirections.includes('orthogonal');
   const diagonal = allowedDirections.includes('diagonal');
 
-  const fromCell = topology.cells.get(fromId);
-  const toCell = topology.cells.get(toId);
-  const fromVertex = topology.vertices.get(fromId);
-  const toVertex = topology.vertices.get(toId);
-  const fromEdge = topology.edges.get(fromId);
-  const toEdge = topology.edges.get(toId);
+  const fromCell = fromKind === 'cell' ? topology.cells.get(fromId) : undefined;
+  const toCell = toKind === 'cell' ? topology.cells.get(toId) : undefined;
+  const fromVertex = fromKind === 'vertex' ? topology.vertices.get(fromId) : undefined;
+  const toVertex = toKind === 'vertex' ? topology.vertices.get(toId) : undefined;
+  const fromEdge = fromKind === 'edge' ? topology.edges.get(fromId) : undefined;
+  const toEdge = toKind === 'edge' ? topology.edges.get(toId) : undefined;
 
   // Cell to cell: sharing an edge is orthogonal, sharing only a corner is diagonal.
   if (fromCell && toCell) {
@@ -123,4 +118,45 @@ export function resolveTopologyPath(
   }
 
   return null;
+}
+
+function uniqueKind(topology: GridTopology, id: string): LineGridPoint | null {
+  const kinds: LineGridPoint[] = [];
+  if (topology.cells.has(id)) kinds.push('cell');
+  if (topology.vertices.has(id)) kinds.push('vertex');
+  if (topology.edges.has(id)) kinds.push('edge');
+  return kinds.length === 1 ? kinds[0] : null;
+}
+
+/** Keep kinds throughout interpolation. Every returned point is an existing node. */
+export function resolveTopologyPointPath(
+  topology: GridTopology, from: BoardPointRef, to: BoardPointRef,
+  directions: LineDirection[], halfMode: boolean,
+): BoardPointRef[] | null {
+  if (sameBoardPoint(from, to)) return null;
+  const adjacent = (a: BoardPointRef, b: BoardPointRef) => resolveTopologyPath(topology, a.id, b.id, directions, halfMode, a.type, b.type) !== null;
+  if (adjacent(from, to)) return [to];
+  if (from.type !== to.type) return null;
+  const nodes: Array<{ id: string; position: Point }> = from.type === 'cell'
+    ? [...topology.cells.values()].filter(c => !c.outboard).map(c => ({ id: c.id, position: c.center }))
+    : from.type === 'vertex' ? [...topology.vertices.values()]
+    : [...topology.edges.values()].map(e => ({ id: e.id, position: e.midpoint }));
+  const a = nodes.find(n => n.id === from.id)?.position, b = nodes.find(n => n.id === to.id)?.position;
+  if (!a || !b) return null;
+  const dx = b.x - a.x, dy = b.y - a.y, length2 = dx * dx + dy * dy;
+  if (length2 < 1e-12) return null;
+  // Interpolate skipped pointer samples along actual geometry, not manufactured IDs.
+  const candidates = nodes.map(n => ({ ...n, t: ((n.position.x - a.x) * dx + (n.position.y - a.y) * dy) / length2 }))
+    .filter(n => n.t >= -1e-8 && n.t <= 1 + 1e-8 && Math.abs((n.position.x - a.x) * dy - (n.position.y - a.y) * dx) / Math.sqrt(length2) < 1e-6)
+    .sort((x, y) => x.t - y.t);
+  if (candidates[0]?.id !== from.id || candidates.at(-1)?.id !== to.id) return null;
+  const path: BoardPointRef[] = [];
+  let previous = from;
+  for (let i = 1; i < candidates.length; i++) {
+    if (Math.abs(candidates[i].t - candidates[i - 1].t) < 1e-8) return null;
+    const next = { id: candidates[i].id, type: from.type };
+    if (!adjacent(previous, next)) return null;
+    path.push(next); previous = next;
+  }
+  return path.length ? path : null;
 }

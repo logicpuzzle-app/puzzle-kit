@@ -1,3 +1,4 @@
+import { captureConstraintSettings, restoreConstraintSettings } from '../../utils/constraintPersistence';
 import { normalizeLineOverlaps } from '../../utils/lineOverlap';
 /**
  * Puzzle IO Slice - New puzzle, export, and import operations
@@ -17,7 +18,7 @@ import { migrationRegistry } from '../../migrations';
 import { mergeDirectionalCluesIntoNumbers } from '../../utils/legacyDirectionalClues';
 import { syncCountersFromPuzzleState } from '../../utils/idGenerator';
 import { freshPuzzleSession } from '../puzzleSession';
-import { captureTopologySettings, restoreTopology } from '../../utils/topologyPersistence';
+import { captureTopologySettings, restoreBoard } from '../../utils/topologyPersistence';
 
 export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
   newPuzzle: (options = {}) => {
@@ -60,7 +61,7 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
           preset: state.topologyPreset,
           intensity: state.topologyIntensity,
         })
-      : null;
+      : applyTopologyPreset(baseTopology, { preset: 'square', intensity: 0.5 });
 
     set({
       ...freshPuzzleSession(state),
@@ -79,10 +80,7 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
       activeLayer: 'grid',
       topology,
       // Set constraint schema if provided
-      currentSchemaId: schemaId ?? null,
-      showConstraintLayer: schemaId ? true : false,
-      currentInputMode: 'auto',
-      validationOverrides: {},
+      ...restoreConstraintSettings({ currentSchemaId: schemaId ?? null }),
     });
     get().historyManager.clear();
   },
@@ -95,12 +93,7 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
       grid: state.grid,
       state: optimizePuzzleStateForExport(state.puzzle),
       topologySettings: captureTopologySettings(state),
-      constraintSettings: {
-        currentSchemaId: state.currentSchemaId,
-        currentInputMode: state.currentInputMode,
-        validationOverrides: state.validationOverrides,
-        highlightOverrides: state.highlightOverrides,
-      },
+      constraintSettings: captureConstraintSettings(state),
       metadata: {
         created: new Date().toISOString(),
         modified: new Date().toISOString(),
@@ -131,13 +124,9 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
         const topologyPreset = data.topologySettings?.topologyPreset ?? data.topologyPreset ?? 'square';
         const topologyIntensity = data.topologySettings?.topologyIntensity ?? data.topologyIntensity ?? 0.5;
 
-        // Load constraint settings (if present)
-        const currentSchemaId = data.constraintSettings?.currentSchemaId ?? null;
-        const currentInputMode = data.constraintSettings?.currentInputMode ?? 'auto';
-        const validationOverrides = data.constraintSettings?.validationOverrides ?? {};
-        const highlightOverrides = data.constraintSettings?.highlightOverrides ?? {};
+        const constraintSettings = restoreConstraintSettings(data.constraintSettings);
 
-        const topology = restoreTopology(data.grid, {
+        const { topology, grid: loadedGrid } = restoreBoard(data.grid, {
           useTopology, topologyPreset, topologyIntensity,
           ...data.topologySettings,
         });
@@ -161,24 +150,25 @@ export const createPuzzleIOSlice: SliceCreator<PuzzleIOSlice> = (set, get) => ({
         const normalizedState = mergeDirectionalCluesIntoNumbers(remappedState);
         for (const layer of hasSnapshot ? [] : ['problem', 'answer'] as const) {
           normalizedState[layer] = { ...normalizedState[layer], lines: normalizeLineOverlaps(
-            normalizedState[layer].lines, data.grid, topology, normalizedState[layer].lineGroups,
+            normalizedState[layer].lines, data.grid, topology, normalizedState[layer].lineGroups, useTopology,
           ) };
         }
 
         syncCountersFromPuzzleState(normalizedState);
         set({
           ...freshPuzzleSession(get()),
-          grid: data.grid,
+          grid: loadedGrid,
           puzzle: normalizedState,
           useTopology,
           topologyPreset,
           topologyIntensity,
           topology,
-          currentSchemaId,
-          currentInputMode,
-          validationOverrides,
-          highlightOverrides,
+          ...constraintSettings,
+          toolSettings: { ...get().toolSettings, inputConstraint: 'none' },
         } as any);
+        if (constraintSettings.showConstraintLayer && (get().activeLayer === 'problem' || get().activeLayer === 'answer')) {
+          get().setInputMode(constraintSettings.currentInputMode);
+        }
         get().historyManager.clear();
         return true;
       }

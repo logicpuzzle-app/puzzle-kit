@@ -1,3 +1,4 @@
+import { captureConstraintSettings } from '../utils/constraintPersistence';
 /**
  * Store Integration Hook
  *
@@ -18,6 +19,7 @@ import { PUZZLE_EXPORT_VERSION } from '../constants/version';
 function capturePersistedState(state: PuzzleStore): PersistedState {
   return {
     version: PUZZLE_EXPORT_VERSION, grid: state.grid, puzzle: state.puzzle,
+    constraintSettings: captureConstraintSettings(state),
     toolSettings: state.toolSettings, ...captureTopologySettings(state),
   };
 }
@@ -44,6 +46,12 @@ export function useStoreIntegration(options?: {
   const grid = usePuzzleStore((state) => state.grid);
   const toolSettings = usePuzzleStore((state) => state.toolSettings);
   const store = usePuzzleStoreApi();
+  const currentSchemaId = usePuzzleStore(state => state.currentSchemaId);
+  const currentInputMode = usePuzzleStore(state => state.currentInputMode);
+  const validationOverrides = usePuzzleStore(state => state.validationOverrides);
+  const highlightOverrides = usePuzzleStore(state => state.highlightOverrides);
+  const showConstraintLayer = usePuzzleStore(state => state.showConstraintLayer);
+  const savedInputModes = usePuzzleStore(state => state.savedInputModes);
   const topology = usePuzzleStore(state => state.topology);
   const useTopology = usePuzzleStore(state => state.useTopology);
   const topologyPreset = usePuzzleStore(state => state.topologyPreset);
@@ -53,6 +61,7 @@ export function useStoreIntegration(options?: {
     const current = store.getState();
     const loaded = current.importPuzzle(JSON.stringify({
       version: saved.version, grid: saved.grid, state: saved.puzzle,
+      constraintSettings: saved.constraintSettings,
       topologySettings: {
         useTopology: saved.useTopology ?? current.useTopology,
         topologyPreset: saved.topologyPreset ?? current.topologyPreset,
@@ -110,7 +119,7 @@ export function useStoreIntegration(options?: {
     const state = capturePersistedState(store.getState());
 
     store.getState().persistenceManager.autoSave(state);
-  }, [enableAutoSave, autoSaveDelay, grid, puzzle, toolSettings, topology, useTopology, topologyPreset, topologyIntensity, store]);
+  }, [enableAutoSave, autoSaveDelay, grid, puzzle, toolSettings, topology, useTopology, topologyPreset, topologyIntensity, currentSchemaId, currentInputMode, validationOverrides, highlightOverrides, showConstraintLayer, savedInputModes, store]);
 
   // Execute action through ActionExecutor
   const executeAction = useCallback((action: PuzzleAction) => {

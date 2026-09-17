@@ -1,5 +1,5 @@
 import { resolveSymbolSize } from '../../utils/symbolSize';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useEffect } from 'react';
 import type { GridConfig, ToolSettings } from '../../types';
 import type { GridTopology } from '../../utils/gridTopology';
 import type { Point } from '../../types';
@@ -50,6 +50,10 @@ export function useSymbolArrowInput({
     inputted: false,
     rotation: null,
   });
+
+  useEffect(() => {
+    symbolArrowFlickRef.current = { startCellId: null, startCellCenter: null, startPoint: null, inputted: false, rotation: null };
+  }, [grid, topology, useTopology]);
 
   const beginSymbolArrow = useCallback((
     point: Point,

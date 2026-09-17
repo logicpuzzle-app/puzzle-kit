@@ -269,6 +269,14 @@ export interface GridPoint {
 export type SurfaceDisplayMode = 'fill' | 'dot';
 
 // Drawing elements
+export interface VertexSurfaceElement {
+  id: string;
+  vertexId: string;
+  color: string;
+  layer: DataLayerType;
+  displayMode?: SurfaceDisplayMode;
+}
+
 export interface SurfaceElement {
   id: string;
   cellId: string;
@@ -305,10 +313,11 @@ export interface LineElement {
   edgeId?: string;             // Edge ID that this line passes through
   lineTarget?: LineTargetType; // How to draw the line
 
-  // Legacy coordinate-based representation (for backward compatibility)
-  // These are derived from edgeId when possible, or used directly for freehand
-  from?: string;  // point ID (vertex or cell) - deprecated for grid-snapped
-  to?: string;    // point ID (vertex or cell) - deprecated for grid-snapped
+  // Scoped endpoints, in drawing order. Older records may omit the kinds.
+  from?: string;
+  to?: string;
+  fromType?: LineGridPoint;
+  toType?: LineGridPoint;
 
   style: LineStyle;
   thickness: LineThickness;
@@ -370,7 +379,9 @@ export type SymbolSize = 'largest' | 'large' | 'medium' | 'small' | number;
 
 export interface SymbolElement {
   id: string;
+  /** Scoped placement reference; legacy untyped targets must resolve uniquely. */
   cellId: string;
+  pointType?: LineGridPoint;
   symbolType: string;
   size: SymbolSize;
   rotation: number;  // degrees
@@ -469,6 +480,8 @@ export type IsometricFace = 'top' | 'left' | 'right' | 'bottom';
 export type IsometricView = 'exterior' | 'interior';
 
 export interface GridConfig {
+  /** Hex layout phase, retained when top margin rows are inserted or removed. Not a node identity. */
+  hexRowOffset?: 0 | 1;
   rows: number;
   cols: number;
   level?: number; // for iso/cube grids (height/depth)
@@ -561,6 +574,8 @@ export type RoomMap = Record<string, number>;
 
 // Puzzle state
 export interface PuzzleElements {
+  /** Visual dual-grid shading, separate from cell-based rule inputs. */
+  vertexSurfaces?: Record<string, VertexSurfaceElement>;
   surfaces: Record<string, SurfaceElement>;
   lines: Record<string, LineElement>;
   /**
@@ -637,6 +652,7 @@ export interface MulticolorSwatch {
 
 // Tool settings
 export interface ToolSettings {
+  surfaceTarget?: 'cell' | 'vertex';
   currentTool: ToolType;
   currentCategory: ToolCategory;
   color: string;
@@ -741,9 +757,20 @@ export const DEFAULT_COLORS: ColorPalette = {
   ],
 };
 
+// Settings travel with the puzzle, independently of board identity and geometry.
+export interface PuzzleConstraintSettings {
+  currentSchemaId: string | null;
+  currentInputMode: import('../constraints/types').InputMode;
+  validationOverrides: Record<string, boolean>;
+  highlightOverrides: Record<string, boolean>;
+  showConstraintLayer?: boolean;
+  savedInputModes?: { edit: import('../constraints/types').InputMode; play: import('../constraints/types').InputMode };
+}
+
 // Export format
 export interface PuzzleExport {
   version: string;
+  constraintSettings?: PuzzleConstraintSettings;
   grid: GridConfig;
   state: PuzzleState;
   metadata?: {

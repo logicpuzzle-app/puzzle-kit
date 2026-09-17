@@ -1,0 +1,152 @@
+{
+  "before": {
+    "commit": "6c6711f5ae312c39529f57a18a011728690c46ab",
+    "createdAt": "2026-09-16T06:26:35.667Z",
+    "runner": "Playwright + Chromium: desktop mouse / Pixel 7 emulation, tap Apply; public import, dimensions, save and history UI.",
+    "stats": {
+      "startTime": "2026-09-16T06:26:36.225Z",
+      "duration": 14608.911,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "testSha256": "aa0ceb5f04fe54696c25c8ecc26530d46c05b90494aa9f93e9e10412343981c3",
+    "fixtureSha256": "271fdd7a496592475fe40da56a675db80c98ff5f723b7f2351ca4f1a381e41a6",
+    "tests": [
+      {
+        "title": "merged extent keeps surviving IDs and notes, with undoable retirement of split cells @production",
+        "project": "chromium",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Growing columns regenerates the graph and loses the opaque merged cell referenced by clue17."
+      },
+      {
+        "title": "merged extent keeps surviving IDs and notes, with undoable retirement of split cells @production",
+        "project": "mobile-chrome",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Growing columns regenerates the graph and loses the opaque merged cell referenced by clue17."
+      }
+    ]
+  },
+  "after": {
+    "commit": "5111b1f93459584558fbe59472c43e80c4e3f398",
+    "createdAt": "2026-09-16T06:26:51.186Z",
+    "runner": "Playwright + Chromium: desktop mouse / Pixel 7 emulation, tap Apply; public import, dimensions, save and history UI.",
+    "stats": {
+      "startTime": "2026-09-16T06:26:51.545Z",
+      "duration": 4748.664,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "testSha256": "aa0ceb5f04fe54696c25c8ecc26530d46c05b90494aa9f93e9e10412343981c3",
+    "fixtureSha256": "271fdd7a496592475fe40da56a675db80c98ff5f723b7f2351ca4f1a381e41a6",
+    "tests": [
+      {
+        "title": "merged extent keeps surviving IDs and notes, with undoable retirement of split cells @production",
+        "project": "chromium",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "merged extent keeps surviving IDs and notes, with undoable retirement of split cells @production",
+        "project": "mobile-chrome",
+        "status": "passed",
+        "runtimeErrors": []
+      }
+    ]
+  },
+  "fixture": "Synthetic native1.4 3x3 square board: U-shaped merged cell with clue17, middle cell9, blue left edge, red bottom-left vertex note.",
+  "scope": "Expand to four columns: keep mergedID, sourceIDs, fullannotations, vertexgeometry. Save/reopen, trim bottom row: splitU into2fresh cells, remove17 and removedvertexnote, retain9 and sharedblueedge. Undo/Redo restore matching annotations. Save/reopen clipped graph. Units also cover square/hex, odd margins, wave/layout/exclusion, hiddenfragmentpropagation, one-source surviving merged cell, legacy long boundaries and atomic trial restoration. Arbitrary source shapes, other grids, split/sculpt remain unsupported.",
+  "files": {
+    "after-chromium-clipped.png": {
+      "sha256": "0af1ab9a1172a4d18bc49f12c79fc09ea9cab22004f6a11c9e2c80823206db8c",
+      "bytes": 30373
+    },
+    "after-chromium.png": {
+      "sha256": "80c3c35f8c74e4070c9d5ff072caaeac9b26f315f20593db60684a07702a0595",
+      "bytes": 30954
+    },
+    "after-chromium.webm": {
+      "sha256": "a8b1ae3820f9e7d58ef35058ef706998cf9aec052a0554592a2701764fed01f0",
+      "bytes": 69254,
+      "durationSeconds": 4.24,
+      "fullDecode": "passed"
+    },
+    "after-mobile-chrome-clipped.png": {
+      "sha256": "f7358aeeb76d00695075b967e5a4d76fec6691579c5eb74003b4e4b5a75dc191",
+      "bytes": 79194
+    },
+    "after-mobile-chrome.png": {
+      "sha256": "52052625445a54d7ff9c17dc9c66c09b07f5222b23f753c69a5a0147cd58be39",
+      "bytes": 80338
+    },
+    "after-mobile-chrome.webm": {
+      "sha256": "a964cbf86c6ad961305bf7f8721383f0272dcf98ee119752e14a139165f3cec7",
+      "bytes": 173071,
+      "durationSeconds": 4.32,
+      "fullDecode": "passed"
+    },
+    "before-chromium.png": {
+      "sha256": "c587435bced23c92cf61c9d581ce199b70ed6e22475db00ecf5ef71175be0b07",
+      "bytes": 31314
+    },
+    "before-chromium.webm": {
+      "sha256": "269edb266def041ff8a1e47452b6b53bb4e642fb77c3e3af53284c649bd13d2a",
+      "bytes": 134408,
+      "durationSeconds": 14.44,
+      "fullDecode": "passed"
+    },
+    "before-mobile-chrome.png": {
+      "sha256": "ecb6782f219fb4ded902f3344fe8f4872b967b1dd161b0edc2e84f383de14f9a",
+      "bytes": 81321
+    },
+    "before-mobile-chrome.webm": {
+      "sha256": "f69cc24c7b2aaa0eaa1028cd39afa81bf52c0ce7520748fd79444dc03300f6d7",
+      "bytes": 178512,
+      "durationSeconds": 14.6,
+      "fullDecode": "passed"
+    }
+  },
+  "localChromiumPlayback": [
+    {
+      "file": "before-chromium.webm",
+      "duration": 14.44,
+      "currentTime": 7.22,
+      "readyState": 4,
+      "width": 800,
+      "height": 450,
+      "error": null
+    },
+    {
+      "file": "after-chromium.webm",
+      "duration": 4.24,
+      "currentTime": 2.12,
+      "readyState": 4,
+      "width": 800,
+      "height": 450,
+      "error": null
+    },
+    {
+      "file": "before-mobile-chrome.webm",
+      "duration": 14.6,
+      "currentTime": 7.3,
+      "readyState": 4,
+      "width": 392,
+      "height": 800,
+      "error": null
+    },
+    {
+      "file": "after-mobile-chrome.webm",
+      "duration": 4.32,
+      "currentTime": 2.16,
+      "readyState": 4,
+      "width": 392,
+      "height": 800,
+      "error": null
+    }
+  ]
+}

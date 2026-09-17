@@ -176,7 +176,7 @@ export const Ribbon: React.FC = () => {
 
   // When constraint is enabled (showConstraintLayer), use constraint-aware mode
   // Problem layer → Edit mode, Answer layer → Play mode
-  const isConstraintEnabled = showConstraintLayer && currentSchema !== null;
+  const isConstraintEnabled = showConstraintLayer && Boolean(currentSchema);
 
   const handleCategoryClick = (category: CategoryDef) => {
     // Switch to problem layer if in grid or specific mode

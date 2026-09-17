@@ -1,62 +1,53 @@
 import type { PuzzleStore } from './slices/types';
-import type { LineElement } from '../types';
-import {
-  getLitsBorderKeys, getLitsCells, getLitsRoomsFromBorders, litsBorderKey, litsNeighbors,
-} from '../constraints/helpers/lits';
+import type { PuzzleAction } from './actions';
+import type { PuzzleState, LineElement } from '../types';
+import { getLitsBoard, getLitsMappedRooms, getLitsRoomsFromBorders } from '../constraints/helpers/lits';
+import { getLitsBorders, type LitsBorders } from '../constraints/helpers/litsBorders';
+import { generateLineId } from '../utils/idGenerator';
 
-/** Materialize implicit imported room boundaries so subsequent edits and history
- * always have a visible, reversible source of truth. Keep existing border styles.
- */
-function materializeRoomBorders(state: PuzzleStore) {
+/** Materialize implicit imported boundaries using actual shared edges, retaining
+ * imported styles. Line record IDs are independent of the edge they reference. */
+function materializeRoomBorders(state: PuzzleStore, borders: LitsBorders) {
   const map = state.puzzle.problem.roomMap!;
-  const cells = new Set(getLitsCells(state.grid));
-  const blocked = getLitsBorderKeys(state);
   const lines = { ...state.puzzle.problem.lines };
   let changed = false;
-  for (const id of cells) for (const neighbor of litsNeighbors(id)) {
-    if (!cells.has(neighbor) || id >= neighbor || map[id] === map[neighbor] || blocked.has(litsBorderKey(id, neighbor))) continue;
-    const [, r, c] = id.split('-').map(Number);
-    const [, nr, nc] = neighbor.split('-').map(Number);
-    const vertical = r === nr;
-    const row = vertical ? r : Math.max(r, nr), col = vertical ? Math.max(c, nc) : c;
-    const edgeId = `edge-${vertical ? 'v' : 'h'}-${row}-${col}`;
-    let lineId = `edge-${edgeId}`;
-    while (lines[lineId]) lineId += '-room';
+  for (const [key, edge] of borders.between) {
+    if (map[edge.cells[0]] === map[edge.cells[1]] || borders.blocked.has(key)) continue;
+    let id = generateLineId();
+    while (Object.hasOwn(lines, id)) id = generateLineId();
     const line: LineElement = {
-      id: lineId, edgeId, lineTarget: 'edge', layer: 'problem',
-      from: `vertex-${row}-${col}`,
-      to: `vertex-${row + (vertical ? 1 : 0)}-${col + (vertical ? 0 : 1)}`,
-      style: 'solid', thickness: 'normal', color: '#000000',
+      id, edgeId: edge.id, from: edge.from, to: edge.to,
+      lineTarget: 'edge', layer: 'problem', style: 'solid', thickness: 'normal', color: '#000000',
     };
-    lines[lineId] = line;
-    changed = true;
+    lines[id] = line; changed = true;
   }
   return changed ? { ...state.puzzle, problem: { ...state.puzzle.problem, lines } } : state.puzzle;
 }
 
-/** Keep loaded LITS room maps consistent with borders, including atomic history replay. */
+/** Keep loaded LITS maps consistent with borders, including atomic history replay. */
 export function syncLitsRoomMap(previous: PuzzleStore, patch: Partial<PuzzleStore>): Partial<PuzzleStore> {
   if (!patch.puzzle && patch.currentSchemaId === undefined) return patch;
-  const next = { ...previous, ...patch };
-  const map = next.puzzle.problem.roomMap;
-  if (next.currentSchemaId !== 'lits' || next.grid.gridType !== 'square' || !map) return patch;
+  const next = { ...previous, ...patch }, map = next.puzzle.problem.roomMap;
+  if (next.currentSchemaId !== 'lits' || next.grid.gridType !== 'square' || !map || !Object.keys(map).length) return patch;
   const isNewMap = map !== previous.puzzle.problem.roomMap || previous.currentSchemaId !== 'lits';
   const editedLines = next.puzzle.problem.lines !== previous.puzzle.problem.lines;
   if (!isNewMap && !editedLines) return patch;
-  if (!isNewMap && next.grid !== previous.grid) return patch;
+  if (!isNewMap && (next.grid !== previous.grid || next.topology !== previous.topology)) return patch;
 
-  const cells = getLitsCells(next.grid);
-  // Preserve incomplete imports and their validation error; never silently repair them.
-  if (!cells.length || cells.some(id => !Number.isInteger(map[id]))) return patch;
+  const board = getLitsBoard(next);
+  // Incomplete/unknown maps and unresolved borders remain unavailable. Do not
+  // silently repair source data or manufacture coordinates from its IDs.
+  if (!board || !getLitsMappedRooms(next, board)) return patch;
+  const after = getLitsBorders(next, board);
+  if (!after) return patch;
   if (isNewMap) {
-    const puzzle = materializeRoomBorders(next);
+    const puzzle = materializeRoomBorders(next, after);
     return puzzle === next.puzzle ? patch : { ...patch, puzzle };
   }
-
-  const before = getLitsBorderKeys(previous), after = getLitsBorderKeys(next);
-  if (before.size === after.size && [...before].every(key => after.has(key))) return patch;
-  const rooms = getLitsRoomsFromBorders(cells, after);
-  // Preserve imported labels/references when connectivity has not changed.
+  const oldBoard = getLitsBoard(previous), before = oldBoard && getLitsBorders(previous, oldBoard);
+  // Repairing a previously unresolved border can now provide a valid partition.
+  if (before && before.blocked.size === after.blocked.size && [...before.blocked].every(key => after.blocked.has(key))) return patch;
+  const rooms = getLitsRoomsFromBorders(board, after.blocked);
   const oldIds = new Set<number>();
   let unchanged = true;
   for (const room of rooms.values()) {
@@ -65,6 +56,24 @@ export function syncLitsRoomMap(previous: PuzzleStore, patch: Partial<PuzzleStor
     oldIds.add(oldId);
   }
   if (unchanged) return patch;
-  const roomMap = Object.fromEntries([...rooms].flatMap(([room, ids]) => ids.map(id => [id, room])));
+  // Keep explicitly excluded cells' labels for later restoration.
+  const roomMap = Object.fromEntries(Object.entries(map).filter(([id]) => board.excluded.has(id)));
+  // New labels must not collide with labels retained for excluded cells.
+  let label = 0;
+  const reserved = new Set(Object.values(roomMap));
+  for (const ids of rooms.values()) {
+    while (reserved.has(label)) label++;
+    for (const id of ids) roomMap[id] = label;
+    label++;
+  }
   return { ...patch, puzzle: { ...next.puzzle, problem: { ...next.puzzle.problem, roomMap } } };
+}
+
+/** Record the derived map with the border edit so Undo restores imported labels
+ * instead of recomputing and renumbering them. Other line edits keep their action. */
+export function withLitsRoomHistory(action: PuzzleAction, before: PuzzleState, after: PuzzleState): PuzzleAction {
+  if (before.problem.roomMap === after.problem.roomMap) return action;
+  return { type: 'EDIT_ROOM_BORDERS',
+    before: { lines: before.problem.lines, roomMap: before.problem.roomMap },
+    after: { lines: after.problem.lines, roomMap: after.problem.roomMap } };
 }

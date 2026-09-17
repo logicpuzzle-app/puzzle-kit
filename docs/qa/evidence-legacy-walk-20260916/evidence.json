@@ -1,0 +1,119 @@
+{
+  "before": {
+    "commit": "9475627350741152c718209cf247c16bcba403f7",
+    "createdAt": "2026-09-16T10:59:29.164Z",
+    "stats": {
+      "startTime": "2026-09-16T10:59:29.665Z",
+      "duration": 14183.619,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "testSha256": "1a9aec103bd5d448e2597da81cd9036dd07d7a075f1ddac551900f183ffe114d",
+    "fixtureSha256": "91e53ffc20ffbbb52e22bb51e005077c44d52748f6c2bceb35afffa167bde932",
+    "tests": [
+      {
+        "title": "legacy repeated walks and pinched merges preserve saved boundaries and restore all members @production",
+        "project": "chromium",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Delete is disabled: no source was migrated for the repeated-vertex/pinched legacy groups."
+      },
+      {
+        "title": "legacy repeated walks and pinched merges preserve saved boundaries and restore all members @production",
+        "project": "mobile-chrome",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Delete is disabled: no source was migrated for the repeated-vertex/pinched legacy groups."
+      }
+    ]
+  },
+  "after": {
+    "commit": "6c6a450b4ec61369ae403c827f2aa2fa49effe6f",
+    "createdAt": "2026-09-16T11:02:32.256Z",
+    "stats": {
+      "startTime": "2026-09-16T11:02:32.792Z",
+      "duration": 4174.591,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "testSha256": "1a9aec103bd5d448e2597da81cd9036dd07d7a075f1ddac551900f183ffe114d",
+    "fixtureSha256": "91e53ffc20ffbbb52e22bb51e005077c44d52748f6c2bceb35afffa167bde932",
+    "tests": [
+      {
+        "title": "legacy repeated walks and pinched merges preserve saved boundaries and restore all members @production",
+        "project": "chromium",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "legacy repeated walks and pinched merges preserve saved boundaries and restore all members @production",
+        "project": "mobile-chrome",
+        "status": "passed",
+        "runtimeErrors": []
+      }
+    ]
+  },
+  "scope": "Public File Open of fixed repeated-vertex and pinched legacy merges; exact loaded maps, restored source IDs, unchanged other group boundary/center, number17 and vertex note; Undo/Redo/native reload. Legacy row/column hints are normalized by editing; identity is checked independently. Desktop mouse and emulated Pixel7 touch. Unverified legacy source walks, sculpt and incomplete archives remain pending.",
+  "files": {
+    "after-chromium-reloaded.png": {
+      "sha256": "bf3a2eb0802ce393673d733d01d1f1f6fee4d595868534e01820c7d4b064504b",
+      "bytes": 30228
+    },
+    "after-chromium-restored.png": {
+      "sha256": "d5b9fd5d2451d993b8c18f56aa18292a7dd2372f325df2622ba23818dbd45259",
+      "bytes": 30414
+    },
+    "after-chromium.png": {
+      "sha256": "122030a4f656b9268586b5b39c69bb703116beaf397590da3236d047b781b665",
+      "bytes": 55826
+    },
+    "after-chromium.webm": {
+      "sha256": "2ab5482b5c006dd2fccca899c8ea927a04463c5b0668a721f4463f25744bf960",
+      "bytes": 76789,
+      "durationSeconds": 3.48,
+      "fullDecode": "passed"
+    },
+    "after-mobile-chrome-reloaded.png": {
+      "sha256": "66bf7a00a80b33f8a30a45392a163807904c5e85135e71221c7e6ec93231fdcc",
+      "bytes": 78614
+    },
+    "after-mobile-chrome-restored.png": {
+      "sha256": "e5b60633b31fedf884efa6cef318a88cfb19cf53985dbee632d3316ee145b3ae",
+      "bytes": 79265
+    },
+    "after-mobile-chrome.png": {
+      "sha256": "8029a19c64a092d8d584a17502c5546e2684d9f8f7f84498a6c17a98267cf905",
+      "bytes": 105212
+    },
+    "after-mobile-chrome.webm": {
+      "sha256": "a3a2929b4b04c0c8cdac64e9015d47bd5be4c2ec3652b7583523d6579b4e19f1",
+      "bytes": 214439,
+      "durationSeconds": 3.56,
+      "fullDecode": "passed"
+    },
+    "before-chromium.png": {
+      "sha256": "2161c2b0e8db2375bba5e3d110f236e89330d5d607818c7bb796e0a9befff8a3",
+      "bytes": 63069
+    },
+    "before-chromium.webm": {
+      "sha256": "aee4ec2683af1a594de0a1c71d05e2e29b3bd072733a70a063699e4dfce7467c",
+      "bytes": 211670,
+      "durationSeconds": 14.24,
+      "fullDecode": "passed"
+    },
+    "before-mobile-chrome.png": {
+      "sha256": "29202b881fffb822abd26cb095dd7043231c7f354448c4b091b232abfe19339b",
+      "bytes": 125484
+    },
+    "before-mobile-chrome.webm": {
+      "sha256": "cdc76b7d92afa19c965ecd3b82761b28ba5a407719167ac78bd029ace9b9aa27",
+      "bytes": 257093,
+      "durationSeconds": 14.32,
+      "fullDecode": "passed"
+    }
+  }
+}

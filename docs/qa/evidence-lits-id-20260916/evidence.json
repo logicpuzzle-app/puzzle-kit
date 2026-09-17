@@ -1,0 +1,135 @@
+{
+  "before": {
+    "commit": "4ffe87e2528365c33d2ef0e5f4783fa87b940b51",
+    "createdAt": "2026-09-16T13:15:36.188Z",
+    "stats": {
+      "startTime": "2026-09-16T13:15:36.626Z",
+      "duration": 26301.470999999998,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "testSha256": "d09b45a1f851aa32d9eed5080b2ac001957ef0640e99c824819a790368512db2",
+    "fixtureSha256": "45a35d24fa0ad09b867436d3fbc1707afed663ccb274a82d1fc502c78f077c7a",
+    "tests": [
+      {
+        "title": "LITS opaque IDs keep validation, room borders, history and native files consistent @production",
+        "project": "chromium",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "The valid L tetromino is reported Incorrect when the board uses opaque IDs."
+      },
+      {
+        "title": "LITS opaque IDs keep validation, room borders, history and native files consistent @production",
+        "project": "mobile-chrome",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "The valid L tetromino is reported Incorrect when the board uses opaque IDs."
+      }
+    ]
+  },
+  "after": {
+    "commit": "c2b28192bfbd0a24a6c039fc52be7c93b13bc008",
+    "createdAt": "2026-09-16T13:27:55.273Z",
+    "stats": {
+      "startTime": "2026-09-16T13:27:55.700Z",
+      "duration": 8185.646000000001,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "testSha256": "d09b45a1f851aa32d9eed5080b2ac001957ef0640e99c824819a790368512db2",
+    "fixtureSha256": "45a35d24fa0ad09b867436d3fbc1707afed663ccb274a82d1fc502c78f077c7a",
+    "tests": [
+      {
+        "title": "LITS opaque IDs keep validation, room borders, history and native files consistent @production",
+        "project": "chromium",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "LITS opaque IDs keep validation, room borders, history and native files consistent @production",
+        "project": "mobile-chrome",
+        "status": "passed",
+        "runtimeErrors": []
+      }
+    ]
+  },
+  "scope": "Public native files, actual-ID LITS validation and room highlighting, map-only import materialization, mouse/Chromium touch border erase, exact room-label/line undo-redo, save/reload, unavailable geometry. Desktop/Pixel7 emulation, not a physical device. No app-state injection.",
+  "files": {
+    "after-chromium-divided.png": {
+      "sha256": "77eecada66355de0fae04bb6db354d4f3282af35b8ff46375b6ead5fceb66677",
+      "bytes": 39533
+    },
+    "after-chromium-merged.png": {
+      "sha256": "cbe0ec22ecfa76d56e8a2f81ad88fd1ea7821e5fc4c57b9ae6db093d34b22c42",
+      "bytes": 36938
+    },
+    "after-chromium-reloaded.png": {
+      "sha256": "34bc414959396dc725c0203a6bccc25f63afeefcf3cf26bae14ff75cdafe3aff",
+      "bytes": 36645
+    },
+    "after-chromium-unavailable.png": {
+      "sha256": "42a97cb39faaa77204c94b64ce6cf28f1d37372e51608698f6d9b5e09b36ca23",
+      "bytes": 58875
+    },
+    "after-chromium.png": {
+      "sha256": "bf43646f600bcd8bafc5824134e881f425d7fdd7731ea15a7f3b18742f1e33ae",
+      "bytes": 36594
+    },
+    "after-chromium.webm": {
+      "sha256": "95b6aa3712164a0024ef9247e8e2e1be48b2468c860642a021fd4ebfcdec0ee4",
+      "bytes": 166791,
+      "durationSeconds": 4.08,
+      "fullDecode": "passed"
+    },
+    "after-mobile-chrome-divided.png": {
+      "sha256": "5c7338f0e46f9a8cf9171faa00562f5b61a5ed3d497a843738b3e455f4ca21ab",
+      "bytes": 106034
+    },
+    "after-mobile-chrome-merged.png": {
+      "sha256": "912f5eed9f50f91b2cc8fe3209b92a551fb3364342f81276a68f421cee1d73a3",
+      "bytes": 96279
+    },
+    "after-mobile-chrome-reloaded.png": {
+      "sha256": "1320c96a29688118f1a866dbdc97a4d7ec5034e0576ff5e14e15e3c4d7436819",
+      "bytes": 96431
+    },
+    "after-mobile-chrome-unavailable.png": {
+      "sha256": "57ec4c9ea36f4c8bc5ff7f6ccba7c18f1195b05c525ade7b5cb18b8d3be1acb6",
+      "bytes": 162473
+    },
+    "after-mobile-chrome.png": {
+      "sha256": "a347a02a465dbe445f2e13f92dbb31079d9cc63fb659844eb8246a95de55b942",
+      "bytes": 96408
+    },
+    "after-mobile-chrome.webm": {
+      "sha256": "9cb105597cf2a1b04dc369fe367ae148262c537b20dead5e29bcac11cb71a624",
+      "bytes": 285069,
+      "durationSeconds": 3.88,
+      "fullDecode": "passed"
+    },
+    "before-chromium.png": {
+      "sha256": "7416917a8ef95868263392877c5d5d8fd413cb789adde15bbba4f10c8608f137",
+      "bytes": 39455
+    },
+    "before-chromium.webm": {
+      "sha256": "1e2b46ac9668c2b006d7cd5565d522b856668fac2a3c9937d2fbfccf3558fa74",
+      "bytes": 171160,
+      "durationSeconds": 14.6,
+      "fullDecode": "passed"
+    },
+    "before-mobile-chrome.png": {
+      "sha256": "55737e2793c9a6d02a64927543588bf955a75397bc008953c219680926a9b342",
+      "bytes": 105980
+    },
+    "before-mobile-chrome.webm": {
+      "sha256": "ff3c32a389daf40e02b87ebc0fa36befd8b76ed607972672c4571bbe88da0346",
+      "bytes": 249778,
+      "durationSeconds": 11.96,
+      "fullDecode": "passed"
+    }
+  }
+}

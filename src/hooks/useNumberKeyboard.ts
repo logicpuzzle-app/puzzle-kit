@@ -1,3 +1,4 @@
+import type { CellSelection } from '../utils/cellSelection';
 /**
  * useNumberKeyboard - Hook for Excel-like keyboard input for number tools
  *
@@ -11,7 +12,7 @@
  */
 
 import { useEffect, useCallback, useMemo, useRef } from 'react';
-import { usePuzzleStore } from '../store/puzzleStoreContext';
+import { usePuzzleStore, usePuzzleStoreApi } from '../store/puzzleStoreContext';
 import { useCellFinder } from './useCellFinder';
 import { getEditableDataLayer } from '../utils/editPolicy';
 import { toPenpaDirection } from '../utils/directionalClue';
@@ -24,7 +25,6 @@ import {
 import {
   shouldIgnoreKeyEvent,
   getArrowDirection,
-  calculateNextPosition,
   appendDigit,
   removeLastChar,
   MARKER_KEYS,
@@ -50,7 +50,7 @@ interface NumberKeyboardContext {
   isNumberTool: boolean;
   isConstraintNumberInput: boolean;
   allowNonNumeric: boolean;
-  target: { row: number; col: number } | null;
+  target: CellSelection | null;
   gridRows: number;
   gridCols: number;
   panelMode: 'number' | 'alphabet' | 'hiragana' | 'custom';
@@ -60,7 +60,7 @@ interface NumberKeyboardContext {
 }
 
 type NumberInputHandler = (
-  target: { row: number; col: number },
+  target: CellSelection,
   key: string,
   isDelete: boolean,
   isSingleCharInput: boolean
@@ -94,13 +94,14 @@ export function useNumberKeyboard() {
   const kanaMode = toolSettings.numberInputKana === 'katakana' ? 'katakana' : 'hiragana';
   const wordDirection = toolSettings.numberWordDirection ?? 'horizontal';
 
-  const { findCellIdByRowCol } = useCellFinder();
+  const { resolveSelection, moveSelection } = useCellFinder();
+  const store = usePuzzleStoreApi();
 
   const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
 
   const romajiBufferRef = useRef('');
   const romajiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const romajiTargetRef = useRef<{ row: number; col: number } | null>(null);
+  const romajiTargetRef = useRef<CellSelection | null>(null);
   const romajiContextRef = useRef<NumberKeyboardContext | null>(null);
 
   // Check if constraint mode number input is active
@@ -151,8 +152,9 @@ export function useNumberKeyboard() {
     if (!editableLayer) {
       return;
     }
-    const cellId = findCellIdByRowCol(target.row, target.col) ?? `cell-${target.row}-${target.col}`;
-    const cellIndex = target.row * grid.cols + target.col;
+    const cellId = resolveSelection(target);
+    if (!cellId) return;
+    const cellIndex = target.row !== undefined && target.col !== undefined ? target.row * grid.cols + target.col : undefined;
     const dataLayer = editableLayer;
 
     if (currentSchemaId === 'simplegako' && dataLayer === 'answer') {
@@ -244,7 +246,7 @@ export function useNumberKeyboard() {
       color: isPaintSchema ? toolSettings.color : existingNumber?.color || toolSettings.color,
     });
   }, [
-    findCellIdByRowCol,
+    resolveSelection,
     grid.cols,
     editableLayer,
     puzzle,
@@ -267,8 +269,9 @@ export function useNumberKeyboard() {
     if (!editableLayer) {
       return;
     }
-    const cellId = findCellIdByRowCol(target.row, target.col) ?? `cell-${target.row}-${target.col}`;
-    const cellIndex = target.row * grid.cols + target.col;
+    const cellId = resolveSelection(target);
+    if (!cellId) return;
+    const cellIndex = target.row !== undefined && target.col !== undefined ? target.row * grid.cols + target.col : undefined;
     const dataLayer = editableLayer;
 
     const existingDirectionalEntry = findDirectionalNumberByCellId(puzzle[dataLayer].numbers, cellId);
@@ -306,7 +309,7 @@ export function useNumberKeyboard() {
       });
     }
   }, [
-    findCellIdByRowCol,
+    resolveSelection,
     grid.cols,
     editableLayer,
     puzzle,
@@ -327,7 +330,8 @@ export function useNumberKeyboard() {
     if (!editableLayer) {
       return;
     }
-    const cellId = findCellIdByRowCol(target.row, target.col) ?? `cell-${target.row}-${target.col}`;
+    const cellId = resolveSelection(target);
+    if (!cellId) return;
     const dataLayerForNumbers = editableLayer;
     const numbers = puzzle[dataLayerForNumbers].numbers;
     const position = toolSettings.numberPosition;
@@ -386,7 +390,7 @@ export function useNumberKeyboard() {
       });
     }
   }, [
-    findCellIdByRowCol,
+    resolveSelection,
     editableLayer,
     puzzle,
     toolSettings.numberPosition,
@@ -400,7 +404,7 @@ export function useNumberKeyboard() {
   ]);
 
   const applyNumberInput = useCallback((
-    target: { row: number; col: number },
+    target: CellSelection,
     value: string,
     options: { isDelete: boolean; isSingleCharInput: boolean },
     context: NumberKeyboardContext
@@ -415,7 +419,7 @@ export function useNumberKeyboard() {
   }, [handleConstraintNumber, handleDirectionalNumber, handleNormalNumber, toolSettings.currentTool]);
 
   const applyTextInput = useCallback((
-    target: { row: number; col: number },
+    target: CellSelection,
     value: string,
     context: NumberKeyboardContext
   ) => {
@@ -430,7 +434,7 @@ export function useNumberKeyboard() {
   }, []);
 
   const flushRomajiBuffer = useCallback((
-    target: { row: number; col: number } | null,
+    target: CellSelection | null,
     context: NumberKeyboardContext,
     commitN: boolean
   ) => {
@@ -447,34 +451,34 @@ export function useNumberKeyboard() {
   }, [applyTextInput, clearRomajiTimer]);
 
   const moveWordCursor = useCallback((
-    target: { row: number; col: number },
+    target: CellSelection,
     context: NumberKeyboardContext,
     step: 1 | -1
   ) => {
     if (context.panelMode === 'number') return;
     const delta = context.wordDirection === 'vertical' ? { dr: step, dc: 0 } : { dr: 0, dc: step };
-    const next = calculateNextPosition(target, delta, context.gridRows, context.gridCols);
-    if (next.row !== target.row || next.col !== target.col) {
+    const next = moveSelection(target, delta);
+    if (next && next.cellId !== target.cellId) {
       setNumberSelection(next);
     }
-  }, [setNumberSelection]);
+  }, [setNumberSelection, moveSelection]);
 
   const advanceWordCursor = useCallback((
-    target: { row: number; col: number },
+    target: CellSelection,
     context: NumberKeyboardContext
   ) => {
     moveWordCursor(target, context, 1);
   }, [moveWordCursor]);
 
   const retreatWordCursor = useCallback((
-    target: { row: number; col: number },
+    target: CellSelection,
     context: NumberKeyboardContext
   ) => {
     moveWordCursor(target, context, -1);
   }, [moveWordCursor]);
 
   const startRomajiConfirmTimer = useCallback((
-    target: { row: number; col: number },
+    target: CellSelection,
     context: NumberKeyboardContext
   ) => {
     clearRomajiTimer();
@@ -483,17 +487,19 @@ export function useNumberKeyboard() {
     romajiTimerRef.current = setTimeout(() => {
       const currentTarget = romajiTargetRef.current;
       const currentContext = romajiContextRef.current;
-      if (!currentTarget || !currentContext) return;
+      const currentState = store.getState();
+      if (!currentTarget || !currentContext || currentState.numberSelection !== currentTarget ||
+          currentState.activeLayer !== activeLayer || currentState.isPlayerMode !== isPlayerMode || !resolveSelection(currentTarget)) return;
       const output = normalizeKanaFromKatakana('ン', currentContext.kanaMode);
       applyTextInput(currentTarget, output, currentContext);
       advanceWordCursor(currentTarget, currentContext);
       romajiBufferRef.current = '';
       romajiTimerRef.current = null;
     }, ROMAJI_N_CONFIRM_DELAY);
-  }, [advanceWordCursor, applyTextInput, clearRomajiTimer]);
+  }, [advanceWordCursor, applyTextInput, clearRomajiTimer, store, resolveSelection, activeLayer, isPlayerMode]);
 
   const handleRomajiKeyInput = useCallback((
-    target: { row: number; col: number },
+    target: CellSelection,
     keyValue: string,
     context: NumberKeyboardContext
   ) => {
@@ -511,7 +517,7 @@ export function useNumberKeyboard() {
   }, [advanceWordCursor, applyTextInput, clearRomajiTimer, startRomajiConfirmTimer]);
 
   const handleRomajiDeleteInput = useCallback((
-    target: { row: number; col: number },
+    target: CellSelection,
     context: NumberKeyboardContext
   ): boolean => {
     clearRomajiTimer();
@@ -525,7 +531,7 @@ export function useNumberKeyboard() {
   }, [clearRomajiTimer, startRomajiConfirmTimer]);
 
   const handleDirectKanaInput = useCallback((
-    target: { row: number; col: number },
+    target: CellSelection,
     keyValue: string,
     context: NumberKeyboardContext
   ) => {
@@ -534,10 +540,10 @@ export function useNumberKeyboard() {
     const normalized = normalizeKanaInput(keyValue, context.kanaMode);
     applyTextInput(target, normalized, context);
     advanceWordCursor(target, context);
-  }, [advanceWordCursor, applyTextInput, clearRomajiTimer]);
+  }, [advanceWordCursor, applyTextInput, clearRomajiTimer, store, resolveSelection, activeLayer, isPlayerMode]);
 
   const handleDeleteInput = useCallback((
-    target: { row: number; col: number },
+    target: CellSelection,
     context: NumberKeyboardContext
   ) => {
     if (context.panelMode === 'hiragana' && handleRomajiDeleteInput(target, context)) {
@@ -573,11 +579,11 @@ export function useNumberKeyboard() {
     if (romajiBufferRef.current) {
       clearRomajiState();
     }
-  }, [numberSelection?.row, numberSelection?.col, clearRomajiState]);
+  }, [numberSelection, clearRomajiState]);
 
   useEffect(() => {
     clearRomajiState();
-  }, [kanaMode, clearRomajiState]);
+  }, [kanaMode, activeLayer, isPlayerMode, clearRomajiState]);
 
   useEffect(() => {
     return () => clearRomajiTimer();
@@ -602,8 +608,8 @@ export function useNumberKeyboard() {
         }
 
         const current = numberSelection || { row: 0, col: 0 };
-        const next = calculateNextPosition(current, direction, ctx.gridRows, ctx.gridCols);
-        if (next.row !== current.row || next.col !== current.col) {
+        const next = moveSelection(current, direction);
+        if (next && next.cellId !== numberSelection?.cellId) {
           setNumberSelection(next);
         }
       },
@@ -693,6 +699,7 @@ export function useNumberKeyboard() {
   ], [
     numberSelection,
     setNumberSelection,
+    moveSelection,
     toolSettings.currentTool,
     handleConstraintNumber,
     handleDirectionalNumber,

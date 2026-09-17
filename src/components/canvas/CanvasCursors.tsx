@@ -12,6 +12,7 @@
  * - Number tool cell cursor
  */
 
+import { usesVertexSurface } from '../../utils/vertexSurfaces';
 import React from 'react';
 import type { Point } from '../../types';
 import { renderSymbol } from './symbols';
@@ -103,6 +104,7 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
   splitHoverVertexPos,
   sculptHoverPolygons,
 }) => {
+  const vertexSurface = usePuzzleStore(state => usesVertexSurface(state.toolSettings));
   const cursorColor = usePuzzleStore(state => state.toolSettings.cursorCellColor) ?? CURSOR_COLOR;
   const cursorThickness = usePuzzleStore(state => state.toolSettings.cursorCellThickness) ?? 3;
   const cursorFill = withAlpha(cursorColor, 0.25);
@@ -114,7 +116,7 @@ export const CanvasCursors: React.FC<CanvasCursorsProps> = ({
       {/* Cell cursor for number tools (Excel-like highlight) */}
       {cellCursorPath && (
         <g data-cursor="true" transform={transform}>
-          <path d={cellCursorPath} fill="none" stroke={cursorStroke} strokeWidth={cursorThickness / canvas.zoom} />
+          <path d={cellCursorPath} fill={vertexSurface ? cursorFill : "none"} fillRule="evenodd" stroke={vertexSurface ? "none" : cursorStroke} strokeWidth={cursorThickness / canvas.zoom} />
         </g>
       )}
 

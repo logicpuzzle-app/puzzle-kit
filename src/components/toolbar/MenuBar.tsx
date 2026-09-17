@@ -1,3 +1,5 @@
+import { useInitialPuzzleLoad } from '../../hooks/useInitialPuzzleLoad';
+import { captureConstraintSettings } from '../../utils/constraintPersistence';
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
@@ -12,7 +14,6 @@ import {
   createExportHandlers,
   createImportHandlers,
   createMenuDefinitions,
-  loadFromUrlOrAutoSave,
 } from './menu';
 import type { MenuDefinition } from './menu';
 
@@ -40,6 +41,10 @@ export const MenuBar: React.FC = () => {
     showConstraintLayer,
     toggleConstraintLayer,
     currentSchemaId,
+    currentInputMode,
+    validationOverrides,
+    highlightOverrides,
+    savedInputModes,
     setCurrentSchemaId,
     showAdjacency,
     setShowAdjacency,
@@ -62,18 +67,17 @@ export const MenuBar: React.FC = () => {
       const topologySettings = captureTopologySettings({
         topology, useTopology, topologyPreset, topologyIntensity,
       });
-      autoSave(grid, puzzle, undefined, topologySettings);
+      autoSave(grid, puzzle, undefined, topologySettings, captureConstraintSettings(store.getState()));
     }, 2000);
     return () => clearTimeout(timer);
-  }, [grid, puzzle, topology, useTopology, topologyPreset, topologyIntensity]);
+  }, [grid, puzzle, topology, useTopology, topologyPreset, topologyIntensity, currentSchemaId, currentInputMode, validationOverrides, highlightOverrides, showConstraintLayer, savedInputModes, store]);
 
   // Load from URL or auto-save on mount
-  useEffect(() => {
-    loadFromUrlOrAutoSave(store);
-  }, [store]);
+  useInitialPuzzleLoad(store);
 
   // Create export handlers
   const exportHandlers = createExportHandlers({
+    constraintSettings: captureConstraintSettings(store.getState()),
     modalStore,
     grid,
     puzzle,

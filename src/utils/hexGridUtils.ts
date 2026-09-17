@@ -20,12 +20,14 @@ export function getHexCenter(row: number, col: number, grid: GridConfig): Point 
   const { width, height } = getHexSize(cellSize);
 
   // Offset for odd rows (odd-r horizontal layout, pointy-top)
-  const xOffset = row % 2 === 1 ? width / 2 : 0;
+  const absoluteRow = row + (grid.marginTop ?? 0);
+  const absoluteCol = col + (grid.marginLeft ?? 0);
+  const xOffset = (absoluteRow + (grid.hexRowOffset ?? 0)) % 2 === 1 ? width / 2 : 0;
   const rowHeight = height * 0.75;
 
   return {
-    x: outerPadding + col * width + xOffset + width / 2,
-    y: outerPadding + row * rowHeight + height / 2,
+    x: outerPadding + absoluteCol * width + xOffset + width / 2,
+    y: outerPadding + absoluteRow * rowHeight + height / 2,
   };
 }
 
@@ -54,7 +56,7 @@ export function findNearestHexCell(
   const { width, height } = getHexSize(cellSize);
   const rowHeight = height * 0.75;
 
-  const approxRow = Math.floor((point.y - outerPadding) / rowHeight);
+  const approxRow = Math.floor((point.y - outerPadding) / rowHeight) - (grid.marginTop ?? 0);
 
   // Check nearby cells and find the closest center
   let bestCell: { row: number; col: number } | null = null;
@@ -65,8 +67,8 @@ export function findNearestHexCell(
       const r = approxRow + dr;
       if (r < 0 || r >= rows) continue;
 
-      const xOffset = r % 2 === 1 ? width / 2 : 0;
-      const approxCol = Math.floor((point.x - outerPadding - xOffset) / width);
+      const xOffset = (r + (grid.marginTop ?? 0) + (grid.hexRowOffset ?? 0)) % 2 === 1 ? width / 2 : 0;
+      const approxCol = Math.floor((point.x - outerPadding - xOffset) / width) - (grid.marginLeft ?? 0);
 
       for (let dc2 = -1; dc2 <= 1; dc2++) {
         const c = approxCol + dc + dc2;
@@ -99,8 +101,8 @@ export function getHexGridDimensions(grid: GridConfig): { width: number; height:
   const rowHeight = height * 0.75;
 
   return {
-    width: cols * width + width / 2 + outerPadding * 2,
-    height: (rows - 1) * rowHeight + height + outerPadding * 2,
+    width: (cols + (grid.marginLeft ?? 0) + (grid.marginRight ?? 0)) * width + width / 2 + outerPadding * 2,
+    height: (rows + (grid.marginTop ?? 0) + (grid.marginBottom ?? 0) - 1) * rowHeight + height + outerPadding * 2,
   };
 }
 

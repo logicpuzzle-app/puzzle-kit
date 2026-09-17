@@ -1,0 +1,127 @@
+{
+  "before": {
+    "commit": "b88c79cf3271d2eee94da6ac231bedcb3834a1e2",
+    "createdAt": "2026-09-16T11:58:40.849Z",
+    "stats": {
+      "startTime": "2026-09-16T11:58:41.211Z",
+      "duration": 13884.391000000001,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "testSha256": "cc7a538d79b5d8c6d711dbb1b0b8b80697a220332e495137140b6f67ce0e1258",
+    "fixtureSha256": "231f9c3308f6680266fd3522991e12c5ec57c55e7ef206575c9a56bf20eaec80",
+    "tests": [
+      {
+        "title": "Nurimisaki checks opaque cell references, wrong clues and unresolved geometry through public files @production",
+        "project": "chromium",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "A correct opaque-ID solution is reported Incorrect; the Correct! assertion fails."
+      },
+      {
+        "title": "Nurimisaki checks opaque cell references, wrong clues and unresolved geometry through public files @production",
+        "project": "mobile-chrome",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "A correct opaque-ID solution is reported Incorrect; the Correct! assertion fails."
+      }
+    ]
+  },
+  "after": {
+    "commit": "e7425825425131181282b9422090b0015411cfe8",
+    "createdAt": "2026-09-16T12:02:48.611Z",
+    "stats": {
+      "startTime": "2026-09-16T12:02:48.965Z",
+      "duration": 7445.732,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "testSha256": "cc7a538d79b5d8c6d711dbb1b0b8b80697a220332e495137140b6f67ce0e1258",
+    "fixtureSha256": "231f9c3308f6680266fd3522991e12c5ec57c55e7ef206575c9a56bf20eaec80",
+    "tests": [
+      {
+        "title": "Nurimisaki checks opaque cell references, wrong clues and unresolved geometry through public files @production",
+        "project": "chromium",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "Nurimisaki checks opaque cell references, wrong clues and unresolved geometry through public files @production",
+        "project": "mobile-chrome",
+        "status": "passed",
+        "runtimeErrors": []
+      }
+    ]
+  },
+  "scope": "Public File Open and explicit Nurimisaki preset selection on both revisions. Correct opaque-ID 3x3 solution, wrong clue99, unavailable cell index, native graph/state roundtrip. Desktop mouse and emulated Pixel7 touch. File Open/Save constraint-settings persistence and other genre ID parsing remain pending.",
+  "files": {
+    "after-chromium-invalid.png": {
+      "sha256": "bf4d7a0055df7a4027ca7a6385e86678b69531f3e38b3b9c1dc8201305033632",
+      "bytes": 43493
+    },
+    "after-chromium-reloaded.png": {
+      "sha256": "3d951d53df54e868b97f9bfecd7ce59392102698b98b4c0e61dce1bf51901de9",
+      "bytes": 39827
+    },
+    "after-chromium-unavailable.png": {
+      "sha256": "367bf7a2926232057bbbae4b6ddc21346b1e978d15b428f5467333e18bfae5cc",
+      "bytes": 62857
+    },
+    "after-chromium.png": {
+      "sha256": "55d2e8022e1b81946b696fd9d0a4b512da77e7f9470e8eff88fc29437f7d1430",
+      "bytes": 40720
+    },
+    "after-chromium.webm": {
+      "sha256": "b1f56ec7a64daf717145a6b0dcab3b7e99499f296ecb8dda1149553f992554c2",
+      "bytes": 169253,
+      "durationSeconds": 3.92,
+      "fullDecode": "passed"
+    },
+    "after-mobile-chrome-invalid.png": {
+      "sha256": "bd820cc261cc958abc4c1f80d819610122b80d408a1a3196f1fe1694d8efbeb3",
+      "bytes": 116170
+    },
+    "after-mobile-chrome-reloaded.png": {
+      "sha256": "4c6897ebd2b4bced50956777c3f49190bcccd1e1efd06908a7758d016733f21a",
+      "bytes": 103351
+    },
+    "after-mobile-chrome-unavailable.png": {
+      "sha256": "abd2d1cf1955b8cf54d380002d05259465e68f67c5f35417e507ce2af768eea4",
+      "bytes": 168530
+    },
+    "after-mobile-chrome.png": {
+      "sha256": "71be90ae7c83caaf0ac78afcbce1111b43323abbb8a5b528157cecc371a2e2db",
+      "bytes": 106561
+    },
+    "after-mobile-chrome.webm": {
+      "sha256": "5fd6ccdb6881da8117b72300e3b5dd2e60aee24013e376693508979f51615cf2",
+      "bytes": 216696,
+      "durationSeconds": 3.04,
+      "fullDecode": "passed"
+    },
+    "before-chromium.png": {
+      "sha256": "8371f9b5bc6280c450f844a302500331746c35fef0d938eca00302e291e498c2",
+      "bytes": 51953
+    },
+    "before-chromium.webm": {
+      "sha256": "17c20a82936d9da91687bb44a8ff36f2b0cb6d937bade20ef886925db2fbaaee",
+      "bytes": 200343,
+      "durationSeconds": 13.8,
+      "fullDecode": "passed"
+    },
+    "before-mobile-chrome.png": {
+      "sha256": "4be202a4bf0b95930fd3c93e204960c50610cb2d2b0d763a86670ad754b288c5",
+      "bytes": 141448
+    },
+    "before-mobile-chrome.webm": {
+      "sha256": "9e9846b89ced0da3ae08a99e8655f686e6d7a15c739c3ab3f025af7d38a8b4c0",
+      "bytes": 293246,
+      "durationSeconds": 13.96,
+      "fullDecode": "passed"
+    }
+  }
+}

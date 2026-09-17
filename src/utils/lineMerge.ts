@@ -762,6 +762,11 @@ export const getChainArrowDirections = (
  * Uses the from/to IDs directly for adjacency check (topology-friendly)
  */
 export const areLinesConnected = (a: LineWithPosition, b: LineWithPosition): boolean => {
+  if (a.line.fromType && a.line.toType && b.line.fromType && b.line.toType) {
+    const aPoints = [[a.line.fromType, a.line.from], [a.line.toType, a.line.to]];
+    const bPoints = [[b.line.fromType, b.line.from], [b.line.toType, b.line.to]];
+    return aPoints.some(([kind, id]) => bPoints.some(([otherKind, otherId]) => kind === otherKind && id === otherId));
+  }
   // Use from/to IDs if available (topology-friendly approach)
   const aFrom = a.line.from;
   const aTo = a.line.to;

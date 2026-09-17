@@ -5,7 +5,7 @@
 import type { LineElement, GridConfig } from '../../../../types';
 import type { GridTopology } from '../../../../utils/gridTopology';
 import type { LineWithPosition } from '../../../../utils/lineMerge';
-import { resolveEdgeVertices } from '../../../../utils/gridIds';
+import { resolveLinePoints } from '../../../../utils/lineReferences';
 
 /**
  * Context needed for resolving line coordinates
@@ -13,6 +13,7 @@ import { resolveEdgeVertices } from '../../../../utils/gridIds';
 export interface GeometryContext {
   grid: GridConfig;
   topology: GridTopology | null;
+  useTopology?: boolean;
 }
 
 /**
@@ -30,30 +31,10 @@ export function resolveLinePosition(
   let toX: number | undefined;
   let toY: number | undefined;
 
-  // Try to get coordinates from edgeId first (new format)
-  if (line.edgeId && topology) {
-    const edge = topology.edges.get(line.edgeId);
-    if (edge) {
-      const startVertex = topology.vertices.get(edge.startVertex);
-      const endVertex = topology.vertices.get(edge.endVertex);
-      if (startVertex && endVertex) {
-        fromX = startVertex.position.x;
-        fromY = startVertex.position.y;
-        toX = endVertex.position.x;
-        toY = endVertex.position.y;
-      }
-    }
-  }
-
-  // Fallback to from/to (legacy format)
-  if (fromX === undefined && line.from && line.to) {
-    const result = resolveEdgeVertices(line.from, line.to, grid, topology, undefined);
-    if (result) {
-      fromX = result.from.x;
-      fromY = result.from.y;
-      toX = result.to.x;
-      toY = result.to.y;
-    }
+  const points = resolveLinePoints(line, { grid, topology, useTopology: context.useTopology ?? !!topology });
+  if (points) {
+    fromX = points[0].position.x; fromY = points[0].position.y;
+    toX = points[1].position.x; toY = points[1].position.y;
   }
 
   // Also check freehand coordinates

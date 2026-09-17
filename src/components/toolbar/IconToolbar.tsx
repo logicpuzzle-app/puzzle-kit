@@ -1,3 +1,4 @@
+import { captureConstraintSettings } from '../../utils/constraintPersistence';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
@@ -161,7 +162,7 @@ export const IconToolbar: React.FC = () => {
   const modalStore = useModalStoreApi();
 
   const handleExportJson = () => {
-    downloadAsJson(grid, puzzle, { title: 'Puzzle' }, captureTopologySettings(store.getState()));
+    downloadAsJson(grid, puzzle, { title: 'Puzzle' }, captureTopologySettings(store.getState()), undefined, captureConstraintSettings(store.getState()));
   };
 
   const handleImportJson = () => {
@@ -209,7 +210,7 @@ export const IconToolbar: React.FC = () => {
   };
 
   const handleShareUrl = () => {
-    const url = generateShareUrl(grid, puzzle, undefined, captureTopologySettings(store.getState()));
+    const url = generateShareUrl(grid, puzzle, undefined, captureTopologySettings(store.getState()), captureConstraintSettings(store.getState()));
     navigator.clipboard.writeText(url).then(() => {
       showAlert({
         title: t('share.copied'),

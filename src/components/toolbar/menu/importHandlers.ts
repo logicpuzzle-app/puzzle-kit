@@ -1,3 +1,4 @@
+import { restoreConstraintSettings } from '../../../utils/constraintPersistence';
 /**
  * Import handlers for MenuBar
  * Handles JSON, Penpa URL, and puzz.link imports
@@ -13,7 +14,7 @@ import {
   generatePuzzlinkUrl,
 } from '../../../utils/penpaCompat';
 import { syncCountersFromPuzzleState } from '../../../utils/idGenerator';
-import { restoreTopology } from '../../../utils/topologyPersistence';
+import { restoreBoard } from '../../../utils/topologyPersistence';
 import { restorePuzzleStateFromExport } from '../../../utils/puzzleExport';
 import { loadAutoSave, parseShareUrl } from '../../../utils/serialization';
 import { getDefaultStorageAdapter } from '../../../modules/storage';
@@ -45,7 +46,9 @@ export const loadPuzzleData = (
   grid: GridConfig;
   state: PuzzleState;
   topologySettings?: PuzzleExport['topologySettings'];
+  constraintSettings?: PuzzleExport['constraintSettings'];
 }) => {
+  const constraintSettings = restoreConstraintSettings(data.constraintSettings);
   const storeState = store.getState();
   const normalizedState = mergeDirectionalCluesIntoNumbers(restorePuzzleStateFromExport(data.state));
 
@@ -54,7 +57,7 @@ export const loadPuzzleData = (
   const loadedTopologyPreset = (data.topologySettings?.topologyPreset ?? storeState.topologyPreset) as typeof storeState.topologyPreset;
   const loadedTopologyIntensity = data.topologySettings?.topologyIntensity ?? storeState.topologyIntensity;
 
-  const loadedTopology = restoreTopology(data.grid, {
+  const { topology: loadedTopology, grid: loadedGrid } = restoreBoard(data.grid, {
     useTopology: loadedUseTopology,
     topologyPreset: loadedTopologyPreset,
     topologyIntensity: loadedTopologyIntensity,
@@ -64,13 +67,18 @@ export const loadPuzzleData = (
   syncCountersFromPuzzleState(normalizedState);
   store.setState({
     ...freshPuzzleSession(store.getState()),
-    grid: data.grid,
+    ...constraintSettings,
+    toolSettings: { ...storeState.toolSettings, inputConstraint: 'none' },
+    grid: loadedGrid,
     puzzle: normalizedState,
     topology: loadedTopology,
     useTopology: loadedUseTopology,
     topologyPreset: loadedTopologyPreset,
     topologyIntensity: loadedTopologyIntensity,
   });
+  if (constraintSettings.showConstraintLayer && (storeState.activeLayer === 'problem' || storeState.activeLayer === 'answer')) {
+    store.getState().setInputMode(constraintSettings.currentInputMode);
+  }
   store.getState().historyManager.clear();
 };
 
@@ -104,6 +112,7 @@ export const loadFromUrlOrAutoSave = async (store: PuzzleStoreHook) => {
             grid: result.data.grid,
             state: result.data.state,
             topologySettings: result.data.topologySettings,
+            constraintSettings: result.data.constraintSettings,
           });
           // Clear URL params
           window.history.replaceState({}, '', window.location.pathname);
@@ -122,6 +131,7 @@ export const loadFromUrlOrAutoSave = async (store: PuzzleStoreHook) => {
       grid: saved.grid,
       state: saved.state,
       topologySettings: saved.topologySettings,
+      constraintSettings: saved.constraintSettings,
     });
   }
 };
@@ -159,6 +169,7 @@ export const createImportHandlers = (options: ImportHandlersOptions) => {
               grid: data.grid,
               state: data.state,
               topologySettings: data.topologySettings,
+              constraintSettings: data.constraintSettings,
             });
           } catch {
             showAlert({

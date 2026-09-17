@@ -28,7 +28,8 @@ import {
  * Implementation of the constraint catalog
  */
 class ConstraintCatalogImpl implements IConstraintCatalog {
-  schemas: Record<string, ConstraintSchema> = {};
+  // Schema names are exact registry keys, including names such as toString.
+  schemas: Record<string, ConstraintSchema> = Object.create(null);
 
   constructor() {
     // Register built-in schemas

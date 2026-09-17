@@ -79,6 +79,9 @@ export const GridShapeContent: React.FC = () => {
     grid,
     setGrid,
     useTopology,
+    topology,
+    previewTopology,
+    previewGrid,
     topologyPreset,
     topologyIntensity,
     setTopologyPreset,
@@ -130,13 +133,17 @@ export const GridShapeContent: React.FC = () => {
   };
 
   // Check if pending values differ from current grid
-  const hasChanges = pendingGridType !== grid.gridType ||
+  const presetChanged = useTopology && topology?.appliedPreset
+    && (topology.appliedPreset.preset !== topologyPreset || topology.appliedPreset.intensity !== topologyIntensity);
+  const hasChanges = presetChanged || pendingGridType !== grid.gridType ||
     pendingRows !== grid.rows ||
     effectiveCols !== grid.cols ||
     pendingLevel !== (grid.level ?? 1) ||
     pendingCellSize !== grid.cellSize ||
     (isIso && facesChanged()) ||
     (isIso && pendingIsoView !== (grid.isometricView ?? 'exterior'));
+
+  const unsupportedEdit = !!topology?.editBase && hasChanges && previewGrid !== null && previewTopology === null;
 
   // Auto-preview when values change
   useEffect(() => {
@@ -151,7 +158,7 @@ export const GridShapeContent: React.FC = () => {
     } else {
       setPreviewGrid(null);
     }
-  }, [hasChanges, pendingGridType, pendingRows, effectiveCols, pendingLevel, pendingCellSize, pendingIsoFaces, pendingIsoView, isIso, setPreviewGrid]);
+  }, [hasChanges, topologyPreset, topologyIntensity, pendingGridType, pendingRows, effectiveCols, pendingLevel, pendingCellSize, pendingIsoFaces, pendingIsoView, isIso, setPreviewGrid]);
 
   // Clear preview when component unmounts
   useEffect(() => {
@@ -162,6 +169,10 @@ export const GridShapeContent: React.FC = () => {
 
   // Cancel: revert pending values to current grid
   const handleCancel = useCallback(() => {
+    if (topology?.appliedPreset) {
+      setTopologyPreset(topology.appliedPreset.preset);
+      setTopologyIntensity(topology.appliedPreset.intensity);
+    }
     setPendingGridType(grid.gridType);
     setPendingRows(grid.rows);
     setPendingCols(grid.cols);
@@ -170,7 +181,7 @@ export const GridShapeContent: React.FC = () => {
     setPendingIsoFaces(grid.isometricFaces ?? ['top', 'left', 'right']);
     setPendingIsoView(grid.isometricView ?? 'exterior');
     setPreviewGrid(null);
-  }, [grid.gridType, grid.rows, grid.cols, grid.cellSize, grid.level, grid.isometricFaces, grid.isometricView, setPreviewGrid]);
+  }, [grid.gridType, grid.rows, grid.cols, grid.cellSize, grid.level, grid.isometricFaces, grid.isometricView, topology?.appliedPreset, setTopologyPreset, setTopologyIntensity, setPreviewGrid]);
 
   const handleApply = useCallback(() => {
     setPreviewGrid(null);
@@ -185,6 +196,7 @@ export const GridShapeContent: React.FC = () => {
 
   return (
     <div className="space-y-2">
+      {unsupportedEdit && <p role="status" className="text-xs text-office-text-secondary">{t('gridEdit.unsupportedSplitResize')}</p>}
       {/* Grid Type and Size */}
       <div>
         <label className="block text-xs text-office-text-secondary mb-1">
@@ -260,6 +272,8 @@ export const GridShapeContent: React.FC = () => {
           </div>
         )}
       </div>
+
+      {!!grid.mergedCells?.length && <p className="text-xs text-office-text-secondary">{t('gridEdit.resizeMergedHelp')}</p>}
 
       {isIso && (
         <>
@@ -421,7 +435,7 @@ export const GridShapeContent: React.FC = () => {
               : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
           }`}
           onClick={handleApply}
-          disabled={!hasChanges}
+          disabled={!hasChanges || unsupportedEdit}
         >
           {t('common.apply')}
         </button>

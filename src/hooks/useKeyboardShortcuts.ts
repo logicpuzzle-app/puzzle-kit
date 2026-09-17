@@ -2,6 +2,8 @@ import { useEffect, useCallback } from 'react';
 import { usePuzzleStore } from '../store/puzzleStoreContext';
 import { getEditableDataLayer } from '../utils/editPolicy';
 import { getCellId, getCellIndexById } from '../utils/gridUtils';
+import { resolveBoardPoint } from '../utils/lineReferences';
+import { shouldAllowOutboardForTool } from '../utils/outboardPolicy';
 
 type Shortcut = {
   keys: string[];
@@ -48,6 +50,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutOptions = {}) {
     highlightedLineIds,
     setHighlightedLineIds,
     removeLine,
+    removeSelectedAnnotations,
   } = usePuzzleStore();
 
   const allowLayerToggle = options.allowLayerToggle !== false;
@@ -57,7 +60,8 @@ export function useKeyboardShortcuts(options: KeyboardShortcutOptions = {}) {
     (dRow: number, dCol: number) => {
       let newCellId: string | null = null;
 
-      if (useTopology && topology) {
+      if (useTopology) {
+        if (!topology) return;
         if (cursorCell) {
           const currentCell = topology.cells.get(cursorCell);
           if (currentCell) {
@@ -111,19 +115,28 @@ export function useKeyboardShortcuts(options: KeyboardShortcutOptions = {}) {
         setCursorCell(newCellId);
       }
     },
-    [cursorCell, grid.cols, grid.rows, setCursorCell, topology, useTopology]
+    [cursorCell, grid, setCursorCell, topology, useTopology]
   );
 
+  const canEditCursorCell = useCallback(() => {
+    if (!editableLayer || cursorCell === null) return false;
+    if (useTopology) {
+      const cell = topology?.cells.get(cursorCell);
+      return !!cell && (!cell.outboard || shouldAllowOutboardForTool(toolSettings.currentTool, activeLayer));
+    }
+    return resolveBoardPoint(cursorCell, 'cell', { grid, topology, useTopology }) !== null;
+  }, [editableLayer, cursorCell, useTopology, topology, grid, toolSettings.currentTool, activeLayer]);
+
   const deleteSymbolAtCursor = useCallback(() => {
-    if (!editableLayer) return;
-    if (!cursorCell) return;
+    if (!editableLayer || !canEditCursorCell()) return;
     const dataLayer = editableLayer;
     const layerData = puzzle[dataLayer];
-    const symbolEntry = Object.entries(layerData.symbols).find(([, s]) => s.cellId === cursorCell);
+    const symbolEntry = Object.entries(layerData.symbols).find(([, s]) => s.cellId === cursorCell
+      && resolveBoardPoint(s.cellId, s.pointType, { grid, topology, useTopology })?.type === 'cell');
     if (symbolEntry) {
       removeSymbol(symbolEntry[0]);
     }
-  }, [cursorCell, puzzle, removeSymbol, editableLayer]);
+  }, [cursorCell, puzzle, removeSymbol, editableLayer, canEditCursorCell, grid, topology, useTopology]);
 
   const deleteHighlightedLines = useCallback(() => {
     if (!editableLayer) return;
@@ -133,17 +146,17 @@ export function useKeyboardShortcuts(options: KeyboardShortcutOptions = {}) {
   }, [editableLayer, highlightedLineIds, removeLine, setHighlightedLineIds]);
 
   const addTextSymbolAtCursor = useCallback((text: string) => {
-    if (!editableLayer) return;
-    if (!cursorCell) return;
+    if (!editableLayer || cursorCell === null || !canEditCursorCell()) return;
     addSymbol({
       cellId: cursorCell,
+      pointType: 'cell',
       symbolType: `text-free:${text}`,
       size: toolSettings.symbolSize,
       rotation: 0,
       color: toolSettings.color,
       layer: editableLayer,
     });
-  }, [addSymbol, cursorCell, toolSettings.color, toolSettings.symbolSize, editableLayer]);
+  }, [addSymbol, cursorCell, toolSettings.color, toolSettings.symbolSize, editableLayer, canEditCursorCell]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -230,9 +243,11 @@ export function useKeyboardShortcuts(options: KeyboardShortcutOptions = {}) {
         {
           keys: ['delete', 'backspace'],
           preventDefault: true,
-          when: () => highlightedLineIds.length > 0 || Boolean(cursorCell),
+          when: () => toolSettings.currentTool === 'select' || highlightedLineIds.length > 0 || Boolean(cursorCell),
           run: () => {
-            if (highlightedLineIds.length > 0) {
+            if (toolSettings.currentTool === 'select') {
+              removeSelectedAnnotations();
+            } else if (highlightedLineIds.length > 0) {
               deleteHighlightedLines();
             } else {
               deleteSymbolAtCursor();
@@ -300,6 +315,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutOptions = {}) {
       toolSettings.currentTool,
       toolSettings.symbolSubMode,
       undo,
+      removeSelectedAnnotations,
     ]
   );
 

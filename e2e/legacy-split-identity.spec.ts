@@ -1,0 +1,52 @@
+import { test, expect } from './fixtures';
+import { readFileSync } from 'node:fs';
+import type { PuzzleExport } from '../src/types';
+import { openPuzzleFile, savePuzzleFile } from './puzzle-file';
+
+const fixture = JSON.parse(readFileSync(new URL('./fixtures/legacy-split-board.json', import.meta.url), 'utf8')) as PuzzleExport;
+
+test('legacy edge-interior splits retain IDs and restore independently through public files and history @production', async ({ page, isMobile }, info) => {
+  await page.goto('/master');
+  await openPuzzleFile(page, Buffer.from(JSON.stringify(fixture)));
+  const close = page.getByTitle('Close', { exact: true });
+  const openSplitPanel = async () => {
+    if (await close.isVisible()) await close.click();
+    await page.getByRole('button', { name: 'Problem', exact: true }).click();
+    await page.getByRole('button', { name: 'Grid', exact: true }).click();
+    await page.getByRole('button', { name: 'Type', exact: true }).click();
+    await page.getByRole('button', { name: 'Split', exact: true }).click();
+    const properties = page.getByTitle('Properties', { exact: true });
+    if (await properties.isVisible()) await properties.click();
+  };
+  await openSplitPanel();
+  await page.screenshot({ path: info.outputPath('legacy-split-loaded.png') });
+  const restore = page.getByRole('button', { name: 'Restore cell', exact: true });
+  await expect(restore).toHaveCount(2);
+  if (await close.isVisible()) await close.click();
+  const initial = await savePuzzleFile(page), graph = initial.topologySettings!.topology!;
+  for (const collection of ['cells','vertices','edges'] as const) expect(graph[collection]).toEqual(fixture.topologySettings!.topology![collection]);
+  expect(graph.editOperations).toHaveLength(2);
+  const second = graph.editOperations![1];
+  await openPuzzleFile(page, Buffer.from(JSON.stringify(initial)));
+  await openSplitPanel();
+  if (isMobile) await restore.first().tap(); else await restore.first().click();
+  if (await close.isVisible()) await close.click();
+  await page.screenshot({ path: info.outputPath('legacy-split-restored.png') });
+  const numbers = page.locator('.number-layer-problem text');
+  await expect(numbers).toHaveText(['9','17']);
+  const notes = page.locator('.vertex-surface-layer-problem [data-vertex-surface]');
+  await expect(notes).toHaveCount(1);
+  await expect(page.locator('.line-layer-problem path[stroke="#0000ff"]')).toHaveCount(1);
+  const restored = await savePuzzleFile(page);
+  expect(restored.topologySettings!.topology!.cells).toHaveLength(4);
+  expect(restored.topologySettings!.topology!.editOperations).toEqual([second]);
+  expect(new Map(restored.topologySettings!.topology!.cells).has(fixture.grid.splitLines![0].cellId)).toBe(true);
+  await page.getByTitle(/Undo \(Ctrl\+Z\)/).first().click();
+  await expect(numbers).toHaveText(['7','9','17']);
+  await expect(notes).toHaveCount(2);
+  expect((await savePuzzleFile(page)).state).toEqual(initial.state);
+  await page.getByTitle(/Redo/).first().click();
+  await openPuzzleFile(page, Buffer.from(JSON.stringify(restored)));
+  expect((await savePuzzleFile(page)).state).toEqual(restored.state);
+  await expect(numbers).toHaveText(['9','17']);
+});

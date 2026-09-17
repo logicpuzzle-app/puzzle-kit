@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { AutoModeConfig } from '../constraints/inputModeMapping';
 import {
-  handleDirecMouseDown,
   handleNumberInputMouseDown,
   handleLineCellMouseDown,
   handleLineMouseDown,
@@ -11,7 +10,6 @@ import {
   isNumberInputMode,
   isLineCellMode,
   isLineMode,
-  createFlickState,
   type MouseDownContext,
   type CellInfo,
 } from '../hooks/tool-handlers/mouseDownStrategies';
@@ -123,33 +121,6 @@ describe('Mode Detection Helpers', () => {
 // ============================================================================
 
 describe('Strategy Functions', () => {
-  describe('handleDirecMouseDown', () => {
-    it('returns handled=false when no cell info', () => {
-      const ctx = createContext();
-      const result = handleDirecMouseDown(ctx, null);
-      expect(result.handled).toBe(false);
-    });
-
-    it('returns handled=false when cell info incomplete', () => {
-      const ctx = createContext();
-      const cellInfo = { cellId: 'cell-2-3' }; // No row/col
-      const result = handleDirecMouseDown(ctx, cellInfo);
-      expect(result.handled).toBe(false);
-    });
-
-    it('initializes a right-button directional gesture and selects its cell', () => {
-      const result = handleDirecMouseDown(
-        createContext({ point: { x: 150, y: 110 }, isRightButton: true }), createCellInfo());
-      expect(result.handled).toBe(true);
-      expect(result.action).toEqual({ type: 'setNumberSelection', row: 2, col: 3 });
-      expect(result.flickState).toMatchObject({
-        startCell: { row: 2, col: 3 }, startCellId: 'cell-2-3', startCellIndex: 21,
-        startCellCenter: { x: 140, y: 100 }, startPoint: { x: 150, y: 110 },
-        rightButton: true, inputted: false, lineDrawn: false, pekeInputMode: null,
-      });
-    });
-  });
-
   describe('handleNumberInputMouseDown', () => {
     it('returns handled=false when no cell info', () => {
       const ctx = createContext();
@@ -249,54 +220,19 @@ describe('Strategy Functions', () => {
   describe('handleNumberToolMouseDown', () => {
     it('returns handled=false when no cell info', () => {
       const ctx = createContext({ currentTool: 'number' });
-      const result = handleNumberToolMouseDown(ctx, null, null);
+      const result = handleNumberToolMouseDown(ctx, null);
       expect(result.handled).toBe(false);
     });
 
     it('returns handleNumberTool action for standard number tool', () => {
       const ctx = createContext({ currentTool: 'number' });
       const cellInfo = createCellInfo();
-      const result = handleNumberToolMouseDown(ctx, cellInfo, null);
+      const result = handleNumberToolMouseDown(ctx, cellInfo);
 
       expect(result.handled).toBe(true);
       expect(result.action?.type).toBe('handleNumberTool');
     });
 
-    it('sets up flick state for directional number tool', () => {
-      const ctx = createContext({ currentTool: 'number-directional' });
-      const cellInfo = createCellInfo();
-      const result = handleNumberToolMouseDown(ctx, cellInfo, null);
-
-      expect(result.handled).toBe(true);
-      expect(result.flickState).toBeDefined();
-      expect(result.flickState?.startCellId).toBe('cell-2-3');
-      expect(result.action).toEqual({ type: 'setNumberSelection', row: 2, col: 3 });
-    });
-
-    it('removes directional number on right click for directional tool', () => {
-      const ctx = createContext({
-        currentTool: 'number-directional',
-        isRightButton: true,
-      });
-      const cellInfo = createCellInfo();
-      const result = handleNumberToolMouseDown(ctx, cellInfo, 'clue-123');
-
-      expect(result.handled).toBe(true);
-      expect(result.action).toEqual({ type: 'removeDirectionalClue', id: 'clue-123' });
-    });
-  });
-
-});
-
-// ============================================================================
-// Tests: createFlickState
-// ============================================================================
-
-describe('createFlickState', () => {
-  it('creates initial state when no cell info', () => {
-    const result = createFlickState(null, { x: 100, y: 100 }, 9, false);
-    expect(result.startCell).toBe(null);
-    expect(result.startCellId).toBe(null);
   });
 
 });

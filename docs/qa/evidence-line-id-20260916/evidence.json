@@ -1,0 +1,217 @@
+{
+  "before": {
+    "commit": "ce3053753c75379c8039d9e0fc5926b4ce27b3af",
+    "createdAt": "2026-09-16T14:24:30.780Z",
+    "stats": {
+      "startTime": "2026-09-16T14:24:31.204Z",
+      "duration": 8598.072,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 4,
+      "flaky": 0
+    },
+    "testSha256": "7f85af5fe2d0cbaf6f477dc46ca2a9d74dbdcf9f0b9547f63c4fbfe50276a448",
+    "fixtureSha256": "f7dbf53acec5443e0126a3e6ef7f6a43c28246c8af6655244009790e8ab25713",
+    "tests": [
+      {
+        "title": "line input uses actual adjacency when IDs look like other Grid coordinates @production",
+        "project": "chromium",
+        "case": "adjacent",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "A real drag creates zero lines instead of one."
+      },
+      {
+        "title": "half line retains cell and vertex endpoints sharing the same ID @production",
+        "project": "chromium",
+        "case": "mixed",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "A real drag creates zero lines instead of one."
+      },
+      {
+        "title": "line input uses actual adjacency when IDs look like other Grid coordinates @production",
+        "project": "mobile-chrome",
+        "case": "adjacent",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "A real drag creates zero lines instead of one."
+      },
+      {
+        "title": "half line retains cell and vertex endpoints sharing the same ID @production",
+        "project": "mobile-chrome",
+        "case": "mixed",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "A real drag creates zero lines instead of one."
+      }
+    ]
+  },
+  "after": {
+    "commit": "f5597fed3510ab35164f78b21e6b043e1800105d",
+    "createdAt": "2026-09-16T14:25:21.217Z",
+    "stats": {
+      "startTime": "2026-09-16T14:25:21.679Z",
+      "duration": 12320.469,
+      "expected": 4,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "testSha256": "7f85af5fe2d0cbaf6f477dc46ca2a9d74dbdcf9f0b9547f63c4fbfe50276a448",
+    "fixtureSha256": "f7dbf53acec5443e0126a3e6ef7f6a43c28246c8af6655244009790e8ab25713",
+    "tests": [
+      {
+        "title": "line input uses actual adjacency when IDs look like other Grid coordinates @production",
+        "project": "chromium",
+        "case": "adjacent",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "half line retains cell and vertex endpoints sharing the same ID @production",
+        "project": "chromium",
+        "case": "mixed",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "line input uses actual adjacency when IDs look like other Grid coordinates @production",
+        "project": "mobile-chrome",
+        "case": "adjacent",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "half line retains cell and vertex endpoints sharing the same ID @production",
+        "project": "mobile-chrome",
+        "case": "mixed",
+        "status": "passed",
+        "runtimeErrors": []
+      }
+    ]
+  },
+  "scope": "Public native File Open/Save, PC mouse / Chromium Pixel 7 touch emulation, actual-ID adjacency and mixed-kind endpoints, undo/redo, opaque line-record erase, reverse arrow geometry and native reload. No application-state injection. Before stops when no line is created; later stages are After regression checks.",
+  "files": {
+    "after-chromium-adjacent-arrow.png": {
+      "sha256": "64f982444056d37b5bd97088cd2d418a3e4083a4fb2026c7146f5386a8ec5869",
+      "bytes": 38349
+    },
+    "after-chromium-adjacent-erased.png": {
+      "sha256": "7e0da67ed4f6b7196c9af25749f06a4de911e88dce7c3749d710e7d807e37182",
+      "bytes": 38067
+    },
+    "after-chromium-adjacent-reloaded.png": {
+      "sha256": "40c6e6f789bf3fb2fa9ada46bfa266e4b0ff6da10c11a76e454c3929186403b4",
+      "bytes": 37938
+    },
+    "after-chromium-adjacent.png": {
+      "sha256": "34ca9489830db75c0ffcb2f54a5beee1141f7bd165a4f35221be15cc8ab9f2db",
+      "bytes": 38018
+    },
+    "after-chromium-adjacent.webm": {
+      "sha256": "fb4704c7ece51b6097a1a569301aa06f7515aee620d3715117df66d220ffa5eb",
+      "bytes": 82775,
+      "durationSeconds": 4.12,
+      "fullDecode": "passed"
+    },
+    "after-chromium-mixed-erased.png": {
+      "sha256": "6c1d94585704582a9d9cd910a1f22a6177a484db02bf8ab9596555ac5ebdc902",
+      "bytes": 38033
+    },
+    "after-chromium-mixed-reloaded.png": {
+      "sha256": "4d5c20d98e05fe81238117648ed9f5c5f6a48ae47c8679e4b0b6b0410cda2cbb",
+      "bytes": 37962
+    },
+    "after-chromium-mixed.png": {
+      "sha256": "e0f2e21c87ea61b465561d470e2f9f165d7a7b3792259153f644566d5e53d77c",
+      "bytes": 38463
+    },
+    "after-chromium-mixed.webm": {
+      "sha256": "5b1b055aed3cd5f21683d9bc8adf8847c9bf5d1f2e702c738592ec51b78760da",
+      "bytes": 86779,
+      "durationSeconds": 2.88,
+      "fullDecode": "passed"
+    },
+    "after-mobile-chrome-adjacent-arrow.png": {
+      "sha256": "e6484cb7158bd02777d54b35573558fe52500dd84164c05e4f3c4d77dac53308",
+      "bytes": 79532
+    },
+    "after-mobile-chrome-adjacent-erased.png": {
+      "sha256": "cdddec369f8110e801ce579dafdf599a90d44351a1186f38c89fd40f0bcfa3a6",
+      "bytes": 78377
+    },
+    "after-mobile-chrome-adjacent-reloaded.png": {
+      "sha256": "be82fea32a61233bdb3a98b99a253273a94ef86edba5107db5a881d34bf9e234",
+      "bytes": 78583
+    },
+    "after-mobile-chrome-adjacent.png": {
+      "sha256": "4d820ee0ccadf79f5fe2f2e0bbb08f90469cca417d41ff7dbad3c4149f032709",
+      "bytes": 78420
+    },
+    "after-mobile-chrome-adjacent.webm": {
+      "sha256": "fcee3b1dbe464c3ba46fb5648d9f3ce67e91a502906e181968b83ce54f7f637d",
+      "bytes": 162050,
+      "durationSeconds": 3.52,
+      "fullDecode": "passed"
+    },
+    "after-mobile-chrome-mixed-erased.png": {
+      "sha256": "ef9d949c3eafa74a410baa352adfbf1e2b942c7bd7a49188163a1b55700ef9aa",
+      "bytes": 77208
+    },
+    "after-mobile-chrome-mixed-reloaded.png": {
+      "sha256": "864de943f8761c8ce169e799e21515ca676c08a0dfb06d3f6fd91c4bc5ea1f26",
+      "bytes": 77938
+    },
+    "after-mobile-chrome-mixed.png": {
+      "sha256": "26c79745a11c8d3ef29b261fac9e9a8a6eb8a0064d410a06ceeabff2645ac28f",
+      "bytes": 77864
+    },
+    "after-mobile-chrome-mixed.webm": {
+      "sha256": "7203fa1a587b478421c70829aedab036df2e8e6e5b6fdc3f337ee9a1b5a8157b",
+      "bytes": 176211,
+      "durationSeconds": 3.28,
+      "fullDecode": "passed"
+    },
+    "before-chromium-adjacent.png": {
+      "sha256": "99cf5320b03c7a77cadd99080c17d50eff13ad6870cb6f44209d07d5d2f126d0",
+      "bytes": 37558
+    },
+    "before-chromium-adjacent.webm": {
+      "sha256": "4423bbf395b6f2d12bc7f8ea254e42299bece240a8561224ce2653e1b26b84ae",
+      "bytes": 60302,
+      "durationSeconds": 2.8,
+      "fullDecode": "passed"
+    },
+    "before-chromium-mixed.png": {
+      "sha256": "9add5056f9892f12f4c03ec71d44d8c94f6b2c6ccf5e09a0785e61b9356f88e2",
+      "bytes": 37862
+    },
+    "before-chromium-mixed.webm": {
+      "sha256": "40d1ea86edc8ea52b4869c61bc978930e7daf0abfca0a29e1274f40e76bd4cf3",
+      "bytes": 70424,
+      "durationSeconds": 1.96,
+      "fullDecode": "passed"
+    },
+    "before-mobile-chrome-adjacent.png": {
+      "sha256": "b53d1272df4ca303e028790aa4bd9bccd2913c95fd9a58bdb431f8aeb31d16fa",
+      "bytes": 78449
+    },
+    "before-mobile-chrome-adjacent.webm": {
+      "sha256": "9dbd8bf6a893ac48541748f8c4f4b5d98ae1b0dcb5bb58f019c6dc58d56c7c23",
+      "bytes": 74865,
+      "durationSeconds": 2.04,
+      "fullDecode": "passed"
+    },
+    "before-mobile-chrome-mixed.png": {
+      "sha256": "c0ffa0681ae6b7501976bed021d80b584f891bdb2394fa1219fa9514aaf6de3c",
+      "bytes": 77388
+    },
+    "before-mobile-chrome-mixed.webm": {
+      "sha256": "1cbe46bd64e1eebb9768349d38298a58035b16fd3ed0d8562295c5c744bd3c07",
+      "bytes": 83974,
+      "durationSeconds": 2.56,
+      "fullDecode": "passed"
+    }
+  }
+}

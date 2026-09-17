@@ -1,0 +1,1048 @@
+{
+  "version": "1.3.0",
+  "grid": {
+    "rows": 2,
+    "cols": 2,
+    "cellSize": 40,
+    "outerPadding": 20,
+    "showGrid": true,
+    "gridStyle": "normal",
+    "gridType": "hex",
+    "marginTop": 0,
+    "marginBottom": 0,
+    "marginLeft": 0,
+    "marginRight": 0,
+    "frameStyle": "normal",
+    "frameColor": "#000000",
+    "gridColor": "#000000",
+    "backgroundColor": "#ffffff"
+  },
+  "state": {
+    "problem": {
+      "surfaces": {
+        "shade": {
+          "id": "shade",
+          "cellId": "room|SW",
+          "color": "#ffcccc",
+          "layer": "problem"
+        }
+      },
+      "lines": {
+        "divider": {
+          "id": "divider",
+          "edgeId": "seam|11",
+          "from": "joint:α/10",
+          "to": "joint:α/9",
+          "lineTarget": "edge",
+          "color": "#0000ff",
+          "width": 3,
+          "style": "solid",
+          "layer": "problem"
+        }
+      },
+      "edges": {},
+      "walls": {},
+      "numbers": {
+        "clue": {
+          "id": "clue",
+          "cellId": "room|SW",
+          "value": "17",
+          "position": "center",
+          "size": "medium",
+          "color": "#000000",
+          "layer": "problem"
+        }
+      },
+      "symbols": {},
+      "cages": {},
+      "specials": {},
+      "boxLines": {}
+    },
+    "answer": {
+      "surfaces": {},
+      "lines": {},
+      "edges": {},
+      "walls": {},
+      "numbers": {},
+      "symbols": {},
+      "cages": {},
+      "specials": {},
+      "boxLines": {},
+      "vertexSurfaces": {
+        "note": {
+          "id": "note",
+          "vertexId": "south-tip",
+          "color": "#ff0000",
+          "layer": "answer"
+        }
+      }
+    }
+  },
+  "topologySettings": {
+    "useTopology": true,
+    "topologyPreset": "square",
+    "topologyIntensity": 0.5,
+    "topology": {
+      "cells": [
+        [
+          "room:NW",
+          {
+            "id": "room:NW",
+            "center": {
+              "x": 37.32050807568877,
+              "y": 40
+            },
+            "boundaryVertices": [
+              "joint:α/0",
+              "joint:α/1",
+              "joint:α/2",
+              "joint:α/3",
+              "joint:α/4",
+              "joint:α/5"
+            ],
+            "adjacentCells": [
+              "room/NE",
+              "room|SW"
+            ],
+            "boundaryEdges": [
+              "seam|0",
+              "seam|1",
+              "seam|2",
+              "seam|3",
+              "seam|4",
+              "seam|5"
+            ],
+            "index": [
+              0,
+              0
+            ],
+            "row": 0,
+            "col": 0,
+            "originalCells": [
+              "room:NW"
+            ]
+          }
+        ],
+        [
+          "room/NE",
+          {
+            "id": "room/NE",
+            "center": {
+              "x": 71.9615242270663,
+              "y": 40
+            },
+            "boundaryVertices": [
+              "joint:α/6",
+              "joint:α/7",
+              "joint:α/8",
+              "joint:α/9",
+              "joint:α/2",
+              "joint:α/1"
+            ],
+            "adjacentCells": [
+              "room-SE",
+              "room|SW",
+              "room:NW"
+            ],
+            "boundaryEdges": [
+              "seam|6",
+              "seam|7",
+              "seam|8",
+              "seam|9",
+              "seam|1",
+              "seam|10"
+            ],
+            "index": [
+              0,
+              1
+            ],
+            "row": 0,
+            "col": 1,
+            "originalCells": [
+              "room/NE"
+            ]
+          }
+        ],
+        [
+          "room|SW",
+          {
+            "id": "room|SW",
+            "center": {
+              "x": 54.64101615137755,
+              "y": 70
+            },
+            "boundaryVertices": [
+              "joint:α/2",
+              "joint:α/9",
+              "joint:α/10",
+              "south-tip",
+              "joint:α/12",
+              "joint:α/3"
+            ],
+            "adjacentCells": [
+              "room/NE",
+              "room-SE",
+              "room:NW"
+            ],
+            "boundaryEdges": [
+              "seam|9",
+              "seam|11",
+              "seam|12",
+              "seam|13",
+              "seam|14",
+              "seam|2"
+            ],
+            "index": [
+              1,
+              0
+            ],
+            "row": 1,
+            "col": 0,
+            "originalCells": [
+              "room|SW"
+            ]
+          }
+        ],
+        [
+          "room-SE",
+          {
+            "id": "room-SE",
+            "center": {
+              "x": 89.2820323027551,
+              "y": 70
+            },
+            "boundaryVertices": [
+              "joint:α/8",
+              "joint:α/13",
+              "joint:α/14",
+              "joint:α/15",
+              "joint:α/10",
+              "joint:α/9"
+            ],
+            "adjacentCells": [
+              "room|SW",
+              "room/NE"
+            ],
+            "boundaryEdges": [
+              "seam|15",
+              "seam|16",
+              "seam|17",
+              "seam|18",
+              "seam|11",
+              "seam|8"
+            ],
+            "index": [
+              1,
+              1
+            ],
+            "row": 1,
+            "col": 1,
+            "originalCells": [
+              "room-SE"
+            ]
+          }
+        ]
+      ],
+      "vertices": [
+        [
+          "joint:α/0",
+          {
+            "id": "joint:α/0",
+            "position": {
+              "x": 37.32050807568877,
+              "y": 20
+            },
+            "adjacentCells": [
+              "room:NW"
+            ],
+            "adjacentEdges": [
+              "seam|0",
+              "seam|5"
+            ],
+            "adjacentVertices": [
+              "joint:α/1",
+              "joint:α/5"
+            ],
+            "index": [
+              0,
+              0
+            ],
+            "row": 0,
+            "col": 0
+          }
+        ],
+        [
+          "joint:α/1",
+          {
+            "id": "joint:α/1",
+            "position": {
+              "x": 54.64101615137754,
+              "y": 30
+            },
+            "adjacentCells": [
+              "room:NW",
+              "room/NE"
+            ],
+            "adjacentEdges": [
+              "seam|0",
+              "seam|1",
+              "seam|10"
+            ],
+            "adjacentVertices": [
+              "joint:α/0",
+              "joint:α/2",
+              "joint:α/6"
+            ],
+            "index": [
+              0,
+              1
+            ],
+            "row": 0,
+            "col": 1
+          }
+        ],
+        [
+          "joint:α/2",
+          {
+            "id": "joint:α/2",
+            "position": {
+              "x": 54.64101615137754,
+              "y": 50
+            },
+            "adjacentCells": [
+              "room:NW",
+              "room/NE",
+              "room|SW"
+            ],
+            "adjacentEdges": [
+              "seam|1",
+              "seam|2",
+              "seam|9"
+            ],
+            "adjacentVertices": [
+              "joint:α/1",
+              "joint:α/3",
+              "joint:α/9"
+            ],
+            "index": [
+              1,
+              1
+            ],
+            "row": 1,
+            "col": 1
+          }
+        ],
+        [
+          "joint:α/3",
+          {
+            "id": "joint:α/3",
+            "position": {
+              "x": 37.32050807568877,
+              "y": 60
+            },
+            "adjacentCells": [
+              "room:NW",
+              "room|SW"
+            ],
+            "adjacentEdges": [
+              "seam|2",
+              "seam|3",
+              "seam|14"
+            ],
+            "adjacentVertices": [
+              "joint:α/2",
+              "joint:α/4",
+              "joint:α/12"
+            ],
+            "index": [
+              1,
+              0
+            ],
+            "row": 1,
+            "col": 0
+          }
+        ],
+        [
+          "joint:α/4",
+          {
+            "id": "joint:α/4",
+            "position": {
+              "x": 20,
+              "y": 50.00000000000001
+            },
+            "adjacentCells": [
+              "room:NW"
+            ],
+            "adjacentEdges": [
+              "seam|3",
+              "seam|4"
+            ],
+            "adjacentVertices": [
+              "joint:α/3",
+              "joint:α/5"
+            ],
+            "index": [
+              1,
+              0
+            ],
+            "row": 1,
+            "col": 0
+          }
+        ],
+        [
+          "joint:α/5",
+          {
+            "id": "joint:α/5",
+            "position": {
+              "x": 19.99999999999999,
+              "y": 30.000000000000014
+            },
+            "adjacentCells": [
+              "room:NW"
+            ],
+            "adjacentEdges": [
+              "seam|4",
+              "seam|5"
+            ],
+            "adjacentVertices": [
+              "joint:α/4",
+              "joint:α/0"
+            ],
+            "index": [
+              0,
+              0
+            ],
+            "row": 0,
+            "col": 0
+          }
+        ],
+        [
+          "joint:α/6",
+          {
+            "id": "joint:α/6",
+            "position": {
+              "x": 71.96152422706632,
+              "y": 20
+            },
+            "adjacentCells": [
+              "room/NE"
+            ],
+            "adjacentEdges": [
+              "seam|6",
+              "seam|10"
+            ],
+            "adjacentVertices": [
+              "joint:α/7",
+              "joint:α/1"
+            ],
+            "index": [
+              0,
+              1
+            ],
+            "row": 0,
+            "col": 1
+          }
+        ],
+        [
+          "joint:α/7",
+          {
+            "id": "joint:α/7",
+            "position": {
+              "x": 89.28203230275508,
+              "y": 30
+            },
+            "adjacentCells": [
+              "room/NE"
+            ],
+            "adjacentEdges": [
+              "seam|6",
+              "seam|7"
+            ],
+            "adjacentVertices": [
+              "joint:α/6",
+              "joint:α/8"
+            ],
+            "index": [
+              0,
+              2
+            ],
+            "row": 0,
+            "col": 2
+          }
+        ],
+        [
+          "joint:α/8",
+          {
+            "id": "joint:α/8",
+            "position": {
+              "x": 89.2820323027551,
+              "y": 50
+            },
+            "adjacentCells": [
+              "room/NE",
+              "room-SE"
+            ],
+            "adjacentEdges": [
+              "seam|7",
+              "seam|8",
+              "seam|15"
+            ],
+            "adjacentVertices": [
+              "joint:α/7",
+              "joint:α/9",
+              "joint:α/13"
+            ],
+            "index": [
+              1,
+              2
+            ],
+            "row": 1,
+            "col": 2
+          }
+        ],
+        [
+          "joint:α/9",
+          {
+            "id": "joint:α/9",
+            "position": {
+              "x": 71.96152422706632,
+              "y": 60
+            },
+            "adjacentCells": [
+              "room/NE",
+              "room|SW",
+              "room-SE"
+            ],
+            "adjacentEdges": [
+              "seam|8",
+              "seam|9",
+              "seam|11"
+            ],
+            "adjacentVertices": [
+              "joint:α/8",
+              "joint:α/2",
+              "joint:α/10"
+            ],
+            "index": [
+              1,
+              1
+            ],
+            "row": 1,
+            "col": 1
+          }
+        ],
+        [
+          "joint:α/10",
+          {
+            "id": "joint:α/10",
+            "position": {
+              "x": 71.96152422706632,
+              "y": 80
+            },
+            "adjacentCells": [
+              "room|SW",
+              "room-SE"
+            ],
+            "adjacentEdges": [
+              "seam|11",
+              "seam|12",
+              "seam|18"
+            ],
+            "adjacentVertices": [
+              "joint:α/9",
+              "south-tip",
+              "joint:α/15"
+            ],
+            "index": [
+              2,
+              1
+            ],
+            "row": 2,
+            "col": 1
+          }
+        ],
+        [
+          "south-tip",
+          {
+            "id": "south-tip",
+            "position": {
+              "x": 54.64101615137754,
+              "y": 90
+            },
+            "adjacentCells": [
+              "room|SW"
+            ],
+            "adjacentEdges": [
+              "seam|12",
+              "seam|13"
+            ],
+            "adjacentVertices": [
+              "joint:α/10",
+              "joint:α/12"
+            ],
+            "index": [
+              2,
+              1
+            ],
+            "row": 2,
+            "col": 1
+          }
+        ],
+        [
+          "joint:α/12",
+          {
+            "id": "joint:α/12",
+            "position": {
+              "x": 37.32050807568877,
+              "y": 80
+            },
+            "adjacentCells": [
+              "room|SW"
+            ],
+            "adjacentEdges": [
+              "seam|13",
+              "seam|14"
+            ],
+            "adjacentVertices": [
+              "south-tip",
+              "joint:α/3"
+            ],
+            "index": [
+              2,
+              0
+            ],
+            "row": 2,
+            "col": 0
+          }
+        ],
+        [
+          "joint:α/13",
+          {
+            "id": "joint:α/13",
+            "position": {
+              "x": 106.60254037844385,
+              "y": 60
+            },
+            "adjacentCells": [
+              "room-SE"
+            ],
+            "adjacentEdges": [
+              "seam|15",
+              "seam|16"
+            ],
+            "adjacentVertices": [
+              "joint:α/8",
+              "joint:α/14"
+            ],
+            "index": [
+              1,
+              2
+            ],
+            "row": 1,
+            "col": 2
+          }
+        ],
+        [
+          "joint:α/14",
+          {
+            "id": "joint:α/14",
+            "position": {
+              "x": 106.60254037844386,
+              "y": 80
+            },
+            "adjacentCells": [
+              "room-SE"
+            ],
+            "adjacentEdges": [
+              "seam|16",
+              "seam|17"
+            ],
+            "adjacentVertices": [
+              "joint:α/13",
+              "joint:α/15"
+            ],
+            "index": [
+              2,
+              2
+            ],
+            "row": 2,
+            "col": 2
+          }
+        ],
+        [
+          "joint:α/15",
+          {
+            "id": "joint:α/15",
+            "position": {
+              "x": 89.28203230275508,
+              "y": 90
+            },
+            "adjacentCells": [
+              "room-SE"
+            ],
+            "adjacentEdges": [
+              "seam|17",
+              "seam|18"
+            ],
+            "adjacentVertices": [
+              "joint:α/14",
+              "joint:α/10"
+            ],
+            "index": [
+              2,
+              2
+            ],
+            "row": 2,
+            "col": 2
+          }
+        ]
+      ],
+      "edges": [
+        [
+          "seam|0",
+          {
+            "id": "seam|0",
+            "midpoint": {
+              "x": 45.98076211353316,
+              "y": 25
+            },
+            "startVertex": "joint:α/0",
+            "endVertex": "joint:α/1",
+            "adjacentCells": [
+              "room:NW"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "seam|1",
+          {
+            "id": "seam|1",
+            "midpoint": {
+              "x": 54.64101615137754,
+              "y": 40
+            },
+            "startVertex": "joint:α/1",
+            "endVertex": "joint:α/2",
+            "adjacentCells": [
+              "room:NW",
+              "room/NE"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "seam|2",
+          {
+            "id": "seam|2",
+            "midpoint": {
+              "x": 45.98076211353316,
+              "y": 55
+            },
+            "startVertex": "joint:α/2",
+            "endVertex": "joint:α/3",
+            "adjacentCells": [
+              "room:NW",
+              "room|SW"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "seam|3",
+          {
+            "id": "seam|3",
+            "midpoint": {
+              "x": 28.660254037844386,
+              "y": 55
+            },
+            "startVertex": "joint:α/3",
+            "endVertex": "joint:α/4",
+            "adjacentCells": [
+              "room:NW"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "seam|4",
+          {
+            "id": "seam|4",
+            "midpoint": {
+              "x": 19.999999999999993,
+              "y": 40.000000000000014
+            },
+            "startVertex": "joint:α/4",
+            "endVertex": "joint:α/5",
+            "adjacentCells": [
+              "room:NW"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "seam|5",
+          {
+            "id": "seam|5",
+            "midpoint": {
+              "x": 28.660254037844382,
+              "y": 25.000000000000007
+            },
+            "startVertex": "joint:α/0",
+            "endVertex": "joint:α/5",
+            "adjacentCells": [
+              "room:NW"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "seam|6",
+          {
+            "id": "seam|6",
+            "midpoint": {
+              "x": 80.6217782649107,
+              "y": 25
+            },
+            "startVertex": "joint:α/6",
+            "endVertex": "joint:α/7",
+            "adjacentCells": [
+              "room/NE"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "seam|7",
+          {
+            "id": "seam|7",
+            "midpoint": {
+              "x": 89.28203230275508,
+              "y": 40
+            },
+            "startVertex": "joint:α/7",
+            "endVertex": "joint:α/8",
+            "adjacentCells": [
+              "room/NE"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "seam|8",
+          {
+            "id": "seam|8",
+            "midpoint": {
+              "x": 80.62177826491072,
+              "y": 55
+            },
+            "startVertex": "joint:α/8",
+            "endVertex": "joint:α/9",
+            "adjacentCells": [
+              "room/NE",
+              "room-SE"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "seam|9",
+          {
+            "id": "seam|9",
+            "midpoint": {
+              "x": 63.30127018922193,
+              "y": 55
+            },
+            "startVertex": "joint:α/2",
+            "endVertex": "joint:α/9",
+            "adjacentCells": [
+              "room/NE",
+              "room|SW"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "seam|10",
+          {
+            "id": "seam|10",
+            "midpoint": {
+              "x": 63.30127018922193,
+              "y": 25
+            },
+            "startVertex": "joint:α/1",
+            "endVertex": "joint:α/6",
+            "adjacentCells": [
+              "room/NE"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "seam|11",
+          {
+            "id": "seam|11",
+            "midpoint": {
+              "x": 71.96152422706632,
+              "y": 70
+            },
+            "startVertex": "joint:α/10",
+            "endVertex": "joint:α/9",
+            "adjacentCells": [
+              "room|SW",
+              "room-SE"
+            ],
+            "isBoundary": false
+          }
+        ],
+        [
+          "seam|12",
+          {
+            "id": "seam|12",
+            "midpoint": {
+              "x": 63.30127018922193,
+              "y": 85
+            },
+            "startVertex": "joint:α/10",
+            "endVertex": "south-tip",
+            "adjacentCells": [
+              "room|SW"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "seam|13",
+          {
+            "id": "seam|13",
+            "midpoint": {
+              "x": 45.98076211353316,
+              "y": 85
+            },
+            "startVertex": "south-tip",
+            "endVertex": "joint:α/12",
+            "adjacentCells": [
+              "room|SW"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "seam|14",
+          {
+            "id": "seam|14",
+            "midpoint": {
+              "x": 37.32050807568877,
+              "y": 70
+            },
+            "startVertex": "joint:α/12",
+            "endVertex": "joint:α/3",
+            "adjacentCells": [
+              "room|SW"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "seam|15",
+          {
+            "id": "seam|15",
+            "midpoint": {
+              "x": 97.94228634059948,
+              "y": 55
+            },
+            "startVertex": "joint:α/13",
+            "endVertex": "joint:α/8",
+            "adjacentCells": [
+              "room-SE"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "seam|16",
+          {
+            "id": "seam|16",
+            "midpoint": {
+              "x": 106.60254037844385,
+              "y": 70
+            },
+            "startVertex": "joint:α/13",
+            "endVertex": "joint:α/14",
+            "adjacentCells": [
+              "room-SE"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "seam|17",
+          {
+            "id": "seam|17",
+            "midpoint": {
+              "x": 97.94228634059948,
+              "y": 85
+            },
+            "startVertex": "joint:α/14",
+            "endVertex": "joint:α/15",
+            "adjacentCells": [
+              "room-SE"
+            ],
+            "isBoundary": true
+          }
+        ],
+        [
+          "seam|18",
+          {
+            "id": "seam|18",
+            "midpoint": {
+              "x": 80.6217782649107,
+              "y": 85
+            },
+            "startVertex": "joint:α/10",
+            "endVertex": "joint:α/15",
+            "adjacentCells": [
+              "room-SE"
+            ],
+            "isBoundary": true
+          }
+        ]
+      ],
+      "bounds": {
+        "minX": 19.99999999999999,
+        "minY": 20,
+        "maxX": 106.60254037844386,
+        "maxY": 90,
+        "width": 126.60254037844386,
+        "height": 110
+      },
+      "sourceConfig": {
+        "rows": 2,
+        "cols": 2,
+        "cellSize": 40,
+        "outerPadding": 20,
+        "showGrid": true,
+        "gridStyle": "normal",
+        "gridType": "hex",
+        "marginTop": 0,
+        "marginBottom": 0,
+        "marginLeft": 0,
+        "marginRight": 0,
+        "frameStyle": "normal",
+        "frameColor": "#000000",
+        "gridColor": "#000000",
+        "backgroundColor": "#ffffff"
+      }
+    }
+  },
+  "constraintSettings": {
+    "currentSchemaId": null,
+    "currentInputMode": "auto",
+    "validationOverrides": {},
+    "highlightOverrides": {}
+  },
+  "metadata": {
+    "created": "2026-09-16T04:44:44.528Z",
+    "modified": "2026-09-16T04:44:44.529Z"
+  }
+}

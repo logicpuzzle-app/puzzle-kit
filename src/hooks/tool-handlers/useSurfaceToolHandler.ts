@@ -4,8 +4,9 @@ import { getCellIndexById } from '../../utils/gridUtils';
 import type { GridTopology } from '../../utils/gridTopology';
 import { prepareExclusionBase } from '../../utils/topology/legacyExclusions';
 import { normalizeMulticolorSlots } from '../../utils/multicolor';
-import type { GridConfig, Point, PuzzleState } from '../../types';
-import { resolveCell } from '../../utils/pointResolver';
+import type { GridConfig, Point, PuzzleState, SurfaceElement } from '../../types';
+import { getVertexSurfaceRegion, usesVertexSurface, resolveSurfaceVertex } from '../../utils/vertexSurfaces';
+import { resolveCell, resolveVertex } from '../../utils/pointResolver';
 import { getEditableDataLayer } from '../../utils/editPolicy';
 import { findDirectionalNumberByCellId } from '../../utils/numberEntries';
 
@@ -61,6 +62,8 @@ export function useSurfaceToolHandler() {
     activeLayer,
     isPlayerMode,
     addSurface,
+    addVertexSurface,
+    removeVertexSurface,
     removeSurface,
     puzzle,
     setMulticolorSurface,
@@ -114,8 +117,17 @@ export function useSurfaceToolHandler() {
   const handleSurfaceTool = useCallback(
     (point: Point, isRightClick: boolean, isShiftKey: boolean = false) => {
       if (!editableLayer) return;
-      const cellId = findCellId(point);
+      const vertexMode = usesVertexSurface(toolSettings);
+      const vertexTopology = topology;
+      if (vertexMode && !vertexTopology) return;
+      const cellId = vertexMode
+        ? resolveVertex(point, { grid, useTopology: true, topology: vertexTopology }, { maxDistance: grid.cellSize * 0.75 })?.id
+        : findCellId(point);
       if (!cellId) return;
+      if (vertexMode && !getVertexSurfaceRegion(vertexTopology!, cellId)) return;
+      const removeCurrentSurface = vertexMode ? removeVertexSurface : removeSurface;
+      const addCurrentSurface = ({ cellId, ...element }: Omit<SurfaceElement, 'id'>) => vertexMode
+        ? addVertexSurface({ ...element, vertexId: cellId }) : addSurface({ ...element, cellId });
 
       // Determine display mode based on current tool
       const isDotTool = toolSettings.currentTool === 'surface-dot';
@@ -133,8 +145,8 @@ export function useSurfaceToolHandler() {
       const colorToUse = isRightClick ? toolSettings.secondaryColor : toolSettings.color;
 
       // Check if surface already exists with the same color
-      const existingSurface = Object.values(layerData.surfaces).find(
-        (s) => s.cellId === cellId
+      const existingSurface = Object.values(vertexMode ? layerData.vertexSurfaces ?? {} : layerData.surfaces).find(
+        (s) => ('vertexId' in s ? vertexTopology && resolveSurfaceVertex(s, vertexTopology) : s.cellId) === cellId
       );
       const hasSameColorSurface = existingSurface && existingSurface.color === colorToUse;
 
@@ -153,7 +165,7 @@ export function useSurfaceToolHandler() {
         }
 
         // For noAdjacent constraint: record first cell's checker parity
-        if (toolSettings.inputConstraint === 'noAdjacent') {
+        if (!vertexMode && toolSettings.inputConstraint === 'noAdjacent') {
           const coords = getCellCoordsFromId(cellId);
           if (coords) {
             firstCellParityRef.current = (coords.row + coords.col) % 2 === 0;
@@ -162,7 +174,7 @@ export function useSurfaceToolHandler() {
       }
 
       // noAdjacent constraint: skip cells that cannot be shaded when filling
-      if (toolSettings.inputConstraint === 'noAdjacent' && surfaceFillModeRef.current === 'fill') {
+      if (!vertexMode && toolSettings.inputConstraint === 'noAdjacent' && surfaceFillModeRef.current === 'fill') {
         // Check 1: skip cells with different checker parity (adjacent to potential shaded cell)
         if (!hasSameParity(cellId)) {
           return;
@@ -184,7 +196,7 @@ export function useSurfaceToolHandler() {
         // Erase mode: only remove surfaces
         if (existingSurface) {
           if (isShiftKey || existingSurface.color === colorToUse) {
-            removeSurface(existingSurface.id);
+            removeCurrentSurface(existingSurface.id);
           }
         }
       } else {
@@ -192,8 +204,8 @@ export function useSurfaceToolHandler() {
         if (existingSurface) {
           if (existingSurface.color !== colorToUse || existingSurface.displayMode !== displayMode) {
             // Different color or display mode: replace
-            removeSurface(existingSurface.id);
-            addSurface({
+            removeCurrentSurface(existingSurface.id);
+            addCurrentSurface({
               cellId,
               color: colorToUse,
               layer: dataLayer,
@@ -203,7 +215,7 @@ export function useSurfaceToolHandler() {
           // Same color and display mode: do nothing (already filled)
         } else {
           // No existing surface: add new one
-          addSurface({
+          addCurrentSurface({
             cellId,
             color: colorToUse,
             layer: dataLayer,
@@ -212,7 +224,7 @@ export function useSurfaceToolHandler() {
         }
       }
     },
-    [grid, puzzle, activeLayer, editableLayer, toolSettings.currentTool, toolSettings.color, toolSettings.secondaryColor, toolSettings.inputConstraint, addSurface, removeSurface, findCellId, getCellCoordsFromId, hasSameParity, topology]
+    [useTopology, addVertexSurface, removeVertexSurface, toolSettings.surfaceTarget, grid, puzzle, activeLayer, editableLayer, toolSettings.currentTool, toolSettings.color, toolSettings.secondaryColor, toolSettings.inputConstraint, addSurface, removeSurface, findCellId, getCellCoordsFromId, hasSameParity, topology]
   );
 
   /**

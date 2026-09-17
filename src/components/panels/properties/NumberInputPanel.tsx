@@ -25,7 +25,7 @@ import { getAutoModeConfig } from '../../../constraints/inputModeMapping';
 import { toDataLayer } from '../../../types';
 import { getEditableDataLayer } from '../../../utils/editPolicy';
 import { toPenpaDirection } from '../../../utils/directionalClue';
-import { appendDigit, getMaxDigitsForGrid, calculateNextPosition } from '../../../hooks/keyboardUtils';
+import { appendDigit, getMaxDigitsForGrid } from '../../../hooks/keyboardUtils';
 import { useCellFinder } from '../../../hooks/useCellFinder';
 import { SegmentedToggle } from '../../common';
 import {
@@ -63,7 +63,7 @@ export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChan
     currentInputMode,
     showConstraintLayer,
   } = usePuzzleStore();
-  const { findCellIdByRowCol } = useCellFinder();
+  const { resolveSelection, moveSelection } = useCellFinder();
 
   const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
   const isPaintSchema = currentSchemaId === 'paint';
@@ -100,19 +100,10 @@ export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChan
   const getEffectiveCellId = (): string | null => {
     if (!numberSelection) return null;
 
-    return findCellIdByRowCol(numberSelection.row, numberSelection.col)
-      ?? `cell-${numberSelection.row}-${numberSelection.col}`;
+    return resolveSelection(numberSelection);
   };
 
   const effectiveCellId = getEffectiveCellId();
-
-  // Get cell index for directional numbers
-  const getCellIndex = (): number | null => {
-    if (!numberSelection) return null;
-    return numberSelection.row * grid.cols + numberSelection.col;
-  };
-
-  const cellIndex = getCellIndex();
 
   // Get current number value in selected cell (or merged cell group)
   const getCurrentValue = (): string | null => {
@@ -146,7 +137,7 @@ export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChan
 
     if (useDirectionalClue) {
       // For directional mode, use directionalClue
-      if (cellIndex === null) return;
+      if (!effectiveCellId) return;
 
       // Update the existing clue so its ID, direction and styling survive.
       const existingNumberEntry = effectiveCellId
@@ -164,8 +155,7 @@ export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChan
         // Use 0 for no direction (will display as centered number without arrow)
         const direction = toPenpaDirection(toolSettings.arrowDirection);
         addDirectionalClue({
-          cellId: effectiveCellId || `cell-${numberSelection!.row}-${numberSelection!.col}`,
-          cell: cellIndex,
+          cellId: effectiveCellId,
           direction: direction as 0 | 1 | 2 | 3 | 4,
           value: parseInt(newValue, 10),
           layer: dataLayer,
@@ -283,7 +273,7 @@ export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChan
     updateNumberValue('');
   };
 
-  const isDisabled = !numberSelection || !editableLayer;
+  const isDisabled = !effectiveCellId || !editableLayer;
 
   // Alphabet rows for the keyboard layout
   const alphabetRows = [
@@ -328,15 +318,10 @@ export const NumberInputPanel: React.FC<NumberInputPanelProps> = ({ onLayoutChan
       wordDirection === 'vertical'
         ? { dr: 1, dc: 0 }
         : { dr: 0, dc: 1 };
-    const next = calculateNextPosition(
-      numberSelection,
-      delta,
-      grid.rows,
-      grid.cols
-    );
-    if (next.row === numberSelection.row && next.col === numberSelection.col) return;
+    const next = moveSelection(numberSelection, delta);
+    if (!next || next.cellId === numberSelection.cellId) return;
     setNumberSelection(next);
-  }, [grid.cols, grid.rows, isNonNumericDisabled, numberSelection, panelMode, setNumberSelection, wordDirection]);
+  }, [grid.cols, grid.rows, isNonNumericDisabled, numberSelection, panelMode, setNumberSelection, wordDirection, moveSelection]);
 
   useEffect(() => {
     if (!onLayoutChange) return;

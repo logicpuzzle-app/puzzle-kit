@@ -17,7 +17,7 @@ function setup() {
   s.undo(); // Both undo and redo belong to the previous puzzle.
   s.startHistoryGroup();
   store.setState({ selectedElements: [id], hoverCell: 'cell-1-1', cursorCell: 'cell-1-1',
-    numberSelection: { row: 1, col: 1 }, highlightedLineIds: ['old'], drawingLineIds: ['old'],
+    numberSelection: { cellId: 'cell-1-1', row: 1, col: 1 }, highlightedLineIds: ['old'], drawingLineIds: ['old'],
     canvas: { ...store.getState().canvas, isDrawing: true, isDragging: true, selection: [id], zoom: 1.5 } });
   return store;
 }

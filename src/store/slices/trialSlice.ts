@@ -28,6 +28,7 @@ const DEFAULT_TRIAL_COLORS = [
 function cloneElements(elements: PuzzleElements): PuzzleElements {
   return {
     surfaces: { ...elements.surfaces },
+    ...(elements.vertexSurfaces ? { vertexSurfaces: { ...elements.vertexSurfaces } } : {}),
     lines: { ...elements.lines },
     edges: { ...elements.edges },
     walls: { ...elements.walls },

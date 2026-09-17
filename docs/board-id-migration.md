@@ -12,7 +12,14 @@
 存続IDと非表示要素を保存・履歴でも保持する。
 [セルサイズ・外側余白](board-layout-identity.md)の変更も現在の盤面の座標変換へ移行した。
 [正方格子の行列・周囲セル編集](board-extent-identity.md)は存続IDを引き継ぐ方式へ移行。
-非正方格子・独自形状・変形プリセット等のリサイズには再生成が残る。
+[接続を変えない表示変形](board-preset-identity.md)も、元座標を保存して実際のグラフへ適用する。
+[六角格子も共通の編集器](hex-extent-identity.md)へ移行し、元座標を持つ正方・六角の表示変形中も存続IDを保持する。
+[新規の結合・解除](board-merge-identity.md)は結合前の実グラフを保持する方式へ移行。
+[既知の旧結合ファイル](legacy-merge-identity.md)も実際のIDと境界を保持して移行する。
+[結合後の正方・六角格子の行列変更](merged-extent-identity.md)も、元セルの編集と結合の再投影へ移行した。
+[境界頂点間の分割・復元](board-split-identity.md)と新規の結合／分割の混合操作も、元グラフと明示的な操作列を保持する方式へ移行した。選択と通常の数字入力も実際のセルIDを保持する。
+他の格子・独自形状の行列変更、除外等を伴う旧結合の読込、除外・彫刻を伴う旧分割、分割端点を失う縮小、彫刻等の再生成は未移行。
+[既知の旧分割](legacy-split-identity.md)は、保存済みの全グラフを照合して復元用の元グラフ・境界情報を補完する方式へ移行した。
 公開の低水準resize APIも正方格子では同じ編集器を使う。適用条件と未対応範囲はリンク先に記す。
 
 ## 最優先: 永続化と再生成を一つの変更として扱う
@@ -43,12 +50,13 @@
 | 対象 | 現状と想定される問題 | 移行先 |
 | --- | --- | --- |
 | [選択状態](../src/store/slices/types.ts)、[選択処理](../src/hooks/useCanvasInputRouter.ts)、[セル検索](../src/hooks/useCellFinder.ts)、[数字キーボード](../src/hooks/useNumberKeyboard.ts)、[数字パネル](../src/components/panels/properties/NumberInputPanel.tsx) | 選択に行列番号だけを保存し、行列のないセルを選択対象から外す。検索ではIDの `hex` を優先し、数字入力では未解決時に `cell-${row}-${col}` を組み立てるため、任意ID・結合・分割セルで入力先を失う可能性がある | 選択した実際のcellIdを保持し、現在の盤面で解決する。未解決・曖昧な検索結果は入力を止め、キーボード・数字パネル・カーソルの参照先を揃える |
-| [LITS補助](../src/constraints/helpers/lits.ts)、[部屋同期](../src/store/litsRoomSync.ts) | 正規表現・splitでセル/頂点を行列に戻す。任意IDや負の行列番号に適用すると隣接・部屋の算出が欠ける | 正方形対応範囲を明示したindex lookupと明示的な接続情報 |
-| [ぬりみさき判定](../src/constraints/validators/nurimisaki.ts) | `cellId.split('-')` により読めない数字をスキップする経路がある | セルlookupと検証不能時の扱いを明示 |
+| [LITSの判定・部屋同期・強調表示](lits-validation-identity.md) | 実セル・辺・頂点参照へ移行済み。mapだけの公開読込も実境界を補い、境界と部屋番号を履歴で復元する | 正方格子の明示indexと接続を検証し、未解決・非対応は検証不能。他ジャンル・汎用線入力の移行は継続 |
+| [ぬりみさき判定](nurimisaki-validation-identity.md) | 実セルID・行列・接続の検証へ移行済み。数字・塗りの未解決参照を成功にしない | 非対応の形状・曖昧な行列は検証不能を返す。他ジャンルの判定は継続対象 |
 | [リサイズ後の要素処理](../src/store/slices/gridSlice.ts) | from/to/positionの接頭辞で種類を判定する | 明示した対象種類と旧→新参照の対応 |
-| [線入力](../src/hooks/tool-handlers/useLineToolHandler.ts)、[点参照](../src/hooks/useGridPointUtils.ts) | `startsWith('cell-')` 等で対象の種類を判定する | 入力モード・型・対象のMap |
+| [汎用線入力・端点参照](line-input-identity.md) | 新しい入力は端点の種類を保持し、明示モードで実接続を解決する。線レコードIDに依存せず消去し、混合端点と矢印方向を保存する | 型なしの旧データは辺参照または一意な点から解決し、曖昧な参照を推測しない。参照モード切替は検証した対応表による一体の移行へ変更。公開互換APIや他ジャンルのID解析の整理は継続 |
 | [LineLayer](../src/components/canvas/LineLayer.tsx)、[SolverLayer](../src/components/canvas/SolverLayer.tsx)、[要素入力](../src/hooks/tool-handlers/useElementToolHandler.ts) | `parseEdgeId` を直接呼ぶ。Grid形式とTopology形式が混在する | 形式を明示した共通resolverへの集約 |
-| [線の出力](../src/utils/puzzleExport.ts)、[重複判定](../src/utils/lineOverlap.ts)、[共通判定](../src/constraints/validators/core.ts)、[スリザーリンク](../src/constraints/validators/slitherlink.ts)、[pzpr形式処理](../src/utils/pzprv3Parser.ts) | `lineTarget` がない場合などに端点接頭辞を解釈する | 旧形式の解釈を読込境界に集め、以降は明示した対象種類を使う |
+| [スリザーリンク判定](slitherlink-validation-identity.md) | 数字・辺数・次数・輪の接続を実セル境界と種類付き参照へ移行。欠損や矛盾は検証不能とし、数字0の誤正解を修正 | 旧Gridは余白を含む明示的な互換処理で扱う。非正方格子の長い線の補間、他ジャンルの判定は継続対象 |
+| [線の出力](../src/utils/puzzleExport.ts)、[重複判定](../src/utils/lineOverlap.ts)、[共通判定](../src/constraints/validators/core.ts)、[pzpr形式処理](../src/utils/pzprv3Parser.ts) | `lineTarget` がない場合などに端点接頭辞を解釈する | 旧形式の解釈を読込境界に集め、以降は明示した対象種類を使う |
 | [結合セル操作](../src/store/slices/grid/cellOperations.ts)、[彫刻操作](../src/store/slices/grid/sculptOperations.ts)、[彫刻モード](../src/hooks/useSculptMode.ts) | `merged-N` を配列添字に、接頭辞を形状判定に使う | 元セル・形状・編集対象の明示メタデータ |
 
 ## 続いて: 公開互換APIと危険な補助関数の整理
@@ -70,7 +78,23 @@
 外部形式固有のポイント番号を読むインポーターは、一律削除の対象ではない。
 局所的な座標キーのsplitも、それが永続IDの解析でなければこの禁止に含まれない。
 
+## 参照モード切替の移行
+
+`gridSlice.setUseTopology` はモードの変更と、必要に応じたトポロジ生成だけを行い、
+既存データの参照変換・モードを含むUndo／Redoを行っていなかった。
+Gridで作った頂点線がTopologyへの切替で未解決となることを、
+実ストアと描画用resolverで確認し、開発ハーネスによる画面操作でも再現する。
+
+移行は[参照モード切替の契約](board-id-contract.md#参照モードの切替はデータ移行として扱う)に従う。
+[実装した移行](reference-mode-identity.md)では数字・塗り・記号・部屋・試行・設定等を一体で変換する。
+Gridモードでも保持したトポロジを参照する頂点塗りは、Grid形式のIDへ変換しない。
+変換元の形式が曖昧なデータや対応不能な形状では、推測で成功させない。
+
 ## #29 頂点塗りへの適用
+
+[キーボード記号入力・削除](keyboard-symbol-identity.md)もセル種別を明示する。
+同名IDの頂点記号の誤削除と、種類を欠いたテキスト入力が描画されない問題を修正する。
+汎用選択・要素のコピー／貼付の対応完了を意味しない。
 
 頂点塗りも盤面の頂点を参照するため、共通のID契約に従う。
 セルの何番目の角かを記録する補助情報は移行の手がかりにはなるが、
@@ -84,3 +108,47 @@
 「互換APIの縮小」とする。機能ごとのPRで現実の症状と回帰防止の確認を示す。
 この文書を追加しただけでは上記の移行は完了しない。
 現時点で専用のlint/CIによるID解析禁止は未導入であり、開発ルールに基づきレビューする。
+
+## 方向入力の移行
+
+方向数字のフリックをマウス・タッチ共通のセルID参照へ移行した。
+行列のないセル、重複した行列情報でも入力先を保持し、盤面・レイヤー・構造の変更で保留入力を解除する。
+[方向入力の仕様と検証範囲](directional-input-identity.md)を参照。制約線・塗りのクリック完了判定も実セルID同士で比較する。
+
+## 除外を伴う旧構造編集の移行
+
+[除外・旧結合・旧分割の移行](legacy-excluded-edits-identity.md)では、保存された可視グラフを保持したまま
+元グラフと操作を復元する。分割端点は除外前後で明示的に対応させ、同じ採番文字列を使い回さない。
+除外後の実際の構成員と境界を保存し、空グループで後続IDを詰め直さない。
+同じ位置の元の内部辺と新しい分割線も別IDにする。検証できた非連結・反復境界や盤外属性も復元し、元経路が不明な形状・彫刻は同文書に記録する。
+
+全グループが除外で消滅した既知の旧盤面でも、グラフと正規化済み設定を一体で復元する。
+公開ファイル読込・ストア読込・設定復元は同じ結果を適用し、空の旧結合設定で次の編集を妨げない。
+未検証の盤面では構造設定を推測で消去しない。
+
+旧除外元グラフに構造編集の元情報がない場合も、元設定と全グラフを照合して移行する。
+元グラフと現在の除外を区別し、移行後の可視グラフを再検証する。由来不明の元グラフは推測しない。
+
+## ぬりみさき判定の移行
+
+[実セル参照と参照モードを使う判定](nurimisaki-validation-identity.md)へ移行した。
+検証不能を共通runnerで区別し、入力先の欠損を正解へ置き換えない。
+MasterのFile Open/Save・共有・自動保存は[設定保存の共通契約](constraint-settings-persistence.md)へ移行した。盤面ID・参照を変更せず、ジャンルと検査設定を一緒に復元する。
+
+## 注記選択の移行
+
+Masterの[注記選択](annotation-selection.md)は盤面・レイヤー・レコード種類・IDを保持する。
+頂点塗りをセル番号へ置き換えず、同名の別種類レコードを個別に削除し、一つのUndoで戻す。
+既存の特殊図形向け文字列選択APIと混同しない。コピー／貼付、線・特殊図形への拡張は後続作業。
+
+## 新規の彫刻操作の移行
+
+[Build／Cut](sculpt-identity.md)も保持した元グラフと種類付き操作列へ移行する。
+任意IDの形状判定、存続する辺ID、完全な境界・隣接情報、削除した注記と試行・履歴を一体で扱う。
+元形状を持たない旧彫刻の移行と、彫刻済みIsometric盤面の行列・高さ・面変更は後続作業。
+
+## 旧彫刻の復元
+
+[旧彫刻ファイルの移行](legacy-sculpt-identity.md)では、実際の旧writerの全出力と一致する
+スナップショットだけを修復し、IDを保持した整合グラフと操作列を補う。設定だけの旧Cutも再生する。
+未知のスナップショットの推測修復や、Isometricの行列・高さ・面変更の完了を意味しない。

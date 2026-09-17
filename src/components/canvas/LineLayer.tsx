@@ -1,3 +1,4 @@
+import { resolveLinePoints } from '../../utils/lineReferences';
 import React, { useMemo } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import {
@@ -161,7 +162,17 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
         fromY = line.fromY;
         toX = line.toX;
         toY = line.toY;
+      } else if (line.fromType !== undefined || line.toType !== undefined) {
+        const points = resolveLinePoints(line, { grid, topology, useTopology });
+        if (!points) return;
+        const [a, b] = points;
+        fromX = a.position.x; fromY = a.position.y;
+        toX = b.position.x; toY = b.position.y;
+        if (isIsometric && activeTopology && a.type === 'cell' && b.type === 'cell') {
+          midpoint = findSharedEdgeMidpoint(a.id, b.id, activeTopology);
+        }
       } else if (line.edgeId) {
+        if (useTopology && !activeTopology) return;
         const lineTarget = line.lineTarget || 'cell'; // default to cell for backward compat
 
         if (activeTopology) {
@@ -207,8 +218,8 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
         }
       } else if (line.from && line.to) {
         // Legacy: Grid-snapped line - calculate positions from IDs (using topology if available)
-        const fromPos = getPointPosition(line.from, grid, activeTopology);
-        const toPos = getPointPosition(line.to, grid, activeTopology);
+        const resolved = resolveLinePoints(line, { grid, topology, useTopology });
+        const fromPos = resolved?.[0].position, toPos = resolved?.[1].position;
         if (!fromPos || !toPos) return;
         fromX = fromPos.x;
         fromY = fromPos.y;
@@ -216,7 +227,7 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
         toY = toPos.y;
 
         // For isometric grids, if both endpoints are cells, go through shared edge midpoint
-        if (isIsometric && activeTopology && line.from.startsWith('cell-') && line.to.startsWith('cell-')) {
+        if (isIsometric && activeTopology && resolved?.every(p => p.type === 'cell')) {
           midpoint = findSharedEdgeMidpoint(line.from, line.to, activeTopology);
         }
       } else {
@@ -407,7 +418,7 @@ export const LineLayer: React.FC<LineLayerProps> = ({ layer }) => {
     }
 
     return elements;
-  }, [puzzle, layer, grid, isVisible, activeTopology, isIsometric, highlightedLineIds, lineGroups]);
+  }, [puzzle, layer, grid, topology, useTopology, isVisible, activeTopology, isIsometric, highlightedLineIds, lineGroups]);
 
   if (!isVisible) return null;
 

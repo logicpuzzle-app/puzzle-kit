@@ -1,0 +1,221 @@
+{
+  "before": {
+    "commit": "846a5f49869a5c28f16b6efd503cab810b75daaf",
+    "createdAt": "2026-09-16T16:55:28.019Z",
+    "stats": {
+      "startTime": "2026-09-16T16:55:28.414Z",
+      "duration": 49340.596000000005,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 4,
+      "flaky": 0
+    },
+    "testSha256": "61164d9d6d26b020b3c23afa60fc6c930dfbadc477c82d8f145a4b06336f08a6",
+    "fixtureSha256": "8caa78175d5c273785321379060fef89eb7dd50e2782aa6801267102452b90c4",
+    "tests": [
+      {
+        "title": "sculpt rotate preserves opaque references through saved files and undo",
+        "project": "chromium",
+        "mode": "rotate",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failureLine": 50,
+        "failure": "Saved rotated board cannot be reopened after resetting to the original board."
+      },
+      {
+        "title": "sculpt cut preserves opaque references through saved files and undo",
+        "project": "chromium",
+        "mode": "cut",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failureLine": 34,
+        "failure": "Quadrilateral IDs resemble legacy cut IDs, so the UI refuses the cut and geometry stays unchanged."
+      },
+      {
+        "title": "sculpt rotate preserves opaque references through saved files and undo",
+        "project": "mobile-chrome",
+        "mode": "rotate",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failureLine": 50,
+        "failure": "Saved rotated board cannot be reopened after resetting to the original board."
+      },
+      {
+        "title": "sculpt cut preserves opaque references through saved files and undo",
+        "project": "mobile-chrome",
+        "mode": "cut",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failureLine": 34,
+        "failure": "Quadrilateral IDs resemble legacy cut IDs, so the UI refuses the cut and geometry stays unchanged."
+      }
+    ]
+  },
+  "after": {
+    "commit": "f51f48116b64908fee9a2cc641cf8b59bebca08f",
+    "createdAt": "2026-09-16T16:57:03.587Z",
+    "stats": {
+      "startTime": "2026-09-16T16:57:03.981Z",
+      "duration": 9777.8,
+      "expected": 4,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "testSha256": "61164d9d6d26b020b3c23afa60fc6c930dfbadc477c82d8f145a4b06336f08a6",
+    "fixtureSha256": "8caa78175d5c273785321379060fef89eb7dd50e2782aa6801267102452b90c4",
+    "tests": [
+      {
+        "title": "sculpt rotate preserves opaque references through saved files and undo",
+        "project": "chromium",
+        "mode": "rotate",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "sculpt cut preserves opaque references through saved files and undo",
+        "project": "chromium",
+        "mode": "cut",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "sculpt rotate preserves opaque references through saved files and undo",
+        "project": "mobile-chrome",
+        "mode": "rotate",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "sculpt cut preserves opaque references through saved files and undo",
+        "project": "mobile-chrome",
+        "mode": "cut",
+        "status": "passed",
+        "runtimeErrors": []
+      }
+    ]
+  },
+  "scope": "Public Master File Open/Save and Grid Type Sculpt Build/Cut. Desktop Chromium mouse and Chromium Pixel 7 touch emulation. Unrelated same-string cell/vertex references, undo/redo, reset-then-reload, clear recorded sculpt and undo. After rotate also creates a dependent split before clearing. No internal store injection or physical-device claim.",
+  "files": {
+    "after-chromium-cut-cleared.png": {
+      "sha256": "cdaa83733ca900718bcee2d3cb55fbb024e131376eff48c007a5ba19ee260b32",
+      "bytes": 34050
+    },
+    "after-chromium-cut-edited.png": {
+      "sha256": "cb9ddce48da5e20e7783adbca70b7abaed57314ed0e9c8d2728ccf753335a4f6",
+      "bytes": 34087
+    },
+    "after-chromium-cut.png": {
+      "sha256": "8de8c7bfda132d23b84fcbaec7e769a7dcf1dfa95ab0d7ee7d3a56ef6478b784",
+      "bytes": 34210
+    },
+    "after-chromium-cut.webm": {
+      "sha256": "b493437d95f2f3faf125706461f50161294ced9393b952aab9635c8eae3d5706",
+      "bytes": 104524,
+      "durationSeconds": 2.36,
+      "fullDecode": "passed"
+    },
+    "after-chromium-rotate-cleared.png": {
+      "sha256": "974636afd549995a89d975c7f536bb90c1c17021824b66beb4c1ac4c5b3a6930",
+      "bytes": 34797
+    },
+    "after-chromium-rotate-dependent-split.png": {
+      "sha256": "5216e586c46e7acde1999d3bb1cc59048197943d2aeb91e0e8718e1b3881f094",
+      "bytes": 32941
+    },
+    "after-chromium-rotate-edited.png": {
+      "sha256": "a05f036593f4e1f9a902b4e9eef03e8414b01ce3f2c45ebe076332adf54e6c39",
+      "bytes": 34543
+    },
+    "after-chromium-rotate.png": {
+      "sha256": "f773ef0045a10814f8e2a1e50d74e902e50bbb33fde3a0abc25a0f49d457e0b7",
+      "bytes": 34809
+    },
+    "after-chromium-rotate.webm": {
+      "sha256": "2f86347ece776d60d6b6885a7b81bbf6da82617b2cb8beaddecb4a6d53bb60db",
+      "bytes": 90006,
+      "durationSeconds": 3.64,
+      "fullDecode": "passed"
+    },
+    "after-mobile-chrome-cut-cleared.png": {
+      "sha256": "c3ac6abde11b20768cfbcf20707685b922425a9759c07e2b02142002baa484d7",
+      "bytes": 86899
+    },
+    "after-mobile-chrome-cut-edited.png": {
+      "sha256": "ed04f1a91393eba8b4eb1edd0a545a876bf1ab59c4bdb2cefcced7c8db8aa181",
+      "bytes": 91344
+    },
+    "after-mobile-chrome-cut.png": {
+      "sha256": "44ecdf6f70175ea41ebd89d2496a730a6f2c1c88618dbe6159f5bd6d69f3cbfe",
+      "bytes": 90520
+    },
+    "after-mobile-chrome-cut.webm": {
+      "sha256": "919f32d21217ac83e2ca3d2bdc15b6f40f854c8d30ebdbe7f804a6a978b34b73",
+      "bytes": 155162,
+      "durationSeconds": 2.44,
+      "fullDecode": "passed"
+    },
+    "after-mobile-chrome-rotate-cleared.png": {
+      "sha256": "8624d29b2b075e655016c0bc9a194f75414124d4c34dc435c95d66644911dd2a",
+      "bytes": 89208
+    },
+    "after-mobile-chrome-rotate-dependent-split.png": {
+      "sha256": "45fdcac9e2919e2404740ede3d92cd8b95a7f9f92b9020dd90d089b2dadec52a",
+      "bytes": 86705
+    },
+    "after-mobile-chrome-rotate-edited.png": {
+      "sha256": "81c9f992dd16e8bd9626022c736182d98c24b829895bee14eb11b6544e9386f4",
+      "bytes": 88386
+    },
+    "after-mobile-chrome-rotate.png": {
+      "sha256": "c66007936162f8dea802f85f3d100ab4be69673353828263c78eed53b1cbe38f",
+      "bytes": 88032
+    },
+    "after-mobile-chrome-rotate.webm": {
+      "sha256": "5a1708457299cdd38efba6a00965ffa7e8b7564bae720505b14da09cd5c309ef",
+      "bytes": 163360,
+      "durationSeconds": 2.8,
+      "fullDecode": "passed"
+    },
+    "before-chromium-cut.png": {
+      "sha256": "93e4775f756159f74b7f3b71e3f29479e6d5a9d83ef74efb042269d23fb358e5",
+      "bytes": 33190
+    },
+    "before-chromium-cut.webm": {
+      "sha256": "6fde090fe36f1f0552de48bfc64fd87ddce9b22943d3e976773f7e28ad64b0f7",
+      "bytes": 194424,
+      "durationSeconds": 12.8,
+      "fullDecode": "passed"
+    },
+    "before-chromium-rotate.png": {
+      "sha256": "3fb75a2a305b61cdab7a2216de11088b8ace56c243d16851dffb08fe514be461",
+      "bytes": 40309
+    },
+    "before-chromium-rotate.webm": {
+      "sha256": "48fa950df16d37457331e6d1384d7b7b15edf677c3cac8fc116ae475eeb7c70e",
+      "bytes": 195302,
+      "durationSeconds": 14.28,
+      "fullDecode": "passed"
+    },
+    "before-mobile-chrome-cut.png": {
+      "sha256": "ab2b4ce75cc7abfa168cc5ca790e0384de6757d66332ca6b41ac3cb1cf3383f2",
+      "bytes": 87702
+    },
+    "before-mobile-chrome-cut.webm": {
+      "sha256": "d287d37f7369f308e7a42bf1923932dae6dd9f28961aa7b830ed0bac5622b3c0",
+      "bytes": 292389,
+      "durationSeconds": 12.8,
+      "fullDecode": "passed"
+    },
+    "before-mobile-chrome-rotate.png": {
+      "sha256": "3900dd40e3d0748487f26fa133bfc467d4dff6009fc6d96e10d7f98611b1d585",
+      "bytes": 106017
+    },
+    "before-mobile-chrome-rotate.webm": {
+      "sha256": "428bfabbf0941fc660166bdb63297243db3a33cd57333efd2cd2c23fb5361df1",
+      "bytes": 303007,
+      "durationSeconds": 13.16,
+      "fullDecode": "passed"
+    }
+  }
+}

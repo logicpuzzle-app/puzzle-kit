@@ -9,6 +9,7 @@
  * - checkCountinuousUnshadeCell (no straight white path crossing 2+ room borders)
  */
 
+import { getCellIndexById } from '../../utils/gridUtils';
 import {
   registerCheckFunction,
   type ValidationContext,
@@ -131,14 +132,14 @@ function getRoomClue(ctx: ValidationContext, roomCells: { row: number; col: numb
  * checkShadeCellExist - At least one shaded cell must exist
  */
 function checkShadeCellExist(ctx: ValidationContext): CheckResult {
-  for (let row = 0; row < ctx.grid.rows; row++) {
-    for (let col = 0; col < ctx.grid.cols; col++) {
-      if (isShaded(ctx, row, col)) {
-        return { ok: true }; // Found at least one shaded cell
-      }
-    }
-  }
-  return { ok: false };
+  // Legacy Grid checker shared by other genres. Preserve the exclusion behavior
+  // of the former shared registration; Nurimisaki now has its own ID-aware check.
+  const excluded = new Set([...(ctx.grid.voidCells ?? []), ...(ctx.grid.disabledCells ?? []), ...(ctx.grid.outboardCells ?? [])]);
+  return { ok: Object.values(ctx.puzzle.answer.surfaces).some(surface => {
+    const index = getCellIndexById(surface.cellId, ctx.grid);
+    return index && index.row >= 0 && index.row < ctx.grid.rows && index.col >= 0 && index.col < ctx.grid.cols
+      && !excluded.has(surface.cellId) && SHADE_COLORS.includes(surface.color);
+  }) };
 }
 
 /**

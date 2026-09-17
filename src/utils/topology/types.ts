@@ -45,6 +45,8 @@ export interface TopologyCell {
   id: string;
   /** Center position */
   center: Point;
+  /** Position before the current visual deformation; retained across native save/load. */
+  baseCenter?: Point;
   /** Ordered list of vertex IDs forming the cell boundary (clockwise) */
   boundaryVertices: string[];
   /** IDs of adjacent cells (sharing an edge) - excludes outboard cells */
@@ -84,6 +86,8 @@ export interface TopologyVertex {
   id: string;
   /** Position */
   position: Point;
+  /** Position before the current visual deformation. */
+  basePosition?: Point;
   /** IDs of cells that share this vertex */
   adjacentCells: string[];
   /** IDs of edges connected to this vertex */
@@ -110,6 +114,8 @@ export interface TopologyEdge {
   id: string;
   /** Midpoint position */
   midpoint: Point;
+  /** Midpoint before the current visual deformation. */
+  baseMidpoint?: Point;
   /** Start vertex ID */
   startVertex: string;
   /** End vertex ID */
@@ -136,10 +142,19 @@ export interface TopologyEdge {
  * Complete grid topology
  */
 export interface GridTopology {
+  /** Flat source graph and explicit operation identities for merge, split and sculpt edits. */
+  editBase?: GridTopology;
+  editOperations?: import('./retainedEdits').TopologyEdit[];
+  /** Actual graph before reversible cell merges; no nested merge/exclusion base. */
+  mergeBase?: GridTopology;
+  /** Explicit merged-cell identity and its source cells, never an ID suffix. */
+  mergeGroups?: import('./retainedMerge').MergeGroup[];
   /** Runtime metadata for the rendered graph; saved in topologySettings, not node IDs. */
   appliedPreset?: { preset: TopologyPreset; intensity: number };
   /** Same board before temporary exclusions. One level only; IDs are preserved. */
   exclusionBase?: GridTopology;
+  /** Bounds of the original geometry used by visual presets, not an identity key. */
+  deformationBounds?: GridTopology['bounds'];
   /** All cells indexed by ID */
   cells: Map<string, TopologyCell>;
   /** All vertices indexed by ID */

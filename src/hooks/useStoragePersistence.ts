@@ -1,3 +1,4 @@
+import { serializeTopology } from '../utils/serialization';
 /**
  * Storage Persistence Hook
  *
@@ -6,7 +7,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { usePuzzleStore, usePuzzleStoreApi } from '../store/puzzleStoreContext';
-import { restoreTopology } from '../utils/topologyPersistence';
+import { restoreBoard } from '../utils/topologyPersistence';
 import {
   saveToolSettings,
   loadToolSettings,
@@ -88,44 +89,58 @@ export function useStoragePersistence() {
     const persistedTopologyState = loadTopologyState();
     const persistedConstraintState = loadConstraintState();
 
-    // Apply to store (merge with defaults)
-    setToolSettings({
-      ...persistedToolSettings,
-    });
+    // A child may already have loaded a complete native document. Its input
+    // modes and rule settings take precedence over independent preferences.
+    const documentRestored = store.getState().grid !== initialGrid.current;
+    if (!documentRestored) setToolSettings({ ...persistedToolSettings });
 
     // Child components may already have restored a native document. Preferences
     // must not regenerate its graph after the document's IDs have been loaded.
-    if (store.getState().grid === initialGrid.current) {
-      const restoredGrid = { ...store.getState().grid, ...persistedGridConfig };
+    if (!documentRestored) {
+      // Basic grid preferences omit structural edits. The saved graph's own
+      // configuration is authoritative for its shape and references.
+      const restoredGrid = { ...store.getState().grid, ...persistedGridConfig,
+        ...persistedTopologyState.deserializedTopology?.sourceConfig,
+      };
       const settings = {
         useTopology: persistedTopologyState.useTopology,
         topologyPreset: persistedTopologyState.topologyPreset,
         topologyIntensity: persistedTopologyState.topologyIntensity,
       };
-      store.setState({
-        grid: restoredGrid,
-        ...settings,
-        topologyPreset: settings.topologyPreset as typeof topologyPreset,
-        topology: persistedTopologyState.deserializedTopology ??
-          restoreTopology(restoredGrid, settings),
-      });
+      try {
+        const { topology, grid: loadedGrid } = restoreBoard(restoredGrid, { ...settings,
+          ...(persistedTopologyState.deserializedTopology && { topology: serializeTopology(persistedTopologyState.deserializedTopology) }),
+        });
+        store.setState({
+          grid: loadedGrid,
+          ...settings,
+          topologyPreset: settings.topologyPreset as typeof topologyPreset,
+          topology,
+        });
+      } catch {
+        // Grid and graph preferences are stored independently. A stale pair
+        // must not replace the current board or prevent the app from opening.
+        console.warn('Inconsistent topology preferences; keeping the current board');
+      }
     }
 
     setCanvasState({
       zoom: persistedCanvasState.zoom,
     });
 
-    // Apply constraint state
-    if (persistedConstraintState.currentSchemaId !== undefined) {
-      setCurrentSchemaId(persistedConstraintState.currentSchemaId);
-    }
-    if (persistedConstraintState.currentInputMode) {
-      // Cast to InputModeType - the stored value should always be valid
-      setInputMode(persistedConstraintState.currentInputMode as Parameters<typeof setInputMode>[0]);
-    }
-    if (persistedConstraintState.validationOverrides) {
-      for (const [ruleId, enabled] of Object.entries(persistedConstraintState.validationOverrides)) {
-        setValidationOverride(ruleId, enabled);
+    // Apply constraint preferences only when no native document was restored.
+    if (!documentRestored) {
+      if (persistedConstraintState.currentSchemaId !== undefined) {
+        setCurrentSchemaId(persistedConstraintState.currentSchemaId);
+      }
+      if (persistedConstraintState.currentInputMode) {
+        // Cast to InputModeType - the stored value should always be valid
+        setInputMode(persistedConstraintState.currentInputMode as Parameters<typeof setInputMode>[0]);
+      }
+      if (persistedConstraintState.validationOverrides) {
+        for (const [ruleId, enabled] of Object.entries(persistedConstraintState.validationOverrides)) {
+          setValidationOverride(ruleId, enabled);
+        }
       }
     }
 

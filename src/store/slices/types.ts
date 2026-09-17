@@ -1,3 +1,5 @@
+import type { CellSelection, CellSelectionRequest } from '../../utils/cellSelection';
+import type { AnnotationSelection, AnnotationRef } from '../../utils/annotationSelection';
 /**
  * Shared types for store slices
  */
@@ -13,6 +15,7 @@ import type {
   CanvasState,
   ToolSettings,
   SurfaceElement,
+  VertexSurfaceElement,
   LineElement,
   LineGroup,
   EdgeElement,
@@ -97,7 +100,7 @@ export interface GridSlice {
 
   // Topology mode
   useTopology: boolean;
-  setUseTopology: (useTopology: boolean) => void;
+  setUseTopology: (useTopology: boolean) => import('../../utils/referenceModeMigration').ReferenceModeChangeResult;
   topology: GridTopology | null;
   updateTopology: () => void;
 
@@ -147,6 +150,8 @@ export interface GridSlice {
 }
 
 export interface ElementsSlice {
+  addVertexSurface: (element: Omit<VertexSurfaceElement, 'id'>) => string;
+  removeVertexSurface: (id: string) => void;
   puzzle: PuzzleState;
 
   // Element operations
@@ -212,6 +217,10 @@ export interface CanvasSlice {
   selectedElements: string[];
   setSelection: (ids: string[]) => void;
   clearSelection: () => void;
+  annotationSelection: AnnotationSelection | null;
+  setAnnotationSelection: (refs: AnnotationRef[]) => void;
+  clearAnnotationSelection: () => void;
+  removeSelectedAnnotations: () => void;
 
   // Hover cursor
   hoverCell: string | null;
@@ -222,8 +231,8 @@ export interface CanvasSlice {
   setCursorCell: (cellId: string | null) => void;
 
   // Number tool selection
-  numberSelection: { row: number; col: number } | null;
-  setNumberSelection: (cell: { row: number; col: number } | null) => void;
+  numberSelection: CellSelection | null;
+  setNumberSelection: (cell: CellSelectionRequest | null) => void;
 
   // Highlighted lines (for preview in line list)
   highlightedLineIds: string[];

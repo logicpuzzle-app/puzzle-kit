@@ -1,10 +1,12 @@
+import { resolveCellSelection } from '../../utils/cellSelection';
 /**
  * Canvas Slice - Canvas viewport and interaction state
  */
 
 import type { CanvasSlice, SliceCreator } from './types';
+import { annotationScope, selectableAnnotations, selectedAnnotations, sameAnnotation } from '../../utils/annotationSelection';
 
-export const createCanvasSlice: SliceCreator<CanvasSlice> = (set) => ({
+export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
   canvas: {
     zoom: 1,
     panX: 0,
@@ -41,6 +43,31 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set) => ({
   setSelection: (ids) => set({ selectedElements: ids }),
   clearSelection: () => set({ selectedElements: [] }),
 
+  annotationSelection: null,
+  setAnnotationSelection: (refs) => {
+    const state = get(), scope = annotationScope(state);
+    const valid = selectableAnnotations(state).filter(a => refs.some(ref => sameAnnotation(ref, a)));
+    set({ annotationSelection: scope && valid.length ? { ...scope, refs: valid.map(({ kind, id }) => ({ kind, id })) } : null });
+  },
+  clearAnnotationSelection: () => set({ annotationSelection: null }),
+  removeSelectedAnnotations: () => {
+    const state = get(), refs = selectedAnnotations(state);
+    if (!refs.length) return;
+    state.endHistoryGroup();
+    state.startHistoryGroup();
+    try {
+      for (const ref of refs) {
+        if (ref.kind === 'vertexSurfaces') state.removeVertexSurface(ref.id);
+        else if (ref.kind === 'surfaces') state.removeSurface(ref.id);
+        else if (ref.kind === 'numbers') state.removeNumber(ref.id);
+        else state.removeSymbol(ref.id);
+      }
+    } finally {
+      state.endHistoryGroup();
+      set({ annotationSelection: null });
+    }
+  },
+
   // Hover cursor
   hoverCell: null,
   setHoverCell: (cell) => set({ hoverCell: cell }),
@@ -51,7 +78,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set) => ({
 
   // Number tool selection
   numberSelection: null,
-  setNumberSelection: (cell) => set({ numberSelection: cell }),
+  setNumberSelection: (cell) => set(state => ({ numberSelection: resolveCellSelection(state, cell) })),
 
   // Highlighted lines (for preview in line list)
   highlightedLineIds: [],

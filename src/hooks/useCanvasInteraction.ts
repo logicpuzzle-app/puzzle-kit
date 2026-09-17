@@ -30,6 +30,7 @@ import { useGridPointUtils } from './useGridPointUtils';
 import { useGridEditMode } from './useGridEditMode';
 import { useSculptMode } from './useSculptMode';
 import { useZoomPan } from './useZoomPan';
+import { useDirectionalNumberGesture } from './useDirectionalNumberGesture';
 import { useTouchHandlers } from './useTouchHandlers';
 import { createToolDispatchers } from './toolDispatchers';
 import {
@@ -65,6 +66,7 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom, onTextCli
     activeLayer,
     gridEditMode,
     topology,
+    useTopology,
   } = usePuzzleStore();
 
   // Derived state: grid mode is when activeLayer is 'grid'
@@ -86,6 +88,12 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom, onTextCli
 
   // Derived state from machine
   const isPanning = machineState.type === 'panning';
+
+  useEffect(() => {
+    setMachineState(INITIAL_STATE);
+    setLineHoverPoint(null); setSymbolHoverPoint(null); setSymbolHoverId(null);
+    setDrawStartPoint(null); setDrawStartPosition(null); setCurrentStrokeId(null);
+  }, [useTopology]);
 
   // Clear cursor states when switching to non-editable layers
   useEffect(() => {
@@ -129,6 +137,8 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom, onTextCli
     resetFillModes,
     finalizeLineSelection,
   } = toolHandlers;
+
+  const directionalGesture = useDirectionalNumberGesture(handleNumberTool);
 
   const { findNearestGridPoint } = useGridPointUtils(grid);
 
@@ -174,6 +184,7 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom, onTextCli
     isSelecting,
     selectionRect,
     handleSelectTool,
+    handleSelectionPointerDown, handleSelectionPointerMove, handleSelectionPointerUp,
   } = useSelectionTool({ getMousePosition });
 
   // Build context for state machine
@@ -380,6 +391,7 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom, onTextCli
       },
     } : undefined,
     toolHandlers,
+    directionalGesture,
     drawStartPoint,
     setDrawStartPoint,
     setDrawStartPosition,
@@ -517,8 +529,10 @@ export function useCanvasInteraction({ svgRef, allowMultiTouchPanZoom, onTextCli
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
+    directionalGesture,
     // Selection handlers
     handleSelectTool,
+    handleSelectionPointerDown, handleSelectionPointerMove, handleSelectionPointerUp,
     isSelecting,
     selectionRect,
     // Special tool preview

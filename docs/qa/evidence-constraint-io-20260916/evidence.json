@@ -1,0 +1,135 @@
+{
+  "before": {
+    "commit": "a6c9be85f2e5d8e838a801bd7587ec9b408000ed",
+    "createdAt": "2026-09-16T12:35:34.342Z",
+    "stats": {
+      "startTime": "2026-09-16T12:35:34.756Z",
+      "duration": 24908.507,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "testSha256": "aeacba288b7abed684fb731c8825b0548985b0660117779bb062c339716cfeac",
+    "fixtureSha256": "231f9c3308f6680266fd3522991e12c5ec57c55e7ef206575c9a56bf20eaec80",
+    "tests": [
+      {
+        "title": "native public IO restores the preset, settings-only autosave and effective rule overrides @production",
+        "project": "chromium",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "File Open drops the genre; Check Answer is missing in the Answer layer."
+      },
+      {
+        "title": "native public IO restores the preset, settings-only autosave and effective rule overrides @production",
+        "project": "mobile-chrome",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "File Open drops the genre; Check Answer is missing in the Answer layer."
+      }
+    ]
+  },
+  "after": {
+    "commit": "ee844acd39539f2b9d1c0da71ea5b1a925b743b7",
+    "createdAt": "2026-09-16T12:36:48.321Z",
+    "stats": {
+      "startTime": "2026-09-16T12:36:48.720Z",
+      "duration": 14585.319,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "testSha256": "aeacba288b7abed684fb731c8825b0548985b0660117779bb062c339716cfeac",
+    "fixtureSha256": "231f9c3308f6680266fd3522991e12c5ec57c55e7ef206575c9a56bf20eaec80",
+    "tests": [
+      {
+        "title": "native public IO restores the preset, settings-only autosave and effective rule overrides @production",
+        "project": "chromium",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "native public IO restores the preset, settings-only autosave and effective rule overrides @production",
+        "project": "mobile-chrome",
+        "status": "passed",
+        "runtimeErrors": []
+      }
+    ]
+  },
+  "scope": "Public menu/icon files, settings-only autosave and reload, generated embedded URL navigation, effective rule overrides, unknown and missing settings. Desktop mouse/Pixel7 touch emulation. Clipboard output is captured at the browser boundary; no direct app-state injection. Adapter Unit tests use memory transport, not production Firebase.",
+  "files": {
+    "after-chromium-customized.png": {
+      "sha256": "0f5f3cc5c04df64d03083506321951cf8eaf3cf708715819eb10c748f54ab04d",
+      "bytes": 40730
+    },
+    "after-chromium-loaded.png": {
+      "sha256": "f9f7ceef342b2a1089dbae2de8991e4d6344eda28152b824f76b250019cc514c",
+      "bytes": 35008
+    },
+    "after-chromium-shared.png": {
+      "sha256": "453741b9990f061bbd61e719c3976d93cb43888975120e2187ba500f8b6af206",
+      "bytes": 41048
+    },
+    "after-chromium-strict.png": {
+      "sha256": "78196c24637683e5fac8a1b11aeb1beb9e8f741197c582457eab425da9af247c",
+      "bytes": 43477
+    },
+    "after-chromium.png": {
+      "sha256": "4229f6cdad6764dab867e6da9b057a8c781ad33b24b9fba82320bcf74c39ef37",
+      "bytes": 40773
+    },
+    "after-chromium.webm": {
+      "sha256": "442e84cfcf020eb6284df11aaac453a4a7631f67d319869a1bbc882263af3700",
+      "bytes": 227313,
+      "durationSeconds": 7.48,
+      "fullDecode": "passed"
+    },
+    "after-mobile-chrome-customized.png": {
+      "sha256": "2542080c472f131e67eb71dd5aaee825459f8e3846a8f119564140f796795f8a",
+      "bytes": 107616
+    },
+    "after-mobile-chrome-loaded.png": {
+      "sha256": "7d8645a53340a9ac4e19a450a9464eb042af610fded7a5daa2da73043da79f8a",
+      "bytes": 87558
+    },
+    "after-mobile-chrome-shared.png": {
+      "sha256": "95c0979ba7de2ae5e68da6eeeaa6743bc2e7a3c86b4fe5679720444477af8123",
+      "bytes": 107259
+    },
+    "after-mobile-chrome-strict.png": {
+      "sha256": "df72d35762bd74edb761015fcab5a87b9080ce5a28472ab56fba7e19a1c41267",
+      "bytes": 116425
+    },
+    "after-mobile-chrome.png": {
+      "sha256": "7bd11481fe3fadf343cc9e403e142029174084c8a306112bcfa24c6e4d74cf50",
+      "bytes": 106467
+    },
+    "after-mobile-chrome.webm": {
+      "sha256": "7818ce7c965be1038f748aa15d8041f8656b572b5e530f03a9046b774e661f02",
+      "bytes": 278748,
+      "durationSeconds": 6.36,
+      "fullDecode": "passed"
+    },
+    "before-chromium.png": {
+      "sha256": "6726ad93c4c1f75c973796dea63f572fb751f0f563eba7953fc6795426992145",
+      "bytes": 29509
+    },
+    "before-chromium.webm": {
+      "sha256": "9d75f859c95b74fdf077b8b9365b25bd603f86f48ba2b54554f1b33305085370",
+      "bytes": 165840,
+      "durationSeconds": 13.6,
+      "fullDecode": "passed"
+    },
+    "before-mobile-chrome.png": {
+      "sha256": "74ff10f36587eec0801c5cbb3d6eedcb8e1f2b61757b1e5dac5c4b26510f4629",
+      "bytes": 69017
+    },
+    "before-mobile-chrome.webm": {
+      "sha256": "6014ce10d39530908d9773d310ffda3ffbf766ec9bd227d0c36d7da449b2ce17",
+      "bytes": 189134,
+      "durationSeconds": 12.56,
+      "fullDecode": "passed"
+    }
+  }
+}

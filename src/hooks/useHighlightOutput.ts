@@ -29,6 +29,7 @@ export const useHighlightOutput = (): HighlightOutput | null => {
       grid,
       schema,
       topology: useTopology ? topology : null,
+      referenceMode: useTopology ? 'topology' : 'grid',
       currentInputMode: currentInputMode as InputMode,
       activeLayer: 'answer',
     };

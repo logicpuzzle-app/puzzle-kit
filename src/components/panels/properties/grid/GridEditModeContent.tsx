@@ -3,19 +3,24 @@
  */
 
 import React from 'react';
+import { currentMergeGroups } from '../../../../utils/topology/retainedEdits';
 import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../../../store/puzzleStoreContext';
 
 // Merge mode content
 export const GridMergeContent: React.FC = () => {
   const { t } = useTranslation();
-  const { grid, setGrid } = usePuzzleStore();
+  const { grid, topology, unmergeCells } = usePuzzleStore();
 
+  const groups = currentMergeGroups(topology);
   const mergedCount = grid.mergedCells?.length ?? 0;
   const totalMergedCells = grid.mergedCells?.reduce((sum, group) => sum + group.length, 0) ?? 0;
 
   return (
     <div className="space-y-3">
+      <p className="text-xs text-office-text-secondary">{t('gridEdit.mergeHelp')}</p>
+      <p className="text-xs text-office-text-secondary">{t('gridEdit.mergeAnnotations')}</p>
+      {mergedCount > 0 && !groups.length && <p role="status" className="text-xs text-office-text-secondary">{t('gridEdit.mergeSourceMissing')}</p>}
       <div className="space-y-1">
         <div className="text-xs text-office-text-secondary">
           {t('gridEdit.mergedGroups')}: <span className="font-medium text-office-text">{mergedCount}</span>
@@ -38,9 +43,10 @@ export const GridMergeContent: React.FC = () => {
                 </span>
                 <button
                   className="px-1.5 py-0.5 text-[10px] text-red-600 hover:bg-red-50 rounded"
+                  disabled={!groups.some(item => item.cellIds.length === group.length && item.cellIds.every(id => group.includes(id)))}
                   onClick={() => {
-                    const newMerged = grid.mergedCells?.filter((_, i) => i !== idx);
-                    setGrid({ mergedCells: newMerged && newMerged.length > 0 ? newMerged : undefined });
+                    const source = groups.find(item => item.cellIds.length === group.length && item.cellIds.every(id => group.includes(id)));
+                    if (source) unmergeCells([source.id]);
                   }}
                 >
                   {t('action.delete')}
@@ -57,12 +63,18 @@ export const GridMergeContent: React.FC = () => {
 // Split mode content
 export const GridSplitContent: React.FC = () => {
   const { t } = useTranslation();
-
+  const { grid, topology, removeSplitLine, clearSplitLines } = usePuzzleStore();
+  const splits = (topology?.editOperations ?? []).filter(op => op.kind === 'split');
   return (
     <div className="space-y-3">
-      <div className="text-xs text-office-text-secondary italic">
-        {t('gridEdit.splitNotImplemented')}
-      </div>
+      <p className="text-xs text-office-text-secondary">{t('gridEdit.splitHelp')}</p>
+      <p className="text-xs text-office-text-secondary">{t('gridEdit.splitAnnotations')}</p>
+      {!!grid.splitLines?.length && !splits.length && <p role="status" className="text-xs text-office-text-secondary">{t('gridEdit.splitSourceMissing')}</p>}
+      {splits.map((split, i) => <div key={split.edgeId} className="flex items-center justify-between text-xs">
+        <span>{t('gridEdit.split')} {i + 1}</span>
+        <button className="px-2 py-1 border border-office-border rounded-sm" onClick={() => removeSplitLine(split.cellId)}>{t('gridEdit.restoreSplit')}</button>
+      </div>)}
+      {splits.length > 0 && <button className="px-2 py-1 text-xs border border-office-border rounded-sm" onClick={clearSplitLines}>{t('gridEdit.restoreAllSplits')}</button>}
     </div>
   );
 };
@@ -143,9 +155,10 @@ export const GridExcludeContent: React.FC = () => {
 // Sculpt mode content (for isometric grids)
 export const GridSculptContent: React.FC = () => {
   const { t } = useTranslation();
-  const { sculptMode, setSculptMode, grid, setGrid } = usePuzzleStore();
+  const { sculptMode, setSculptMode, grid, setGrid, topology } = usePuzzleStore();
 
   const sculptCount = grid.sculptOperations?.length ?? 0;
+  const canClear = (topology?.exclusionBase ?? topology)?.editOperations?.some(op => op.kind === 'sculpt') ?? false;
 
   return (
     <div className="space-y-3">
@@ -179,6 +192,9 @@ export const GridSculptContent: React.FC = () => {
           : t('gridEdit.sculptHelp.cut')}
       </div>
 
+      <p className="text-xs text-office-text-secondary">{t('gridEdit.sculptAnnotations')}</p>
+      {sculptCount > 0 && !canClear && <p role="status" className="text-xs text-office-text-secondary">{t('gridEdit.sculptSourceMissing')}</p>}
+
       {/* Sculpt operations count */}
       <div className="space-y-1">
         <div className="text-xs text-office-text-secondary">
@@ -190,6 +206,7 @@ export const GridSculptContent: React.FC = () => {
       {sculptCount > 0 && (
         <button
           className="w-full px-2 py-1.5 text-xs border border-office-border rounded-sm hover:bg-red-50 hover:border-red-300 text-red-600"
+          disabled={!canClear}
           onClick={() => setGrid({ sculptOperations: undefined })}
         >
           {t('gridEdit.clearAllSculpt')}

@@ -1,6 +1,8 @@
+import { projectEdits } from './topology/retainedEdits';
 import pako from 'pako';
 import type { PuzzleExport, GridConfig, PuzzleState } from '../types';
 import type { GridTopology, TopologyCell, TopologyVertex, TopologyEdge } from './topology/types';
+import { projectMerges } from './topology/retainedMerge';
 import { PUZZLE_EXPORT_VERSION } from '../constants/version';
 
 // Penpa-compatible compression using zlib
@@ -82,10 +84,12 @@ export function serializePuzzle(
   grid: GridConfig,
   state: PuzzleState,
   metadata?: PuzzleExport['metadata'],
-  topologySettings?: PuzzleExport['topologySettings']
+  topologySettings?: PuzzleExport['topologySettings'],
+  constraintSettings?: PuzzleExport['constraintSettings']
 ): string {
   const data: PuzzleExport = {
     version: PUZZLE_VERSION,
+    ...(constraintSettings ? { constraintSettings } : {}),
     grid,
     state,
     metadata: {
@@ -156,9 +160,10 @@ export function generateShareUrl(
   grid: GridConfig,
   state: PuzzleState,
   metadata?: PuzzleExport['metadata'],
-  topologySettings?: PuzzleExport['topologySettings']
+  topologySettings?: PuzzleExport['topologySettings'],
+  constraintSettings?: PuzzleExport['constraintSettings']
 ): string {
-  const encoded = serializePuzzle(grid, state, metadata, topologySettings);
+  const encoded = serializePuzzle(grid, state, metadata, topologySettings, constraintSettings);
   const baseUrl = window.location.origin + window.location.pathname;
   return `${baseUrl}?p=${encoded}`;
 }
@@ -182,10 +187,12 @@ export function autoSave(
   grid: GridConfig,
   state: PuzzleState,
   metadata?: PuzzleExport['metadata'],
-  topologySettings?: PuzzleExport['topologySettings']
+  topologySettings?: PuzzleExport['topologySettings'],
+  constraintSettings?: PuzzleExport['constraintSettings']
 ): void {
   const data: PuzzleExport = {
     version: PUZZLE_VERSION,
+    ...(constraintSettings ? { constraintSettings } : {}),
     grid,
     state,
     metadata: {
@@ -235,10 +242,12 @@ export function savePuzzleToList(
   grid: GridConfig,
   state: PuzzleState,
   metadata?: PuzzleExport['metadata'],
-  topologySettings?: PuzzleExport['topologySettings']
+  topologySettings?: PuzzleExport['topologySettings'],
+  constraintSettings?: PuzzleExport['constraintSettings']
 ): void {
   const data: PuzzleExport = {
     version: PUZZLE_VERSION,
+    ...(constraintSettings ? { constraintSettings } : {}),
     grid,
     state,
     ...(topologySettings ? { topologySettings } : {}),
@@ -293,10 +302,12 @@ export function downloadAsJson(
   state: PuzzleState,
   metadata?: PuzzleExport['metadata'],
   topologySettings?: PuzzleExport['topologySettings'],
-  filename = 'puzzle.json'
+  filename = 'puzzle.json',
+  constraintSettings?: PuzzleExport['constraintSettings']
 ): void {
   const data: PuzzleExport = {
     version: PUZZLE_VERSION,
+    ...(constraintSettings ? { constraintSettings } : {}),
     grid,
     state,
     metadata: {
@@ -456,7 +467,12 @@ export function downloadAsPng(blob: Blob, filename = 'puzzle.png'): void {
  * Serializable topology format (uses arrays instead of Maps)
  */
 export interface SerializedTopology {
+  editBase?: SerializedTopology;
+  editOperations?: GridTopology['editOperations'];
+  mergeBase?: SerializedTopology;
+  mergeGroups?: GridTopology['mergeGroups'];
   exclusionBase?: SerializedTopology;
+  deformationBounds?: GridTopology['bounds'];
   cells: [string, TopologyCell][];
   vertices: [string, TopologyVertex][];
   edges: [string, TopologyEdge][];
@@ -469,11 +485,14 @@ export interface SerializedTopology {
  */
 export function serializeTopology(topology: GridTopology): SerializedTopology {
   return {
+    ...(topology.editBase && { editBase: serializeTopology(topology.editBase), editOperations: topology.editOperations }),
     ...(topology.exclusionBase ? { exclusionBase: serializeTopology(topology.exclusionBase) } : {}),
+    ...(topology.mergeBase && { mergeBase: serializeTopology(topology.mergeBase), mergeGroups: topology.mergeGroups }),
     cells: Array.from(topology.cells.entries()),
     vertices: Array.from(topology.vertices.entries()),
     edges: Array.from(topology.edges.entries()),
     bounds: topology.bounds,
+    ...(topology.deformationBounds && { deformationBounds: topology.deformationBounds }),
     sourceConfig: topology.sourceConfig,
   };
 }
@@ -502,6 +521,8 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
     return nodes;
   };
   if (!record(serialized)) throw new Error('Invalid topology snapshot');
+  const phase = serialized.sourceConfig?.hexRowOffset;
+  if (phase !== undefined && phase !== 0 && phase !== 1) throw new Error('Invalid hex row offset');
   const cells = readNodes<TopologyCell>(serialized.cells);
   const vertices = readNodes<TopologyVertex>(serialized.vertices);
   const edges = readNodes<TopologyEdge>(serialized.edges);
@@ -511,21 +532,25 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
       throw new Error('Nested exclusion base is not supported');
     }
     exclusionBase = deserializeTopology(serialized.exclusionBase);
+    if ((exclusionBase.sourceConfig?.hexRowOffset ?? 0) !== (phase ?? 0)) throw new Error('Inconsistent hidden hex row offset');
     for (const [id, vertex] of vertices) {
       const original = exclusionBase.vertices.get(id);
-      if (!original || original.position.x !== vertex.position.x || original.position.y !== vertex.position.y) {
+      if (!original || original.position.x !== vertex.position.x || original.position.y !== vertex.position.y
+          || JSON.stringify(original.basePosition) !== JSON.stringify(vertex.basePosition)) {
         throw new Error('Exclusion base reassigns a vertex ID');
       }
     }
     for (const [id, edge] of edges) {
       const original = exclusionBase.edges.get(id);
-      if (!original || original.startVertex !== edge.startVertex || original.endVertex !== edge.endVertex) {
+      if (!original || original.startVertex !== edge.startVertex || original.endVertex !== edge.endVertex
+          || JSON.stringify(original.baseMidpoint) !== JSON.stringify(edge.baseMidpoint)) {
         throw new Error('Exclusion base reassigns an edge ID');
       }
     }
     for (const [id, cell] of cells) {
       const original = exclusionBase.cells.get(id);
-      if (!original || original.center.x !== cell.center.x || original.center.y !== cell.center.y ||
+      if (!original || original.center.x !== cell.center.x || original.center.y !== cell.center.y
+          || JSON.stringify(original.baseCenter) !== JSON.stringify(cell.baseCenter) ||
           JSON.stringify(original.boundaryVertices) !== JSON.stringify(cell.boundaryVertices) ||
           JSON.stringify(original.boundaryEdges) !== JSON.stringify(cell.boundaryEdges)) {
         throw new Error('Exclusion base reassigns a cell ID');
@@ -539,30 +564,118 @@ export function deserializeTopology(serialized: SerializedTopology): GridTopolog
         .every(key => Number.isFinite(serialized.bounds[key as keyof GridTopology['bounds']]))) {
     throw new Error('Invalid topology bounds');
   }
+  if (serialized.deformationBounds !== undefined && (!record(serialized.deformationBounds) ||
+      !['minX', 'minY', 'maxX', 'maxY', 'width', 'height'].every(key =>
+        Number.isFinite(serialized.deformationBounds![key as keyof GridTopology['bounds']])))) {
+    throw new Error('Invalid deformation bounds');
+  }
+  const origin = (value: unknown) => serialized.deformationBounds !== undefined ? point(value) : value === undefined;
   for (const cell of cells.values()) {
-    if (!point(cell.center) || !refs(cell.boundaryVertices, vertices) ||
+    if (!point(cell.center) || !origin(cell.baseCenter) || !refs(cell.boundaryVertices, vertices) ||
         !refs(cell.boundaryEdges, edges) || !refs(cell.adjacentCells, cells)) {
       throw new Error('Invalid cell geometry or reference');
     }
   }
   for (const vertex of vertices.values()) {
-    if (!point(vertex.position) || !refs(vertex.adjacentCells, cells) ||
+    if (!point(vertex.position) || !origin(vertex.basePosition) || !refs(vertex.adjacentCells, cells) ||
         !refs(vertex.adjacentEdges, edges) || !refs(vertex.adjacentVertices, vertices)) {
       throw new Error('Invalid vertex geometry or reference');
     }
   }
   for (const edge of edges.values()) {
-    if (!point(edge.midpoint) || !vertices.has(edge.startVertex) ||
+    if (!point(edge.midpoint) || !origin(edge.baseMidpoint) || !vertices.has(edge.startVertex) ||
         !vertices.has(edge.endVertex) || !refs(edge.adjacentCells, cells)) {
       throw new Error('Invalid edge geometry or reference');
     }
   }
+  let editBase: GridTopology | undefined;
+  if (serialized.editBase !== undefined) {
+    if (serialized.mergeBase || !record(serialized.editBase) || serialized.editBase.editBase || serialized.editBase.mergeBase || serialized.editBase.exclusionBase
+      || !Array.isArray(serialized.editOperations) || !serialized.editOperations.length) throw new Error('Invalid edit source graph');
+    editBase = deserializeTopology(serialized.editBase);
+    for (const op of serialized.editOperations) {
+      if (!record(op) || (op.kind !== 'merge' && op.kind !== 'split' && op.kind !== 'sculpt') || !Array.isArray(op.cellIds) || op.cellIds.some(id => typeof id !== 'string')) throw new Error('Invalid topology operation');
+      if (op.kind === 'sculpt') {
+        if ((op.mode !== 'rotate' && op.mode !== 'cut') || typeof op.vertexId !== 'string' || !Array.isArray(op.inputCells)
+          || op.inputCells.some(id => typeof id !== 'string') || !Array.isArray(op.edges)
+          || op.edges.some(e => !record(e) || [e.id, e.startVertex, e.endVertex].some(id => typeof id !== 'string'))) throw new Error('Invalid sculpt metadata');
+        continue;
+      }
+      if (op.kind === 'split' && ((op.reverseEdge !== undefined && typeof op.reverseEdge !== 'boolean') ||
+          (op.originalCells !== undefined && (!Array.isArray(op.originalCells) || op.originalCells.some(id => typeof id !== 'string'))))) throw new Error('Invalid split metadata');
+      if (op.boundary !== undefined && (!record(op.boundary) || !Array.isArray(op.boundary.vertices) || !Array.isArray(op.boundary.edges) ||
+          [...op.boundary.vertices, ...op.boundary.edges].some(id => typeof id !== 'string'))) throw new Error('Invalid operation boundary');
+      if (op.kind === 'merge' ? typeof op.id !== 'string'
+        : op.cellIds.length !== 2 || [op.cellId, op.startVertex, op.endVertex, op.edgeId].some(id => typeof id !== 'string')) throw new Error('Invalid topology operation identities');
+    }
+    const expected = projectEdits(editBase, serialized.editOperations);
+    const declaredRoles = serialized.editOperations.some(op => op.kind !== 'sculpt' && op.boundary?.outboard !== undefined);
+    const sculpted = serialized.editOperations.some(op => op.kind === 'sculpt');
+    const samePosition = (a: { x: number; y: number } | undefined, b: { x: number; y: number } | undefined) =>
+      !!a && !!b && Math.abs(a.x - b.x) < 1e-8 && Math.abs(a.y - b.y) < 1e-8;
+    const full = exclusionBase ?? { cells, vertices, edges };
+    if (!expected || full.cells.size !== expected.cells.size || full.vertices.size !== expected.vertices.size || full.edges.size !== expected.edges.size) throw new Error('Edited graph does not match its source');
+    for (const [id, cell] of full.cells) {
+      const target = expected.cells.get(id), source = editBase.cells.get(id);
+      if (!target || JSON.stringify(target.boundaryVertices) !== JSON.stringify(cell.boundaryVertices) || JSON.stringify(target.boundaryEdges) !== JSON.stringify(cell.boundaryEdges)) throw new Error('Edit source reassigns a cell');
+      if (declaredRoles && !!target.outboard !== !!cell.outboard) throw new Error('Edit source changes a declared cell role');
+      if (JSON.stringify(target.originalCells) !== JSON.stringify(cell.originalCells)) throw new Error('Edit source changes cell provenance');
+      if (source && (sculpted ? !samePosition(target.baseCenter ?? target.center, cell.baseCenter ?? cell.center)
+        : JSON.stringify(source.center) !== JSON.stringify(cell.center) || JSON.stringify(source.baseCenter) !== JSON.stringify(cell.baseCenter))) throw new Error('Edit source moves a surviving cell');
+    }
+    for (const [id, vertex] of full.vertices) {
+      const source = editBase.vertices.get(id);
+      const target = expected.vertices.get(id);
+      if (!source || (sculpted ? !samePosition(target?.basePosition ?? target?.position, vertex.basePosition ?? vertex.position)
+        : JSON.stringify(source.position) !== JSON.stringify(vertex.position) || JSON.stringify(source.basePosition) !== JSON.stringify(vertex.basePosition))) throw new Error('Edit source reassigns a vertex');
+    }
+    for (const [id, edge] of full.edges) {
+      const target = expected.edges.get(id), source = editBase.edges.get(id);
+      if (!target || target.startVertex !== edge.startVertex || target.endVertex !== edge.endVertex) throw new Error('Edit source reassigns an edge');
+      if (source && (sculpted ? !samePosition(target.baseMidpoint ?? target.midpoint, edge.baseMidpoint ?? edge.midpoint)
+        : JSON.stringify(source.midpoint) !== JSON.stringify(edge.midpoint) || JSON.stringify(source.baseMidpoint) !== JSON.stringify(edge.baseMidpoint))) throw new Error('Edit source moves a surviving edge');
+    }
+    if (exclusionBase && (JSON.stringify(serialized.editOperations) !== JSON.stringify(serialized.exclusionBase!.editOperations) || JSON.stringify(serialized.editBase) !== JSON.stringify(serialized.exclusionBase!.editBase))) throw new Error('Inconsistent hidden edit source');
+  } else if (serialized.editOperations !== undefined || exclusionBase?.editBase) throw new Error('Missing edit source graph');
+  let mergeBase: GridTopology | undefined;
+  if (serialized.mergeBase !== undefined) {
+    if (!record(serialized.mergeBase) || serialized.mergeBase.mergeBase !== undefined || serialized.mergeBase.editBase !== undefined || serialized.mergeBase.exclusionBase !== undefined || !Array.isArray(serialized.mergeGroups) || !serialized.mergeGroups.length) {
+      throw new Error('Invalid merge source graph');
+    }
+    mergeBase = deserializeTopology(serialized.mergeBase);
+    if (serialized.mergeGroups.some(group => !record(group) || typeof group.id !== 'string' || !Array.isArray(group.cellIds) || group.cellIds.some(id => typeof id !== 'string'))) {
+      throw new Error('Invalid merge groups');
+    }
+    const projected = projectMerges(mergeBase, serialized.mergeGroups);
+    const declaredRoles = serialized.mergeGroups.some(group => group.boundary?.outboard !== undefined);
+    const full = exclusionBase ?? { cells, vertices, edges };
+    if (!projected || full.cells.size !== projected.cells.size || full.vertices.size !== projected.vertices.size || full.edges.size !== projected.edges.size) throw new Error('Merge graph does not match its source');
+    for (const [id, cell] of full.cells) {
+      const expected = projected.cells.get(id);
+      const source = mergeBase.cells.get(id);
+      if (source && (JSON.stringify(source.center) !== JSON.stringify(cell.center) || JSON.stringify(source.baseCenter) !== JSON.stringify(cell.baseCenter))) throw new Error('Merge source moves a surviving cell');
+      if (!expected || JSON.stringify(expected.boundaryVertices) !== JSON.stringify(cell.boundaryVertices) || JSON.stringify(expected.boundaryEdges) !== JSON.stringify(cell.boundaryEdges)) throw new Error('Merge source reassigns a cell');
+      if (declaredRoles && !!expected.outboard !== !!cell.outboard) throw new Error('Merge source changes a declared cell role');
+    }
+    for (const [id, vertex] of full.vertices) {
+      const source = mergeBase.vertices.get(id);
+      if (!source || JSON.stringify(source.position) !== JSON.stringify(vertex.position) || JSON.stringify(source.basePosition) !== JSON.stringify(vertex.basePosition)) throw new Error('Merge source reassigns a vertex');
+    }
+    for (const [id, edge] of full.edges) {
+      const source = mergeBase.edges.get(id);
+      if (!source || source.startVertex !== edge.startVertex || source.endVertex !== edge.endVertex || JSON.stringify(source.midpoint) !== JSON.stringify(edge.midpoint) || JSON.stringify(source.baseMidpoint) !== JSON.stringify(edge.baseMidpoint)) throw new Error('Merge source reassigns an edge');
+    }
+    if (exclusionBase && (JSON.stringify(serialized.mergeGroups) !== JSON.stringify(serialized.exclusionBase!.mergeGroups) || JSON.stringify(serialized.mergeBase) !== JSON.stringify(serialized.exclusionBase!.mergeBase))) throw new Error('Inconsistent hidden merge source');
+  } else if (serialized.mergeGroups !== undefined || exclusionBase?.mergeBase) throw new Error('Missing merge source graph');
   return {
     cells,
     vertices,
     edges,
     ...(exclusionBase ? { exclusionBase } : {}),
+    ...(mergeBase ? { mergeBase, mergeGroups: serialized.mergeGroups } : {}),
+    ...(editBase ? { editBase, editOperations: serialized.editOperations } : {}),
     bounds: serialized.bounds,
+    ...(serialized.deformationBounds && { deformationBounds: serialized.deformationBounds }),
     sourceConfig: serialized.sourceConfig,
   };
 }

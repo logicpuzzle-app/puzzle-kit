@@ -1,0 +1,186 @@
+{
+  "before": {
+    "captureHead": "6706c24f7c66af3d2b1f0dc1a62190d16f9b15c2",
+    "createdAt": "2026-09-16T15:37:13.066Z",
+    "stats": {
+      "startTime": "2026-09-16T15:37:13.515Z",
+      "duration": 47956.962999999996,
+      "expected": 0,
+      "skipped": 0,
+      "unexpected": 4,
+      "flaky": 0
+    },
+    "testSha256": "20cbd3d99b2d24ca4aa13acd0a920dd2211d9aeaf8da31ca544e78d92b134f21",
+    "harnessSha256": "dbd578e263bcb287f1137180bb1df9f12ba1f3850bbea1b528f2b11686a5f4cb",
+    "tests": [
+      {
+        "title": "touch iso-sculpt changes geometry once and supports undo/redo",
+        "project": "mobile-chrome",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Geometry unchanged after tapping the first vertex outside the visible board."
+      },
+      {
+        "title": "touch iso-sculpt-cut changes geometry once and supports undo/redo",
+        "project": "mobile-chrome",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Geometry unchanged after tapping the first vertex outside the visible board."
+      },
+      {
+        "title": "touch iso-sculpt changes geometry once and supports undo/redo",
+        "project": "mobile-webkit",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Geometry unchanged after tapping the first vertex outside the visible board."
+      },
+      {
+        "title": "touch iso-sculpt-cut changes geometry once and supports undo/redo",
+        "project": "mobile-webkit",
+        "status": "failed",
+        "runtimeErrors": [],
+        "failure": "Geometry unchanged after tapping the first vertex outside the visible board."
+      }
+    ]
+  },
+  "after": {
+    "captureHead": "6706c24f7c66af3d2b1f0dc1a62190d16f9b15c2",
+    "createdAt": "2026-09-16T15:39:58.167Z",
+    "stats": {
+      "startTime": "2026-09-16T15:39:58.642Z",
+      "duration": 7758.488,
+      "expected": 4,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "testSha256": "6d1b9a625fac5c41d3411c7405645c9e3a3543c6bf46292b629a231cb0b535f3",
+    "harnessSha256": "dbd578e263bcb287f1137180bb1df9f12ba1f3850bbea1b528f2b11686a5f4cb",
+    "tests": [
+      {
+        "title": "touch iso-sculpt changes geometry once and supports undo/redo",
+        "project": "mobile-chrome",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "touch iso-sculpt-cut changes geometry once and supports undo/redo",
+        "project": "mobile-chrome",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "touch iso-sculpt changes geometry once and supports undo/redo",
+        "project": "mobile-webkit",
+        "status": "passed",
+        "runtimeErrors": []
+      },
+      {
+        "title": "touch iso-sculpt-cut changes geometry once and supports undo/redo",
+        "project": "mobile-webkit",
+        "status": "passed",
+        "runtimeErrors": []
+      }
+    ],
+    "committedSource": "bf2f8ff61387c67fccaf98a05f7c59a4dfe08bb3"
+  },
+  "scope": "QA test correction, not a product geometry fix. Viewport 390x580 in both mobile Chromium and WebKit. Before blindly taps the first computed vertex. After uses three public Zoom Out taps, scrolls canvas into view, and chooses a visible hit-tested three-cell vertex. Geometry-change and Undo/Redo assertions unchanged. No physical device claim. Standard device viewport checks also run separately.",
+  "ciFailure": {
+    "run": 35114004791,
+    "head": "3cd1bf0b17b4dc3367cf54e964b0ef447edfba64",
+    "viewport": {
+      "width": 390,
+      "height": 664
+    },
+    "tap": {
+      "x": 260,
+      "y": 685
+    }
+  },
+  "viewport": {
+    "width": 390,
+    "height": 580
+  },
+  "files": {
+    "after-mobile-chrome-cut.png": {
+      "sha256": "3c9ba86fe0092a5deae4be21cfd9ba0755a1e5547252d925dc960f5e94ff206c",
+      "bytes": 199316
+    },
+    "after-mobile-chrome-cut.webm": {
+      "sha256": "ed13cf0aa056becc3c6cda217abd7781231fcb55c99fa09065a6d51abdc03b14",
+      "bytes": 79180,
+      "durationSeconds": 1.76,
+      "fullDecode": "passed"
+    },
+    "after-mobile-chrome-rotate.png": {
+      "sha256": "cf48d567b178af3830738f56d9eaea713f8b307d819b61ed4cb2b4951fd10b53",
+      "bytes": 197957
+    },
+    "after-mobile-chrome-rotate.webm": {
+      "sha256": "b3a6ec2f477d019f4ca2f7ff6983fcc72e3c5d302c98d3c009c1ce7ca0771457",
+      "bytes": 93801,
+      "durationSeconds": 3.16,
+      "fullDecode": "passed"
+    },
+    "after-mobile-webkit-cut.png": {
+      "sha256": "2818a5d008537b08f81f938595fe703aed52e56cea1a3f1bc94c2c389f12ffc1",
+      "bytes": 145346
+    },
+    "after-mobile-webkit-cut.webm": {
+      "sha256": "4815d69f4033f712b73dd84401fcfbc1dabb2fcb8edbf69c3409397fc77708bb",
+      "bytes": 84755,
+      "durationSeconds": 1.92,
+      "fullDecode": "passed"
+    },
+    "after-mobile-webkit-rotate.png": {
+      "sha256": "70b61824347511f8baee362fcc57d15de82f6b45a8617cdd2ed17678ad2b4550",
+      "bytes": 141117
+    },
+    "after-mobile-webkit-rotate.webm": {
+      "sha256": "b4b2dc841e4c41557eaee4e054612ca8f51c8ac040cf23ac91700d515336bdc3",
+      "bytes": 98413,
+      "durationSeconds": 2.24,
+      "fullDecode": "passed"
+    },
+    "before-mobile-chrome-cut.png": {
+      "sha256": "135092423aa78ba0d8b4c3bb4385fa9ccc01c9f081591416c55ccea7e9bf7d1b",
+      "bytes": 184236
+    },
+    "before-mobile-chrome-cut.webm": {
+      "sha256": "30be769c45cf172970fe1adafcde3c9be065a8dba4d6cd13a1a85ee3897ab21a",
+      "bytes": 257122,
+      "durationSeconds": 10.6,
+      "fullDecode": "passed"
+    },
+    "before-mobile-chrome-rotate.png": {
+      "sha256": "dae0c48f2d00565c2eb9e9b561a625a3e9e5ad351f4238b9c3cade12d296c0b2",
+      "bytes": 183901
+    },
+    "before-mobile-chrome-rotate.webm": {
+      "sha256": "725dc9466ed62726179bb2c794e08bb6beee61ad8afffe9a6ceac8e1ed7cfbb2",
+      "bytes": 255528,
+      "durationSeconds": 12.28,
+      "fullDecode": "passed"
+    },
+    "before-mobile-webkit-cut.png": {
+      "sha256": "b10bcf70ab30364784d59fd869413b56b955cdc61a21e54eeb3a407a856c7356",
+      "bytes": 210813
+    },
+    "before-mobile-webkit-cut.webm": {
+      "sha256": "b2cb0838b54922edb2e80d9068aa074f5afee56ccc0c41b6c0ce3fe1551acf7f",
+      "bytes": 240677,
+      "durationSeconds": 11.04,
+      "fullDecode": "passed"
+    },
+    "before-mobile-webkit-rotate.png": {
+      "sha256": "21b65ed6147f2b70d69795d255f799cd89cb0f9a7df7f8f70b58887961ce430a",
+      "bytes": 210645
+    },
+    "before-mobile-webkit-rotate.webm": {
+      "sha256": "f2e017de7607740e522fc878de1382aae7d2cadbed9379f95f7bc1efd4d69b6a",
+      "bytes": 236596,
+      "durationSeconds": 11.12,
+      "fullDecode": "passed"
+    }
+  }
+}

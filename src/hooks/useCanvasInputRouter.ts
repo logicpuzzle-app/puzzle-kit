@@ -8,21 +8,14 @@ import type { NumberClickInfo, TextClickInfo } from '../types/canvasInput';
 import type { Point } from '../types';
 import { toDataLayer } from '../types';
 import { getEditableDataLayer } from '../utils/editPolicy';
-import {
-  buildDirectionalClueIncrementPlan,
-  findDirectionalNumberByCellId,
-  findNumberEntry,
-  getDirectionalClueValueFields,
-  toPenpaDirectionalClue,
-} from '../utils/numberEntries';
 import { constraintCatalog } from '../constraints';
 import { getAutoModeConfig, type AutoModeConfig } from '../constraints/inputModeMapping';
 import {
   type FlickState,
   INITIAL_FLICK_STATE,
-  calculateFlickDirection,
 } from './inputStrategies';
-import { resolveEdge } from '../utils/pointResolver';
+import { usesVertexSurface } from '../utils/vertexSurfaces';
+import { resolveEdge, resolveVertex } from '../utils/pointResolver';
 import { shouldAllowOutboardForTool } from '../utils/outboardPolicy';
 import { useLineSelection } from './canvasInput/useLineSelection';
 import { useSymbolArrowInput } from './canvasInput/useSymbolArrowInput';
@@ -31,7 +24,6 @@ import {
   isNumberInputMode,
   isLineCellMode,
   isLineMode,
-  handleDirecMouseDown,
   handleNumberInputMouseDown,
   handleLineCellMouseDown,
   handleLineMouseDown,
@@ -67,9 +59,6 @@ export function useCanvasInputRouter({
     puzzle,
     activeLayer,
     isPlayerMode,
-    addDirectionalClue,
-    removeDirectionalClue,
-    removeNumber,
     addSurface,
     numberSelection,
     setNumberSelection,
@@ -124,12 +113,14 @@ export function useCanvasInputRouter({
     handlePointerDown: baseHandlePointerDown,
     handlePointerMove: baseHandlePointerMove,
     handlePointerUp: baseHandlePointerUp,
+    directionalGesture,
     handleNumberTool,
     handleTextTool,
     handleSurfaceCycleTool,
     handleSymbolTool,
     resetFillModes,
     handleSelectTool,
+    handleSelectionPointerDown, handleSelectionPointerMove, handleSelectionPointerUp,
     isSelecting,
     selectionRect,
     specialPath,
@@ -178,7 +169,7 @@ export function useCanvasInputRouter({
     handleSymbolTool,
   });
 
-  // Flick input state for directional number input (pzpr-puzzlink style)
+  // Pending constraint line/shade input. Directional numbers use directionalGesture.
   const flickStateRef = useRef<FlickState>({ ...INITIAL_FLICK_STATE });
 
   const buildMouseDownContext = useCallback((point: Point, isRightButton: boolean): MouseDownContext => {
@@ -219,7 +210,7 @@ export function useCanvasInputRouter({
   ): void => {
     switch (action.type) {
       case 'setNumberSelection':
-        setNumberSelection({ row: action.row, col: action.col });
+        setNumberSelection({ cellId: action.cellId });
         break;
       case 'handleNumberTool': {
         const result = handleNumberTool(action.point, action.isRightButton, action.options);
@@ -254,29 +245,10 @@ export function useCanvasInputRouter({
         }
         break;
       }
-      case 'removeDirectionalClue':
-        if (!editableLayer) {
-          break;
-        }
-        removeDirectionalClue(action.id);
-        break;
-      case 'incrementDirectionalClue':
-        if (!editableLayer) {
-          break;
-        }
-        addDirectionalClue(action.clue);
-        break;
-      case 'convertNumberToDirectionalClue':
-        if (!editableLayer) {
-          break;
-        }
-        addDirectionalClue(action.clue);
-        removeNumber(action.removeNumberId);
-        break;
       default:
         break;
     }
-  }, [setNumberSelection, handleNumberTool, handleSelectTool, handleTextTool, handleSymbolTool, editableLayer, puzzle, addSurface, removeDirectionalClue, addDirectionalClue, removeNumber]);
+  }, [setNumberSelection, handleNumberTool, handleSelectTool, handleTextTool, handleSymbolTool, editableLayer, puzzle, addSurface]);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -284,6 +256,8 @@ export function useCanvasInputRouter({
       const point = getCanvasPoint(e.clientX, e.clientY);
       const isRightButton = e.button === 2;
       recordLineSelectionMouseDown(point);
+      if (canvas.panMode) { baseHandleMouseDown(e); return; }
+      if (directionalGesture.begin(point, isRightButton)) return;
 
       if (isConstraintEnabled && editableLayer) {
         const ctx = buildMouseDownContext(point, isRightButton);
@@ -295,20 +269,9 @@ export function useCanvasInputRouter({
           strategyCellInfo.center = getCellCenter(cellInfo.row, cellInfo.col, grid);
         }
 
-        if (isDirecInputMode(ctx.currentInputMode, ctx.autoConfig)) {
-          const result = handleDirecMouseDown(ctx, strategyCellInfo);
-          if (result.flickState) {
-            flickStateRef.current = result.flickState;
-          }
-          if (result.action) {
-            executeMouseDownAction(result.action, e, { onNumberClick, onTextClick });
-          }
-          if (result.handled) return;
-        }
-
         if (isNumberInputMode(ctx.currentInputMode, ctx.autoConfig)) {
-          if (!cellInfo || cellInfo.row === undefined || cellInfo.col === undefined) return;
-          setNumberSelection({ row: cellInfo.row, col: cellInfo.col });
+          if (!cellInfo) return;
+          setNumberSelection({ cellId: cellInfo.cellId });
           const result = handleNumberInputMouseDown(ctx, strategyCellInfo);
           if (result.action) {
             executeMouseDownAction(result.action, e, { onNumberClick, onTextClick });
@@ -319,9 +282,6 @@ export function useCanvasInputRouter({
         if (isLineCellMode(ctx.autoConfig)) {
           const result = handleLineCellMouseDown(ctx, strategyCellInfo);
           if (result.flickState) {
-            if (result.flickState.startCell && !result.flickState.startCellCenter && cellInfo?.row !== undefined && cellInfo?.col !== undefined) {
-              result.flickState.startCellCenter = getCellCenter(cellInfo.row, cellInfo.col, grid);
-            }
             flickStateRef.current = result.flickState;
           }
           if (result.action) {
@@ -386,26 +346,19 @@ export function useCanvasInputRouter({
         const cellInfo = findCellAtPoint(point, {
           allowOutboard: shouldAllowOutboardForTool(toolSettings.currentTool, activeLayer),
         });
-        if (!cellInfo || cellInfo.row === undefined || cellInfo.col === undefined) return;
+        if (!cellInfo) return;
 
-        setNumberSelection({ row: cellInfo.row, col: cellInfo.col });
+        setNumberSelection({ cellId: cellInfo.cellId });
         if (shouldSkipNumberMouseInput(tool)) {
           return;
         }
         const strategyCellInfo = toStrategyCellInfo(cellInfo);
-        if (strategyCellInfo && !strategyCellInfo.center) {
+        if (strategyCellInfo && !strategyCellInfo.center && cellInfo.row !== undefined && cellInfo.col !== undefined) {
           strategyCellInfo.center = getCellCenter(cellInfo.row, cellInfo.col, grid);
         }
 
-        let existingDirectionalClueId: string | null = null;
-        if (tool === 'number-directional' && isRightButton) {
-          const dataLayer = toDataLayer(activeLayer);
-          existingDirectionalClueId =
-            findDirectionalNumberByCellId(puzzle[dataLayer].numbers, cellInfo.cellId)?.id ?? null;
-        }
-
         const ctx = buildMouseDownContext(point, isRightButton);
-        const result = handleNumberToolMouseDown(ctx, strategyCellInfo, existingDirectionalClueId);
+        const result = handleNumberToolMouseDown(ctx, strategyCellInfo);
         if (result.flickState) {
           flickStateRef.current = result.flickState;
         }
@@ -450,6 +403,7 @@ export function useCanvasInputRouter({
       setCursorCell,
       findCellAtPoint,
       baseHandleMouseDown,
+      directionalGesture,
       grid,
       setNumberSelection,
       puzzle,
@@ -475,7 +429,9 @@ export function useCanvasInputRouter({
       const point = getCanvasPoint(e.clientX, e.clientY);
 
       const cellInfo = findCellAtPoint(point, { allowOutboard: shouldAllowOutboardForTool(toolSettings.currentTool, activeLayer) });
-      const cellId = cellInfo?.cellId ?? null;
+      const cellId = usesVertexSurface(toolSettings)
+        ? (topology ? resolveVertex(point, { grid, useTopology: true, topology }, { maxDistance: grid.cellSize * 0.75 })?.id ?? null : null)
+        : cellInfo?.cellId ?? null;
 
       if (cellId !== hoverCell) {
         setHoverCell(cellId);
@@ -483,77 +439,7 @@ export function useCanvasInputRouter({
 
       updateSymbolArrow(point);
 
-      const shouldHandleFlick = flickStateRef.current.startCell && flickStateRef.current.startPoint;
-      const isNumberDirectionalTool = toolSettings.currentTool === 'number-directional';
-
-      if (shouldHandleFlick) {
-        const isDirecMode = currentInputMode === 'direc';
-        const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
-        const isEditMode = activeLayer === 'problem';
-        const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
-        const isAutoDirecMode = currentInputMode === 'auto' && autoConfig.type === 'direc';
-
-        if ((isConstraintEnabled && (isDirecMode || isAutoDirecMode)) || isNumberDirectionalTool) {
-          const { startPoint, startCellId } = flickStateRef.current;
-          if (!startCellId) return;
-          if (!editableLayer) return;
-          const dataLayer = editableLayer;
-
-          const existingDirectionalEntry = findDirectionalNumberByCellId(puzzle[dataLayer].numbers, startCellId);
-          const existingClue = existingDirectionalEntry
-            ? toPenpaDirectionalClue(existingDirectionalEntry.number)
-            : null;
-
-          const existingNumberEntry = findNumberEntry(puzzle[dataLayer].numbers, startCellId, 'center');
-
-          const dx = point.x - startPoint!.x;
-          const dy = point.y - startPoint!.y;
-          const threshold = grid.cellSize * 0.3;
-
-          const { direction, angle } = calculateFlickDirection(
-            dx,
-            dy,
-            threshold,
-            startCellId,
-            useTopology ? topology : null
-          );
-
-          if (direction !== 0 || angle !== null) {
-            if (existingClue) {
-              const clue = existingClue;
-              const directionChanged = angle === null && direction !== clue.direction;
-              const angleChanged = angle !== null && (clue.angle !== angle);
-              if (directionChanged || angleChanged) {
-                addDirectionalClue({
-                  cellId: startCellId,
-                  direction: angle !== null ? 0 : direction,
-                  value: clue.value,
-                  char: clue.char,
-                  layer: dataLayer,
-                  angle: angle,
-                  color: clue.color || toolSettings.color,
-                });
-                flickStateRef.current.inputted = true;
-              }
-            } else if (existingNumberEntry) {
-              const { id: numberId, number: num } = existingNumberEntry;
-              const { value, char } = getDirectionalClueValueFields(num.value);
-
-              addDirectionalClue({
-                cellId: startCellId,
-                direction: angle !== null ? 0 : direction,
-                value,
-                char,
-                layer: dataLayer,
-                angle: angle,
-                color: toolSettings.color,
-              });
-              removeNumber(numberId);
-              flickStateRef.current.inputted = true;
-            }
-          }
-        }
-      }
+      directionalGesture.move(point);
 
       if (isConstraintEnabled && flickStateRef.current.rightButton && flickStateRef.current.inputted) {
         const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
@@ -628,6 +514,7 @@ export function useCanvasInputRouter({
     },
     [
       baseHandleMouseMove,
+      directionalGesture,
       getCanvasPoint,
       hoverCell,
       setHoverCell,
@@ -646,11 +533,10 @@ export function useCanvasInputRouter({
       puzzle,
       activeLayer,
       editableLayer,
-      addDirectionalClue,
       addSurface,
-      removeNumber,
       handleSymbolTool,
       toolSettings.currentTool,
+      toolSettings.surfaceTarget,
       toolSettings.color,
       useTopology,
       topology,
@@ -660,69 +546,18 @@ export function useCanvasInputRouter({
   const handleMouseUp = useCallback(
     (e: React.MouseEvent) => {
       finishSymbolArrow();
+      directionalGesture.finish(getCanvasPoint(e.clientX, e.clientY));
 
       const flickState = flickStateRef.current;
       const currentSchema = currentSchemaId ? constraintCatalog.getSchema(currentSchemaId) : null;
       const isEditMode = activeLayer === 'problem';
       const autoConfig = getAutoModeConfig(currentSchema, isEditMode);
 
-      if (flickState.startCell && !flickState.inputted) {
-        const isDirecMode = currentInputMode === 'direc';
-        const isAutoDirecMode = currentInputMode === 'auto' && autoConfig.type === 'direc';
-
-        if ((isDirecMode || isAutoDirecMode) && isConstraintEnabled) {
-          const currentPoint = getCanvasPoint(e.clientX, e.clientY);
-          const { row, col } = flickState.startCell;
-          const cellInfo = findCellAtPoint(currentPoint, {
-            allowOutboard: shouldAllowOutboardForTool(toolSettings.currentTool, activeLayer),
-          });
-          const isSameCell = cellInfo && cellInfo.row === row && cellInfo.col === col;
-          if (isSameCell && flickState.startCellCenter && flickState.startCellId) {
-            handleNumberTool(flickState.startCellCenter, flickState.rightButton, {
-              cellId: flickState.startCellId,
-            });
-          }
-        }
-      }
-
-      const isNumberDirectionalTool = toolSettings.currentTool === 'number-directional';
-      if (isNumberDirectionalTool && flickState.startCell && !flickState.inputted && !flickState.rightButton) {
-        const point = getCanvasPoint(e.clientX, e.clientY);
-        const cellInfo = findCellAtPoint(point, {
-          allowOutboard: shouldAllowOutboardForTool(toolSettings.currentTool, activeLayer),
-        });
-        const { row, col } = flickState.startCell;
-        const isSameCell = cellInfo && cellInfo.row === row && cellInfo.col === col;
-
-        if (isSameCell && flickState.startCellId && editableLayer) {
-          const startCellId = flickState.startCellId;
-          const dataLayer = editableLayer;
-          const existingDirectionalEntry = findDirectionalNumberByCellId(puzzle[dataLayer].numbers, startCellId);
-          const existingEntry = existingDirectionalEntry
-            ? toPenpaDirectionalClue(existingDirectionalEntry.number)
-            : null;
-          const plan = buildDirectionalClueIncrementPlan({
-            cellId: startCellId,
-            layer: dataLayer,
-            existingClue: existingEntry ?? null,
-            existingNumber: existingEntry ? null : findNumberEntry(puzzle[dataLayer].numbers, startCellId, 'center'),
-          });
-
-          if (plan.type === 'update' || plan.type === 'create' || plan.type === 'convert-number') {
-            addDirectionalClue(plan.clue);
-            if (plan.type === 'convert-number') {
-              removeNumber(plan.removeNumberId);
-            }
-          }
-        }
-      }
-
       const isAutoLineCellMode = currentInputMode === 'auto' && autoConfig.type === 'line-cell';
-      if (isAutoLineCellMode && isConstraintEnabled && flickState.startCell) {
+      if (isAutoLineCellMode && isConstraintEnabled && flickState.startCellId) {
         const point = getCanvasPoint(e.clientX, e.clientY);
         const cellInfo = findCellAtPoint(point);
-        const { row, col } = flickState.startCell;
-        const isSameCell = cellInfo && cellInfo.row === row && cellInfo.col === col;
+        const isSameCell = cellInfo?.cellId === flickState.startCellId;
 
         const shouldInputShade = !flickState.rightButton && !flickState.lineDrawn && isSameCell;
 
@@ -772,6 +607,7 @@ export function useCanvasInputRouter({
     },
     [
       baseHandleMouseUp,
+      directionalGesture,
       currentInputMode,
       currentSchemaId,
       activeLayer,
@@ -788,53 +624,56 @@ export function useCanvasInputRouter({
       toolSettings.currentTool,
       toolSettings.currentCategory,
       puzzle,
-      addDirectionalClue,
-      removeNumber,
     ]
   );
 
   const handleMouseLeave = useCallback(
     (e: React.MouseEvent) => {
       baseHandleMouseUp(e);
+      directionalGesture.cancel();
       setHoverCell(null);
       flickStateRef.current = { ...INITIAL_FLICK_STATE };
       resetSymbolArrow();
       resetLineSelectionMouseDown();
     },
-    [baseHandleMouseUp, resetLineSelectionMouseDown, resetSymbolArrow, setHoverCell]
+    [baseHandleMouseUp, directionalGesture, resetLineSelectionMouseDown, resetSymbolArrow, setHoverCell]
   );
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
+      if (toolSettings.currentTool === 'select' && !canvas.panMode) { handleSelectionPointerDown(e); return; }
       if (e.pointerType === 'mouse') {
         handleMouseDown(e as unknown as React.MouseEvent);
         return;
       }
       baseHandlePointerDown(e);
     },
-    [baseHandlePointerDown, handleMouseDown]
+    [baseHandlePointerDown, handleMouseDown, toolSettings.currentTool, canvas.panMode, handleSelectionPointerDown]
   );
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
+      if (toolSettings.currentTool === 'select' && !canvas.panMode) { handleSelectionPointerMove(e); return; }
       if (e.pointerType === 'mouse') {
         handleMouseMove(e as unknown as React.MouseEvent);
         return;
       }
       baseHandlePointerMove(e);
     },
-    [baseHandlePointerMove, handleMouseMove]
+    [baseHandlePointerMove, handleMouseMove, toolSettings.currentTool, canvas.panMode, handleSelectionPointerMove]
   );
 
   const handlePointerUp = useCallback(
     (e: React.PointerEvent) => {
+      if (toolSettings.currentTool === 'select' && !canvas.panMode) { handleSelectionPointerUp(e); return; }
       if (e.pointerType === 'mouse') {
+        if (e.type === 'pointercancel') { handleMouseLeave(e as unknown as React.MouseEvent); return; }
         handleMouseUp(e as unknown as React.MouseEvent);
         return;
       }
       baseHandlePointerUp(e);
     },
-    [baseHandlePointerUp, handleMouseUp]
+    [baseHandlePointerUp, handleMouseUp, handleMouseLeave, toolSettings.currentTool, canvas.panMode, handleSelectionPointerUp]
   );
 
   const handlePointerLeave = useCallback(

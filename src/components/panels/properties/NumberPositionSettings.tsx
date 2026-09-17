@@ -1,3 +1,4 @@
+import { useCellFinder } from '../../../hooks/useCellFinder';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePuzzleStore } from '../../../store/puzzleStoreContext';
@@ -60,11 +61,12 @@ const CandidatesSelector: React.FC = () => {
     removeNumber,
   } = usePuzzleStore();
 
+  const { resolveSelection } = useCellFinder();
   const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
   const dataLayer = editableLayer ?? toDataLayer(activeLayer);
 
   // Get existing candidates in selected cell
-  const cellId = numberSelection ? `cell-${numberSelection.row}-${numberSelection.col}` : null;
+  const cellId = resolveSelection(numberSelection);
   const cellCandidates = cellId ? getCellCandidates(puzzle[dataLayer].numbers, cellId) : new Set();
 
   const handleToggleCandidate = (n: number) => {
@@ -135,6 +137,7 @@ export const NumberPositionSettings: React.FC = () => {
     addNumber,
   } = usePuzzleStore();
 
+  const { resolveSelection } = useCellFinder();
   const editableLayer = getEditableDataLayer(activeLayer, isPlayerMode);
   const dataLayer = editableLayer ?? toDataLayer(activeLayer);
 
@@ -171,7 +174,8 @@ export const NumberPositionSettings: React.FC = () => {
   // Find existing number at current position
   const findExistingNumber = () => {
     if (!numberSelection) return null;
-    const cellId = `cell-${numberSelection.row}-${numberSelection.col}`;
+    const cellId = resolveSelection(numberSelection);
+    if (!cellId) return null;
     const position = toolSettings.numberPosition;
     const cornerIndex = toolSettings.cornerIndex;
     const sideIndex = toolSettings.sideIndex;

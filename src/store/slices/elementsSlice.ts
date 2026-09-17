@@ -1,3 +1,4 @@
+import { findLineByReferences, resolveLinePoints, resolveBoardPoint } from '../../utils/lineReferences';
 /**
  * Elements Slice - Puzzle element CRUD operations
  */
@@ -14,6 +15,7 @@ import {
 } from '../../utils/idGenerator';
 import type {
   SurfaceElement,
+  VertexSurfaceElement,
   LineElement,
   NumberElement,
   SymbolElement,
@@ -22,6 +24,8 @@ import type {
   BoxLineElement,
   LineGroup,
 } from '../../types';
+import { withLitsRoomHistory } from '../litsRoomSync';
+import { getVertexSurfaceRegion } from '../../utils/vertexSurfaces';
 import { isSymbolSize } from '../../utils/symbolSize';
 import { toDataLayer, type DataLayerType } from '../../types';
 import type { ElementsSlice, SliceCreator } from './types';
@@ -31,6 +35,8 @@ import {
 } from '../../utils/lineMerge';
 import {
   createAddSurfaceAction,
+  createAddVertexSurfaceAction,
+  createRemoveVertexSurfaceAction,
   createRemoveSurfaceAction,
   createAddLineAction,
   createRemoveLineAction,
@@ -76,6 +82,34 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
 
   return {
     puzzle: createEmptyState(),
+
+  addVertexSurface: (element) => {
+    if (!canEditLayer(element.layer)) return '';
+    const state = get();
+    const topology = state.topology;
+    if (!topology || !getVertexSurfaceRegion(topology, element.vertexId)) return '';
+    const fullElement: VertexSurfaceElement = { ...element, id: generateSurfaceId() };
+    set(state => ({ puzzle: { ...state.puzzle, [element.layer]: {
+      ...state.puzzle[element.layer],
+      vertexSurfaces: { ...state.puzzle[element.layer].vertexSurfaces, [fullElement.id]: fullElement },
+    } } }));
+    get().historyManager.addAction(createAddVertexSurfaceAction(fullElement));
+    return fullElement.id;
+  },
+
+  removeVertexSurface: (id) => {
+    const state = get();
+    const layer = getEditableDataLayer(state.activeLayer, state.isPlayerMode);
+    if (!layer) return;
+    const element = state.puzzle[layer].vertexSurfaces?.[id];
+    if (!element) return;
+    set(state => {
+      const vertexSurfaces = { ...state.puzzle[layer].vertexSurfaces };
+      delete vertexSurfaces[id];
+      return { puzzle: { ...state.puzzle, [layer]: { ...state.puzzle[layer], vertexSurfaces } } };
+    });
+    get().historyManager.addAction(createRemoveVertexSurfaceAction(id, element));
+  },
 
   // Surface operations
   addSurface: (element) => {
@@ -144,6 +178,14 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
       // Freehand lines: use compact ID
       id = generateLineIdCompact();
       normalizedElement = { ...element, id };
+    } else if (element.fromType !== undefined || element.toType !== undefined) {
+      const state = get();
+      const context = { grid: state.grid, topology: state.topology, useTopology: state.useTopology };
+      if (!resolveLinePoints({ ...element, id: '' }, context)) return '';
+      const existing = findLineByReferences(state.puzzle[element.layer].lines, element, context);
+      if (existing) return existing.id;
+      do { id = generateLineIdCompact(); } while (state.puzzle[element.layer].lines[id]);
+      normalizedElement = { ...element, id };
     } else if (element.edgeId && element.lineTarget) {
       // Edge-based lines (unified representation): use edgeId + lineTarget for ID
       id = `${element.lineTarget}-${element.edgeId}`;
@@ -172,7 +214,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
     }
 
     const state = get();
-    const merged = mergeLineOverlaps(normalizedElement, state.puzzle[element.layer].lines, state.grid, state.topology, state.puzzle[element.layer].lineGroups);
+    const merged = mergeLineOverlaps(normalizedElement, state.puzzle[element.layer].lines, state.grid, state.topology, state.puzzle[element.layer].lineGroups, state.useTopology);
     if (merged.removed.length === 1 && merged.line === merged.removed[0]) return merged.line.id;
     normalizedElement = merged.line;
     id = normalizedElement.id;
@@ -184,9 +226,9 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
       return { puzzle: { ...state.puzzle, [layer]: { ...state.puzzle[layer], lines } } };
     });
     const addition = createAddLineAction(normalizedElement);
-    get().historyManager.addAction(merged.removed.length ? createBatchAction([
+    get().historyManager.addAction(withLitsRoomHistory(merged.removed.length ? createBatchAction([
       ...merged.removed.map(line => createRemoveLineAction(line.id, line)), addition,
-    ], 'Merge overlapping lines') : addition);
+    ], 'Merge overlapping lines') : addition, state.puzzle, get().puzzle));
     return id;
   },
 
@@ -213,7 +255,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
           },
         };
       });
-      get().historyManager.addAction(createRemoveLineAction(id, lineElement));
+      get().historyManager.addAction(withLitsRoomHistory(createRemoveLineAction(id, lineElement), state.puzzle, get().puzzle));
     }
   },
 
@@ -241,7 +283,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
           },
         };
       });
-      get().historyManager.addAction(createUpdateLineAction(id, element, newElement, layer));
+      get().historyManager.addAction(withLitsRoomHistory(createUpdateLineAction(id, element, newElement, layer), state.puzzle, get().puzzle));
     }
   },
 
@@ -370,12 +412,13 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
   // Symbol operations
   addSymbol: (element) => {
     if (!canEditLayer(element.layer)) return '';
-    // A cell has one editable text entry; other symbol kinds may coexist.
+    const pointType = element.pointType ?? resolveBoardPoint(element.cellId, undefined, get())?.type;
+    // A scoped point has one editable text entry; other symbol kinds may coexist.
     const previous = element.symbolType.startsWith('text-')
-      ? Object.values(get().puzzle[element.layer].symbols).filter(s => s.cellId === element.cellId && s.symbolType.startsWith('text-'))
+      ? Object.values(get().puzzle[element.layer].symbols).filter(s => s.cellId === element.cellId && pointType !== undefined && resolveBoardPoint(s.cellId, s.pointType, get())?.type === pointType && s.symbolType.startsWith('text-'))
       : [];
     const id = previous[0]?.id ?? generateSymbolId();
-    const fullElement: SymbolElement = { ...element, id };
+    const fullElement: SymbolElement = { ...element, ...(pointType && { pointType }), id };
     if (previous.length === 1 && JSON.stringify(previous[0]) === JSON.stringify(fullElement)) return id;
     set((state) => {
       const symbols = { ...state.puzzle[element.layer].symbols };
@@ -659,7 +702,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
       return '';
     }
     const lines = state.puzzle[layer].lines || {};
-    const context: GeometryContext = { grid: state.grid, topology: state.topology };
+    const context: GeometryContext = { grid: state.grid, topology: state.topology, useTopology: state.useTopology };
 
     // Build LineWithPosition array using helper
     const groupLines = buildLinesWithPosition(lineIds, lines, context);
@@ -700,7 +743,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
     if (!group) return;
 
     const lines = state.puzzle[layer].lines || {};
-    const context: GeometryContext = { grid: state.grid, topology: state.topology };
+    const context: GeometryContext = { grid: state.grid, topology: state.topology, useTopology: state.useTopology };
 
     // Build LineWithPosition array and normalize to get correct arrow directions
     const groupLines = buildLinesWithPosition(group.lineIds, lines, context);
@@ -819,7 +862,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
     }
 
     const lines = state.puzzle[layer].lines || {};
-    const context: GeometryContext = { grid: state.grid, topology: state.topology };
+    const context: GeometryContext = { grid: state.grid, topology: state.topology, useTopology: state.useTopology };
 
     // Build LineWithPosition array using helper
     const groupLines = buildLinesWithPosition(group.lineIds, lines, context);
@@ -892,7 +935,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
     if (!group) return;
 
     const lines = state.puzzle[layer].lines || {};
-    const context: GeometryContext = { grid: state.grid, topology: state.topology };
+    const context: GeometryContext = { grid: state.grid, topology: state.topology, useTopology: state.useTopology };
 
     // Build LineWithPosition array and normalize using helpers
     const groupLines = buildLinesWithPosition(group.lineIds, lines, context);
@@ -929,7 +972,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
       return [];
     }
     const lines = state.puzzle[layer].lines || {};
-    const context: GeometryContext = { grid: state.grid, topology: state.topology };
+    const context: GeometryContext = { grid: state.grid, topology: state.topology, useTopology: state.useTopology };
 
     // Build LineWithPosition array using helper
     const selectedLines = buildLinesWithPosition(lineIds, lines, context);
@@ -973,7 +1016,7 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
       return [];
     }
     const lines = state.puzzle[layer].lines || {};
-    const context: GeometryContext = { grid: state.grid, topology: state.topology };
+    const context: GeometryContext = { grid: state.grid, topology: state.topology, useTopology: state.useTopology };
 
     // Build LineWithPosition array using helper
     const selectedLines = buildLinesWithPosition(lineIds, lines, context);
@@ -1046,12 +1089,14 @@ export const createElementsSlice: SliceCreator<ElementsSlice> = (set, get) => {
     if (!canEditLayer(layer)) {
       return;
     }
+    const previousState = get().puzzle[layer];
     set((state) => ({
       puzzle: {
         ...state.puzzle,
         [layer]: createEmptyElements(),
       },
     }));
+    get().historyManager.addAction({ type: 'CLEAR_LAYER', layer, previousState });
   },
 
     clearAll: () => {

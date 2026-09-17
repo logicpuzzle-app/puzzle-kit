@@ -44,13 +44,10 @@ export interface CellInfo {
 }
 
 /**
- * Flick input state for directional number input
+ * Pending cell/edge gesture for constraint line and shade input
  */
 export interface FlickState {
-  startCell: { row: number; col: number } | null;
   startCellId: string | null;
-  startCellCenter: Point | null;
-  startCellIndex: number | null;
   startPoint: Point | null;
   inputted: boolean;
   rightButton: boolean;
@@ -59,10 +56,7 @@ export interface FlickState {
 }
 
 export const INITIAL_FLICK_STATE: Readonly<FlickState> = {
-  startCell: null,
   startCellId: null,
-  startCellCenter: null,
-  startCellIndex: null,
   startPoint: null,
   inputted: false,
   rightButton: false,
