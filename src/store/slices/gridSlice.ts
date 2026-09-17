@@ -11,6 +11,8 @@ import {
   resizeTopology,
 } from '../../utils/gridTopology';
 import { remapLineEdgeIdsForTopology } from '../../utils/lineTopology';
+import { applyCellExclusions } from '../../utils/topology/exclusions';
+import { prepareExclusionBase } from '../../utils/topology/legacyExclusions';
 import {
   sculptRotateCluster,
   sculptCutCluster,
@@ -94,6 +96,8 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
         'sculptOperations',
       ]);
       const hasTopologyChange = Object.keys(gridUpdate).some((key) => topologyKeys.has(key));
+      const hasExclusionChange = ['voidCells', 'disabledCells', 'outboardCells']
+        .some(key => Object.prototype.hasOwnProperty.call(gridUpdate, key));
 
       let newTopology = state.topology;
       let nextPuzzle = state.puzzle;
@@ -117,12 +121,18 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
           };
         }
       }
-      return {
+      if (nextUseTopology && !hasTopologyChange && hasExclusionChange && state.topology) {
+        const base = prepareExclusionBase(state.topology, state.grid, state.topologyPreset, state.topologyIntensity);
+        newTopology = applyCellExclusions(base, newGrid);
+      }
+      const result = {
         grid: newGrid,
         topology: newTopology,
         puzzle: nextPuzzle,
         ...(forceTopology ? { useTopology: true } : {}),
       };
+      return hasExclusionChange && !hasTopologyChange
+        ? recordGeometryEdit(state, result, 'Change cell exclusions') : result;
     }),
 
   // Topology mode
@@ -141,7 +151,10 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
 
   updateTopology: () => {
     const state = get();
-    if (state.useTopology) {
+    if (state.useTopology && state.topology) {
+      const base = prepareExclusionBase(state.topology, state.grid, state.topologyPreset, state.topologyIntensity);
+      set({ topology: applyCellExclusions(base, state.grid) });
+    } else if (state.useTopology) {
       get().applyTopologyPreset();
     }
   },
@@ -209,12 +222,12 @@ export const createGridSlice: SliceCreator<GridSlice> = (set, get) => ({
 
   // Cell enabled/disabled operations (delegated to cellOperations module)
   toggleCellDisabled: (cellId) =>
-    set((state) => toggleCellDisabled(state, cellId)),
+    set((state) => recordGeometryEdit(state, toggleCellDisabled(state, cellId), 'Toggle cell exclusion')),
 
   setCellDisabled: (cellId, disabled, skipTopologyRegeneration = false) =>
     set((state) => {
       const result = setCellDisabled(state, cellId, disabled, skipTopologyRegeneration);
-      return result === state ? {} : result;
+      return recordGeometryEdit(state, result, disabled ? 'Exclude cell' : 'Restore cell');
     }),
 
   // Sculpt mode

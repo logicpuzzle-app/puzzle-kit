@@ -809,7 +809,7 @@ export const ja = {
   'gridEdit.excludeMode': '除外モード',
   'gridEdit.excludeMode.void': '除去',
   'gridEdit.excludeMode.outboard': '外周',
-  'gridEdit.excludeMode.voidHelp': 'セルは盤面から完全に除去されます。',
+  'gridEdit.excludeMode.voidHelp': 'セルを一時的に非表示にします。もう一度クリックすると復元できます。',
   'gridEdit.excludeMode.outboardHelp': 'セルはメイングリッド外のヒント領域になります。',
   'gridEdit.voidCells': '除去セル',
   'gridEdit.outboardCells': '外周セル',

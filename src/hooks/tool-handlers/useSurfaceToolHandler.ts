@@ -2,7 +2,7 @@ import { useCallback, useMemo, useRef } from 'react';
 import { usePuzzleStore } from '../../store/puzzleStoreContext';
 import { getCellIndexById } from '../../utils/gridUtils';
 import type { GridTopology } from '../../utils/gridTopology';
-import { gridConfigToTopology, applyTopologyPreset } from '../../utils/gridTopology';
+import { prepareExclusionBase } from '../../utils/topology/legacyExclusions';
 import { normalizeMulticolorSlots } from '../../utils/multicolor';
 import type { GridConfig, Point, PuzzleState } from '../../types';
 import { resolveCell } from '../../utils/pointResolver';
@@ -225,11 +225,9 @@ export function useSurfaceToolHandler() {
    * the live topology.
    */
   const topologyWithExcluded = useMemo(() => {
-    if (!useTopology) return null;
-    const hasVoid = (grid.voidCells?.length ?? 0) > 0 || (grid.disabledCells?.length ?? 0) > 0;
-    if (!hasVoid) return topology;
-    const base = gridConfigToTopology({ ...grid, voidCells: undefined, disabledCells: undefined });
-    return applyTopologyPreset(base, { preset: topologyPreset, intensity: topologyIntensity });
+    if (!useTopology || !topology) return null;
+    const prepared = prepareExclusionBase(topology, grid, topologyPreset, topologyIntensity);
+    return prepared.exclusionBase ?? prepared;
   }, [grid, useTopology, topology, topologyPreset, topologyIntensity]);
 
   const findCellIdForExclude = useCallback((point: Point): string | null => {
@@ -272,9 +270,7 @@ export function useSurfaceToolHandler() {
         }
       }
 
-      // Apply action based on current fill mode
-      // Skip topology regeneration during drag for better performance
-      // Topology will be regenerated on mouse up via finishGridTool
+      // Apply visibility immediately; surviving nodes retain their IDs.
       if (gridFillModeRef.current === 'disable') {
         if (!isCurrentlyDisabled) {
           setCellDisabled(cellId, true, true);
