@@ -77,6 +77,11 @@ export class GridTopologyBuilder {
       maxY = Math.max(maxY, vertex.position.y);
     }
 
+    // A fully excluded board still needs a finite, serializable empty extent.
+    if (this.vertices.size === 0) {
+      minX = minY = maxX = maxY = this.sourceConfig?.outerPadding ?? 0;
+    }
+
     // Calculate total width/height including padding on both sides
     // Content starts at outerPadding and ends at maxX/maxY
     // Total size = maxX + outerPadding (for right padding)

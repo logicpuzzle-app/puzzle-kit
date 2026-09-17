@@ -11,8 +11,16 @@ import type { PuzzleStateSlice } from './actionExecutor';
 import type { HistoryState } from './historyManager';
 import type { PersistedState } from './persistence';
 import type { PuzzleAction } from './actions';
-import { syncCountersFromPuzzleState } from '../utils/idGenerator';
-import { mergeDirectionalCluesIntoNumbers } from '../utils/legacyDirectionalClues';
+import { captureTopologySettings } from '../utils/topologyPersistence';
+import type { PuzzleStore } from './slices/types';
+import { PUZZLE_EXPORT_VERSION } from '../constants/version';
+
+function capturePersistedState(state: PuzzleStore): PersistedState {
+  return {
+    version: PUZZLE_EXPORT_VERSION, grid: state.grid, puzzle: state.puzzle,
+    toolSettings: state.toolSettings, ...captureTopologySettings(state),
+  };
+}
 
 // ========================================
 // Integration Hook
@@ -36,6 +44,25 @@ export function useStoreIntegration(options?: {
   const grid = usePuzzleStore((state) => state.grid);
   const toolSettings = usePuzzleStore((state) => state.toolSettings);
   const store = usePuzzleStoreApi();
+  const topology = usePuzzleStore(state => state.topology);
+  const useTopology = usePuzzleStore(state => state.useTopology);
+  const topologyPreset = usePuzzleStore(state => state.topologyPreset);
+  const topologyIntensity = usePuzzleStore(state => state.topologyIntensity);
+
+  const restorePersistedState = useCallback((saved: PersistedState) => {
+    const current = store.getState();
+    const loaded = current.importPuzzle(JSON.stringify({
+      version: saved.version, grid: saved.grid, state: saved.puzzle,
+      topologySettings: {
+        useTopology: saved.useTopology ?? current.useTopology,
+        topologyPreset: saved.topologyPreset ?? current.topologyPreset,
+        topologyIntensity: saved.topologyIntensity ?? current.topologyIntensity,
+        topology: saved.topology,
+      },
+    }));
+    if (loaded && saved.toolSettings) current.setToolSettings(saved.toolSettings);
+    return loaded;
+  }, [store]);
 
   // History state from HistoryManager
   const [historyState, setHistoryState] = useState<HistoryState>(
@@ -80,15 +107,10 @@ export function useStoreIntegration(options?: {
 
     store.getState().persistenceManager.setAutoSaveDelay(autoSaveDelay);
 
-    const state: PersistedState = {
-      version: '1.0.0',
-      grid,
-      puzzle,
-      toolSettings,
-    };
+    const state = capturePersistedState(store.getState());
 
     store.getState().persistenceManager.autoSave(state);
-  }, [enableAutoSave, autoSaveDelay, grid, puzzle, toolSettings]);
+  }, [enableAutoSave, autoSaveDelay, grid, puzzle, toolSettings, topology, useTopology, topologyPreset, topologyIntensity, store]);
 
   // Execute action through ActionExecutor
   const executeAction = useCallback((action: PuzzleAction) => {
@@ -140,101 +162,34 @@ export function useStoreIntegration(options?: {
   // Save current state to a slot
   const saveToSlot = useCallback(
     (slotId: string, name?: string) => {
-      const state: PersistedState = {
-        version: '1.0.0',
-        grid,
-        puzzle,
-        toolSettings,
-      };
+      const state = capturePersistedState(store.getState());
       return store.getState().persistenceManager.saveToSlot(slotId, state, name);
     },
     [grid, puzzle, toolSettings, store]
   );
 
-  // Load state from a slot (async for decompression)
+  // Restore the document and graph atomically through the same native loader.
   const loadFromSlot = useCallback(async (slotId: string) => {
     const saved = await store.getState().persistenceManager.loadFromSlot(slotId);
-    if (!saved) return false;
+    return saved ? restorePersistedState(saved) : false;
+  }, [store, restorePersistedState]);
 
-    const normalizedPuzzle = mergeDirectionalCluesIntoNumbers(saved.puzzle);
-
-    // Sync ID counters to avoid collisions
-    syncCountersFromPuzzleState(normalizedPuzzle);
-
-    // Apply loaded state to store
-    const currentToolSettings = store.getState().toolSettings;
-    store.setState({
-      grid: saved.grid,
-      puzzle: normalizedPuzzle,
-      toolSettings: saved.toolSettings
-        ? { ...currentToolSettings, ...saved.toolSettings }
-        : currentToolSettings,
-    });
-
-    // Clear history after load
-    store.getState().historyManager.clear();
-
-    return true;
-  }, [store]);
-
-  // Load auto-save (async for decompression)
   const loadAutoSave = useCallback(async () => {
     const saved = await store.getState().persistenceManager.loadAutoSave();
-    if (!saved) return false;
-
-    const normalizedPuzzle = mergeDirectionalCluesIntoNumbers(saved.puzzle);
-
-    // Sync ID counters to avoid collisions
-    syncCountersFromPuzzleState(normalizedPuzzle);
-
-    const currentToolSettings = store.getState().toolSettings;
-    store.setState({
-      grid: saved.grid,
-      puzzle: normalizedPuzzle,
-      toolSettings: saved.toolSettings
-        ? { ...currentToolSettings, ...saved.toolSettings }
-        : currentToolSettings,
-    });
-
-    store.getState().historyManager.clear();
-
-    return true;
-  }, [store]);
+    return saved ? restorePersistedState(saved) : false;
+  }, [store, restorePersistedState]);
 
   // Export as JSON
   const exportAsJson = useCallback(() => {
-    const state: PersistedState = {
-      version: '1.0.0',
-      grid,
-      puzzle,
-      toolSettings,
-    };
+    const state = capturePersistedState(store.getState());
     return store.getState().persistenceManager.exportAsJson(state);
   }, [grid, puzzle, toolSettings, store]);
 
   // Import from JSON
   const importFromJson = useCallback((json: string) => {
     const saved = store.getState().persistenceManager.importFromJson(json);
-    if (!saved) return false;
-
-    const normalizedPuzzle = mergeDirectionalCluesIntoNumbers(saved.puzzle);
-
-    // Sync ID counters to avoid collisions
-    syncCountersFromPuzzleState(normalizedPuzzle);
-
-    const currentToolSettings = store.getState().toolSettings;
-    store.setState({
-      grid: saved.grid,
-      puzzle: normalizedPuzzle,
-      toolSettings: saved.toolSettings
-        ? { ...currentToolSettings, ...saved.toolSettings }
-        : currentToolSettings,
-    });
-
-    store.getState().historyManager.clear();
-
-    return true;
-  }, [store]);
+    return saved ? restorePersistedState(saved) : false;
+  }, [store, restorePersistedState]);
 
   return useMemo(
     () => ({

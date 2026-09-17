@@ -50,6 +50,9 @@ describe('overlapping snapped segments', () => {
 it('repairs legacy long/short overlaps on import and keeps repeated roundtrips stable', () => {
   const store = setup();
   const data = JSON.parse(store.getState().exportPuzzle());
+  // This is a pre-snapshot file, not a native graph whose records must be kept.
+  data.version = '1.1.0';
+  delete data.topologySettings.topology;
   data.state.problem.lines = { long: { ...line('cell-1-1','cell-1-3'), id:'long' }, short: { ...line('cell-1-1','cell-1-2', {edgeId:'edge-22'}), id:'short' } };
   expect(store.getState().importPuzzle(JSON.stringify(data))).toBe(true);
   expect(Object.keys(store.getState().puzzle.problem.lines)).toHaveLength(1);

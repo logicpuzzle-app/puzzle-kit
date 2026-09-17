@@ -754,12 +754,12 @@ export interface PuzzleExport {
     created?: string;
     modified?: string;
   };
-  // Topology settings
-  // Note: topology geometry is NOT stored - it's regenerated from grid config
-  // (grid.mergedCells, grid.splitLines are used to recreate merge/split state)
+  // Native files preserve the graph. Files without a snapshot use the legacy
+  // grid/preset conversion once on import.
   topologySettings?: {
     useTopology: boolean;
     topologyPreset: string;
     topologyIntensity: number;
+    topology?: import('../utils/serialization').SerializedTopology;
   };
 }

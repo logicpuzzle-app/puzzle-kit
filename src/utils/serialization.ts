@@ -1,11 +1,12 @@
 import pako from 'pako';
 import type { PuzzleExport, GridConfig, PuzzleState } from '../types';
 import type { GridTopology, TopologyCell, TopologyVertex, TopologyEdge } from './topology/types';
+import { PUZZLE_EXPORT_VERSION } from '../constants/version';
 
 // Penpa-compatible compression using zlib
 // Format: "m=edit&p=" + base64(zlib(JSON))
 
-const PUZZLE_VERSION = '1.0.0';
+const PUZZLE_VERSION = PUZZLE_EXPORT_VERSION;
 
 // Key compression mapping (similar to Penpa's Z-substitution)
 const COMPRESS_KEYS: Record<string, string> = {
@@ -61,22 +62,6 @@ const DECOMPRESS_KEYS: Record<string, string> = Object.fromEntries(
   Object.entries(COMPRESS_KEYS).map(([k, v]) => [v, k])
 );
 
-function compressKeys(obj: unknown): unknown {
-  if (obj === null || obj === undefined) return obj;
-  if (Array.isArray(obj)) {
-    return obj.map(compressKeys);
-  }
-  if (typeof obj === 'object') {
-    const result: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(obj)) {
-      const newKey = COMPRESS_KEYS[key] || key;
-      result[newKey] = compressKeys(value);
-    }
-    return result;
-  }
-  return obj;
-}
-
 function decompressKeys(obj: unknown): unknown {
   if (obj === null || obj === undefined) return obj;
   if (Array.isArray(obj)) {
@@ -114,17 +99,19 @@ export function serializePuzzle(
     data.topologySettings = topologySettings;
   }
 
-  // Compress keys
-  const compressed = compressKeys(data);
-
-  // Convert to JSON
-  const json = JSON.stringify(compressed);
+  // Do not rewrite dictionary keys: an opaque element ID may itself be "co",
+  // "color", or "zL". The envelope distinguishes this from legacy key substitution.
+  const json = JSON.stringify({ encoding: 'puzzle-kit-json', data });
 
   // Compress with zlib
   const deflated = pako.deflate(json, { level: 9 });
 
   // Convert to base64
-  const base64 = btoa(String.fromCharCode(...deflated));
+  let binary = '';
+  for (let offset = 0; offset < deflated.length; offset += 8192) {
+    binary += String.fromCharCode(...deflated.subarray(offset, offset + 8192));
+  }
+  const base64 = btoa(binary);
 
   // URL-safe base64
   const urlSafe = base64
@@ -157,11 +144,8 @@ export function deserializePuzzle(encoded: string): PuzzleExport | null {
 
     // Parse JSON
     const compressed = JSON.parse(inflated);
-
-    // Decompress keys
-    const data = decompressKeys(compressed) as PuzzleExport;
-
-    return data;
+    return (compressed?.encoding === 'puzzle-kit-json'
+      ? compressed.data : decompressKeys(compressed)) as PuzzleExport;
   } catch (error) {
     console.error('Failed to deserialize puzzle:', error);
     return null;
@@ -250,12 +234,14 @@ export function savePuzzleToList(
   id: string,
   grid: GridConfig,
   state: PuzzleState,
-  metadata?: PuzzleExport['metadata']
+  metadata?: PuzzleExport['metadata'],
+  topologySettings?: PuzzleExport['topologySettings']
 ): void {
   const data: PuzzleExport = {
     version: PUZZLE_VERSION,
     grid,
     state,
+    ...(topologySettings ? { topologySettings } : {}),
     metadata: {
       ...metadata,
       modified: new Date().toISOString(),
@@ -494,10 +480,58 @@ export function serializeTopology(topology: GridTopology): SerializedTopology {
  * Convert serialized format back to GridTopology
  */
 export function deserializeTopology(serialized: SerializedTopology): GridTopology {
+  // Validate before constructing Maps: duplicate keys would otherwise silently
+  // replace a node and leave every reference to it pointing at the wrong object.
+  const record = (value: unknown): value is Record<string, unknown> =>
+    value !== null && typeof value === 'object' && !Array.isArray(value);
+  const point = (value: unknown): boolean =>
+    record(value) && Number.isFinite(value.x) && Number.isFinite(value.y);
+  const readNodes = <T extends { id: string }>(value: unknown): Map<string, T> => {
+    if (!Array.isArray(value)) throw new Error('Invalid topology node collection');
+    const nodes = new Map<string, T>();
+    for (const entry of value) {
+      if (!Array.isArray(entry) || entry.length !== 2 ||
+          typeof entry[0] !== 'string' || !entry[0] ||
+          !record(entry[1]) || entry[1].id !== entry[0] || nodes.has(entry[0])) {
+        throw new Error('Duplicate or inconsistent topology ID');
+      }
+      nodes.set(entry[0], entry[1] as T);
+    }
+    return nodes;
+  };
+  if (!record(serialized)) throw new Error('Invalid topology snapshot');
+  const cells = readNodes<TopologyCell>(serialized.cells);
+  const vertices = readNodes<TopologyVertex>(serialized.vertices);
+  const edges = readNodes<TopologyEdge>(serialized.edges);
+  const refs = (value: unknown, target: Map<string, unknown>): boolean =>
+    Array.isArray(value) && value.every(id => typeof id === 'string' && target.has(id));
+  if (!record(serialized.bounds) ||
+      !['minX', 'minY', 'maxX', 'maxY', 'width', 'height']
+        .every(key => Number.isFinite(serialized.bounds[key as keyof GridTopology['bounds']]))) {
+    throw new Error('Invalid topology bounds');
+  }
+  for (const cell of cells.values()) {
+    if (!point(cell.center) || !refs(cell.boundaryVertices, vertices) ||
+        !refs(cell.boundaryEdges, edges) || !refs(cell.adjacentCells, cells)) {
+      throw new Error('Invalid cell geometry or reference');
+    }
+  }
+  for (const vertex of vertices.values()) {
+    if (!point(vertex.position) || !refs(vertex.adjacentCells, cells) ||
+        !refs(vertex.adjacentEdges, edges) || !refs(vertex.adjacentVertices, vertices)) {
+      throw new Error('Invalid vertex geometry or reference');
+    }
+  }
+  for (const edge of edges.values()) {
+    if (!point(edge.midpoint) || !vertices.has(edge.startVertex) ||
+        !vertices.has(edge.endVertex) || !refs(edge.adjacentCells, cells)) {
+      throw new Error('Invalid edge geometry or reference');
+    }
+  }
   return {
-    cells: new Map(serialized.cells),
-    vertices: new Map(serialized.vertices),
-    edges: new Map(serialized.edges),
+    cells,
+    vertices,
+    edges,
     bounds: serialized.bounds,
     sourceConfig: serialized.sourceConfig,
   };
