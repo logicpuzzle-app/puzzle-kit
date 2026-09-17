@@ -34,6 +34,8 @@ export function generateLineId(from: string, to: string): string {
 
 /**
  * Parse a normalized line ID to extract endpoint IDs.
+ * @deprecated Not an unambiguous decoder when endpoint IDs contain hyphens.
+ * Read explicit from/to fields instead; see docs/board-id-contract.md.
  *
  * @param lineId The normalized line ID
  * @returns [from, to] or null if invalid format

@@ -4,14 +4,18 @@
  * Provides ID generation, parsing, and conversion utilities for bridging
  * Grid mode (pzpr/puzz.link format) and Topology mode.
  *
- * Grid mode IDs:
+ * The formats below describe legacy encodings, not a contract for consumers.
+ * Application code must treat IDs as opaque and resolve them in a known board.
+ * See docs/board-id-contract.md and docs/board-id-migration.md.
+ *
+ * Legacy Grid mode IDs:
  *   - cell-{row}-{col}
  *   - vertex-{row}-{col}
  *   - edge-h-{row}-{col} (horizontal edge above row at col)
  *   - edge-v-{row}-{col} (vertical edge to left of row at col)
  *
- * Topology mode IDs:
- *   - cell-{row}-{col} (same as grid mode)
+ * Examples from current topology generators (not universal or stable on rebuild):
+ *   - cell-{row}-{col} (regular square cells; other cell IDs also exist)
  *   - vertex-{n} (auto-generated counter)
  *   - edge-{n} (auto-generated counter)
  */
@@ -71,6 +75,8 @@ export interface EdgeCoord {
 
 /**
  * Parse cell ID to row/col coordinates
+ * @deprecated Legacy-format adapter only. Resolve a cell in its topology, or
+ * use getCellIndexById with an explicitly known Grid-format board.
  * @returns null if invalid format
  */
 export function parseGridCellId(id: string): CellCoord | null {
@@ -83,6 +89,8 @@ export function parseGridCellId(id: string): CellCoord | null {
 
 /**
  * Parse vertex ID to row/col coordinates
+ * @deprecated Legacy-format adapter only. Resolve a vertex in its topology, or
+ * use getVertexIndexById with an explicitly known Grid-format board.
  * @returns null if invalid format
  */
 export function parseGridVertexId(id: string): CellCoord | null {
@@ -95,6 +103,8 @@ export function parseGridVertexId(id: string): CellCoord | null {
 
 /**
  * Parse edge ID to type and row/col coordinates
+ * @deprecated Legacy-format adapter only. Resolve an edge in its topology, or
+ * use getEdgeIndexById with an explicitly known Grid-format board.
  * @returns null if invalid format
  */
 export function parseEdgeId(id: string): EdgeCoord | null {
@@ -111,6 +121,7 @@ export function parseEdgeId(id: string): EdgeCoord | null {
 
 /**
  * Check if an ID is in grid mode format (has row-col)
+ * @deprecated Recognizes a legacy spelling only; does not identify board mode.
  */
 export function isGridModeId(id: string): boolean {
   return /^(cell|vertex)-\d+-\d+$/.test(id) || /^edge-[hv]-\d+-\d+$/.test(id);
@@ -118,6 +129,7 @@ export function isGridModeId(id: string): boolean {
 
 /**
  * Check if an ID is in topology mode format (auto-generated counter)
+ * @deprecated Recognizes a legacy spelling only; does not identify board mode.
  */
 export function isTopologyModeId(id: string): boolean {
   return /^(vertex|edge)-\d+$/.test(id) && !id.includes('-', id.indexOf('-') + 1);
