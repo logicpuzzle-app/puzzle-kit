@@ -77,6 +77,9 @@ npm run qa:production
 ```
 
 The built-app Chromium cases use `@production` and run once against the build.
+`npm run qa:check` and `npm run qa:production` keep the newest 5 timestamped runs of each kind in
+`artifacts/check/` and delete older ones before starting. Set `QA_KEEP_RUNS` to another number,
+or to `all` to keep everything. Named folders there are never deleted.
 See [testing and before/after capture](docs/testing.md) for development debugging and optional UI recordings.
 
 ## Library Usage
