@@ -1,7 +1,11 @@
 import { closeSync, mkdirSync, openSync, writeFileSync, writeSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
+import { keepRuns, pruneRuns } from './qa-prune.mjs';
 
+// The run about to start counts toward QA_KEEP_RUNS (default 5, "all" keeps everything).
+const pruned = pruneRuns('check', { keep: Math.max(0, keepRuns() - 1) });
+if (pruned.length) console.log(`Removed ${pruned.length} old run(s) from artifacts/check`);
 const directory = resolve('artifacts/check', new Date().toISOString().replace(/[:.]/g, '-'));
 mkdirSync(directory, { recursive: true });
 console.log(`Results: ${directory}`);
