@@ -116,7 +116,7 @@ This project is inspired by these wonderful tools:
 - [penpa-edit (enhanced)](https://github.com/swaroopg92/penpa-edit)
 
 **Kudamono editor**
-- [Kudamono](https://pedros.works/kudamono/)
+- Kudamono Editor (Pedro)
 
 ## License
 
